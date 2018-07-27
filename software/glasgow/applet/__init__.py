@@ -42,4 +42,5 @@ from .i2c.bmp280 import I2CBMP280Applet
 from .i2c.eeprom import I2CEEPROMApplet
 from .program_ice40 import ProgramICE40Applet
 from .selftest import SelfTestApplet
+from .smia import SMIAApplet
 from .uart import UARTApplet
