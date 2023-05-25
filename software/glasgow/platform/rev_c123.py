@@ -120,13 +120,38 @@ class GlasgowPlatformRevC123(GlasgowPlatformICE40):
         # On revC, these balls are shared with B6 and B7, respectively.
         # Since the default pin state is a weak pullup, we need to tristate them explicitly.
         Resource("unused", 0, Pins("A6 B5", dir="oe"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+
+        ### LVDS Header (Not used as LVDS, but still using the same pin names)
+        Resource("X_ENABLE", 0, Pins("B1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+        #Resource("0N", 0, Pins("B2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+        
+        Resource("X_LATCH", 0, Pins("C4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+        #Resource("1N", 0, Pins("C3", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+
+        Resource("Y_ENABLE", 0, Pins("C2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+        #Resource("2N", 0, Pins("C1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+
+        Resource("Y_LATCH", 0, Pins("E1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+
+        Resource("A_ENABLE", 0, Pins("D2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+
+        Resource("A_LATCH", 0, Pins("E2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+
+        Resource("D_CLOCK", 0, Pins("F1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+
+        Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
     ]
-    connectors  = [
-        #                     1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22
-        #                     23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44
-        Connector("lvds", 0, "-  -  K1 -  J1 -  -  K2 H1 J2 H2 -  -  H3 G1 G3 G2 -  -  F3 F1 F4 "
-                             "F2 -  -  E3 E1 E2 D1 -  -  D2 C1 D3 C2 -  -  C3 B1 C4 B2 -  -  -  "),
-    ]
+    connectors = [
+
+                        # V  G   G 12P 12N  G  9N 9P G  7N 7P G  5N 5P G  4P 4N G  1N 1P V
+
+                        # G 11N 11P G  10P 10N G  8P 8N G  6P 6N G  3P 3N G  2N 2P G  0P 0N
+
+    Connector("lvds", 0, "-  -  -  K2  J2   -  H3 G3  - F3 F4  - E3 E2 -  D2 D3 -  C3 C4 -"
+
+                         "-  K1 J1  -  H1  H2  -  G1 G2  - F1 F2  - E1 D1 -  C1 C2 -  B1 B2"),
+
+                ]
 
 
 if __name__ == "__main__":
