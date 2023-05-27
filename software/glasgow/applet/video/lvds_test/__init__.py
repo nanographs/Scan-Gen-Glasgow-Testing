@@ -67,10 +67,10 @@ class ScanGenSubtarget(Elaboratable):
         ## C0-7
         x_latch = platform.request("X_LATCH")
         #x_enable = platform.request("X_ENABLE")
-        y_latch = platform.request("Y_LATCH")
+        # y_latch = platform.request("Y_LATCH")
         #y_enable = platform.request("Y_ENABLE")
         # a_latch = platform.request("A_LATCH")
-        a_enable = platform.request("A_ENABLE")
+        # a_enable = platform.request("A_ENABLE")
         #d_clock = platform.request("D_CLOCK")
         #a_clock = platform.request("A_CLOCK")
         # v_ok = platform.request("port_b",7)
@@ -106,38 +106,27 @@ class ScanGenSubtarget(Elaboratable):
 
         self.dataout = Signal(14)
 
-        self.MinDwelCounter_limit = 20
         self.UpCount_limit = 16383
         self.DownCount_limit = 16383
 
         # Ports
         self.UpCount_ovf = Signal()
         self.DownCount_ovf = Signal()
-        self.MinDwelCounter_ovf = Signal()
 
         # State
-        self.MinDwelCounter = Signal(4)
         self.UpCount = Signal(14)
         self.DownCount = Signal(14)
 
 ## Countes
     # Ovf Monitors
-        m.d.comb += self.MinDwelCounter_ovf.eq(self.MinDwelCounter == self.MinDwelCounter_limit)
         m.d.comb += self.UpCount_ovf.eq(self.UpCount == self.UpCount_limit)
         m.d.comb += self.DownCount_ovf.eq(self.DownCount == self.DownCount_limit)
     
 
-        # MinDwelCounter
-        with m.If(1):
-            with m.If(self.MinDwelCounter_ovf):
-                ## if the counter is at overflow, set it to 0
-                m.d.sync += self.MinDwelCounter.eq(0)
-            with m.Else():
-                ## else, increment the counter by 1
-                m.d.sync += self.MinDwelCounter.eq(self.MinDwelCounter + 1)
+        dac_increment = Signal()
 
         # Up Count
-        with m.If(1):
+        with m.If(dac_increment):
             with m.If(self.UpCount_ovf):
                 ## if the counter is at overflow, set it to 0
                 m.d.sync += self.UpCount.eq(0)
@@ -161,82 +150,55 @@ class ScanGenSubtarget(Elaboratable):
         
 
         # X Data
-        with m.If((self.MinDwelCounter >= 1)|(self.MinDwelCounter <= 3)):
+        # with m.If((self.MinDwelCounter >= 1)|(self.MinDwelCounter <= 3)):
             m.d.sync += self.dataout.eq(self.UpCount)
 
-        # Y Data
-        with m.If((self.MinDwelCounter >= 4)|(self.MinDwelCounter <= 6)):
-            m.d.sync += self.dataout.eq(self.DownCount)
 
-        # X Latch
-        with m.If(self.MinDwelCounter == 2):
-            m.d.sync += x_latch.eq(1)
-        with m.Else():
-            m.d.sync += x_latch.eq(0)
-
-        # Y Latch
-        with m.If(self.MinDwelCounter == 5):
-            m.d.sync += y_latch.eq(1)
-        with m.Else():
-            m.d.sync += y_latch.eq(0)
+        # X Data Latch Permant
+        m.d.comb += x_latch.eq(1)
         
-        # ADC Enable
-        with m.If((self.MinDwelCounter >= 12)|(self.MinDwelCounter <= 14)):
-            m.d.sync += a_enable.eq(1)
+
+
+
+    
+
+        dac_freqency = int(24)
+        dac_timer = Signal(range(dac_freqency + 1))
+
+        with m.If(dac_timer == dac_freqency):
+            #m.d.sync += d_clock.eq(~d_clock)
+            m.d.sync += dac_timer.eq(0)
+            m.d.sync += dac_increment.eq(1)
+        
         with m.Else():
-            m.d.sync += a_enable.eq(0)
+            m.d.sync += dac_timer.eq(dac_timer + 1)
+            m.d.sync += dac_increment.eq(0)
 
 
 
-        # R/W Config
-        with m.If(self.MinDwelCounter > 10):
+
             m.d.sync += [
-            self.pads.a_t.oe.eq(0),
-            self.pads.b_t.oe.eq(0),
-            self.pads.c_t.oe.eq(0),
-            self.pads.d_t.oe.eq(0),
-            self.pads.e_t.oe.eq(0),
-            self.pads.f_t.oe.eq(0),
-            self.pads.g_t.oe.eq(0),
-            self.pads.h_t.oe.eq(0),
-            self.pads.i_t.oe.eq(0),
-            self.pads.j_t.oe.eq(0),
-            self.pads.k_t.oe.eq(0),
-            self.pads.l_t.oe.eq(0),
-            self.pads.m_t.oe.eq(0),
-            self.pads.n_t.oe.eq(0),
-            ]
-            
-        with m.Else():
-            m.d.sync += [
-            self.pads.a_t.oe.eq(self.pads.p_t.i),
+            self.pads.a_t.oe.eq(1),
             self.pads.a_t.o.eq(self.dataout[0]),
-            self.pads.b_t.oe.eq(self.pads.p_t.i),
+            self.pads.b_t.oe.eq(1),
             self.pads.b_t.o.eq(self.dataout[1]),
-            self.pads.c_t.oe.eq(self.pads.p_t.i),
+            self.pads.c_t.oe.eq(1),
             self.pads.c_t.o.eq(self.dataout[2]),
-            self.pads.d_t.oe.eq(self.pads.p_t.i),
+            self.pads.d_t.oe.eq(1),
             self.pads.d_t.o.eq(self.dataout[3]),
-            self.pads.e_t.oe.eq(self.pads.p_t.i),
+            self.pads.e_t.oe.eq(1),
             self.pads.e_t.o.eq(self.dataout[4]),
-            self.pads.f_t.oe.eq(self.pads.p_t.i),
+            self.pads.f_t.oe.eq(1),
             self.pads.f_t.o.eq(self.dataout[5]),
-            self.pads.g_t.oe.eq(self.pads.p_t.i),
+            self.pads.g_t.oe.eq(1),
             self.pads.g_t.o.eq(self.dataout[6]),
-            self.pads.h_t.oe.eq(self.pads.p_t.i),
+            self.pads.h_t.oe.eq(1),
             self.pads.h_t.o.eq(self.dataout[7]),
-            self.pads.i_t.oe.eq(self.pads.p_t.i),
-            self.pads.i_t.o.eq(self.dataout[8]),
-            self.pads.j_t.oe.eq(self.pads.p_t.i),
-            self.pads.j_t.o.eq(self.dataout[9]),
-            self.pads.k_t.oe.eq(self.pads.p_t.i),
-            self.pads.k_t.o.eq(self.dataout[10]),
-            self.pads.l_t.oe.eq(self.pads.p_t.i),
-            self.pads.l_t.o.eq(self.dataout[11]),
-            self.pads.m_t.oe.eq(self.pads.p_t.i),
-            self.pads.m_t.o.eq(self.dataout[12]),
-            self.pads.n_t.oe.eq(self.pads.p_t.i),
-            self.pads.n_t.o.eq(self.dataout[13]),
+
+            self.pads.i_t.oe.eq(1),
+            self.pads.i_t.o.eq(dac_increment),
+
+
             ]
 
             m.d.sync += [  
