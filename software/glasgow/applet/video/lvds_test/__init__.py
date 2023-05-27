@@ -178,30 +178,36 @@ class ScanGenSubtarget(Elaboratable):
 
 
             m.d.sync += [
-            self.pads.a_t.oe.eq(1),
+            self.pads.a_t.oe.eq(self.pads.p_t.i),
             self.pads.a_t.o.eq(self.dataout[0]),
-            self.pads.b_t.oe.eq(1),
+            self.pads.b_t.oe.eq(self.pads.p_t.i),
             self.pads.b_t.o.eq(self.dataout[1]),
-            self.pads.c_t.oe.eq(1),
+            self.pads.c_t.oe.eq(self.pads.p_t.i),
             self.pads.c_t.o.eq(self.dataout[2]),
-            self.pads.d_t.oe.eq(1),
+            self.pads.d_t.oe.eq(self.pads.p_t.i),
             self.pads.d_t.o.eq(self.dataout[3]),
-            self.pads.e_t.oe.eq(1),
+            self.pads.e_t.oe.eq(self.pads.p_t.i),
             self.pads.e_t.o.eq(self.dataout[4]),
-            self.pads.f_t.oe.eq(1),
+            self.pads.f_t.oe.eq(self.pads.p_t.i),
             self.pads.f_t.o.eq(self.dataout[5]),
-            self.pads.g_t.oe.eq(1),
+            self.pads.g_t.oe.eq(self.pads.p_t.i),
             self.pads.g_t.o.eq(self.dataout[6]),
-            self.pads.h_t.oe.eq(1),
+            self.pads.h_t.oe.eq(self.pads.p_t.i),
             self.pads.h_t.o.eq(self.dataout[7]),
+            self.pads.i_t.oe.eq(self.pads.p_t.i),
+            self.pads.i_t.o.eq(self.dataout[8]),
+            self.pads.j_t.oe.eq(self.pads.p_t.i),
+            self.pads.j_t.o.eq(self.dataout[9]),
+            self.pads.k_t.oe.eq(self.pads.p_t.i),
+            self.pads.k_t.o.eq(self.dataout[10]),
+            self.pads.l_t.oe.eq(self.pads.p_t.i),
+            self.pads.l_t.o.eq(self.dataout[11]),
+            self.pads.m_t.oe.eq(self.pads.p_t.i),
+            self.pads.m_t.o.eq(self.dataout[12]),
+            self.pads.n_t.oe.eq(self.pads.p_t.i),
+            self.pads.n_t.o.eq(self.dataout[13]),
 
 
-
-
-
-
-
-            
             self.pads.i_t.oe.eq(1),
             self.pads.i_t.o.eq(dac_increment),
 
