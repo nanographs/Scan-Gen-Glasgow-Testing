@@ -195,6 +195,13 @@ class ScanGenSubtarget(Elaboratable):
             self.pads.h_t.oe.eq(1),
             self.pads.h_t.o.eq(self.dataout[7]),
 
+
+
+
+
+
+
+            
             self.pads.i_t.oe.eq(1),
             self.pads.i_t.o.eq(dac_increment),
 
