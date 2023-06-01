@@ -66,12 +66,12 @@ class ScanGenSubtarget(Elaboratable):
 
         ## C0-7
         x_latch = platform.request("X_LATCH")
-        #x_enable = platform.request("X_ENABLE")
+        x_enable = platform.request("X_ENABLE")
         # y_latch = platform.request("Y_LATCH")
         #y_enable = platform.request("Y_ENABLE")
         # a_latch = platform.request("A_LATCH")
         # a_enable = platform.request("A_ENABLE")
-        #d_clock = platform.request("D_CLOCK")
+        d_clock = platform.request("D_CLOCK")
         #a_clock = platform.request("A_CLOCK")
         # v_ok = platform.request("port_b",7)
         #data = platform.request("port_a",0)
@@ -156,6 +156,7 @@ class ScanGenSubtarget(Elaboratable):
 
         # X Data Latch Permant
         m.d.comb += x_latch.eq(1)
+        m.d.comb += x_enable.eq(0)
         
 
 
@@ -207,9 +208,9 @@ class ScanGenSubtarget(Elaboratable):
             self.pads.n_t.oe.eq(self.pads.p_t.i),
             self.pads.n_t.o.eq(self.dataout[13]),
 
+            d_clock.eq(dac_increment),
 
-            self.pads.i_t.oe.eq(1),
-            self.pads.i_t.o.eq(dac_increment),
+            
 
 
             ]
