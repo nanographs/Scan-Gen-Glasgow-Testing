@@ -126,7 +126,9 @@ class AnalyzerInterface:
         self.decoder = TraceDecoder(event_sources)
 
     async def read(self):
+        print("reading AnalyzerInterface")
         self.decoder.process(await self.lower.read())
+        print("Done reading")
         return self.decoder.flush()
 
 class LVDSTestApplet(GlasgowApplet, name="lvds-test"):
@@ -169,6 +171,7 @@ class LVDSTestApplet(GlasgowApplet, name="lvds-test"):
         ))
 
         self._event_sources = subtarget.analyzer.event_sources
+        self._sample_freq = target.sys_clk_freq
     
     @classmethod
     def add_run_arguments(cls, parser, access):
@@ -184,6 +187,35 @@ class LVDSTestApplet(GlasgowApplet, name="lvds-test"):
 
     async def interact(self, device, args, iface):
         print(self._event_sources)
+        print(vars(self._event_sources))
+        for index in range(self._event_sources[0].width):
+            print("index", index)
+        try:
+            overrun = False
+            timestamp = 0
+            while not overrun:
+                print("reading")
+                for cycle, events in await iface.read():
+                    print("cycle",cycle)
+                    print("events", events)
+                    timestamp = cycle * 1_000_000_000 // self._sample_freq
+
+                    if events == "overrun":
+                        self.logger.error("FIFO overrun, shutting down")
+                        for signal in signals:
+                            print(signal)
+                            #vcd_writer.change(signal, timestamp, "x")
+                        overrun = True
+                        break
+
+                    if "pin" in events: # could be also "throttle"
+                        value = events["pin"]
+                        for bit, signal in enumerate(signals):
+                            print("bit", bit,"signal",signal)
+                            #vcd_writer.change(signal, timestamp, (value >> bit) & 1)
+
+        finally:
+            print("finally")
 
 # -------------------------------------------------------------------------------------------------
 
