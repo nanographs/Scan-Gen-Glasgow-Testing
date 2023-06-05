@@ -101,9 +101,9 @@ class ScanGenSubtarget(Elaboratable):
                 m.d.sync += self.count.eq(self.count + 1)
 
     ## Pins Doing Things
-        pins_i = Signal.like(self.pads.p_t.i)
-        pins_r = Signal.like(self.pads.p_t.i)
-        m.submodules += FFSynchronizer(self.pads.p_t.i, pins_i)
+        #pins_i = Signal.like(self.pads.p_t.i)
+        #pins_r = Signal.like(self.pads.p_t.i)
+        #m.submodules += FFSynchronizer(self.pads.p_t.i, pins_i)
 
         m.d.sync += [
         self.pads.a_t.oe.eq(1),
@@ -112,10 +112,10 @@ class ScanGenSubtarget(Elaboratable):
         led2.eq(~self.datain)
         ]
 
-        m.d.comb += [
-        self.event_source.data.eq(pins_i),
-        self.event_source.trigger.eq(pins_i != pins_r)
-        ]
+        #m.d.comb += [
+        #self.event_source.data.eq(pins_i),
+        #self.event_source.trigger.eq(pins_i != pins_r)
+        #]
             
 
         return m
@@ -127,6 +127,9 @@ class AnalyzerInterface:
 
     async def read(self):
         print("reading AnalyzerInterface")
+        print(vars(self.decoder))
+        print(vars(self.lower))
+        print(self.lower)
         self.decoder.process(await self.lower.read())
         print("Done reading")
         return self.decoder.flush()
@@ -193,27 +196,27 @@ class LVDSTestApplet(GlasgowApplet, name="lvds-test"):
         try:
             overrun = False
             timestamp = 0
-            while not overrun:
-                print("reading")
-                for cycle, events in await iface.read():
-                    print("cycle",cycle)
-                    print("events", events)
-                    timestamp = cycle * 1_000_000_000 // self._sample_freq
-
-                    if events == "overrun":
-                        self.logger.error("FIFO overrun, shutting down")
-                        for signal in signals:
-                            print(signal)
-                            #vcd_writer.change(signal, timestamp, "x")
-                        overrun = True
-                        break
-
-                    if "pin" in events: # could be also "throttle"
-                        value = events["pin"]
-                        for bit, signal in enumerate(signals):
-                            print("bit", bit,"signal",signal)
-                            #vcd_writer.change(signal, timestamp, (value >> bit) & 1)
-
+            #while not overrun:
+                #print("reading")
+                #for cycle, events in await iface.read():
+                #    print("cycle",cycle)
+                #    print("events", events)
+                #    timestamp = cycle * 1_000_000_000 // self._sample_freq
+#
+                #    if events == "overrun":
+                #        self.logger.error("FIFO overrun, shutting down")
+                #        for signal in signals:
+                #            print(signal)
+                #            #vcd_writer.change(signal, timestamp, "x")
+                #        overrun = True
+                #        break
+#
+                #    if "pin" in events: # could be also "throttle"
+                #        value = events["pin"]
+                #        for bit, signal in enumerate(signals):
+                #            print("bit", bit,"signal",signal)
+                #            #vcd_writer.change(signal, timestamp, (value >> bit) & 1)
+#
         finally:
             print("finally")
 
