@@ -72,7 +72,7 @@ class ScanGenSubtarget(Elaboratable):
         # a_latch = platform.request("A_LATCH")
         # a_enable = platform.request("A_ENABLE")
         d_clock = platform.request("D_CLOCK")
-        #a_clock = platform.request("A_CLOCK")
+        a_clock = platform.request("A_CLOCK")
         # v_ok = platform.request("port_b",7)
         #data = platform.request("port_a",0)
 
@@ -175,6 +175,16 @@ class ScanGenSubtarget(Elaboratable):
             m.d.sync += dac_timer.eq(dac_timer + 1)
             m.d.sync += dac_increment.eq(0)
 
+        min_dwel = Signal()
+
+
+        with m.If(dac_timer <= 12):
+            m.d.sync += min_dwel.eq(0)
+
+        with m.Else():
+            m.d.sync += min_dwel.eq(1)
+
+
 
 
 
@@ -208,7 +218,9 @@ class ScanGenSubtarget(Elaboratable):
             self.pads.n_t.oe.eq(self.pads.p_t.i),
             self.pads.n_t.o.eq(self.dataout[13]),
 
-            d_clock.eq(dac_increment),
+            d_clock.eq(self.dataout[0]),
+
+            a_clock.eq(0),
 
             
 
