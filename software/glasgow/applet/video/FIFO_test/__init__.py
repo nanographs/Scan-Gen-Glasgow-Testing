@@ -3,6 +3,7 @@ import asyncio
 from amaranth import *
 
 from ... import *
+from ramps import RampGenerator
 
 
 class BoilerplateSubtarget(Elaboratable):
