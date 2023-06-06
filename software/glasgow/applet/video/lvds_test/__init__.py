@@ -124,12 +124,14 @@ class AnalyzerInterface:
     def __init__(self, interface, event_sources):
         self.lower   = interface
         self.decoder = TraceDecoder(event_sources)
+        self.logger = logging.getLogger("analyzerinterface")
 
     async def read(self):
         print("reading AnalyzerInterface")
         print(vars(self.decoder))
         print(vars(self.lower))
         print(self.lower)
+        self.logger.trace("reading AnalyzerInterface")
         self.decoder.process(await self.lower.read())
         print("Done reading")
         return self.decoder.flush()
