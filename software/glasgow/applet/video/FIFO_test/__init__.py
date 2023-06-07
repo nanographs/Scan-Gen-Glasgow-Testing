@@ -58,33 +58,51 @@ class FIFOTestSubtarget(Elaboratable):
         self.pads     = pads
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
-
+        self.datain = Signal(8)
 
     def elaborate(self, platform):
         m = Module()
-        m.submodules.ramp = ramp = RampGenerator(8)
+        m.submodules.ramp = ramp = RampGenerator(255)
         ## enable ramp
         m.d.comb += ramp.en.eq(1)
 
         ## output pins
         m.d.comb += [
             self.pads.a_t.oe.eq(1),
-            self.pads.a_t.o.eq(self.count[0]),
+            self.pads.a_t.o.eq(ramp.count[0]),
             self.pads.b_t.oe.eq(1),
-            self.pads.b_t.o.eq(self.count[1]),
+            self.pads.b_t.o.eq(ramp.count[1]),
             self.pads.c_t.oe.eq(1),
-            self.pads.c_t.o.eq(self.count[2]),
+            self.pads.c_t.o.eq(ramp.count[2]),
             self.pads.d_t.oe.eq(1),
-            self.pads.d_t.o.eq(self.count[3]),
+            self.pads.d_t.o.eq(ramp.count[3]),
             self.pads.e_t.oe.eq(1),
-            self.pads.e_t.o.eq(self.count[4]),
+            self.pads.e_t.o.eq(ramp.count[4]),
             self.pads.f_t.oe.eq(1),
-            self.pads.f_t.o.eq(self.count[5]),
+            self.pads.f_t.o.eq(ramp.count[5]),
             self.pads.g_t.oe.eq(1),
-            self.pads.g_t.o.eq(self.count[6]),
+            self.pads.g_t.o.eq(ramp.count[6]),
             self.pads.h_t.oe.eq(1),
-            self.pads.h_t.o.eq(self.count[7]),
+            self.pads.h_t.o.eq(ramp.count[7]),
                 ]
+
+        ## input pins
+        m.d.comb += [
+            self.datain[0].eq(self.pads.i_t.i),
+            self.datain[1].eq(self.pads.j_t.i),
+            self.datain[2].eq(self.pads.k_t.i),
+            self.datain[3].eq(self.pads.l_t.i),
+            self.datain[4].eq(self.pads.m_t.i),
+            self.datain[5].eq(self.pads.n_t.i),
+            self.datain[6].eq(self.pads.o_t.i),
+            self.datain[7].eq(self.pads.p_t.i),
+        ]
+
+        with m.If(self.in_fifo.w_rdy):
+            m.d.comb += [
+                self.in_fifo.din.eq(self.datain),
+                self.in_fifo.w_en.eq(1)
+            ]
         return m
 
 
@@ -104,7 +122,7 @@ class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
     nothing. Similarly, there is no requirement to use IN or OUT FIFOs, or any pins at all.
     """
 
-    __pins = ("a", "b", "c", "d", "e","f","g","h","j","k","l","m","n","o","p")
+    __pins = ("a", "b", "c", "d", "e","f","g","h","i","j","k","l","m","n","o","p")
 
     @classmethod
     def add_build_arguments(cls, parser, access):
@@ -126,7 +144,9 @@ class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
         super().add_run_arguments(parser, access)
 
     async def run(self, device, args):
-        return await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        data = await iface.read()
+        print(data.tolist())
 
     @classmethod
     def add_interact_arguments(cls, parser):

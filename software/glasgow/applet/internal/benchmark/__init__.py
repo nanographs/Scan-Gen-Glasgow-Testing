@@ -163,6 +163,8 @@ class BenchmarkApplet(GlasgowApplet, name="benchmark"):
                 counter_fut.cancel()
 
                 error = (actual != golden)
+                print(actual.tolist())
+                print(type(actual))
                 count = None
 
             if mode == "sink":
