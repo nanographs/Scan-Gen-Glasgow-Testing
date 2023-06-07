@@ -63,6 +63,8 @@ class FIFOTestSubtarget(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
+
+
         y_latch = platform.request("Y_LATCH")
         y_enable = platform.request("Y_ENABLE")
         a_latch = platform.request("A_LATCH")
@@ -71,16 +73,24 @@ class FIFOTestSubtarget(Elaboratable):
         m.submodules.ramp = ramp = RampGenerator(65535)
         m.d.comb += y_enable.eq(0)
 
+
+       
+
+     
+
+
+
         with m.FSM() as fsm:
             with m.State("Y_WRITE"):
                 ## output pins
                 m.d.comb += [
-                    ## pause ramp
+                    ## enable ramp
                     ramp.en.eq(1),
                     #Cat(pin.oe for pin in pins).eq(1),
                     #Cat(pin.o  for pin in pins).eq(ramp.count),
                     #]
-                    
+                    a_enable.eq(1),
+
                     self.pads.a_t.oe.eq(1),
                     self.pads.b_t.oe.eq(1),
                     self.pads.a_t.o.eq(ramp.count[0]),
@@ -120,7 +130,10 @@ class FIFOTestSubtarget(Elaboratable):
             with m.State("Y_LATCH_ON"):
                 m.d.comb += [
                     ## enable ramp
+                    ramp.en.eq(1),
+
                     y_latch.eq(1),
+                    a_enable.eq(1),
                         
         
                     self.pads.a_t.oe.eq(1),
@@ -160,8 +173,10 @@ class FIFOTestSubtarget(Elaboratable):
 
                 
             with m.State("A_LATCH_ON"):
-                m.d.comb += [
-                    a_latch.eq(1)
+                m.d.comb += [                  
+
+                    a_latch.eq(1),
+                    a_enable.eq(1),
                 ]
                 m.next = "A_READ"
 
@@ -171,6 +186,9 @@ class FIFOTestSubtarget(Elaboratable):
                 ## input pins
                 m.d.comb += [
                     #self.datain.eq(Cat(pin.i for pin in pins))
+
+                    a_enable.eq(0),
+
 
                     self.datain[0].eq(self.pads.a_t.i),
                     self.datain[1].eq(self.pads.b_t.i),
