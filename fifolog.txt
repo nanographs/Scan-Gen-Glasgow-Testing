@@ -1,0 +1,80 @@
+[2023-06-06 16:13:57,436] DEBUG: glasgow.device.hardware: found revC3 device with serial C3-20230515T153013Z
+[2023-06-06 16:13:57,442] DEBUG: glasgow.applet.video.fifo_test: claimed pipe P and port(s) A, B
+[2023-06-06 16:13:57,442] DEBUG: glasgow.applet.video.fifo_test: adding reset register at address 0x00
+[2023-06-06 16:13:57,443] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'a' to device pin A0
+[2023-06-06 16:13:57,444] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'b' to device pin A1
+[2023-06-06 16:13:57,444] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'c' to device pin A2
+[2023-06-06 16:13:57,444] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'd' to device pin A3
+[2023-06-06 16:13:57,444] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'e' to device pin A4
+[2023-06-06 16:13:57,445] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'f' to device pin A5
+[2023-06-06 16:13:57,445] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'g' to device pin A6
+[2023-06-06 16:13:57,446] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'h' to device pin A7
+[2023-06-06 16:13:57,446] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'i' to device pin B0
+[2023-06-06 16:13:57,446] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'j' to device pin B1
+[2023-06-06 16:13:57,447] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'k' to device pin B2
+[2023-06-06 16:13:57,447] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'l' to device pin B3
+[2023-06-06 16:13:57,447] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'm' to device pin B4
+[2023-06-06 16:13:57,448] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'n' to device pin B5
+[2023-06-06 16:13:57,448] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'o' to device pin B6
+[2023-06-06 16:13:57,448] DEBUG: glasgow.applet.video.fifo_test: assigning pin 'p' to device pin B7
+[2023-06-06 16:13:57,851] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x18 value=0x0000 index=0x0000 length=16 (submit)
+[2023-06-06 16:13:57,851] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<0966fb66ef70cf268486396ffb4ad83b> (completed)
+[2023-06-06 16:13:57,852] INFO: g.device.hardware: device already has bitstream ID 0966fb66ef70cf268486396ffb4ad83b
+[2023-06-06 16:13:57,853] INFO: g.cli: running handler for applet 'fifo-test'
+[2023-06-06 16:13:57,853] WARNING: g.cli: applet 'fifo-test' is PREVIEW QUALITY and may CORRUPT DATA
+[2023-06-06 16:13:57,854] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x14 value=0x0000 index=0x0003 data=<e40c> (submit)
+[2023-06-06 16:13:57,854] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-06-06 16:13:57,854] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
+[2023-06-06 16:13:57,855] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
+[2023-06-06 16:13:57,855] INFO: g.applet.video.fifo_test: port(s) A, B voltage set to 3.3 V
+[2023-06-06 16:13:57,855] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x1b value=0x0000 index=0x0001 data=<0000> (submit)
+[2023-06-06 16:13:57,856] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-06-06 16:13:57,856] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
+[2023-06-06 16:13:57,856] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
+[2023-06-06 16:13:57,856] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x1b value=0x0000 index=0x0002 data=<0000> (submit)
+[2023-06-06 16:13:57,857] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-06-06 16:13:57,857] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
+[2023-06-06 16:13:57,857] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
+[2023-06-06 16:13:57,857] DEBUG: glasgow.applet.video.fifo_test: port(s) A, B pull resistors disabled
+[2023-06-06 16:13:57,857] TRACE: glasgow.applet.video.fifo_test: asserting reset
+[2023-06-06 16:13:57,857] TRACE: glasgow.device.hardware: register 0 write: 0x01
+[2023-06-06 16:13:57,858] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0000 index=0x0000 data=<01> (submit)
+[2023-06-06 16:13:57,858] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-06-06 16:13:57,858] TRACE: glasgow.applet.video.fifo_test: FIFO: synchronizing buffers
+[2023-06-06 16:13:57,859] TRACE: glasgow.applet.video.fifo_test: FIFO: pipelining reads
+[2023-06-06 16:13:57,859] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,860] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,860] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,860] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,860] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,860] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,860] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,861] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,861] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,861] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,861] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,862] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,862] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,862] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,862] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,862] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,863] TRACE: glasgow.applet.video.fifo_test: deasserting reset
+[2023-06-06 16:13:57,863] TRACE: glasgow.device.hardware: register 0 write: 0x00
+[2023-06-06 16:13:57,863] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0000 index=0x0000 data=<00> (submit)
+[2023-06-06 16:13:57,863] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-06-06 16:13:57,863] TRACE: glasgow.applet.video.fifo_test: FIFO: flush
+[2023-06-06 16:13:57,864] TRACE: glasgow.applet.video.fifo_test: FIFO: wait for flush
+[2023-06-06 16:13:57,864] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00000000000000000000200000000000000000002000000080000000400000000000200008000000000400000000020000000000000000000000020008000000... (16384 bytes total)> (completed)
+[2023-06-06 16:13:57,864] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-06-06 16:13:57,865] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00000000000000000000000000000000080000000000000000000000000000000000000000000000000800000000000000000000800000000004000000000000... (16384 bytes total)> (completed)
+[2023-06-06 16:13:57,865] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00000000000000000008000000000005000000028000000000040000000000000008000000000010000000000000000500000020000000000000000000000000... (16384 bytes total)> (completed)
+[2023-06-06 16:13:57,865] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00080100000000100000000000000005000000a00000000000000000000000000000001000000008000000000000000000000000100000100008000040300000... (16384 bytes total)> (completed)
+[2023-06-06 16:13:57,866] TRACE: glasgow.applet.video.fifo_test: FIFO: cancelling operations
+[2023-06-06 16:13:57,868] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-06-06 16:13:57,868] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-06-06 16:13:57,868] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-06-06 16:13:57,868] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-06-06 16:13:57,869] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-06-06 16:13:57,869] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-06-06 16:13:57,869] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-06-06 16:13:57,869] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
