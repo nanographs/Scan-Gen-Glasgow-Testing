@@ -58,51 +58,151 @@ class FIFOTestSubtarget(Elaboratable):
         self.pads     = pads
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
-        self.datain = Signal(8)
+        self.datain = Signal(16)
 
     def elaborate(self, platform):
         m = Module()
-        m.submodules.ramp = ramp = RampGenerator(255)
-        ## enable ramp
-        m.d.comb += ramp.en.eq(1)
 
-        ## output pins
-        m.d.comb += [
-            self.pads.a_t.oe.eq(1),
-            self.pads.a_t.o.eq(ramp.count[0]),
-            self.pads.b_t.oe.eq(1),
-            self.pads.b_t.o.eq(ramp.count[1]),
-            self.pads.c_t.oe.eq(1),
-            self.pads.c_t.o.eq(ramp.count[2]),
-            self.pads.d_t.oe.eq(1),
-            self.pads.d_t.o.eq(ramp.count[3]),
-            self.pads.e_t.oe.eq(1),
-            self.pads.e_t.o.eq(ramp.count[4]),
-            self.pads.f_t.oe.eq(1),
-            self.pads.f_t.o.eq(ramp.count[5]),
-            self.pads.g_t.oe.eq(1),
-            self.pads.g_t.o.eq(ramp.count[6]),
-            self.pads.h_t.oe.eq(1),
-            self.pads.h_t.o.eq(ramp.count[7]),
+        y_latch = platform.request("Y_LATCH")
+        y_enable = platform.request("Y_ENABLE")
+        a_latch = platform.request("A_LATCH")
+        a_enable = platform.request("A_ENABLE")
+
+        m.submodules.ramp = ramp = RampGenerator(65535)
+        m.d.comb += y_enable.eq(0)
+
+        with m.FSM() as fsm:
+            with m.State("Y_WRITE"):
+                ## output pins
+                m.d.comb += [
+                    ## pause ramp
+                    ramp.en.eq(1),
+                    #Cat(pin.oe for pin in pins).eq(1),
+                    #Cat(pin.o  for pin in pins).eq(ramp.count),
+                    #]
+                    
+                    self.pads.a_t.oe.eq(1),
+                    self.pads.b_t.oe.eq(1),
+                    self.pads.a_t.o.eq(ramp.count[0]),
+                    self.pads.b_t.o.eq(ramp.count[1]),
+                    self.pads.c_t.oe.eq(1),
+                    self.pads.c_t.o.eq(ramp.count[2]),
+                    self.pads.d_t.oe.eq(1),
+                    self.pads.d_t.o.eq(ramp.count[3]),
+                    self.pads.e_t.oe.eq(1),
+                    self.pads.e_t.o.eq(ramp.count[4]),
+                    self.pads.f_t.oe.eq(1),
+                    self.pads.f_t.o.eq(ramp.count[5]),
+                    self.pads.g_t.oe.eq(1),
+                    self.pads.g_t.o.eq(ramp.count[6]),
+                    self.pads.h_t.oe.eq(1),
+                    self.pads.h_t.o.eq(ramp.count[7]),
+                    self.pads.i_t.oe.eq(1),
+                    self.pads.i_t.o.eq(ramp.count[8]),
+                    self.pads.j_t.oe.eq(1),
+                    self.pads.j_t.o.eq(ramp.count[9]),
+                    self.pads.k_t.oe.eq(1),
+                    self.pads.k_t.o.eq(ramp.count[10]),
+                    self.pads.l_t.oe.eq(1),
+                    self.pads.l_t.o.eq(ramp.count[11]),
+                    self.pads.m_t.oe.eq(1),
+                    self.pads.m_t.o.eq(ramp.count[12]),
+                    self.pads.n_t.oe.eq(1),
+                    self.pads.n_t.o.eq(ramp.count[13]),
+                    self.pads.o_t.oe.eq(1),
+                    self.pads.o_t.o.eq(ramp.count[14]),
+                    self.pads.p_t.oe.eq(1),
+                    self.pads.p_t.o.eq(ramp.count[15]),
+                    ]
+                m.next = "Y_LATCH_ON"
+
+
+            with m.State("Y_LATCH_ON"):
+                m.d.comb += [
+                    ## enable ramp
+                    y_latch.eq(1),
+                        
+        
+                    self.pads.a_t.oe.eq(1),
+                    self.pads.a_t.o.eq(ramp.count[0]),
+                    self.pads.b_t.oe.eq(1),
+                    self.pads.b_t.o.eq(ramp.count[1]),
+                    self.pads.c_t.oe.eq(1),
+                    self.pads.c_t.o.eq(ramp.count[2]),
+                    self.pads.d_t.oe.eq(1),
+                    self.pads.d_t.o.eq(ramp.count[3]),
+                    self.pads.e_t.oe.eq(1),
+                    self.pads.e_t.o.eq(ramp.count[4]),
+                    self.pads.f_t.oe.eq(1),
+                    self.pads.f_t.o.eq(ramp.count[5]),
+                    self.pads.g_t.oe.eq(1),
+                    self.pads.g_t.o.eq(ramp.count[6]),
+                    self.pads.h_t.oe.eq(1),
+                    self.pads.h_t.o.eq(ramp.count[7]),
+                    self.pads.i_t.oe.eq(1),
+                    self.pads.i_t.o.eq(ramp.count[8]),
+                    self.pads.j_t.oe.eq(1),
+                    self.pads.j_t.o.eq(ramp.count[9]),
+                    self.pads.k_t.oe.eq(1),
+                    self.pads.k_t.o.eq(ramp.count[10]),
+                    self.pads.l_t.oe.eq(1),
+                    self.pads.l_t.o.eq(ramp.count[11]),
+                    self.pads.m_t.oe.eq(1),
+                    self.pads.m_t.o.eq(ramp.count[12]),
+                    self.pads.n_t.oe.eq(1),
+                    self.pads.n_t.o.eq(ramp.count[13]),
+                    self.pads.o_t.oe.eq(1),
+                    self.pads.o_t.o.eq(ramp.count[14]),
+                    self.pads.p_t.oe.eq(1),
+                    self.pads.p_t.o.eq(ramp.count[15]),
                 ]
+                m.next = "A_LATCH_ON"
 
-        ## input pins
-        m.d.comb += [
-            self.datain[0].eq(self.pads.i_t.i),
-            self.datain[1].eq(self.pads.j_t.i),
-            self.datain[2].eq(self.pads.k_t.i),
-            self.datain[3].eq(self.pads.l_t.i),
-            self.datain[4].eq(self.pads.m_t.i),
-            self.datain[5].eq(self.pads.n_t.i),
-            self.datain[6].eq(self.pads.o_t.i),
-            self.datain[7].eq(self.pads.p_t.i),
-        ]
+                
+            with m.State("A_LATCH_ON"):
+                m.d.comb += [
+                    a_latch.eq(1)
+                ]
+                m.next = "A_READ"
 
-        with m.If(self.in_fifo.w_rdy):
-            m.d.comb += [
-                self.in_fifo.din.eq(self.datain),
-                self.in_fifo.w_en.eq(1)
-            ]
+
+
+            with m.State("A_READ"):
+                ## input pins
+                m.d.comb += [
+                    #self.datain.eq(Cat(pin.i for pin in pins))
+
+                    self.datain[0].eq(self.pads.a_t.i),
+                    self.datain[1].eq(self.pads.b_t.i),
+                    self.datain[2].eq(self.pads.c_t.i),
+                    self.datain[3].eq(self.pads.d_t.i),
+                    self.datain[4].eq(self.pads.e_t.i),
+                    self.datain[5].eq(self.pads.f_t.i),
+                    self.datain[6].eq(self.pads.g_t.i),
+                    self.datain[7].eq(self.pads.h_t.i),
+                    self.datain[8].eq(self.pads.i_t.i),
+                    self.datain[9].eq(self.pads.j_t.i),
+                    self.datain[10].eq(self.pads.k_t.i),
+                    self.datain[11].eq(self.pads.l_t.i),
+                    self.datain[12].eq(self.pads.m_t.i),
+                    self.datain[13].eq(self.pads.n_t.i),
+                    self.datain[14].eq(self.pads.o_t.i),
+                    self.datain[15].eq(self.pads.p_t.i),
+                ]
+                m.next = "Y_LATCH_ON"
+        
+
+                with m.If(self.in_fifo.w_rdy):
+                    m.d.comb += [
+                        self.in_fifo.din.eq(self.datain),
+                        self.in_fifo.w_en.eq(1)
+                    ]
+                #with m.Else():
+                #    m.d.comb += [
+                #        self.in_fifo.flush.eq(1),
+                #    ]
+                
+
         return m
 
 
@@ -145,8 +245,13 @@ class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        data = await iface.read()
-        print(data.tolist())
+        async def read_data():
+            data = await iface.read()
+            print(data.tolist())
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
 
     @classmethod
     def add_interact_arguments(cls, parser):
