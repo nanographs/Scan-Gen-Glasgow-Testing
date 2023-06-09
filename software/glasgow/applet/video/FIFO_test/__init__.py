@@ -58,7 +58,7 @@ class FIFOTestSubtarget(Elaboratable):
         self.pads     = pads
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
-        self.datain = Signal(16)
+        self.datain = Signal(14)
 
     def elaborate(self, platform):
         m = Module()
@@ -119,13 +119,8 @@ class FIFOTestSubtarget(Elaboratable):
                     self.pads.m_t.o.eq(ramp.count[12]),
                     self.pads.n_t.oe.eq(1),
                     self.pads.n_t.o.eq(ramp.count[13]),
-                    self.pads.o_t.oe.eq(1),
-                    self.pads.o_t.o.eq(ramp.count[14]),
-                    self.pads.p_t.oe.eq(1),
-                    self.pads.p_t.o.eq(ramp.count[15]),
                     ]
                 m.next = "Y_LATCH_ON"
-
 
             with m.State("Y_LATCH_ON"):
                 m.d.comb += [
@@ -164,10 +159,6 @@ class FIFOTestSubtarget(Elaboratable):
                     self.pads.m_t.o.eq(ramp.count[12]),
                     self.pads.n_t.oe.eq(1),
                     self.pads.n_t.o.eq(ramp.count[13]),
-                    self.pads.o_t.oe.eq(1),
-                    self.pads.o_t.o.eq(ramp.count[14]),
-                    self.pads.p_t.oe.eq(1),
-                    self.pads.p_t.o.eq(ramp.count[15]),
                 ]
                 m.next = "A_LATCH_ON"
 
@@ -179,7 +170,6 @@ class FIFOTestSubtarget(Elaboratable):
                     a_enable.eq(1),
                 ]
                 m.next = "A_READ"
-
 
 
             with m.State("A_READ"):
@@ -204,22 +194,52 @@ class FIFOTestSubtarget(Elaboratable):
                     self.datain[11].eq(self.pads.l_t.i),
                     self.datain[12].eq(self.pads.m_t.i),
                     self.datain[13].eq(self.pads.n_t.i),
-                    self.datain[14].eq(self.pads.o_t.i),
-                    self.datain[15].eq(self.pads.p_t.i),
                 ]
-                m.next = "Y_LATCH_ON"
         
 
                 with m.If(self.in_fifo.w_rdy):
                     m.d.comb += [
-                        self.in_fifo.din.eq(self.datain),
-                        self.in_fifo.w_en.eq(1)
+                        self.in_fifo.din.eq(self.datain[0:6]),
+                        self.in_fifo.w_en.eq(1),
                     ]
                 #with m.Else():
                 #    m.d.comb += [
                 #        self.in_fifo.flush.eq(1),
                 #    ]
                 
+                m.next = "READ_AGAIN"
+
+            with m.State("READ_AGAIN"):
+                m.d.comb += [
+                    #self.datain.eq(Cat(pin.i for pin in pins))
+
+                    a_enable.eq(0),
+
+
+                    self.datain[0].eq(self.pads.a_t.i),
+                    self.datain[1].eq(self.pads.b_t.i),
+                    self.datain[2].eq(self.pads.c_t.i),
+                    self.datain[3].eq(self.pads.d_t.i),
+                    self.datain[4].eq(self.pads.e_t.i),
+                    self.datain[5].eq(self.pads.f_t.i),
+                    self.datain[6].eq(self.pads.g_t.i),
+                    self.datain[7].eq(self.pads.h_t.i),
+                    self.datain[8].eq(self.pads.i_t.i),
+                    self.datain[9].eq(self.pads.j_t.i),
+                    self.datain[10].eq(self.pads.k_t.i),
+                    self.datain[11].eq(self.pads.l_t.i),
+                    self.datain[12].eq(self.pads.m_t.i),
+                    self.datain[13].eq(self.pads.n_t.i),
+                ]
+
+                with m.If(self.in_fifo.w_rdy):
+                    m.d.comb += [
+                        self.in_fifo.din.eq(self.datain[7:13]),
+                        self.in_fifo.w_en.eq(1),
+                    ]
+
+                m.next = "Y_LATCH_ON"
+
 
         return m
 
@@ -265,7 +285,7 @@ class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
         async def read_data():
             data = await iface.read()
-            print(data.tolist())
+            d_list = data.tolist()
         await read_data()
         await read_data()
         await read_data()
