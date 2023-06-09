@@ -284,8 +284,14 @@ class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
         async def read_data():
-            data = await iface.read()
-            d_list = data.tolist()
+            print("reading")
+            raw_data = await iface.read()
+            print(len(raw_data))
+            data = raw_data.tolist()
+            last_7_bits = [data[index]for index in range(0, len(data),2)]
+            first_7_bits = [data[index]*pow(2,8) for index in range(1, len(data)-1,2)]
+            combined = [first_7_bits[index] + last_7_bits[index] for index in range(min(len(last_7_bits),len(first_7_bits)))]
+            print(combined)
         await read_data()
         await read_data()
         await read_data()
