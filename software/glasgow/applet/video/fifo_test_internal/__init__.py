@@ -24,7 +24,7 @@ class RampGenerator(Elaboratable):
     """
     def __init__(self, limit: int):
         ## Number of unique steps to count up to
-        self.limit = limit
+        self.limit = 128
 
         # Ports
         self.en  = Signal()
@@ -76,7 +76,7 @@ class FIFOTestSubtarget(Elaboratable):
         a_latch = platform.request("A_LATCH")
         a_enable = platform.request("A_ENABLE")
 
-        m.submodules.ramp = ramp = RampGenerator(65535)
+        m.submodules.ramp = ramp = RampGenerator(16384)
         m.d.comb += y_enable.eq(0)
 
 
@@ -127,6 +127,7 @@ class FIFOTestSubtarget(Elaboratable):
                     self.pads.n_t.o.eq(ramp.count[13]),
                     ]
                 m.next = "Y_LATCH_ON"
+
 
             with m.State("Y_LATCH_ON"):
                 m.d.comb += [
@@ -239,7 +240,7 @@ class FIFOTestSubtarget(Elaboratable):
 
                 with m.If(self.in_fifo.w_rdy):
                     m.d.comb += [
-                        self.in_fifo.din.eq(self.datain[8:]),
+                        self.in_fifo.din.eq(self.datain[7:]),
                         self.in_fifo.w_en.eq(1),
                     ]
 
@@ -305,7 +306,7 @@ class FIFOTestInternalApplet(GlasgowApplet, name="fifo-test-internal"):
             ## write output to txt file
             raw_length = len(raw_data)
             combined_length = len(combined)
-            file.write("<=============================================================>\n")
+            file.write("<=======================================================================================================================================>\n")
             file.write(f'RAW PACKET LENGTH: {raw_length}\n')
             file.write(f'COMBINED PACKET LENGTH: {combined_length}\n')
             for index in range (0,len(data),2):
@@ -315,7 +316,9 @@ class FIFOTestInternalApplet(GlasgowApplet, name="fifo-test-internal"):
                 half_index = int(index/2)
                 if half_index < combined_length:
                     combined_out = combined[half_index]
-                file.write(f'{half_index}: {raw_slice_in} : {raw_slice_in_bin} : {combined_out}\n')
+                    last_7 = last_7_bits[half_index]
+                    first_7 = first_7_bits[half_index]
+                file.write(f'{half_index}:{raw_slice_in_bin} : {raw_slice_in} : {last_7} + {first_7} = {combined_out}\n')
         
         ## do read_data() four times (get 4 packets)
         await read_data()
