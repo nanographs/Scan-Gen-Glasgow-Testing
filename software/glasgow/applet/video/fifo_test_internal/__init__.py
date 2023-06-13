@@ -54,10 +54,10 @@ class RampGenerator(Elaboratable):
 
 
 class FIFOTestSubtarget(Elaboratable):
-    def __init__(self, pads, in_fifo):
+    def __init__(self, pads, in_fifo, out_fifo):
         self.pads     = pads
         self.in_fifo  = in_fifo
-        #self.out_fifo = out_fifo
+        self.out_fifo = out_fifo
         self.datain = Signal(14)
 
     def elaborate(self, platform):
@@ -180,21 +180,6 @@ class FIFOTestSubtarget(Elaboratable):
                     a_enable.eq(0),
 
 
-                    #self.datain[0].eq(self.pads.a_t.i),
-                    #self.datain[1].eq(self.pads.b_t.i),
-                    #self.datain[2].eq(self.pads.c_t.i),
-                    #self.datain[3].eq(self.pads.d_t.i),
-                    #self.datain[4].eq(self.pads.e_t.i),
-                    #self.datain[5].eq(self.pads.f_t.i),
-                    #self.datain[6].eq(self.pads.g_t.i),
-                    #self.datain[7].eq(self.pads.h_t.i),
-                    #self.datain[8].eq(self.pads.i_t.i),
-                    #self.datain[9].eq(self.pads.j_t.i),
-                    #self.datain[10].eq(self.pads.k_t.i),
-                    #self.datain[11].eq(self.pads.l_t.i),
-                    #self.datain[12].eq(self.pads.m_t.i),
-                    #self.datain[13].eq(self.pads.n_t.i),
-
                     self.datain[0].eq(ramp.count[0]),
                     self.datain[1].eq(ramp.count[1]),
                     self.datain[2].eq(ramp.count[2]),
@@ -213,8 +198,8 @@ class FIFOTestSubtarget(Elaboratable):
         
 
                 with m.If(self.in_fifo.w_rdy):
-                    m.d.sync += [
-                        self.in_fifo.din.eq(self.datain[0:13],16),
+                    m.d.comb += [
+                        self.in_fifo.din.eq(self.datain[0:7]),
                         self.in_fifo.w_en.eq(1),
                     ]
                 #with m.Else():
@@ -222,12 +207,43 @@ class FIFOTestSubtarget(Elaboratable):
                 #        self.in_fifo.flush.eq(1),
                 #    ]
                 
+                m.next = "READ_AGAIN"
+
+            with m.State("READ_AGAIN"):
+                m.d.comb += [
+                    #self.datain.eq(Cat(pin.i for pin in pins))
+
+                    a_enable.eq(0),
+
+                    self.datain[0].eq(ramp.count[0]),
+                    self.datain[1].eq(ramp.count[1]),
+                    self.datain[2].eq(ramp.count[2]),
+                    self.datain[3].eq(ramp.count[3]),
+                    self.datain[4].eq(ramp.count[4]),
+                    self.datain[5].eq(ramp.count[5]),
+                    self.datain[6].eq(ramp.count[6]),
+                    self.datain[7].eq(ramp.count[7]),
+                    self.datain[8].eq(ramp.count[8]),
+                    self.datain[9].eq(ramp.count[9]),
+                    self.datain[10].eq(ramp.count[10]),
+                    self.datain[11].eq(ramp.count[11]),
+                    self.datain[12].eq(ramp.count[12]),
+                    self.datain[13].eq(ramp.count[13]),
+                ]
+
+                with m.If(self.in_fifo.w_rdy):
+                    m.d.comb += [
+                        self.in_fifo.din.eq(self.datain[8:]),
+                        self.in_fifo.w_en.eq(1),
+                    ]
+
                 m.next = "Y_LATCH_ON"
+
 
         return m
 
 
-class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
+class FIFOTestInternalApplet(GlasgowApplet, name="fifo-test-internal"):
     logger = logging.getLogger(__name__)
     help = "boilerplate applet"
     preview = True
@@ -257,7 +273,7 @@ class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
         iface.add_subtarget(FIFOTestSubtarget(
             pads=iface.get_pads(args, pins=self.__pins),
             in_fifo=iface.get_in_fifo(),
-            #out_fifo=iface.get_out_fifo(),
+            out_fifo=iface.get_out_fifo(),
         ))
 
     @classmethod
@@ -266,12 +282,36 @@ class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        file = open("fifo_output.txt", "w")
         async def read_data():
-            print("reading")
+            ## actually get the data from the fifo
             raw_data = await iface.read()
-            print(len(raw_data))
+            
             data = raw_data.tolist()
-            print(data)
+
+            ## combine 7 bits + 7 bits -> 14 bits
+            last_7_bits = [data[index] for index in range(0, len(data)-1,2)]
+            first_7_bits = [data[index]*pow(2,7) for index in range(1, len(data),2)]
+            combined = [first_7_bits[index] + last_7_bits[index] for index in range(min(len(last_7_bits),len(first_7_bits)))]
+
+            
+            
+            ## write output to txt file
+            raw_length = len(raw_data)
+            combined_length = len(combined)
+            file.write("<=============================================================>\n")
+            file.write(f'RAW PACKET LENGTH: {raw_length}\n')
+            file.write(f'COMBINED PACKET LENGTH: {combined_length}\n')
+            for index in range (0,len(data),2):
+                raw_slice_in = data[index:index+2]
+                raw_slice_in_bin = ['{0:7b}'.format(n)for n in raw_slice_in]
+                combined_out = "??"
+                half_index = int(index/2)
+                if half_index < combined_length:
+                    combined_out = combined[half_index]
+                file.write(f'{half_index}: {raw_slice_in} : {raw_slice_in_bin} : {combined_out}\n')
+        
+        ## do read_data() four times (get 4 packets)
         await read_data()
         await read_data()
         await read_data()
@@ -286,7 +326,7 @@ class FIFOTestApplet(GlasgowApplet, name="fifo-test"):
 
 # -------------------------------------------------------------------------------------------------
 
-class BoilerplateAppletTestCase(GlasgowAppletTestCase, applet=FIFOTestApplet()):
+class BoilerplateAppletTestCase(GlasgowAppletTestCase, applet=FIFOTestInternalApplet()):
     @synthesis_test
     def test_build(self):
         self.assertBuilds()
