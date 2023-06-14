@@ -24,7 +24,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
 
-        self.resolution_bits = 2 ## 9x9 = 512, etc.
+        self.resolution_bits = 9 ## 9x9 = 512, etc.
 
         self.datain = Signal(14)
 
@@ -57,66 +57,66 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
             m.d.comb += [
-                self.pads.a_t.oe.eq(self.pads.p_t.i),
-                self.pads.a_t.o.eq(scan_bus.x_data[13]),
+                self.pads.a_t.oe.eq(self.pads.p_t.i), 
+                self.pads.a_t.o.eq(scan_bus.x_data[0]), ## LSB
                 self.pads.b_t.oe.eq(self.pads.p_t.i),
-                self.pads.b_t.o.eq(scan_bus.x_data[12]),
+                self.pads.b_t.o.eq(scan_bus.x_data[1]),
                 self.pads.c_t.oe.eq(self.pads.p_t.i),
-                self.pads.c_t.o.eq(scan_bus.x_data[11]),
+                self.pads.c_t.o.eq(scan_bus.x_data[2]),
                 self.pads.d_t.oe.eq(self.pads.p_t.i),
-                self.pads.d_t.o.eq(scan_bus.x_data[10]),
+                self.pads.d_t.o.eq(scan_bus.x_data[3]),
                 self.pads.e_t.oe.eq(self.pads.p_t.i),
-                self.pads.e_t.o.eq(scan_bus.x_data[9]),
+                self.pads.e_t.o.eq(scan_bus.x_data[4]),
                 self.pads.f_t.oe.eq(self.pads.p_t.i),
-                self.pads.f_t.o.eq(scan_bus.x_data[8]),
+                self.pads.f_t.o.eq(scan_bus.x_data[5]),
                 self.pads.g_t.oe.eq(self.pads.p_t.i),
-                self.pads.g_t.o.eq(scan_bus.x_data[7]),
+                self.pads.g_t.o.eq(scan_bus.x_data[6]),
                 self.pads.h_t.oe.eq(self.pads.p_t.i),
-                self.pads.h_t.o.eq(scan_bus.x_data[6]),
+                self.pads.h_t.o.eq(scan_bus.x_data[7]),
                 self.pads.i_t.oe.eq(self.pads.p_t.i),
-                self.pads.i_t.o.eq(scan_bus.x_data[5]),
+                self.pads.i_t.o.eq(scan_bus.x_data[8]),
                 self.pads.j_t.oe.eq(self.pads.p_t.i),
-                self.pads.j_t.o.eq(scan_bus.x_data[4]),
+                self.pads.j_t.o.eq(scan_bus.x_data[9]),
                 self.pads.k_t.oe.eq(self.pads.p_t.i),
-                self.pads.k_t.o.eq(scan_bus.x_data[3]),
+                self.pads.k_t.o.eq(scan_bus.x_data[10]),
                 self.pads.l_t.oe.eq(self.pads.p_t.i),
-                self.pads.l_t.o.eq(scan_bus.x_data[2]),
+                self.pads.l_t.o.eq(scan_bus.x_data[11]),
                 self.pads.m_t.oe.eq(self.pads.p_t.i),
-                self.pads.m_t.o.eq(scan_bus.x_data[1]),
+                self.pads.m_t.o.eq(scan_bus.x_data[12]),
                 self.pads.n_t.oe.eq(self.pads.p_t.i),
-                self.pads.n_t.o.eq(scan_bus.x_data[0]),
+                self.pads.n_t.o.eq(scan_bus.x_data[13]), ## MSB
             ]
         
         with m.If(scan_bus.bus_state == BUS_WRITE_Y):
             m.d.comb += [
                 self.pads.a_t.oe.eq(self.pads.p_t.i),
-                self.pads.a_t.o.eq(scan_bus.y_data[13]),
+                self.pads.a_t.o.eq(scan_bus.y_data[0]), ## LSB
                 self.pads.b_t.oe.eq(self.pads.p_t.i),
-                self.pads.b_t.o.eq(scan_bus.y_data[12]),
+                self.pads.b_t.o.eq(scan_bus.y_data[1]),
                 self.pads.c_t.oe.eq(self.pads.p_t.i),
-                self.pads.c_t.o.eq(scan_bus.y_data[11]),
+                self.pads.c_t.o.eq(scan_bus.y_data[2]),
                 self.pads.d_t.oe.eq(self.pads.p_t.i),
-                self.pads.d_t.o.eq(scan_bus.y_data[10]),
+                self.pads.d_t.o.eq(scan_bus.y_data[3]),
                 self.pads.e_t.oe.eq(self.pads.p_t.i),
-                self.pads.e_t.o.eq(scan_bus.y_data[9]),
+                self.pads.e_t.o.eq(scan_bus.y_data[4]),
                 self.pads.f_t.oe.eq(self.pads.p_t.i),
-                self.pads.f_t.o.eq(scan_bus.y_data[8]),
+                self.pads.f_t.o.eq(scan_bus.y_data[5]),
                 self.pads.g_t.oe.eq(self.pads.p_t.i),
-                self.pads.g_t.o.eq(scan_bus.y_data[7]),
+                self.pads.g_t.o.eq(scan_bus.y_data[6]),
                 self.pads.h_t.oe.eq(self.pads.p_t.i),
-                self.pads.h_t.o.eq(scan_bus.y_data[6]),
+                self.pads.h_t.o.eq(scan_bus.y_data[7]),
                 self.pads.i_t.oe.eq(self.pads.p_t.i),
-                self.pads.i_t.o.eq(scan_bus.y_data[5]),
+                self.pads.i_t.o.eq(scan_bus.y_data[8]),
                 self.pads.j_t.oe.eq(self.pads.p_t.i),
-                self.pads.j_t.o.eq(scan_bus.y_data[4]),
+                self.pads.j_t.o.eq(scan_bus.y_data[9]),
                 self.pads.k_t.oe.eq(self.pads.p_t.i),
-                self.pads.k_t.o.eq(scan_bus.y_data[3]),
+                self.pads.k_t.o.eq(scan_bus.y_data[10]),
                 self.pads.l_t.oe.eq(self.pads.p_t.i),
-                self.pads.l_t.o.eq(scan_bus.y_data[2]),
+                self.pads.l_t.o.eq(scan_bus.y_data[11]),
                 self.pads.m_t.oe.eq(self.pads.p_t.i),
-                self.pads.m_t.o.eq(scan_bus.y_data[1]),
+                self.pads.m_t.o.eq(scan_bus.y_data[12]),
                 self.pads.n_t.oe.eq(self.pads.p_t.i),
-                self.pads.n_t.o.eq(scan_bus.y_data[0]),
+                self.pads.n_t.o.eq(scan_bus.y_data[13]), ## MSB
             ]
         
         with m.If(scan_bus.bus_state == BUS_READ):
@@ -133,15 +133,15 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 #self.datain[7].eq(self.x_data[8]),
 
                 ## Actual input
-                self.datain[0].eq(self.pads.a_t.i),
-                self.datain[1].eq(self.pads.b_t.i),
-                self.datain[2].eq(self.pads.c_t.i),
-                self.datain[3].eq(self.pads.d_t.i),
-                self.datain[4].eq(self.pads.e_t.i),
-                self.datain[5].eq(self.pads.f_t.i),
-                self.datain[6].eq(self.pads.g_t.i),
-                self.datain[7].eq(self.pads.h_t.i),
-                self.datain[8].eq(self.pads.i_t.i),
+                self.datain[0].eq(self.pads.f_t.i), 
+                self.datain[1].eq(self.pads.g_t.i),
+                self.datain[2].eq(self.pads.h_t.i),
+                self.datain[3].eq(self.pads.i_t.i),
+                self.datain[4].eq(self.pads.j_t.i),
+                self.datain[5].eq(self.pads.k_t.i),
+                self.datain[6].eq(self.pads.l_t.i),
+                self.datain[7].eq(self.pads.m_t.i),
+                self.datain[8].eq(self.pads.n_t.i), ## MSB
 
                 
 
@@ -152,11 +152,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 self.datain[11].eq(0),
                 self.datain[12].eq(0),
                 self.datain[13].eq(0),
-                #self.datain[9].eq(self.pads.j_t.i),
-                #self.datain[10].eq(self.pads.k_t.i),
-                #self.datain[11].eq(self.pads.l_t.i),
-                #self.datain[12].eq(self.pads.m_t.i),
-                #self.datain[13].eq(self.pads.n_t.i),
+
             ]
 
         with m.If(scan_bus.bus_state == BUS_FIFO):
