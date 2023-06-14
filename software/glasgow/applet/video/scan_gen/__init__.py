@@ -27,8 +27,6 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         self.resolution_bits = 14
 
         self.datain = Signal(14)
-        self.x_data = Signal(14)
-        self.y_data = Signal(14)
 
     def elaborate(self, platform):
         m = Module()
@@ -45,11 +43,6 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         a_clock = platform.request("A_CLOCK")
         d_clock = platform.request("D_CLOCK")
 
-        m.d.sync += [  
-            self.x_data.eq(scan_bus.x_data),
-            self.y_data.eq(scan_bus.y_data),
-        ]
-
 
         m.d.comb += [
             x_latch.eq(scan_bus.x_latch),
@@ -65,65 +58,65 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
             m.d.comb += [
                 self.pads.a_t.oe.eq(self.pads.p_t.i),
-                self.pads.a_t.o.eq(self.x_data[13]),
+                self.pads.a_t.o.eq(scan_bus.x_data[13]),
                 self.pads.b_t.oe.eq(self.pads.p_t.i),
-                self.pads.b_t.o.eq(self.x_data[12]),
+                self.pads.b_t.o.eq(scan_bus.x_data[12]),
                 self.pads.c_t.oe.eq(self.pads.p_t.i),
-                self.pads.c_t.o.eq(self.x_data[11]),
+                self.pads.c_t.o.eq(scan_bus.x_data[11]),
                 self.pads.d_t.oe.eq(self.pads.p_t.i),
-                self.pads.d_t.o.eq(self.x_data[10]),
+                self.pads.d_t.o.eq(scan_bus.x_data[10]),
                 self.pads.e_t.oe.eq(self.pads.p_t.i),
-                self.pads.e_t.o.eq(self.x_data[9]),
+                self.pads.e_t.o.eq(scan_bus.x_data[9]),
                 self.pads.f_t.oe.eq(self.pads.p_t.i),
-                self.pads.f_t.o.eq(self.x_data[8]),
+                self.pads.f_t.o.eq(scan_bus.x_data[8]),
                 self.pads.g_t.oe.eq(self.pads.p_t.i),
-                self.pads.g_t.o.eq(self.x_data[7]),
+                self.pads.g_t.o.eq(scan_bus.x_data[7]),
                 self.pads.h_t.oe.eq(self.pads.p_t.i),
-                self.pads.h_t.o.eq(self.x_data[6]),
+                self.pads.h_t.o.eq(scan_bus.x_data[6]),
                 self.pads.i_t.oe.eq(self.pads.p_t.i),
-                self.pads.i_t.o.eq(self.x_data[5]),
+                self.pads.i_t.o.eq(scan_bus.x_data[5]),
                 self.pads.j_t.oe.eq(self.pads.p_t.i),
-                self.pads.j_t.o.eq(self.x_data[4]),
+                self.pads.j_t.o.eq(scan_bus.x_data[4]),
                 self.pads.k_t.oe.eq(self.pads.p_t.i),
-                self.pads.k_t.o.eq(self.x_data[3]),
+                self.pads.k_t.o.eq(scan_bus.x_data[3]),
                 self.pads.l_t.oe.eq(self.pads.p_t.i),
-                self.pads.l_t.o.eq(self.x_data[2]),
+                self.pads.l_t.o.eq(scan_bus.x_data[2]),
                 self.pads.m_t.oe.eq(self.pads.p_t.i),
-                self.pads.m_t.o.eq(self.x_data[1]),
+                self.pads.m_t.o.eq(scan_bus.x_data[1]),
                 self.pads.n_t.oe.eq(self.pads.p_t.i),
-                self.pads.n_t.o.eq(self.x_data[0]),
+                self.pads.n_t.o.eq(scan_bus.x_data[0]),
             ]
         
         with m.If(scan_bus.bus_state == BUS_WRITE_Y):
             m.d.comb += [
                 self.pads.a_t.oe.eq(self.pads.p_t.i),
-                self.pads.a_t.o.eq(self.y_data[13]),
+                self.pads.a_t.o.eq(scan_bus.y_data[13]),
                 self.pads.b_t.oe.eq(self.pads.p_t.i),
-                self.pads.b_t.o.eq(self.y_data[12]),
+                self.pads.b_t.o.eq(scan_bus.y_data[12]),
                 self.pads.c_t.oe.eq(self.pads.p_t.i),
-                self.pads.c_t.o.eq(self.y_data[11]),
+                self.pads.c_t.o.eq(scan_bus.y_data[11]),
                 self.pads.d_t.oe.eq(self.pads.p_t.i),
-                self.pads.d_t.o.eq(self.y_data[10]),
+                self.pads.d_t.o.eq(scan_bus.y_data[10]),
                 self.pads.e_t.oe.eq(self.pads.p_t.i),
-                self.pads.e_t.o.eq(self.y_data[9]),
+                self.pads.e_t.o.eq(scan_bus.y_data[9]),
                 self.pads.f_t.oe.eq(self.pads.p_t.i),
-                self.pads.f_t.o.eq(self.y_data[8]),
+                self.pads.f_t.o.eq(scan_bus.y_data[8]),
                 self.pads.g_t.oe.eq(self.pads.p_t.i),
-                self.pads.g_t.o.eq(self.y_data[7]),
+                self.pads.g_t.o.eq(scan_bus.y_data[7]),
                 self.pads.h_t.oe.eq(self.pads.p_t.i),
-                self.pads.h_t.o.eq(self.y_data[6]),
+                self.pads.h_t.o.eq(scan_bus.y_data[6]),
                 self.pads.i_t.oe.eq(self.pads.p_t.i),
-                self.pads.i_t.o.eq(self.y_data[5]),
+                self.pads.i_t.o.eq(scan_bus.y_data[5]),
                 self.pads.j_t.oe.eq(self.pads.p_t.i),
-                self.pads.j_t.o.eq(self.y_data[4]),
+                self.pads.j_t.o.eq(scan_bus.y_data[4]),
                 self.pads.k_t.oe.eq(self.pads.p_t.i),
-                self.pads.k_t.o.eq(self.y_data[3]),
+                self.pads.k_t.o.eq(scan_bus.y_data[3]),
                 self.pads.l_t.oe.eq(self.pads.p_t.i),
-                self.pads.l_t.o.eq(self.y_data[2]),
+                self.pads.l_t.o.eq(scan_bus.y_data[2]),
                 self.pads.m_t.oe.eq(self.pads.p_t.i),
-                self.pads.m_t.o.eq(self.y_data[1]),
+                self.pads.m_t.o.eq(scan_bus.y_data[1]),
                 self.pads.n_t.oe.eq(self.pads.p_t.i),
-                self.pads.n_t.o.eq(self.y_data[0]),
+                self.pads.n_t.o.eq(scan_bus.y_data[0]),
             ]
         
         with m.If(scan_bus.bus_state == BUS_READ):
