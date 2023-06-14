@@ -24,7 +24,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
 
-        self.resolution_bits = 14
+        self.resolution_bits = 2 ## 9x9 = 512, etc.
 
         self.datain = Signal(14)
 
