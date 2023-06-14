@@ -73,20 +73,30 @@ class ScanIOBus(Elaboratable):
 
             with m.State("X WRITE"):
                 m.d.comb += self.bus_state.eq(BUS_WRITE_X)
-                m.d.comb += self.x_latch.eq(1)
+                m.d.comb += self.x_latch.eq(0)
                 m.next = "X LATCH"
 
             with m.State("X LATCH"):
+                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
+                m.d.comb += self.x_latch.eq(1)
+                m.next = "X RELEASE"
+            
+            with m.State("X RELEASE"):
                 m.d.comb += self.bus_state.eq(BUS_WRITE_X)
                 m.d.comb += self.x_latch.eq(0)
                 m.next = "Y WRITE"
 
             with m.State("Y WRITE"):
                 m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
-                m.d.comb += self.y_latch.eq(1)
+                m.d.comb += self.y_latch.eq(0)
                 m.next = "Y LATCH"
 
             with m.State("Y LATCH"):
+                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
+                m.d.comb += self.y_latch.eq(1)
+                m.next = "Y RELEASE"
+
+            with m.State("Y RELEASE"):
                 m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
                 m.d.comb += self.y_latch.eq(0)
                 m.next = "A LATCH & ENABLE"
