@@ -11,6 +11,7 @@ BUS_READ = 0x03
 BUS_FIFO = 0x04
 
 
+
 class ScanIOBus(Elaboratable):
     def __init__(self, resolution_bits):
         self.resolution_bits = resolution_bits
