@@ -64,6 +64,7 @@ class ScanIOBus(Elaboratable):
                         self.d_clock.eq(1)
                     ]
                 with m.If(count_one):
+                    m.d.comb += scan_gen.en.eq(1) 
                     m.next = "X WRITE"
                 with m.Else():
                     m.next = "WAIT"
@@ -99,7 +100,7 @@ class ScanIOBus(Elaboratable):
             with m.State("A READ"):
                 m.d.comb += self.a_enable.eq(0)
                 m.d.sync += self.bus_state.eq(BUS_READ)
-                m.d.comb += scan_gen.en.eq(1) 
+                
                 m.next = "FIFO_1"
 
             with m.State("FIFO_1"):
