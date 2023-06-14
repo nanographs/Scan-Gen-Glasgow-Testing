@@ -71,22 +71,22 @@ class ScanIOBus(Elaboratable):
 
 
             with m.State("X WRITE"):
-                m.d.sync += self.bus_state.eq(BUS_WRITE_X)
+                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
                 m.d.comb += self.x_latch.eq(1)
                 m.next = "X LATCH"
 
             with m.State("X LATCH"):
-                m.d.sync += self.bus_state.eq(BUS_WRITE_X)
+                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
                 m.d.comb += self.x_latch.eq(0)
                 m.next = "Y WRITE"
 
             with m.State("Y WRITE"):
-                m.d.sync += self.bus_state.eq(BUS_WRITE_Y)
+                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
                 m.d.comb += self.y_latch.eq(1)
                 m.next = "Y LATCH"
 
             with m.State("Y LATCH"):
-                m.d.sync += self.bus_state.eq(BUS_WRITE_Y)
+                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
                 m.d.comb += self.y_latch.eq(0)
                 m.next = "A LATCH & ENABLE"
 
@@ -99,12 +99,12 @@ class ScanIOBus(Elaboratable):
 
             with m.State("A READ"):
                 m.d.comb += self.a_enable.eq(0)
-                m.d.sync += self.bus_state.eq(BUS_READ)
+                m.d.comb += self.bus_state.eq(BUS_READ)
                 
                 m.next = "FIFO_1"
 
             with m.State("FIFO_1"):
-                m.d.sync += self.bus_state.eq(BUS_FIFO)
+                m.d.comb += self.bus_state.eq(BUS_FIFO)
                 m.next = "FIFO_2"
 
             with m.State("FIFO_2"):
