@@ -49,21 +49,25 @@ class ScanIOBus(Elaboratable):
 
         m.d.sync += [
             count_one.eq(min_dwell_ctr.count == 1),
-            count_six.eq(min_dwell_ctr.count > 6),
+            count_six.eq(min_dwell_ctr.count > 5),
         ]
+
+
+
+        with m.If(count_six):
+            m.d.sync += [
+                self.a_clock.eq(0),
+                self.d_clock.eq(1)
+            ]
+        with m.Else():
+            m.d.sync += [
+                self.a_clock.eq(1),
+                self.d_clock.eq(0)
+            ]
 
 
         with m.FSM() as fsm:
             with m.State("WAIT"):
-                m.d.sync += [
-                    self.a_clock.eq(1),
-                    self.d_clock.eq(0)
-                ]
-                with m.If(count_six):
-                    m.d.sync += [
-                        self.a_clock.eq(0),
-                        self.d_clock.eq(1)
-                    ]
                 with m.If(count_one):
                     m.d.comb += scan_gen.en.eq(1) 
                     m.next = "X WRITE"
