@@ -41,8 +41,9 @@ class ScanIOBus(Elaboratable):
         m.d.comb += [
             self.x_data.eq(scan_gen.x_data),
             self.y_data.eq(scan_gen.y_data),
-            self.x_enable.eq(1),
-            self.y_enable.eq(1),
+            self.x_enable.eq(0),
+            self.y_enable.eq(0),
+            self.a_enable.eq(1)
         ]
 
         m.d.sync += [
@@ -63,36 +64,42 @@ class ScanIOBus(Elaboratable):
                         self.d_clock.eq(1)
                     ]
                 with m.If(count_one):
-                    m.d.comb += scan_gen.en.eq(1)  
                     m.next = "X WRITE"
                 with m.Else():
                     m.next = "WAIT"
+
+
             with m.State("X WRITE"):
                 m.d.sync += self.bus_state.eq(BUS_WRITE_X)
+                m.d.comb += self.x_latch.eq(1)
                 m.next = "X LATCH"
 
             with m.State("X LATCH"):
-                m.d.comb += self.x_latch.eq(1)
+                m.d.sync += self.bus_state.eq(BUS_WRITE_X)
+                m.d.comb += self.x_latch.eq(0)
                 m.next = "Y WRITE"
 
             with m.State("Y WRITE"):
                 m.d.sync += self.bus_state.eq(BUS_WRITE_Y)
+                m.d.comb += self.y_latch.eq(1)
                 m.next = "Y LATCH"
 
             with m.State("Y LATCH"):
-                m.d.comb += self.y_latch.eq(1)
+                m.d.sync += self.bus_state.eq(BUS_WRITE_Y)
+                m.d.comb += self.y_latch.eq(0)
                 m.next = "A LATCH & ENABLE"
 
             with m.State("A LATCH & ENABLE"):
                 m.d.comb += [                  
                     self.a_latch.eq(1),
-                    self.a_enable.eq(1),
+                    self.a_enable.eq(0)
                 ]
                 m.next = "A READ"
 
             with m.State("A READ"):
-                m.d.comb += self.a_enable.eq(1)
+                m.d.comb += self.a_enable.eq(0)
                 m.d.sync += self.bus_state.eq(BUS_READ)
+                m.d.comb += scan_gen.en.eq(1) 
                 m.next = "FIFO_1"
 
             with m.State("FIFO_1"):
