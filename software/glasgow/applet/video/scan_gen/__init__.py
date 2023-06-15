@@ -13,7 +13,8 @@ from ... import *
 BUS_WRITE_X = 0x01
 BUS_WRITE_Y = 0x02
 BUS_READ = 0x03
-BUS_FIFO = 0x04
+BUS_FIFO_1 = 0x04
+BUS_FIFO_2 = 0x05
 
 
 
@@ -46,93 +47,94 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         a_clock = platform.request("A_CLOCK")
         d_clock = platform.request("D_CLOCK")
 
-
         m.d.comb += [
             x_latch.eq(scan_bus.x_latch),
             x_enable.eq(scan_bus.x_enable),
             y_latch.eq(scan_bus.y_latch),
             y_enable.eq(scan_bus.y_enable),
-            a_latch.eq(scan_bus.a_latch),
-            a_enable.eq(scan_bus.a_enable),
+            a_latch.eq(1),
+            a_enable.eq(0),
             a_clock.eq(scan_bus.a_clock),
             d_clock.eq(scan_bus.d_clock),
         ]
 
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
-            m.d.comb += [
-                self.pads.a_t.oe.eq(self.pads.p_t.i), 
-                self.pads.a_t.o.eq(scan_bus.x_data[0]), ## LSB
-                self.pads.b_t.oe.eq(self.pads.p_t.i),
-                self.pads.b_t.o.eq(scan_bus.x_data[1]),
-                self.pads.c_t.oe.eq(self.pads.p_t.i),
-                self.pads.c_t.o.eq(scan_bus.x_data[2]),
-                self.pads.d_t.oe.eq(self.pads.p_t.i),
-                self.pads.d_t.o.eq(scan_bus.x_data[3]),
-                self.pads.e_t.oe.eq(self.pads.p_t.i),
-                self.pads.e_t.o.eq(scan_bus.x_data[4]),
-                self.pads.f_t.oe.eq(self.pads.p_t.i),
-                self.pads.f_t.o.eq(scan_bus.x_data[5]),
-                self.pads.g_t.oe.eq(self.pads.p_t.i),
-                self.pads.g_t.o.eq(scan_bus.x_data[6]),
-                self.pads.h_t.oe.eq(self.pads.p_t.i),
-                self.pads.h_t.o.eq(scan_bus.x_data[7]),
-                self.pads.i_t.oe.eq(self.pads.p_t.i),
-                self.pads.i_t.o.eq(scan_bus.x_data[8]),
-                self.pads.j_t.oe.eq(self.pads.p_t.i),
-                self.pads.j_t.o.eq(scan_bus.x_data[9]),
-                self.pads.k_t.oe.eq(self.pads.p_t.i),
-                self.pads.k_t.o.eq(scan_bus.x_data[10]),
-                self.pads.l_t.oe.eq(self.pads.p_t.i),
-                self.pads.l_t.o.eq(scan_bus.x_data[11]),
-                self.pads.m_t.oe.eq(self.pads.p_t.i),
-                self.pads.m_t.o.eq(scan_bus.x_data[12]),
-                self.pads.n_t.oe.eq(self.pads.p_t.i),
-                self.pads.n_t.o.eq(scan_bus.x_data[13]), ## MSB
-            ]
+            pass
+            # m.d.comb += [
+            #     self.pads.a_t.oe.eq(self.pads.p_t.i), 
+            #     self.pads.a_t.o.eq(scan_bus.x_data[0]), ## LSB
+            #     self.pads.b_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.b_t.o.eq(scan_bus.x_data[1]),
+            #     self.pads.c_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.c_t.o.eq(scan_bus.x_data[2]),
+            #     self.pads.d_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.d_t.o.eq(scan_bus.x_data[3]),
+            #     self.pads.e_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.e_t.o.eq(scan_bus.x_data[4]),
+            #     self.pads.f_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.f_t.o.eq(scan_bus.x_data[5]),
+            #     self.pads.g_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.g_t.o.eq(scan_bus.x_data[6]),
+            #     self.pads.h_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.h_t.o.eq(scan_bus.x_data[7]),
+            #     self.pads.i_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.i_t.o.eq(scan_bus.x_data[8]),
+            #     self.pads.j_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.j_t.o.eq(scan_bus.x_data[9]),
+            #     self.pads.k_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.k_t.o.eq(scan_bus.x_data[10]),
+            #     self.pads.l_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.l_t.o.eq(scan_bus.x_data[11]),
+            #     self.pads.m_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.m_t.o.eq(scan_bus.x_data[12]),
+            #     self.pads.n_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.n_t.o.eq(scan_bus.x_data[13]), ## MSB
+            # ]
         
         with m.If(scan_bus.bus_state == BUS_WRITE_Y):
-            m.d.comb += [
-                self.pads.a_t.oe.eq(self.pads.p_t.i),
-                self.pads.a_t.o.eq(scan_bus.y_data[0]), ## LSB
-                self.pads.b_t.oe.eq(self.pads.p_t.i),
-                self.pads.b_t.o.eq(scan_bus.y_data[1]),
-                self.pads.c_t.oe.eq(self.pads.p_t.i),
-                self.pads.c_t.o.eq(scan_bus.y_data[2]),
-                self.pads.d_t.oe.eq(self.pads.p_t.i),
-                self.pads.d_t.o.eq(scan_bus.y_data[3]),
-                self.pads.e_t.oe.eq(self.pads.p_t.i),
-                self.pads.e_t.o.eq(scan_bus.y_data[4]),
-                self.pads.f_t.oe.eq(self.pads.p_t.i),
-                self.pads.f_t.o.eq(scan_bus.y_data[5]),
-                self.pads.g_t.oe.eq(self.pads.p_t.i),
-                self.pads.g_t.o.eq(scan_bus.y_data[6]),
-                self.pads.h_t.oe.eq(self.pads.p_t.i),
-                self.pads.h_t.o.eq(scan_bus.y_data[7]),
-                self.pads.i_t.oe.eq(self.pads.p_t.i),
-                self.pads.i_t.o.eq(scan_bus.y_data[8]),
-                self.pads.j_t.oe.eq(self.pads.p_t.i),
-                self.pads.j_t.o.eq(scan_bus.y_data[9]),
-                self.pads.k_t.oe.eq(self.pads.p_t.i),
-                self.pads.k_t.o.eq(scan_bus.y_data[10]),
-                self.pads.l_t.oe.eq(self.pads.p_t.i),
-                self.pads.l_t.o.eq(scan_bus.y_data[11]),
-                self.pads.m_t.oe.eq(self.pads.p_t.i),
-                self.pads.m_t.o.eq(scan_bus.y_data[12]),
-                self.pads.n_t.oe.eq(self.pads.p_t.i),
-                self.pads.n_t.o.eq(scan_bus.y_data[13]), ## MSB
-            ]
+            pass
+            # m.d.comb += [
+            #     self.pads.a_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.a_t.o.eq(scan_bus.y_data[0]), ## LSB
+            #     self.pads.b_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.b_t.o.eq(scan_bus.y_data[1]),
+            #     self.pads.c_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.c_t.o.eq(scan_bus.y_data[2]),
+            #     self.pads.d_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.d_t.o.eq(scan_bus.y_data[3]),
+            #     self.pads.e_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.e_t.o.eq(scan_bus.y_data[4]),
+            #     self.pads.f_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.f_t.o.eq(scan_bus.y_data[5]),
+            #     self.pads.g_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.g_t.o.eq(scan_bus.y_data[6]),
+            #     self.pads.h_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.h_t.o.eq(scan_bus.y_data[7]),
+            #     self.pads.i_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.i_t.o.eq(scan_bus.y_data[8]),
+            #     self.pads.j_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.j_t.o.eq(scan_bus.y_data[9]),
+            #     self.pads.k_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.k_t.o.eq(scan_bus.y_data[10]),
+            #     self.pads.l_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.l_t.o.eq(scan_bus.y_data[11]),
+            #     self.pads.m_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.m_t.o.eq(scan_bus.y_data[12]),
+            #     self.pads.n_t.oe.eq(self.pads.p_t.i),
+            #     self.pads.n_t.o.eq(scan_bus.y_data[13]), ## MSB
+            # ]
         
         with m.If(scan_bus.bus_state == BUS_READ):
             m.d.sync += [
                 ## LOOPBACK
-                #self.datain[0].eq(scan_bus.x_data[0]),
-                #self.datain[1].eq(scan_bus.x_data[1]),
-                #self.datain[2].eq(scan_bus.x_data[2]),
-                #self.datain[3].eq(scan_bus.x_data[3]),
-                #self.datain[4].eq(scan_bus.x_data[4]),
-                #self.datain[5].eq(scan_bus.x_data[5]),
-                #self.datain[6].eq(scan_bus.x_data[6]),
-                #self.datain[7].eq(scan_bus.x_data[7]),
+                # self.datain[0].eq(scan_bus.x_data[0]),
+                # self.datain[1].eq(scan_bus.x_data[1]),
+                # self.datain[2].eq(scan_bus.x_data[2]),
+                # self.datain[3].eq(scan_bus.x_data[3]),
+                # self.datain[4].eq(scan_bus.x_data[4]),
+                # self.datain[5].eq(scan_bus.x_data[5]),
+                # self.datain[6].eq(scan_bus.x_data[6]),
+                # self.datain[7].eq(scan_bus.x_data[7]),
 
 
                 ## Fixed Value
@@ -165,16 +167,31 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 self.datain[11].eq(0),
                 self.datain[12].eq(0),
                 self.datain[13].eq(0),
-
             ]
 
-        with m.If(scan_bus.bus_state == BUS_FIFO):
+            with m.If(self.datain <= 1):
+                m.d.sync += self.datain.eq(2)
+
+        with m.If(scan_bus.bus_state == BUS_FIFO_1):
             with m.If(self.in_fifo.w_rdy):
                     m.d.comb += [
                         self.in_fifo.din.eq(self.datain[0:8]),
                         self.in_fifo.w_en.eq(1),
                     ]
             
+        with m.If(scan_bus.bus_state == BUS_FIFO_2):
+            with m.If(self.in_fifo.w_rdy):
+                with m.If(scan_bus.line_sync):
+                    m.d.comb += [
+                        self.in_fifo.din.eq(0),
+                        self.in_fifo.w_en.eq(1),
+                    ]
+                with m.Elif(scan_bus.frame_sync):
+                    m.d.comb += [
+                        self.in_fifo.din.eq(1),
+                        self.in_fifo.w_en.eq(1),
+                    ]
+
         return m
 
 
@@ -273,11 +290,25 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             data = raw_data.tolist()
             if len(data) > 0:
                 first = data[0]
+                n_binary = '{0:8b}'.format(first)
                 display = "#"*round(first/5)
                 print(display)
 
+        async def just_print_data():
+            raw_data = await iface.read()
+            data = raw_data.tolist()
+            print(data)
+
+
         while True:
             await display_data()
+
+        #await just_print_data()
+        #await just_print_data()
+        #await just_print_data()
+        #await just_print_data()
+
+
 
 
     @classmethod
