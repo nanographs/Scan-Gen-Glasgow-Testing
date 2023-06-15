@@ -1,7 +1,13 @@
 import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
-from ..scan_gen_components import ramps
+
+## dealing with relative imports
+if "glasgow" in __name__: ## running as applet
+    from ..scan_gen_components.ramps import RampGenerator
+else: ## running as script (simulation)
+    from ramps import RampGenerator
+    
 
 
 class ScanGenerator(Elaboratable):
@@ -26,8 +32,8 @@ class ScanGenerator(Elaboratable):
     def elaborate(self,platform):
         m = Module()
 
-        m.submodules.x_ramp = x_ramp = ramps.RampGenerator(self.width)
-        m.submodules.y_ramp = y_ramp = ramps.RampGenerator(self.width)
+        m.submodules.x_ramp = x_ramp = RampGenerator(self.width)
+        m.submodules.y_ramp = y_ramp = RampGenerator(self.width)
         m.d.comb += [x_ramp.en.eq(0),y_ramp.en.eq(0)]
 
         m.d.comb += [            
