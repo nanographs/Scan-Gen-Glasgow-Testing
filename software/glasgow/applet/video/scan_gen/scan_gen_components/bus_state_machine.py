@@ -155,7 +155,7 @@ class ScanIOBus(Elaboratable):
 if __name__ == "__main__":
     dut = ScanIOBus(4) #16 x 16
     def bench():
-        for _ in range(1024):
+        for _ in range(4000):
             yield
         yield
 
