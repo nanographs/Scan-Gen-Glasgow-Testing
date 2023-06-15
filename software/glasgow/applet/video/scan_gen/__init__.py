@@ -13,7 +13,8 @@ from ... import *
 BUS_WRITE_X = 0x01
 BUS_WRITE_Y = 0x02
 BUS_READ = 0x03
-BUS_FIFO = 0x04
+BUS_FIFO_1 = 0x04
+BUS_FIFO_2 = 0x05
 
 
 
@@ -168,8 +169,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
             ]
 
-        with m.If(scan_bus.bus_state == BUS_FIFO):
+        with m.If(scan_bus.bus_state == BUS_FIFO_1):
             with m.If(self.in_fifo.w_rdy):
+                with m.If(self.datain <= 1): #restrict image data to 2-255, save 0-1 for frame/line sync
+                    m.d.comb += [
+                        self.in_fifo.din.eq(2),
+                        self.in_fifo.w_en.eq(1),
+                    ]
+                with m.Else():
                     m.d.comb += [
                         self.in_fifo.din.eq(self.datain[0:8]),
                         self.in_fifo.w_en.eq(1),
