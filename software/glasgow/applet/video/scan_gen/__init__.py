@@ -3,6 +3,8 @@ import asyncio
 from amaranth import *
 from amaranth.sim import Simulator
 import csv
+import matplotlib.pyplot as plt
+import os, datetime
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 
@@ -123,14 +125,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_READ):
             m.d.sync += [
                 ## LOOPBACK
-                #self.datain[0].eq(scan_bus.x_data[0]),
-                #self.datain[1].eq(scan_bus.x_data[1]),
-                #self.datain[2].eq(scan_bus.x_data[2]),
-                #self.datain[3].eq(scan_bus.x_data[3]),
-                #self.datain[4].eq(scan_bus.x_data[4]),
-                #self.datain[5].eq(scan_bus.x_data[5]),
-                #self.datain[6].eq(scan_bus.x_data[6]),
-                #self.datain[7].eq(scan_bus.x_data[7]),
+                self.datain[0].eq(scan_bus.x_data[0]),
+                self.datain[1].eq(scan_bus.x_data[1]),
+                self.datain[2].eq(scan_bus.x_data[2]),
+                self.datain[3].eq(scan_bus.x_data[3]),
+                self.datain[4].eq(scan_bus.x_data[4]),
+                self.datain[5].eq(scan_bus.x_data[5]),
+                self.datain[6].eq(scan_bus.x_data[6]),
+                self.datain[7].eq(scan_bus.x_data[7]),
 
 
                 ## Fixed Value
@@ -144,14 +146,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 # self.datain[7].eq(0),
 
                 ## Actual input
-                self.datain[0].eq(self.pads.g_t.i), 
-                self.datain[1].eq(self.pads.h_t.i),
-                self.datain[2].eq(self.pads.i_t.i),
-                self.datain[3].eq(self.pads.j_t.i),
-                self.datain[4].eq(self.pads.k_t.i),
-                self.datain[5].eq(self.pads.l_t.i),
-                self.datain[6].eq(self.pads.m_t.i),
-                self.datain[7].eq(self.pads.n_t.i),## MSB
+                #self.datain[0].eq(self.pads.g_t.i), 
+                #self.datain[1].eq(self.pads.h_t.i),
+                #self.datain[2].eq(self.pads.i_t.i),
+                #self.datain[3].eq(self.pads.j_t.i),
+                #self.datain[4].eq(self.pads.k_t.i),
+                #self.datain[5].eq(self.pads.l_t.i),
+                #self.datain[6].eq(self.pads.m_t.i),
+                #self.datain[7].eq(self.pads.n_t.i),## MSB
 
                 
 
@@ -225,12 +227,39 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         file = open("fifo_output2.txt", "w")
         csvfile = open('waveform.csv', 'w', newline='')
         spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        self.n = 0
+        ### create time stamped folder
+        save_dir = os.path.join(os.getcwd(), "Scan Capture", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        os.makedirs(save_dir)
         async def read_data():
+            self.n += 1 #count number of captures, to tell them apart
+            
             print("reading")
             ## actually get the data from the fifo
             raw_data = await iface.read()
             raw_length = len(raw_data)
             data = raw_data.tolist()
+
+            ## break down data into smaller chunks
+            for index in range (0,len(data), 500):
+                data_chunk = data[index:index+500]
+
+                fig, ax = plt.subplots()
+                ax.plot(data_chunk)
+                plt.title(f'capture {self.n}, {index} - {index+500} / {raw_length} bytes')
+
+                ## set aspect ratio of plot
+                ratio = .5
+                x_left, x_right = ax.get_xlim()
+                y_low, y_high = ax.get_ylim()
+                ax.set_aspect(abs((x_right-x_left)/(y_low-y_high))*ratio)
+
+                plt.savefig(f'{save_dir}/capture {self.n}: {index} - {index+500}.png',
+                    dpi=300
+                )
+                plt.close() #clear figure
+
+
             file.write("<=======================================================================================================================================>\n")
             file.write(f'PACKET LENGTH: {raw_length}\n')
             for index in range (0,len(data)):
@@ -240,17 +269,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         await read_data()
         await read_data()
         await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
+
 
     @classmethod
     def add_interact_arguments(cls, parser):

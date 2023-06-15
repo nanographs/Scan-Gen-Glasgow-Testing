@@ -1,9 +1,16 @@
 import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
-from ..scan_gen_components.ramps import RampGenerator
-from ..scan_gen_components.min_dwell_ctr import MinDwellCtr
-from ..scan_gen_components.xy_ramp_gen import ScanGenerator
+
+## dealing with relative imports
+
+if "glasgow" in __name__: ## running as applet
+    from ..scan_gen_components.ramps import RampGenerator
+    from ..scan_gen_components.min_dwell_ctr import MinDwellCtr
+    from ..scan_gen_components.xy_ramp_gen import ScanGenerator
+else: ## running as script (simulation)
+    from min_dwell_ctr import MinDwellCtr
+    from xy_ramp_gen import ScanGenerator
 
 BUS_WRITE_X = 0x01
 BUS_WRITE_Y = 0x02
