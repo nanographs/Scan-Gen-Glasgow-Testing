@@ -268,13 +268,16 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 file.write(f'{data[index]}\n')
                 spamwriter.writerow([data[index]])
 
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
-        await read_data()
+        async def display_data():
+            raw_data = await iface.read()
+            data = raw_data.tolist()
+            if len(data) > 0:
+                first = data[0]
+                display = "#"*round(first/5)
+                print(display)
 
+        while True:
+            await display_data()
 
 
     @classmethod
