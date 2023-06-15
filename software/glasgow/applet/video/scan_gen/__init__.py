@@ -2,6 +2,7 @@ import logging
 import asyncio
 from amaranth import *
 from amaranth.sim import Simulator
+import csv
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 
@@ -122,31 +123,41 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_READ):
             m.d.sync += [
                 ## LOOPBACK
-                #self.datain[0].eq(self.x_data[0]),
-                #self.datain[1].eq(self.x_data[1]),
-                #self.datain[2].eq(self.x_data[2]),
-                #self.datain[3].eq(self.x_data[3]),
-                #self.datain[4].eq(self.x_data[4]),
-                #self.datain[5].eq(self.x_data[5]),
-                #self.datain[6].eq(self.x_data[6]),
-                #self.datain[7].eq(self.x_data[7]),
-                #self.datain[7].eq(self.x_data[8]),
+                #self.datain[0].eq(scan_bus.x_data[0]),
+                #self.datain[1].eq(scan_bus.x_data[1]),
+                #self.datain[2].eq(scan_bus.x_data[2]),
+                #self.datain[3].eq(scan_bus.x_data[3]),
+                #self.datain[4].eq(scan_bus.x_data[4]),
+                #self.datain[5].eq(scan_bus.x_data[5]),
+                #self.datain[6].eq(scan_bus.x_data[6]),
+                #self.datain[7].eq(scan_bus.x_data[7]),
+
+
+                ## Fixed Value
+                # self.datain[0].eq(1),
+                # self.datain[1].eq(1),
+                # self.datain[2].eq(1),
+                # self.datain[3].eq(1),
+                # self.datain[4].eq(1),
+                # self.datain[5].eq(1),
+                # self.datain[6].eq(1),
+                # self.datain[7].eq(0),
 
                 ## Actual input
-                self.datain[0].eq(self.pads.f_t.i), 
-                self.datain[1].eq(self.pads.g_t.i),
-                self.datain[2].eq(self.pads.h_t.i),
-                self.datain[3].eq(self.pads.i_t.i),
-                self.datain[4].eq(self.pads.j_t.i),
-                self.datain[5].eq(self.pads.k_t.i),
-                self.datain[6].eq(self.pads.l_t.i),
-                self.datain[7].eq(self.pads.m_t.i),
-                self.datain[8].eq(self.pads.n_t.i), ## MSB
+                self.datain[0].eq(self.pads.g_t.i), 
+                self.datain[1].eq(self.pads.h_t.i),
+                self.datain[2].eq(self.pads.i_t.i),
+                self.datain[3].eq(self.pads.j_t.i),
+                self.datain[4].eq(self.pads.k_t.i),
+                self.datain[5].eq(self.pads.l_t.i),
+                self.datain[6].eq(self.pads.m_t.i),
+                self.datain[7].eq(self.pads.n_t.i),## MSB
 
                 
 
                 ### Only reading 8 bits right now
                 ### so just ignore the rest
+                self.datain[8].eq(0),
                 self.datain[9].eq(0),
                 self.datain[10].eq(0),
                 self.datain[11].eq(0),
@@ -158,7 +169,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_FIFO):
             with m.If(self.in_fifo.w_rdy):
                     m.d.comb += [
-                        self.in_fifo.din.eq(self.datain[0:7]),
+                        self.in_fifo.din.eq(self.datain[0:8]),
                         self.in_fifo.w_en.eq(1),
                     ]
             
@@ -211,10 +222,33 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        file = open("fifo_output2.txt", "w")
+        csvfile = open('waveform.csv', 'w', newline='')
+        spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         async def read_data():
+            print("reading")
             ## actually get the data from the fifo
             raw_data = await iface.read()
-            print(raw_data.tolist())
+            raw_length = len(raw_data)
+            data = raw_data.tolist()
+            file.write("<=======================================================================================================================================>\n")
+            file.write(f'PACKET LENGTH: {raw_length}\n')
+            for index in range (0,len(data)):
+                file.write(f'{data[index]}\n')
+                spamwriter.writerow([data[index]])
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
         await read_data()
         await read_data()
 
