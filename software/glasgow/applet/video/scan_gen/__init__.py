@@ -126,14 +126,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_READ):
             m.d.sync += [
                 ## LOOPBACK
-                self.datain[0].eq(scan_bus.x_data[0]),
-                self.datain[1].eq(scan_bus.x_data[1]),
-                self.datain[2].eq(scan_bus.x_data[2]),
-                self.datain[3].eq(scan_bus.x_data[3]),
-                self.datain[4].eq(scan_bus.x_data[4]),
-                self.datain[5].eq(scan_bus.x_data[5]),
-                self.datain[6].eq(scan_bus.x_data[6]),
-                self.datain[7].eq(scan_bus.x_data[7]),
+                self.datain[0].eq(scan_bus.x_data[6]),
+                self.datain[1].eq(scan_bus.x_data[7]),
+                self.datain[2].eq(scan_bus.x_data[8]),
+                self.datain[3].eq(scan_bus.x_data[9]),
+                self.datain[4].eq(scan_bus.x_data[10]),
+                self.datain[5].eq(scan_bus.x_data[11]),
+                self.datain[6].eq(scan_bus.x_data[12]),
+                self.datain[7].eq(scan_bus.x_data[13]),
 
 
                 ## Fixed Value
@@ -169,7 +169,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
             ]
 
-        with m.If(scan_bus.bus_state == BUS_FIFO_1):
+        with m.If(scan_bus.bus_state == BUS_FIFO_2):
             with m.If(self.in_fifo.w_rdy):
                 with m.If(self.datain <= 1): #restrict image data to 2-255, save 0-1 for frame/line sync
                     m.d.comb += [
@@ -179,6 +179,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 with m.Else():
                     m.d.comb += [
                         self.in_fifo.din.eq(self.datain[0:8]),
+                        self.in_fifo.w_en.eq(1),
+                    ]
+
+        with m.If(scan_bus.bus_state == BUS_FIFO_1):
+            with m.If(self.in_fifo.w_rdy):
+                with m.If(scan_bus.line_sync):
+                    m.d.comb += [
+                        self.in_fifo.din.eq(0),
                         self.in_fifo.w_en.eq(1),
                     ]
             
