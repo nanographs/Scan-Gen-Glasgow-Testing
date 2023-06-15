@@ -1,6 +1,7 @@
 import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
+
 from bus_state_machine import ScanIOBus
 
 
