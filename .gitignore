@@ -12,3 +12,5 @@
 /*.json
 /*.csv
 Scan Capture/*
+scan_sim_bus.vcd
+.gitignore

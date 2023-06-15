@@ -123,7 +123,13 @@ class ScanIOBus(Elaboratable):
                 m.d.comb += self.a_enable.eq(0)
                 m.d.comb += self.bus_state.eq(BUS_READ)
                 
+                m.next = "A RELEASE"
+
+            with m.State("A RELEASE"):
+                m.d.comb += self.a_enable.eq(0)
+                
                 m.next = "FIFO_1"
+
 
             with m.State("FIFO_1"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO)
