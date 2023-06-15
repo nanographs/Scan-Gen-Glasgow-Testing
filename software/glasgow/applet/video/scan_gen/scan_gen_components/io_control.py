@@ -32,15 +32,33 @@ class IO_Control(Elaboratable):
         self.datain = Signal(14)
         self.x_data = Signal(14)
         self.y_data = Signal(14)
+
+        self.x_latch = Signal()
+        self.x_enable = Signal()
+        self.y_latch = Signal()
+        self.y_enable = Signal()
+        self.a_latch = Signal()
+        self.a_enable = Signal()
+
+        self.a_clock = Signal()
+        self.d_clock = Signal()
+
     def elaborate(self, platform):
         m = Module()
         m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits)
 
-        m.d.sync += [
-            self.datain.eq(255),    
-            self.x_data.eq(scan_bus.x_data),
-            self.y_data.eq(scan_bus.y_data),
+        m.d.comb += [
+            self.x_latch.eq(scan_bus.x_latch),
+            self.x_enable.eq(scan_bus.x_enable),
+            self.y_latch.eq(scan_bus.y_latch),
+            self.y_enable.eq(scan_bus.y_enable),
+            self.a_latch.eq(scan_bus.a_latch),
+            self.a_enable.eq(scan_bus.a_enable),
+            self.a_clock.eq(scan_bus.a_clock),
+            self.d_clock.eq(scan_bus.d_clock),
         ]
+
+        m.d.sync += [self.datain.eq(255)] #fake data
 
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
             m.d.comb += [
@@ -94,7 +112,9 @@ class IO_Control(Elaboratable):
         return m
     def ports(self):
         return [self.a, self.b, self.c, self.d, self.e, self.f, self.g,
-        self.h, self.i, self,j, self.k, self.l, self.m, self.n]
+        self.h, self.i, self,j, self.k, self.l, self.m, self.n,
+        self.x_enable, self.x_latch, self.y_enable, self.y_latch, self.a_enable, self.a_latch,
+        self.a_clock, self.d_clock]
 
 if __name__ == "__main__":
     dut = IO_Control(4) # 16 x 16

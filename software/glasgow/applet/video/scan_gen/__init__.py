@@ -254,6 +254,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 y_low, y_high = ax.get_ylim()
                 ax.set_aspect(abs((x_right-x_left)/(y_low-y_high))*ratio)
 
+                plt.tight_layout()
+
                 plt.savefig(f'{save_dir}/capture {self.n}: {index} - {index+500}.png',
                     dpi=300
                 )
@@ -266,6 +268,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 file.write(f'{data[index]}\n')
                 spamwriter.writerow([data[index]])
 
+        await read_data()
+        await read_data()
+        await read_data()
+        await read_data()
         await read_data()
         await read_data()
 
