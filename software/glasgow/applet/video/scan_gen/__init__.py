@@ -28,7 +28,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
 
-        self.resolution_bits = 9 ## 9x9 = 512, etc.
+        self.resolution_bits = 3 ## 9x9 = 512, etc.
 
         self.datain = Signal(14)
 
@@ -184,9 +184,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
         with m.If(scan_bus.bus_state == BUS_FIFO_1):
             with m.If(self.in_fifo.w_rdy):
-                with m.If(scan_bus.line_sync):
+                with m.If(scan_bus.line_sync & scan_bus.frame_sync):
                     m.d.comb += [
                         self.in_fifo.din.eq(0),
+                        self.in_fifo.w_en.eq(1),
+                    ]
+                with m.Elif(scan_bus.line_sync):
+                    m.d.comb += [
+                        self.in_fifo.din.eq(1),
                         self.in_fifo.w_en.eq(1),
                     ]
             
