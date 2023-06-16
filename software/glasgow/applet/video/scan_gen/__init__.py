@@ -207,8 +207,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         ]
             with m.Else():
                 m.d.comb += [
-                            self.in_fifo.flush.eq(1),
-                            scan_bus.fifo_ready.eq(1)
+                            self.in_fifo.flush.eq(1)
                         ]
             
             

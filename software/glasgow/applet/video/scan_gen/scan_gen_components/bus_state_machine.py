@@ -141,20 +141,27 @@ class ScanIOBus(Elaboratable):
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
                 
-                m.next = "FIFO_1"
+                m.next = "FIFO_wait_1"
 
+            with m.State("FIFO_wait_1"):
+                m.d.comb += self.bus_state.eq(FIFO_WAIT)
+                ## comment this part out for simulation
+                with m.If(self.fifo_ready):
+                    m.next = "FIFO_1"
+                with m.Else():
+                    m.next = "FIFO_wait_1"
 
             with m.State("FIFO_1"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                m.next = "FIFO_wait"
+                m.next = "FIFO_wait_2"
 
-            with m.State("FIFO_wait"):
+            with m.State("FIFO_wait_2"):
                 m.d.comb += self.bus_state.eq(FIFO_WAIT)
                 ## comment this part out for simulation
                 with m.If(self.fifo_ready):
                     m.next = "FIFO_2"
                 with m.Else():
-                    m.next = "FIFO_wait"
+                    m.next = "FIFO_wait_2"
                     
             with m.State("FIFO_2"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_2)
