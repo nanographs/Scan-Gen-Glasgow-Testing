@@ -8,6 +8,22 @@ import os, datetime
 import numpy as np
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
+#from .scan_gen_components import pg_gui 
+
+
+
+### GUI
+import sys
+from math import sin
+from threading import Thread
+from time import sleep
+
+from PyQt6.QtWidgets import QApplication
+
+from pglive.sources.data_connector import DataConnector
+from pglive.sources.live_plot import LiveLinePlot
+from pglive.sources.live_plot_widget import LivePlotWidget
+###
 
 from ... import *
 
@@ -282,7 +298,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         frame_data = np.zeros([dimension, dimension])
         self.x = 0
         self.y = 0
-        
+
+
 
         def packets_to_txt_file(raw_data):
             raw_length = len(raw_data)
@@ -326,6 +343,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 print(display)
 
         def image_array(raw_data):
+
             data = raw_data.tolist()
             
             for index in range(0,len(data)):
@@ -337,7 +355,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     text_file.write(f'FRAME SYNC: FRAME {self.n}\n')
                     print(f'frame {self.n}')
                     print(frame_data)
-
                     self.n += 1 #count frames for unique file names
                     fig, ax = plt.subplots()
                     plt.imshow(frame_data)
@@ -346,7 +363,39 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     plt.savefig(save_dir + "/" + "frame" + str(self.n) + '.png')
                     plt.show()
                     plt.close()
-                    #frame_data.tofile("array_output.txt", format = '%s')
+
+                elif pixel == 1: #line sync
+                    self.x = 0
+                    self.y += 1
+                    text_file.write(f'LINE SYNC: Y {self.y}\n')
+                else:
+                    #print(f'x: {x}, y: {y}')
+                    if (self.x < dimension) and (self.y < dimension):
+                        frame_data[self.y][self.x] = pixel
+                        self.x += 1
+                    else:
+                        text_file.write(f'LINE OVERFLOW\n')
+
+        def live_signal(raw_data, connector):
+
+            data = raw_data.tolist()
+            
+            for index in range(0,len(data)):
+                pixel = data[index]
+                x = 0
+                while running:
+                    x += 1
+                    connector.cb_append_data_point(pixel, x)
+                    sleep(0.005)
+                text_file.write(f'{pixel} at {self.x}, {self.y}\n')
+                if pixel == 0: # frame sync
+                    self.x = 0
+                    self.y = 0
+                    text_file.write(f'FRAME SYNC: FRAME {self.n}\n')
+                    print(f'frame {self.n}')
+                    print(frame_data)
+                    self.n += 1 #count frames for unique file names
+
                 elif pixel == 1: #line sync
                     self.x = 0
                     self.y += 1
@@ -359,25 +408,47 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     else:
                         text_file.write(f'LINE OVERFLOW\n')
                     
-                    
 
         #while True:
             #await display_data()
 
-        ## get approx the number of packets you need 
-        # to contain {captures} images
-        ## and then some more
+        async def mpl_output():
+            ## get approx the number of packets you need 
+            # to contain {captures} images
+            ## and then some more
+
+            
+            for n in range((args.captures+1)*(round(dimension*dimension/2000)+1)): 
+                if self.n < args.captures:
+                    print("Reading...")
+                    raw_data = await iface.read()
+                    packets_to_txt_file(raw_data)
+                    #packets_to_waveforms(raw_data)
+                    image_array(raw_data) 
+                ## at minimum you are going to get the number of images that fit in one packet
+
+        await mpl_output()
+
+        ## PGLive output
+        # app = QApplication(sys.argv)
+        # running = True
+
+        # plot_widget = LivePlotWidget(title="Line Plot @ 100Hz")
+        # plot_curve = LiveLinePlot()
+        # plot_widget.addItem(plot_curve)
+        # # DataConnector holding 600 points and plots @ 100Hz
+        # data_connector = DataConnector(plot_curve, max_points=600, update_rate=100)
+            
+        # plot_widget.show()
+
+        # for n in range(0,100):
+        #     raw_data = await iface.read()
+        #     Thread(target=live_signal, args=(raw_data, data_connector,)).start()
+        
+        # app.exec()
+        # running = False
 
 
-        for n in range((args.captures+1)*(round(dimension*dimension/2000)+1)): 
-            if self.n < args.captures:
-                print("Reading...")
-                raw_data = await iface.read()
-                packets_to_txt_file(raw_data)
-                packets_to_waveforms(raw_data)
-                image_array(raw_data) 
-                
-        ## at minimum you are going to get the number of images that fit in one packet
                 
 
         
