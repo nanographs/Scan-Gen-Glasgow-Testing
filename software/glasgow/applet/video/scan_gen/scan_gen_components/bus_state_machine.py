@@ -17,6 +17,7 @@ BUS_WRITE_Y = 0x02
 BUS_READ = 0x03
 BUS_FIFO_1 = 0x04
 BUS_FIFO_2 = 0x05
+FIFO_WAIT = 0x06
 
 
 
@@ -40,6 +41,8 @@ class ScanIOBus(Elaboratable):
         self.line_sync = Signal()
         self.frame_sync = Signal()
 
+        self.fifo_ready = Signal()
+
     def elaborate(self, platform):
         m = Module()
 
@@ -57,7 +60,7 @@ class ScanIOBus(Elaboratable):
             self.y_enable.eq(0),
             self.a_enable.eq(1),
             self.line_sync.eq(scan_gen.line_sync),
-            self.frame_sync.eq(scan_gen.frame_sync)
+            self.frame_sync.eq(scan_gen.frame_sync),
         ]
 
         m.d.sync += [
@@ -139,7 +142,14 @@ class ScanIOBus(Elaboratable):
 
             with m.State("FIFO_1"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                m.next = "FIFO_2"
+                m.next = "FIFO_wait"
+
+            with m.State("FIFO_wait"):
+                m.d.comb += self.bus_state.eq(FIFO_WAIT)
+                with m.If(self.fifo_ready):
+                    m.next = "FIFO_2"
+                with m.Else():
+                    m.next = "FIFO_wait"
 
             with m.State("FIFO_2"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_2)

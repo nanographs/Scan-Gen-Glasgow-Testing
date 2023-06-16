@@ -61,6 +61,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             a_enable.eq(scan_bus.a_enable),
             a_clock.eq(scan_bus.a_clock),
             d_clock.eq(scan_bus.d_clock),
+            scan_bus.fifo_ready.eq(0)
         ]
 
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
@@ -198,6 +199,18 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         self.in_fifo.din.eq(1),
                         self.in_fifo.w_en.eq(1),
                     ]
+
+        with m.If(scan_bus.bus_state == FIFO_WAIT):
+            with m.If(self.in_fifo.w_rdy):
+                m.d.comb += [
+                            scan_bus.fifo_ready.eq(1)
+                        ]
+            with m.Else():
+                m.d.comb += [
+                            self.in_fifo.flush.eq(1),
+                            scan_bus.fifo_ready.eq(1)
+                        ]
+            
             
         return m
 
