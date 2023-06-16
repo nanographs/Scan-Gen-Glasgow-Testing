@@ -23,13 +23,15 @@ BUS_FIFO_2 = 0x05
 ###### DATA BUS ######
 ######################
 
+
+
 class DataBusAndFIFOSubtarget(Elaboratable):
-    def __init__(self, pads, in_fifo, out_fifo):
+    def __init__(self, pads, in_fifo, out_fifo, resolution_bits):
         self.pads     = pads
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
 
-        self.resolution_bits = 3 ## 9x9 = 512, etc.
+        self.resolution_bits = resolution_bits ## 9x9 = 512, etc.
 
         self.datain = Signal(14)
 
@@ -228,6 +230,9 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         super().add_build_arguments(parser, access)
         for pin in cls.__pins:
             access.add_pin_argument(parser, pin, default=True)
+        parser.add_argument(
+            "-r", "--res", type=int, default=9,
+            help="resolution bits(default: %(default)s)")
 
 
     def build(self, target, args):
@@ -236,7 +241,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             pads=iface.get_pads(args, pins=self.__pins),
             in_fifo = iface.get_in_fifo(),
-            out_fifo = iface.get_out_fifo()
+            out_fifo = iface.get_out_fifo(),
+            resolution_bits = args.res
         ))
     
     @classmethod
@@ -244,6 +250,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         super().add_run_arguments(parser, access)
 
     async def run(self, device, args):
+        resolution_bits = args.res
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
         file = open("fifo_output2.txt", "w")
         csvfile = open('waveform.csv', 'w', newline='')
@@ -302,23 +309,36 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             data = raw_data.tolist()
             print(data)
 
-        frame_data = np.zeros([8,8])
-        frame_iter = np.nditer(frame_data, flags=['multi_index'])
+        dimension = pow(2,resolution_bits) + 1
+        frame_data = np.zeros([dimension, dimension])
+        self.x = 0
+        self.y = 0
 
         async def image_array():
             raw_data = await iface.read()
             data = raw_data.tolist()
+            
             for index in range(0,len(data)):
-                empty_pixel = next(frame_iter)
                 pixel = data[index]
-                x, y = frame_iter.multi_index
-                frame_data[x][y] = pixel
-            print(frame_data)
-
+                if pixel == 0: # frame sync
+                    self.x = 0
+                    self.y = 0
+                    print(frame_data)
+                elif pixel == 1: #line sync
+                    self.x = 0
+                    self.y += 1
+                else:
+                    #print(f'x: {x}, y: {y}')
+                    if (self.x < dimension) and (self.y < dimension):
+                        frame_data[self.y][self.x] = pixel
+                        self.x += 1
+                    
 
         #while True:
             #await display_data()
         
+        await image_array()
+        await just_print_data()
         await image_array()
 
 
