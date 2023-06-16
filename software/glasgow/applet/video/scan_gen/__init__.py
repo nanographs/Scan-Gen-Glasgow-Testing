@@ -278,6 +278,11 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         #csvfile = open('waveform.csv', 'w', newline='')
         #spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         self.n = 0
+
+        dimension = pow(2,resolution_bits) + 1
+        frame_data = np.zeros([dimension, dimension])
+        self.x = 0
+        self.y = 0
         
 
         def packets_to_txt_file(raw_data):
@@ -285,8 +290,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             data = raw_data.tolist()
             text_file.write("<=======================================================================================================================================>\n")
             text_file.write(f'PACKET LENGTH: {raw_length}\n')
-            for index in range (0,len(data)):
-                text_file.write(f'{data[index]}\n')
+            #for index in range (0,len(data)):
+                #text_file.write(f'{data[index]}\n')
                 #spamwriter.writerow([data[index]])
         
         def packets_to_waveforms(raw_data):
@@ -321,23 +326,16 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 display = "#"*round(first/5)
                 print(display)
 
-        dimension = pow(2,resolution_bits) + 1
-        frame_data = np.zeros([dimension, dimension])
-        self.x = 0
-        self.y = 0
-
-        file = open("array_output.txt", "w")
-
         def image_array(raw_data):
-            file.write("Reading\n")
             data = raw_data.tolist()
             
             for index in range(0,len(data)):
                 pixel = data[index]
-                #file.write(f'{pixel}, ')
+                text_file.write(f'{pixel} at {self.x}, {self.y}\n')
                 if pixel == 0: # frame sync
                     self.x = 0
                     self.y = 0
+                    text_file.write(f'FRAME SYNC: FRAME {self.n}\n')
                     print(f'frame {self.n}')
                     print(frame_data)
 
@@ -353,11 +351,15 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 elif pixel == 1: #line sync
                     self.x = 0
                     self.y += 1
+                    text_file.write(f'LINE SYNC: Y {self.y}\n')
                 else:
                     #print(f'x: {x}, y: {y}')
                     if (self.x < dimension) and (self.y < dimension):
                         frame_data[self.y][self.x] = pixel
                         self.x += 1
+                    else:
+                        text_file.write(f'LINE OVERFLOW\n')
+                    
                     
 
         #while True:
@@ -367,17 +369,14 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         # to contain {captures} images
         ## and then some more
 
-        async def read_process_data():
-            raw_data = await iface.read()
-            packets_to_txt_file(raw_data)
-            packets_to_waveforms(raw_data)
-            image_array(raw_data) 
 
         for n in range((args.captures+1)*(round(dimension*dimension/2000)+1)): 
-            print((args.captures+1)*(round(dimension*dimension/2000)+1))
-            if self.n < args.captures: #stop when you have {captures} images
-                await read_process_data()
-                print("reading")
+            if self.n < args.captures:
+                print("Reading...")
+                raw_data = await iface.read()
+                packets_to_txt_file(raw_data)
+                packets_to_waveforms(raw_data)
+                image_array(raw_data) 
                 
         ## at minimum you are going to get the number of images that fit in one packet
                 
