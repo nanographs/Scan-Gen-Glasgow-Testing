@@ -5,6 +5,7 @@ from amaranth.sim import Simulator
 import csv
 import matplotlib.pyplot as plt
 import os, datetime
+import numpy as np
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 
@@ -301,12 +302,25 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             data = raw_data.tolist()
             print(data)
 
+        frame_data = np.zeros([8,8])
+        frame_iter = np.nditer(frame_data, flags=['multi_index'])
+
+        async def image_array():
+            raw_data = await iface.read()
+            data = raw_data.tolist()
+            for index in range(0,len(data)):
+                empty_pixel = next(frame_iter)
+                pixel = data[index]
+                x, y = frame_iter.multi_index
+                frame_data[x][y] = pixel
+            print(frame_data)
+
+
         #while True:
             #await display_data()
+        
+        await image_array()
 
-        await just_print_data()
-        await just_print_data()
-        await just_print_data()
 
 
     @classmethod
