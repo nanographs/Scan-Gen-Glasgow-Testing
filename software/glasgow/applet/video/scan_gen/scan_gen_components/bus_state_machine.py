@@ -1,6 +1,7 @@
 import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
+import unittest
 
 ## dealing with relative imports
 
@@ -43,12 +44,14 @@ class ScanIOBus(Elaboratable):
 
         self.fifo_ready = Signal()
 
+        self.count_one = Signal()
+        self.count_six = Signal()
+
     def elaborate(self, platform):
         m = Module()
 
         m.submodules.min_dwell_ctr = min_dwell_ctr = MinDwellCtr()
-        count_one = Signal()
-        count_six = Signal()
+        
 
         m.submodules.scan_gen = scan_gen = ScanGenerator(self.resolution_bits) 
 
@@ -61,16 +64,17 @@ class ScanIOBus(Elaboratable):
             self.a_enable.eq(1),
             self.line_sync.eq(scan_gen.line_sync),
             self.frame_sync.eq(scan_gen.frame_sync),
+            #self.fifo_ready.eq(1) # in simulation
         ]
 
         m.d.sync += [
-            count_one.eq(min_dwell_ctr.count == 1),
-            count_six.eq(min_dwell_ctr.count > 5),
+            self.count_one.eq(min_dwell_ctr.count == 1),
+            self.count_six.eq(min_dwell_ctr.count > 5),
         ]
 
 
 
-        with m.If(count_six):
+        with m.If(self.count_six):
             m.d.sync += [
                 self.a_clock.eq(0),
                 self.d_clock.eq(1)
@@ -84,7 +88,7 @@ class ScanIOBus(Elaboratable):
 
         with m.FSM() as fsm:
             with m.State("WAIT"):
-                with m.If(count_one):
+                with m.If(self.count_one):
                     m.d.comb += scan_gen.en.eq(1) 
                     m.next = "X WRITE"
                 with m.Else():
@@ -146,11 +150,12 @@ class ScanIOBus(Elaboratable):
 
             with m.State("FIFO_wait"):
                 m.d.comb += self.bus_state.eq(FIFO_WAIT)
+                ## comment this part out for simulation
                 with m.If(self.fifo_ready):
                     m.next = "FIFO_2"
                 with m.Else():
                     m.next = "FIFO_wait"
-
+                    
             with m.State("FIFO_2"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_2)
                 m.next = "WAIT"
@@ -163,11 +168,36 @@ class ScanIOBus(Elaboratable):
 
 # --- TEST ---
 if __name__ == "__main__":
-    dut = ScanIOBus(4) #16 x 16
+    test_resolution_bits = 3
+    dut = ScanIOBus(test_resolution_bits) #16 x 16
+    test_dimension = pow(2,test_resolution_bits)
     def bench():
-        for _ in range(4000):
+        def test_frame():
+            x_counter = 0
+            y_counter = -1
             yield
-        yield
+            assert 0 == (yield dut.x_data)
+            assert 0 ==  (yield dut.y_data)
+            for _ in range(test_dimension):
+                y_counter += 1
+                for _ in range(test_dimension-1):
+                    
+                    if x_counter == test_dimension-1:
+                        x_counter = 0
+                    else:
+                        x_counter += 1
+                    for _ in range(16):
+                        yield
+                    yield dut.count_one.eq(1)
+                    print(x_counter, y_counter)
+                    print(x_counter*pow(2,14-test_resolution_bits), y_counter*pow(2,14-test_resolution_bits))
+                    assert x_counter*pow(2,14-test_resolution_bits) == (yield dut.x_data)
+                    assert y_counter*pow(2,14-test_resolution_bits) ==  (yield dut.y_data)
+                    print("passed", x_counter, y_counter)
+
+
+        yield from test_frame()
+
 
 
     sim = Simulator(dut)
