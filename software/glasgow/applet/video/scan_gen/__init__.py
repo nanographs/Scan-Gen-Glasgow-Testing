@@ -6,6 +6,7 @@ import csv
 import matplotlib.pyplot as plt
 import os, datetime
 import numpy as np
+from tifffile import imread, imwrite, TiffFile
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 #from .scan_gen_components import pg_gui 
@@ -356,6 +357,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     print(f'frame {self.n}')
                     print(frame_data)
                     self.n += 1 #count frames for unique file names
+                    #imwrite(save_dir + "/" + "frame" + str(self.n) + '.tif',frame_data, photometric='minisblack')
+                    imwrite('temp.tif',frame_data.astype(np.uint8)) #to fix an error i got when opening the tif
                     fig, ax = plt.subplots()
                     plt.imshow(frame_data)
                     plt.set_cmap("gray")
