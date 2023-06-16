@@ -131,14 +131,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_READ):
             m.d.sync += [
                 ## LOOPBACK
-                # self.datain[0].eq(scan_bus.x_data[6]),
-                # self.datain[1].eq(scan_bus.x_data[7]),
-                # self.datain[2].eq(scan_bus.x_data[8]),
-                # self.datain[3].eq(scan_bus.x_data[9]),
-                # self.datain[4].eq(scan_bus.x_data[10]),
-                # self.datain[5].eq(scan_bus.x_data[11]),
-                # self.datain[6].eq(scan_bus.x_data[12]),
-                # self.datain[7].eq(scan_bus.x_data[13]),
+                self.datain[0].eq(scan_bus.x_data[6]),
+                self.datain[1].eq(scan_bus.x_data[7]),
+                self.datain[2].eq(scan_bus.x_data[8]),
+                self.datain[3].eq(scan_bus.x_data[9]),
+                self.datain[4].eq(scan_bus.x_data[10]),
+                self.datain[5].eq(scan_bus.x_data[11]),
+                self.datain[6].eq(scan_bus.x_data[12]),
+                self.datain[7].eq(scan_bus.x_data[13]),
 
 
                 ## Fixed Value
@@ -152,14 +152,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 # self.datain[7].eq(0),
 
                 ## Actual input
-                self.datain[0].eq(self.pads.g_t.i), 
-                self.datain[1].eq(self.pads.h_t.i),
-                self.datain[2].eq(self.pads.i_t.i),
-                self.datain[3].eq(self.pads.j_t.i),
-                self.datain[4].eq(self.pads.k_t.i),
-                self.datain[5].eq(self.pads.l_t.i),
-                self.datain[6].eq(self.pads.m_t.i),
-                self.datain[7].eq(self.pads.n_t.i),## MSB
+                # self.datain[0].eq(self.pads.g_t.i), 
+                # self.datain[1].eq(self.pads.h_t.i),
+                # self.datain[2].eq(self.pads.i_t.i),
+                # self.datain[3].eq(self.pads.j_t.i),
+                # self.datain[4].eq(self.pads.k_t.i),
+                # self.datain[5].eq(self.pads.l_t.i),
+                # self.datain[6].eq(self.pads.m_t.i),
+                # self.datain[7].eq(self.pads.n_t.i),## MSB
 
                 
 
@@ -246,7 +246,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             access.add_pin_argument(parser, pin, default=True)
         parser.add_argument(
             "-r", "--res", type=int, default=9,
-            help="resolution bits(default: %(default)s)")
+            help="resolution bits (default: %(default)s)")
+        parser.add_argument(
+            "-c", "--captures", type=int, default=1,
+            help="number of captures (default: %(default)s)")
 
 
     def build(self, target, args):
@@ -341,6 +344,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 if pixel == 0: # frame sync
                     self.x = 0
                     self.y = 0
+                    print(f'frame {self.n}')
                     print(frame_data)
 
                     self.n += 1 #count frames for unique file names
@@ -348,7 +352,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     plt.imshow(frame_data)
                     plt.set_cmap("gray")
                     plt.tight_layout()
-                    plt.savefig(save_dir + "/" + "frame" + str(self.n) + '.png')
+                    #plt.savefig(save_dir + "/" + "frame" + str(self.n) + '.png')
                     plt.show()
                     #frame_data.tofile("array_output.txt", format = '%s')
                 elif pixel == 1: #line sync
@@ -363,10 +367,17 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
         #while True:
             #await display_data()
-        
 
-        for n in range(0,(5*round(dimension*dimension/2000)+2)):
-            await image_array()
+        ## get approx the number of packets you need 
+        # to contain {captures} images
+        ## and then some more
+
+        for n in range((args.captures+1)*round(dimension*dimension/2000)+1): 
+            if self.n < args.captures: #stop when you have {captures} images
+                await image_array() 
+        ## at minimum you are going to get the number of images that fit in one packet
+                
+
         
 
 
