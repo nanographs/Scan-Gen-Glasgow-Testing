@@ -269,19 +269,27 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
     async def run(self, device, args):
         resolution_bits = args.res
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        file = open("fifo_output2.txt", "w")
-        csvfile = open('waveform.csv', 'w', newline='')
-        spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        self.n = 0
+
         ### create time stamped folder
         save_dir = os.path.join(os.getcwd(), "Scan Capture", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
         os.makedirs(save_dir)
-        async def read_data():
-            self.n += 1 #count number of captures, to tell them apart
-            
-            print("reading")
-            ## actually get the data from the fifo
-            raw_data = await iface.read()
+
+        text_file = open(f'{save_dir}/fifo_output.txt', "w")
+        #csvfile = open('waveform.csv', 'w', newline='')
+        #spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        self.n = 0
+        
+
+        def packets_to_txt_file(raw_data):
+            raw_length = len(raw_data)
+            data = raw_data.tolist()
+            text_file.write("<=======================================================================================================================================>\n")
+            text_file.write(f'PACKET LENGTH: {raw_length}\n')
+            for index in range (0,len(data)):
+                text_file.write(f'{data[index]}\n')
+                #spamwriter.writerow([data[index]])
+        
+        def packets_to_waveforms(raw_data):
             raw_length = len(raw_data)
             data = raw_data.tolist()
 
@@ -306,25 +314,12 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 )
                 plt.close() #clear figure
 
-
-            file.write("<=======================================================================================================================================>\n")
-            file.write(f'PACKET LENGTH: {raw_length}\n')
-            for index in range (0,len(data)):
-                file.write(f'{data[index]}\n')
-                spamwriter.writerow([data[index]])
-
-        async def display_data():
-            raw_data = await iface.read()
+        def display_data(raw_data):
             data = raw_data.tolist()
             if len(data) > 0:
                 first = data[0]
                 display = "#"*round(first/5)
                 print(display)
-
-        async def just_print_data():
-            raw_data = await iface.read()
-            data = raw_data.tolist()
-            print(data)
 
         dimension = pow(2,resolution_bits) + 1
         frame_data = np.zeros([dimension, dimension])
@@ -333,9 +328,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
         file = open("array_output.txt", "w")
 
-        async def image_array():
+        def image_array(raw_data):
             file.write("Reading\n")
-            raw_data = await iface.read()
             data = raw_data.tolist()
             
             for index in range(0,len(data)):
@@ -352,8 +346,9 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     plt.imshow(frame_data)
                     plt.set_cmap("gray")
                     plt.tight_layout()
-                    #plt.savefig(save_dir + "/" + "frame" + str(self.n) + '.png')
+                    plt.savefig(save_dir + "/" + "frame" + str(self.n) + '.png')
                     plt.show()
+                    plt.close()
                     #frame_data.tofile("array_output.txt", format = '%s')
                 elif pixel == 1: #line sync
                     self.x = 0
@@ -372,9 +367,18 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         # to contain {captures} images
         ## and then some more
 
-        for n in range((args.captures+1)*round(dimension*dimension/2000)+1): 
+        async def read_process_data():
+            raw_data = await iface.read()
+            packets_to_txt_file(raw_data)
+            packets_to_waveforms(raw_data)
+            image_array(raw_data) 
+
+        for n in range((args.captures+1)*(round(dimension*dimension/2000)+1)): 
+            print((args.captures+1)*(round(dimension*dimension/2000)+1))
             if self.n < args.captures: #stop when you have {captures} images
-                await image_array() 
+                await read_process_data()
+                print("reading")
+                
         ## at minimum you are going to get the number of images that fit in one packet
                 
 
