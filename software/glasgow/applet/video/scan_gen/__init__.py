@@ -314,16 +314,24 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         self.x = 0
         self.y = 0
 
+        file = open("array_output.txt", "w")
+
         async def image_array():
+            file.write("Reading\n")
             raw_data = await iface.read()
             data = raw_data.tolist()
             
             for index in range(0,len(data)):
                 pixel = data[index]
+                #file.write(f'{pixel}, ')
                 if pixel == 0: # frame sync
                     self.x = 0
                     self.y = 0
                     print(frame_data)
+                    #fig, ax = plt.subplots()
+                    #plt.plot(frame_data)
+                    #plt.show()
+                    #frame_data.tofile("array_output.txt", format = '%s')
                 elif pixel == 1: #line sync
                     self.x = 0
                     self.y += 1
@@ -337,9 +345,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         #while True:
             #await display_data()
         
-        await image_array()
-        await just_print_data()
-        await image_array()
+
+        for n in range(0,48):
+            await image_array()
+        
 
 
 
