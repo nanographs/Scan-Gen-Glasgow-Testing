@@ -16,6 +16,7 @@ BUS_WRITE_Y = 0x02
 BUS_READ = 0x03
 BUS_FIFO_1 = 0x04
 BUS_FIFO_2 = 0x05
+FIFO_WAIT = 0x06
 
 
 
@@ -328,9 +329,13 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     self.x = 0
                     self.y = 0
                     print(frame_data)
-                    #fig, ax = plt.subplots()
-                    #plt.plot(frame_data)
-                    #plt.show()
+
+                    self.n += 1 #count frames for unique file names
+                    fig, ax = plt.subplots()
+                    plt.imshow(frame_data)
+                    plt.set_cmap("gray")
+                    #imwrite(save_dir + "/" + "frame" + self.n + '.tif',image, photometric='minisblack')
+                    plt.show()
                     #frame_data.tofile("array_output.txt", format = '%s')
                 elif pixel == 1: #line sync
                     self.x = 0
@@ -346,7 +351,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             #await display_data()
         
 
-        for n in range(0,48):
+        for n in range(0,200):
             await image_array()
         
 
