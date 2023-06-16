@@ -14,3 +14,4 @@
 Scan Capture/*
 scan_sim_bus.vcd
 .gitignore
+array_output.txt
