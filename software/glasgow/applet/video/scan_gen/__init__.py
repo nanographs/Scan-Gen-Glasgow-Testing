@@ -281,15 +281,18 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     print(f'frame {current.n}')
                     print(current.frame_data)
                     current.n += 1 #count frames for unique file names
+                    ## save frame as .tif
                     imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data, photometric='minisblack') 
+                    ## display frame using matplotlib
                     current.frame_display_mpl()
                 elif pixel == 1: #line sync
-                    current.x = 0
-                    current.y += 1
+                    current.x = 0 ## reset x position to beginning of line
+                    current.y += 1 ## move to next line
                 else:
+                    ## if there are more than {dimension} data points in one line, ignore them
                     if (current.x < dimension) and (current.y < dimension):
                         current.frame_data[current.y][current.x] = pixel
-                        current.x += 1
+                        current.x += 1 ## move to the next pixel in line
 
         async def get_limited_output():
             ## get approx the number of packets you need 
@@ -301,7 +304,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     print("Reading...")
                     raw_data = await iface.read()
                     data = raw_data.tolist()
-                    current.packet_to_txt_file(data)
+                    current.packet_to_txt_file(data) 
                     #packets_to_waveforms(raw_data)
                     image_array(data) 
                 ## at minimum you are going to get the number of images that fit in one packet
