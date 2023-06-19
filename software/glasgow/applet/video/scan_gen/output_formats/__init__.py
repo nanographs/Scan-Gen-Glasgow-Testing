@@ -64,14 +64,14 @@ class ScanDataRun:
                 else:
                     self.text_file.write(f'LINE OVERFLOW\n')
 
-        ### Methods for one complete frame
+    ### Methods for one complete frame
 
 
-        def frame_to_png(self,frame_data):
-            fig, ax = plt.subplots()
-            plt.imshow(frame_data)
-            plt.set_cmap("gray")
-            plt.tight_layout()
-            plt.savefig(self.save_dir + "/" + "frame" + str(self.n) + '.png')
-            plt.show()
-            plt.close()
+    def frame_display_mpl(self):
+        fig, ax = plt.subplots()
+        plt.imshow(self.frame_data)
+        plt.set_cmap("gray")
+        plt.tight_layout()
+        #plt.savefig(self.save_dir + "/" + "frame" + str(self.n) + '.png')
+        plt.show()
+        plt.close()
