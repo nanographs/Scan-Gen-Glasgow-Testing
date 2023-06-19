@@ -96,9 +96,14 @@ class CommandLine:
         bar_length = 50
         frame_size = current.dimension*current.dimension
         p = round(bar_length*(current.y*current.dimension + current.x) / frame_size)
-        progress = color.orange + "#"* p + color.end
+        progress = color.green + "#"* p + color.end
         remaining = " "* (bar_length - p)
-        print("[" + progress + remaining + "]   "
-                + " Y:" + "{: >14}".format(current.y) 
-                + " X:" + "{: >14}".format(current.x) 
-                + " /" + "{: >14}".format(frame_size))
+        print("[" + progress + remaining + "]")
+
+        # for really fast updating text display
+        # print("[" + progress + remaining + "]\t"
+        #         + color.purple + "Y:" + color.end + "{: >5}".format(current.y) + "\t"
+        #         + color.purple + "X:" + color.end + "{: >5}".format(current.x) + "\t/" + "\t"
+        #         + "Y:" + "{: >5}".format(current.dimension) + "\t"
+        #         + "X:" + "{: >5}".format(current.dimension) + "\t"
+        #         )
