@@ -277,13 +277,15 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         current = ScanDataRun(dimension)
 
-        def display_data(data):
+        def display_data(data): ## use to create a basic live display in terminal
             if len(data) > 0:
                 first = data[0]
                 display = "#"*round(first/5)
                 print(display)
 
-        def image_array(data):
+
+        def image_array(data): ## this could be moved to output_formats
+            ## but leaving it here for now, for context
             for index in range(0,len(data)):
                 pixel = data[index]
                 if pixel == 0: # frame sync
@@ -307,7 +309,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             # to contain {captures} images
             ## and then some more
 
-            
             for n in range((args.captures+1)*(round(dimension*dimension/2000)+1)): 
                 if current.n < args.captures:
                     print("Reading...")
