@@ -75,3 +75,30 @@ class ScanDataRun:
         #plt.savefig(self.save_dir + "/" + "frame" + str(self.n) + '.png')
         plt.show()
         plt.close()
+
+
+class color:
+    black = '\033[30m'
+    red = '\033[31m'
+    green = '\033[32m'
+    orange = '\033[33m'
+    blue = '\033[34m'
+    purple = '\033[35m'
+    cyan = '\033[36m'
+    lightgrey = '\033[37m'
+    end = '\033[0m'
+
+class CommandLine:
+    def __init__(self):
+        pass
+        
+    def show_progress_bar(self, current):
+        bar_length = 50
+        frame_size = current.dimension*current.dimension
+        p = round(bar_length*(current.y*current.dimension + current.x) / frame_size)
+        progress = color.orange + "#"* p + color.end
+        remaining = " "* (bar_length - p)
+        print("[" + progress + remaining + "]   "
+                + " Y:" + "{: >14}".format(current.y) 
+                + " X:" + "{: >14}".format(current.x) 
+                + " /" + "{: >14}".format(frame_size))
