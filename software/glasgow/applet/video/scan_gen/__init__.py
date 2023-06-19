@@ -282,9 +282,9 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     print(current.frame_data)
                     current.n += 1 #count frames for unique file names
                     ## save frame as .tif
-                    imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data, photometric='minisblack') 
+                    #imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data, photometric='minisblack') 
                     ## display frame using matplotlib
-                    current.frame_display_mpl()
+                    #current.frame_display_mpl()
                 elif pixel == 1: #line sync
                     current.x = 0 ## reset x position to beginning of line
                     current.y += 1 ## move to next line
@@ -309,7 +309,14 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     image_array(data) 
                 ## at minimum you are going to get the number of images that fit in one packet
 
-        await get_limited_output()
+        #await get_limited_output()
+
+        while True:
+            raw_data = await iface.read()
+            data = raw_data.tolist()
+            image_array(data) 
+            np.save(f'Scan Capture/current_frame', current.frame_data)
+            
 
     @classmethod
     def add_interact_arguments(cls, parser):
