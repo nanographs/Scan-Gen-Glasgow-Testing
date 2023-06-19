@@ -270,6 +270,18 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 display = "#"*round(first/5)
                 print(display)
 
+        def show_progress_bar():
+            
+            bar_length = 50
+            frame_size = current.dimension*current.dimension
+            p = round(bar_length*(current.y*dimension + current.x) / frame_size)
+            progress = "#"* p
+            remaining = " "* (bar_length - p)
+            print("[" + progress + remaining + "]   "
+                    + "Y: " + "{: ^14}".format(current.y) 
+                    + "X: " + "{: ^14}".format(current.x) 
+                    + "/" + "{: ^14}".format(frame_size))
+
 
         def image_array(data): ## this could be moved to output_formats
             ## but leaving it here for now, for context
@@ -301,10 +313,11 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
             for n in range((args.captures+1)*(round(dimension*dimension/2000)+1)): 
                 if current.n < args.captures:
-                    print("Reading...")
+                    #print("Reading...")
                     raw_data = await iface.read()
                     data = raw_data.tolist()
-                    current.packet_to_txt_file(data) 
+                    #current.text_file = open(f'{current.save_dir}/fifo_output.txt', "w")
+                    #current.packet_to_txt_file(data) 
                     #packets_to_waveforms(raw_data)
                     image_array(data) 
                 ## at minimum you are going to get the number of images that fit in one packet
@@ -315,7 +328,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             raw_data = await iface.read()
             data = raw_data.tolist()
             image_array(data) 
-            np.save(f'Scan Capture/current_frame', current.frame_data)
+            #np.savetxt(f'Scan Capture/current_frame', current.frame_data)
+            show_progress_bar()
             
 
     @classmethod

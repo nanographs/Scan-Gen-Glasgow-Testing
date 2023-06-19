@@ -25,7 +25,7 @@ img = pg.ImageItem(border='w')
 view.addItem(img)
 
 ## Set initial view bounds
-view.setRange(QtCore.QRectF(0, 0, 512, 512))
+view.setRange(QtCore.QRectF(0, 0, 513, 513))
 
 
 updateTime = perf_counter()
@@ -40,10 +40,11 @@ timer.setSingleShot(True)
 def updateData():
     global img, updateTime, elapsed
 
-    data = np.load("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_frame.npy")
+    data = np.loadtxt("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_frame",)
 
     #img.setImage(np.rot90(data,k=3))
-    img.setImage(data)
+    #img.setImage(data)
+    print(data)
 
     timer.start(1)
     now = perf_counter()
@@ -51,7 +52,7 @@ def updateData():
     updateTime = now
     elapsed = elapsed * 0.9 + elapsed_now * 0.1
 
-    # print(f"{1 / elapsed:.1f} fps")
+    print(f"{1 / elapsed:.1f} fps")
     
 timer.timeout.connect(updateData)
 updateData()
