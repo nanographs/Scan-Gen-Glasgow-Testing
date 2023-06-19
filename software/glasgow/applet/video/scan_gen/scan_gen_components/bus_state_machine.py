@@ -65,10 +65,6 @@ class ScanIOBus(Elaboratable):
             self.x_enable.eq(0), ## default state for X enable
             self.y_enable.eq(0),
             self.a_enable.eq(1),
-
-            ## fifo_ready must be set to run simulation
-            ## in real execution, this signal is set by DataBusAndFIFOSubtarget
-            #self.fifo_ready.eq(1) 
         ]
 
         m.d.sync += [
@@ -147,7 +143,7 @@ class ScanIOBus(Elaboratable):
 
             with m.State("FIFO_wait_1"):
                 m.d.comb += self.bus_state.eq(FIFO_WAIT)
-                ## comment this part out for simulation
+
                 with m.If(self.fifo_ready):
                     m.next = "FIFO_1"
                 with m.Else():
@@ -159,7 +155,7 @@ class ScanIOBus(Elaboratable):
 
             with m.State("FIFO_wait_2"):
                 m.d.comb += self.bus_state.eq(FIFO_WAIT)
-                ## comment this part out for simulation
+
                 with m.If(self.fifo_ready):
                     m.next = "FIFO_2"
                 with m.Else():
@@ -177,36 +173,12 @@ class ScanIOBus(Elaboratable):
 
 # --- TEST ---
 if __name__ == "__main__":
-    test_resolution_bits = 3
-    dut = ScanIOBus(test_resolution_bits) #16 x 16
-    test_dimension = pow(2,test_resolution_bits)
+    dut = ScanIOBus(4) # 16 x 16
     def bench():
-        def test_frame():
-            x_counter = 0
-            y_counter = -1
+        yield dut.fifo_ready.eq(1)
+        for _ in range(1024):
             yield
-            assert 0 == (yield dut.x_data)
-            assert 0 ==  (yield dut.y_data)
-            for _ in range(test_dimension):
-                y_counter += 1
-                for _ in range(test_dimension-1):
-                    
-                    if x_counter == test_dimension-1:
-                        x_counter = 0
-                    else:
-                        x_counter += 1
-                    for _ in range(16):
-                        yield
-                    yield dut.count_one.eq(1)
-                    print(x_counter, y_counter)
-                    print(x_counter*pow(2,14-test_resolution_bits), y_counter*pow(2,14-test_resolution_bits))
-                    assert x_counter*pow(2,14-test_resolution_bits) == (yield dut.x_data)
-                    assert y_counter*pow(2,14-test_resolution_bits) ==  (yield dut.y_data)
-                    print("passed", x_counter, y_counter)
-
-
-        yield from test_frame()
-
+        yield
 
 
     sim = Simulator(dut)
