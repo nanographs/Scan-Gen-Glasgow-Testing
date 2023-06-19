@@ -59,20 +59,22 @@ class ScanIOBus(Elaboratable):
         m.d.comb += [
             self.x_data.eq(scan_gen.x_data),
             self.y_data.eq(scan_gen.y_data),
-            self.x_enable.eq(0),
-            self.y_enable.eq(0),
-            self.a_enable.eq(1),
             self.line_sync.eq(scan_gen.line_sync),
             self.frame_sync.eq(scan_gen.frame_sync),
-            #self.fifo_ready.eq(1) # in simulation
+
+            self.x_enable.eq(0), ## default state for X enable
+            self.y_enable.eq(0),
+            self.a_enable.eq(1),
+
+            ## fifo_ready must be set to run simulation
+            ## in real execution, this signal is set by DataBusAndFIFOSubtarget
+            #self.fifo_ready.eq(1) 
         ]
 
         m.d.sync += [
             self.count_one.eq(min_dwell_ctr.count == 1),
             self.count_six.eq(min_dwell_ctr.count > 5),
         ]
-
-
 
         with m.If(self.count_six):
             m.d.sync += [
