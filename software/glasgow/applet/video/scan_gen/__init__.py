@@ -10,21 +10,8 @@ from tifffile import imread, imwrite, TiffFile
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 #from .scan_gen_components import pg_gui 
+from .output_formats import ScanDataRun
 
-
-
-### GUI
-import sys
-from math import sin
-from threading import Thread
-from time import sleep
-
-from PyQt6.QtWidgets import QApplication
-
-from pglive.sources.data_connector import DataConnector
-from pglive.sources.live_plot import LiveLinePlot
-from pglive.sources.live_plot_widget import LivePlotWidget
-###
 
 from ... import *
 
@@ -283,180 +270,53 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         super().add_run_arguments(parser, access)
 
     async def run(self, device, args):
-        resolution_bits = args.res
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
 
-        ### create time stamped folder
-        save_dir = os.path.join(os.getcwd(), "Scan Capture", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-        os.makedirs(save_dir)
-
-        text_file = open(f'{save_dir}/fifo_output.txt', "w")
-        #csvfile = open('waveform.csv', 'w', newline='')
-        #spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        self.n = 0
-
+        resolution_bits = args.res
         dimension = pow(2,resolution_bits) + 1
-        frame_data = np.zeros([dimension, dimension])
-        self.x = 0
-        self.y = 0
-
-
-
-        def packets_to_txt_file(raw_data):
-            raw_length = len(raw_data)
-            data = raw_data.tolist()
-            text_file.write("<=======================================================================================================================================>\n")
-            text_file.write(f'PACKET LENGTH: {raw_length}\n')
-            #for index in range (0,len(data)):
-                #text_file.write(f'{data[index]}\n')
-                #spamwriter.writerow([data[index]])
         
-        def packets_to_waveforms(raw_data):
-            raw_length = len(raw_data)
-            data = raw_data.tolist()
+        current = ScanDataRun(dimension)
 
-            ## break down data into smaller chunks
-            for index in range (0,len(data), 500):
-                data_chunk = data[index:index+500]
-
-                fig, ax = plt.subplots()
-                ax.plot(data_chunk)
-                plt.title(f'capture {self.n}, {index} - {index+500} / {raw_length} bytes')
-
-                ## set aspect ratio of plot
-                ratio = .5
-                x_left, x_right = ax.get_xlim()
-                y_low, y_high = ax.get_ylim()
-                ax.set_aspect(abs((x_right-x_left)/(y_low-y_high))*ratio)
-
-                plt.tight_layout()
-
-                plt.savefig(f'{save_dir}/capture {self.n}: {index} - {index+500}.png',
-                    dpi=300
-                )
-                plt.close() #clear figure
-
-        def display_data(raw_data):
-            data = raw_data.tolist()
+        def display_data(data):
             if len(data) > 0:
                 first = data[0]
                 display = "#"*round(first/5)
                 print(display)
 
-        def image_array(raw_data):
-
-            data = raw_data.tolist()
-            
+        def image_array(data):
             for index in range(0,len(data)):
                 pixel = data[index]
-                text_file.write(f'{pixel} at {self.x}, {self.y}\n')
                 if pixel == 0: # frame sync
-                    self.x = 0
-                    self.y = 0
-                    text_file.write(f'FRAME SYNC: FRAME {self.n}\n')
-                    print(f'frame {self.n}')
-                    print(frame_data)
-                    self.n += 1 #count frames for unique file names
-                    #imwrite(save_dir + "/" + "frame" + str(self.n) + '.tif',frame_data, photometric='minisblack')
-                    imwrite('temp.tif',frame_data.astype(np.uint8)) #to fix an error i got when opening the tif
-                    fig, ax = plt.subplots()
-                    plt.imshow(frame_data)
-                    plt.set_cmap("gray")
-                    plt.tight_layout()
-                    plt.savefig(save_dir + "/" + "frame" + str(self.n) + '.png')
-                    plt.show()
-                    plt.close()
-
+                    current.x = 0
+                    current.y = 0
+                    print(f'frame {current.n}')
+                    print(current.frame_data)
+                    current.n += 1 #count frames for unique file names
+                    imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data, photometric='minisblack') 
                 elif pixel == 1: #line sync
-                    self.x = 0
-                    self.y += 1
-                    text_file.write(f'LINE SYNC: Y {self.y}\n')
+                    current.x = 0
+                    current.y += 1
                 else:
-                    #print(f'x: {x}, y: {y}')
-                    if (self.x < dimension) and (self.y < dimension):
-                        frame_data[self.y][self.x] = pixel
-                        self.x += 1
-                    else:
-                        text_file.write(f'LINE OVERFLOW\n')
+                    if (current.x < dimension) and (current.y < dimension):
+                        current.frame_data[current.y][current.x] = pixel
+                        current.x += 1
 
-        def live_signal(raw_data, connector):
-
-            data = raw_data.tolist()
-            
-            for index in range(0,len(data)):
-                pixel = data[index]
-                x = 0
-                while running:
-                    x += 1
-                    connector.cb_append_data_point(pixel, x)
-                    sleep(0.005)
-                text_file.write(f'{pixel} at {self.x}, {self.y}\n')
-                if pixel == 0: # frame sync
-                    self.x = 0
-                    self.y = 0
-                    text_file.write(f'FRAME SYNC: FRAME {self.n}\n')
-                    print(f'frame {self.n}')
-                    print(frame_data)
-                    self.n += 1 #count frames for unique file names
-
-                elif pixel == 1: #line sync
-                    self.x = 0
-                    self.y += 1
-                    text_file.write(f'LINE SYNC: Y {self.y}\n')
-                else:
-                    #print(f'x: {x}, y: {y}')
-                    if (self.x < dimension) and (self.y < dimension):
-                        frame_data[self.y][self.x] = pixel
-                        self.x += 1
-                    else:
-                        text_file.write(f'LINE OVERFLOW\n')
-                    
-
-        #while True:
-            #await display_data()
-
-        async def mpl_output():
+        async def get_limited_output():
             ## get approx the number of packets you need 
             # to contain {captures} images
             ## and then some more
 
             
             for n in range((args.captures+1)*(round(dimension*dimension/2000)+1)): 
-                if self.n < args.captures:
+                if current.n < args.captures:
                     print("Reading...")
                     raw_data = await iface.read()
-                    packets_to_txt_file(raw_data)
+                    current.packet_to_txt_file(raw_data)
                     #packets_to_waveforms(raw_data)
                     image_array(raw_data) 
                 ## at minimum you are going to get the number of images that fit in one packet
 
-        await mpl_output()
-
-        ## PGLive output
-        # app = QApplication(sys.argv)
-        # running = True
-
-        # plot_widget = LivePlotWidget(title="Line Plot @ 100Hz")
-        # plot_curve = LiveLinePlot()
-        # plot_widget.addItem(plot_curve)
-        # # DataConnector holding 600 points and plots @ 100Hz
-        # data_connector = DataConnector(plot_curve, max_points=600, update_rate=100)
-            
-        # plot_widget.show()
-
-        # for n in range(0,100):
-        #     raw_data = await iface.read()
-        #     Thread(target=live_signal, args=(raw_data, data_connector,)).start()
-        
-        # app.exec()
-        # running = False
-
-
-                
-
-        
-
-
+        await get_limited_output()
 
     @classmethod
     def add_interact_arguments(cls, parser):
