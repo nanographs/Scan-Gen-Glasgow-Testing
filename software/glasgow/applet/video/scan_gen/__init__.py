@@ -293,6 +293,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     print(current.frame_data)
                     current.n += 1 #count frames for unique file names
                     imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data, photometric='minisblack') 
+                    current.frame_display_mpl()
                 elif pixel == 1: #line sync
                     current.x = 0
                     current.y += 1
@@ -311,9 +312,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 if current.n < args.captures:
                     print("Reading...")
                     raw_data = await iface.read()
-                    current.packet_to_txt_file(raw_data)
+                    data = raw_data.tolist()
+                    current.packet_to_txt_file(data)
                     #packets_to_waveforms(raw_data)
-                    image_array(raw_data) 
+                    image_array(data) 
                 ## at minimum you are going to get the number of images that fit in one packet
 
         await get_limited_output()
