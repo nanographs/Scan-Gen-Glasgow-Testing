@@ -10,7 +10,7 @@ from tifffile import imread, imwrite, TiffFile
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 #from .scan_gen_components import pg_gui 
-from .output_formats import ScanDataRun
+from .output_formats import ScanDataRun, CommandLine
 
 
 from ... import *
@@ -263,6 +263,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         dimension = pow(2,resolution_bits) + 1
         
         current = ScanDataRun(dimension)
+        cli = CommandLine() 
 
         def display_data(data): ## use to create a basic live display in terminal
             if len(data) > 0:
@@ -270,17 +271,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 display = "#"*round(first/5)
                 print(display)
 
-        def show_progress_bar():
-            
-            bar_length = 50
-            frame_size = current.dimension*current.dimension
-            p = round(bar_length*(current.y*dimension + current.x) / frame_size)
-            progress = "#"* p
-            remaining = " "* (bar_length - p)
-            print("[" + progress + remaining + "]   "
-                    + "Y: " + "{: ^14}".format(current.y) 
-                    + "X: " + "{: ^14}".format(current.x) 
-                    + "/" + "{: ^14}".format(frame_size))
+
 
 
         def image_array(data): ## this could be moved to output_formats
@@ -329,7 +320,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             data = raw_data.tolist()
             image_array(data) 
             #np.savetxt(f'Scan Capture/current_frame', current.frame_data)
-            show_progress_bar()
+            cli.show_progress_bar(current)
             
 
     @classmethod
