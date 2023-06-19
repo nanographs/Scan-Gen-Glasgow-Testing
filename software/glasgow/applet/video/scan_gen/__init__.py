@@ -165,8 +165,6 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 # self.datain[6].eq(self.pads.m_t.i),
                 # self.datain[7].eq(self.pads.n_t.i),## MSB
 
-                
-
                 ### Only reading 8 bits right now
                 ### so just ignore the rest
                 self.datain[8].eq(0),
@@ -213,8 +211,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 m.d.comb += [
                             self.in_fifo.flush.eq(1)
                         ]
-            
-            
+             
         return m
 
 
@@ -229,16 +226,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
     /|/|/|/|/|/|/|/|
     """
 
-    # An example of the boilerplate code required to implement a minimal Glasgow applet.
-    #
-    # The only things necessary for an applet are:
-    #   * a subtarget class,
-    #   * an applet class,
-    #   * the `build` and `run` methods of the applet class.
-    #
-    # Everything else can be omitted and would be replaced by a placeholder implementation that does
-    # nothing. Similarly, there is no requirement to use IN or OUT FIFOs, or any pins at all.
-#
     __pins = ("a", "b", "c", "d", "e","f","g","h",
     "i","j","k","l","m","n", "o","p")
 
