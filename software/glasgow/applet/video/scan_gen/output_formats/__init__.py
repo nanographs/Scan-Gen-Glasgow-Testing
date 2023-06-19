@@ -16,7 +16,7 @@ class ScanDataRun:
         self.save_dir = os.path.join(os.getcwd(), "Scan Capture", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
         os.makedirs(self.save_dir)
 
-        self.text_file = open(f'{self.save_dir}/fifo_output.txt', "w")
+        
         #csvfile = open('waveform.csv', 'w', newline='')
         #csvwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         
