@@ -1,7 +1,3 @@
-"""
-Demonstrates very basic use of ImageItem to display image data inside a ViewBox.
-"""
-
 from time import perf_counter
 
 import numpy as np
@@ -9,7 +5,10 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore
 
-app = pg.mkQApp("ImageItem Example")
+app = pg.mkQApp("Scan Live View")
+
+settings = np.loadtxt("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_display_setting")
+dimension = int(settings)
 
 ## Create window with GraphicsView widget
 win = pg.GraphicsLayoutWidget()
@@ -25,7 +24,7 @@ img = pg.ImageItem(border='w')
 view.addItem(img)
 
 ## Set initial view bounds
-view.setRange(QtCore.QRectF(0, 0, 513, 513))
+view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
 
 
 updateTime = perf_counter()
@@ -40,11 +39,13 @@ timer.setSingleShot(True)
 def updateData():
     global img, updateTime, elapsed
 
-    data = np.loadtxt("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_frame",)
+    data = np.memmap("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_frame",
+    shape = (dimension,dimension))
 
-    #img.setImage(np.rot90(data,k=3))
-    #img.setImage(data)
     print(data)
+    print(data.shape)
+    img.setImage(np.rot90(data,k=3)) #this is the correct orientation to display the image
+    
 
     timer.start(1)
     now = perf_counter()

@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import os, datetime
 import numpy as np
 from tifffile import imread, imwrite, TiffFile
+import random
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 #from .scan_gen_components import pg_gui 
@@ -211,7 +212,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 m.d.comb += [
                             self.in_fifo.flush.eq(1)
                         ]
-             
+        
         return m
 
 
@@ -244,7 +245,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
-        #iface.add_subtarget(LEDBlinker())
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             pads=iface.get_pads(args, pins=self.__pins),
             in_fifo = iface.get_in_fifo(),
@@ -264,11 +264,15 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         current = ScanDataRun(dimension)
         cli = CommandLine() 
+        
+        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
+
+        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension,dimension), mode = "w+")
 
         def display_data(data): ## use to create a basic live display in terminal
             if len(data) > 0:
-                first = data[0]
-                display = "#"*round(first/5)
+                first = data[0] ## just read the first byte of every packet
+                display = "#"*round(first/5) ## scale it to fit in one line in the terminal
                 print(display)
 
 
@@ -285,7 +289,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     print(current.frame_data)
                     current.n += 1 #count frames for unique file names
                     ## save frame as .tif
-                    #imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data, photometric='minisblack') 
+                    imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
                     ## display frame using matplotlib
                     #current.frame_display_mpl()
                 elif pixel == 1: #line sync
@@ -294,7 +298,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 else:
                     ## if there are more than {dimension} data points in one line, ignore them
                     if (current.x < dimension) and (current.y < dimension):
-                        current.frame_data[current.y][current.x] = pixel
+                        #current.frame_data[current.y][current.x] = pixel
+                        current.frame_data[current.y][current.x] = random.randint(2,255)
                         current.x += 1 ## move to the next pixel in line
 
         async def get_limited_output():
@@ -311,6 +316,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     #current.packet_to_txt_file(data) 
                     #packets_to_waveforms(raw_data)
                     image_array(data) 
+                    cli.show_progress_bar(current)
                 ## at minimum you are going to get the number of images that fit in one packet
 
         #await get_limited_output()
@@ -319,7 +325,9 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             raw_data = await iface.read()
             data = raw_data.tolist()
             image_array(data) 
-            #np.savetxt(f'Scan Capture/current_frame', current.frame_data)
+            #display_data(data)
+            buf[:] = current.frame_data[:]
+            buf.flush()
             cli.show_progress_bar(current)
             
 
