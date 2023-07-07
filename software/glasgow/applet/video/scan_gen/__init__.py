@@ -8,6 +8,8 @@ import os, datetime
 import numpy as np
 from tifffile import imread, imwrite, TiffFile
 import random
+import time
+import threading
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 #from .scan_gen_components import pg_gui 
@@ -286,11 +288,11 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 if pixel == 0: # frame sync
                     current.x = 0
                     current.y = 0
-                    print(f'frame {current.n}')
-                    print(current.frame_data)
+                    #print(f'frame {current.n}')
+                    #print(current.frame_data)
                     current.n += 1 #count frames for unique file names
                     ## save frame as .tif
-                    imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
+                    #imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
                     ## display frame using matplotlib
                     #current.frame_display_mpl()
                 elif pixel == 1: #line sync
@@ -322,14 +324,18 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
         #await get_limited_output()
 
+        def fn():
+            
+
         while True:
-            raw_data = await iface.read()
+            raw_data = await iface.read(dimension*dimension)
             data = raw_data.tolist()
+            #print(len(data))
             image_array(data) 
             #display_data(data)
             buf[:] = current.frame_data[:]
             buf.flush()
-            cli.show_progress_bar(current)
+            #cli.show_progress_bar(current)
             
 
     @classmethod
