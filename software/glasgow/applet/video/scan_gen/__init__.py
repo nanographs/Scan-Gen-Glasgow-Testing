@@ -10,6 +10,7 @@ from tifffile import imread, imwrite, TiffFile
 import random
 import time
 import threading
+from rich import print
 
 from .scan_gen_components.bus_state_machine import ScanIOBus
 #from .scan_gen_components import pg_gui 
@@ -200,11 +201,11 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         self.in_fifo.din.eq(0),
                         self.in_fifo.w_en.eq(1),
                     ]
-                with m.Elif(scan_bus.line_sync):
-                    m.d.comb += [
-                        self.in_fifo.din.eq(1),
-                        self.in_fifo.w_en.eq(1),
-                    ]
+                # with m.Elif(scan_bus.line_sync):
+                #     m.d.comb += [
+                #         self.in_fifo.din.eq(1),
+                #         self.in_fifo.w_en.eq(1),
+                #     ]
 
         # with m.If(scan_bus.bus_state == FIFO_WAIT):
         #     with m.If(self.in_fifo.w_rdy):
@@ -250,7 +251,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             pads=iface.get_pads(args, pins=self.__pins),
-            in_fifo = iface.get_in_fifo(),
+            in_fifo = iface.get_in_fifo(auto_flush=False),
             out_fifo = iface.get_out_fifo(),
             resolution_bits = args.res
         ))
@@ -270,7 +271,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         np.savetxt(f'Scan Capture/current_display_setting', [dimension])
 
-        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension,dimension), mode = "w+")
+        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
 
         def display_data(data): ## use to create a basic live display in terminal
             if len(data) > 0:
@@ -281,29 +282,32 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
 
 
-        def image_array(data): ## this could be moved to output_formats
-            ## but leaving it here for now, for context
-            for index in range(0,len(data)):
-                pixel = data[index]
-                if pixel == 0: # frame sync
-                    current.x = 0
-                    current.y = 0
-                    #print(f'frame {current.n}')
-                    #print(current.frame_data)
-                    current.n += 1 #count frames for unique file names
-                    ## save frame as .tif
-                    #imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
-                    ## display frame using matplotlib
-                    #current.frame_display_mpl()
-                elif pixel == 1: #line sync
-                    current.x = 0 ## reset x position to beginning of line
-                    current.y += 1 ## move to next line
-                else:
-                    ## if there are more than {dimension} data points in one line, ignore them
-                    if (current.x < dimension) and (current.y < dimension):
-                        current.frame_data[current.y][current.x] = pixel
-                        #current.frame_data[current.y][current.x] = random.randint(2,255) #use randomly generated data instead
-                        current.x += 1 ## move to the next pixel in line
+        # def image_array(data): ## this could be moved to output_formats
+        #     ## but leaving it here for now, for context
+        #     for index in range(0,len(data)):
+        #         pixel = data[index]
+        #         if pixel == 0: # frame sync
+        #             current.x = 0
+        #             current.y = 0
+        #             #print(f'frame {current.n}')
+        #             #print(current.frame_data)
+        #             current.n += 1 #count frames for unique file names
+        #             ## save frame as .tif
+        #             #imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
+        #             ## display frame using matplotlib
+        #             #current.frame_display_mpl()
+        #         elif pixel == 1: #line sync
+        #             current.x = 0 ## reset x position to beginning of line
+        #             current.y += 1 ## move to next line
+        #         else:
+        #             ## if there are more than {dimension} data points in one line, ignore them
+        #             if (current.x < dimension) and (current.y < dimension):
+        #                 current.frame_data[current.y][current.x] = pixel
+        #                 #current.frame_data[current.y][current.x] = random.randint(2,255) #use randomly generated data instead
+        #                 current.x += 1 ## move to the next pixel in line
+
+
+
 
         async def get_limited_output():
             ## get approx the number of packets you need 
@@ -324,19 +328,56 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
         #await get_limited_output()
 
-        def fn():
+        current.last_x = 0
+        current.last_y = 0
+
+        empty_frame = np.zeros(shape = dimension*dimension)
+
+        def fn(raw_data):
+            data = raw_data.tolist()
+            d = np.array(data)
+            zero_index = np.nonzero(d < 1)[0]
+            if len(zero_index) > 0: #if a zero was found
+                zero_index = int(zero_index)
+                buf[0:zero_index] = d[0:zero_index]
+                rem = len(buf) - len(d[zero_index:])
+                buf[rem:] = d[zero_index:]
+                current.last_pixel = zero_index #+ len(d[zero_index:])
+            else: 
+                buf[current.last_pixel:current.last_pixel+len(data)] = d
             
 
+        background_tasks = set()
+
+        start_time = time.perf_counter()
+        
         while True:
-            raw_data = await iface.read(dimension*dimension)
-            data = raw_data.tolist()
-            #print(len(data))
-            image_array(data) 
+        #     start = time.perf_counter()
+        #     if (start-start_time) > .01:
+        #         self.logger.error(msg = ("Raw read start:",start-start_time))
+        #     start_time = start
+        # #for i in range(1000):
+            raw_data = await iface.read()
+            # end1 = time.perf_counter()
+            # print("raw data read", end1-start)
+            # if (end1-start) > .01:
+            #     self.logger.error(msg = ("Raw read:",end1-start))
             #display_data(data)
-            buf[:] = current.frame_data[:]
-            buf.flush()
-            #cli.show_progress_bar(current)
+            #thread = threading.get_ident()
+            #print("A THREAD:", thread)
+
+            threading.Thread(target=fn(raw_data)).start()
+
             
+            # task = asyncio.create_task(fn(raw_data))
+            # background_tasks.add(task)
+            # task.add_done_callback(background_tasks.discard)
+
+            # end2 = time.perf_counter()
+            # print("Task set",end2-end1)
+            # if (end2-end1) > .01:
+            #     self.logger.error(msg = ("Task set:",end2-end1))
+
 
     @classmethod
     def add_interact_arguments(cls, parser):
