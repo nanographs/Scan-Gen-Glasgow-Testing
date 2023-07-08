@@ -39,8 +39,10 @@ timer.setSingleShot(True)
 def updateData():
     global img, updateTime, elapsed
 
-    data = np.memmap("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_frame",
-    shape = (dimension,dimension))
+    d = np.memmap("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_frame",
+        shape = (dimension*dimension))
+    data = np.reshape(d,(dimension,dimension))
+    #data = np.random.rand(dimension,dimension)
 
     print(data)
     print(data.shape)

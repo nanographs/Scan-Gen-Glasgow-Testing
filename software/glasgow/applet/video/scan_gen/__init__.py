@@ -339,13 +339,17 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             zero_index = np.nonzero(d < 1)[0]
             if len(zero_index) > 0: #if a zero was found
                 zero_index = int(zero_index)
-                buf[0:zero_index] = d[0:zero_index]
+                buf[dimension * dimension - zero_index:] = d[:zero_index]
                 rem = len(buf) - len(d[zero_index:])
-                buf[rem:] = d[zero_index:]
-                current.last_pixel = zero_index #+ len(d[zero_index:])
+                buf[0:len(d[zero_index:])] = d[zero_index:]
+                current.last_pixel = len(d[:zero_index])
+                print("in the if")
             else: 
-                buf[current.last_pixel:current.last_pixel+len(data)] = d
-            
+                buf[current.last_pixel:current.last_pixel + d.size + 1 - 1] = d
+                current.last_pixel = current.last_pixel + d.size
+                print("in the else")
+            # for i in range(dimension):
+            #     print(buf[i*dimension:(i+1)*dimension])
 
         background_tasks = set()
 

@@ -10,7 +10,10 @@ class ScanDataRun:
         self.n = 0 ### frame number
         self.x = 0 ### pixel number in line
         self.y = 0 ### line number
-        self.frame_data = np.zeros([dimension, dimension])
+        #self.frame_data = np.zeros([dimension, dimension])
+
+        self.last_pixel = 0
+        self.frame_data = np.zeros([dimension * dimension])
 
         ### create time stamped folder
         self.save_dir = os.path.join(os.getcwd(), "Scan Capture", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
