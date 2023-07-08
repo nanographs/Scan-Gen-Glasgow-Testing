@@ -41,6 +41,7 @@ class Scan:
 scan = Scan()
 
 frame_data = np.zeros([dimension*dimension])
+print(frame_data[dimension*dimension-1])
 def new_func(data):
     d = np.array(data)
     zero_index = np.nonzero(d < 1)[0]
@@ -51,7 +52,10 @@ def new_func(data):
         frame_data[rem:] = d[zero_index:]
         scan.last_pixel = zero_index
     else: 
+        if len(frame_data[scan.last_pixel:scan.last_pixel+len(data)]) < len(d):
+            print("data too long to fit in end of frame, but no zero")
         frame_data[scan.last_pixel:scan.last_pixel+len(data)] = d
+        scan.last_pixel = scan.last_pixel+len(data)
     print(frame_data)
     
 
@@ -66,6 +70,13 @@ end = time.perf_counter()
 print("new func:", end-start)
 
 start = time.perf_counter()
+new_func(data_2)
+new_func(data_2)
+new_func(data_2)
+new_func(data_2)
+new_func(data_2)
+new_func(data_2)
+new_func(data_2)
 new_func(data_2)
 end = time.perf_counter()
 print("new func:", end-start)
