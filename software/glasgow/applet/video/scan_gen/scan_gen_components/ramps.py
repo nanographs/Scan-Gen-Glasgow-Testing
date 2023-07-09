@@ -32,7 +32,7 @@ class RampGenerator(Elaboratable):
     def elaborate(self, platform):
         m = Module()
         ## evaluate whether counter is at its limit
-        m.d.comb += self.ovf.eq(self.count == self.limit)
+        m.d.comb += self.ovf.eq(self.count == self.limit-1)
 
         ## incrementing the counter
         with m.If(self.en):

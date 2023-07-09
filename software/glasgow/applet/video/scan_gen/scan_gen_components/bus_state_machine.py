@@ -177,7 +177,7 @@ if __name__ == "__main__":
     dut = ScanIOBus(4) # 16 x 16
     def bench():
         yield dut.fifo_ready.eq(1)
-        for _ in range(1024):
+        for _ in range(4096):
             yield
         yield
 
