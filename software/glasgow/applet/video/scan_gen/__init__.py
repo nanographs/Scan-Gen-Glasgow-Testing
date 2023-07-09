@@ -140,14 +140,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_READ):
             m.d.sync += [
                 ## LOOPBACK
-                # self.datain[0].eq(scan_bus.x_data[6]),
-                # self.datain[1].eq(scan_bus.x_data[7]),
-                # self.datain[2].eq(scan_bus.x_data[8]),
-                # self.datain[3].eq(scan_bus.x_data[9]),
-                # self.datain[4].eq(scan_bus.x_data[10]),
-                # self.datain[5].eq(scan_bus.x_data[11]),
-                # self.datain[6].eq(scan_bus.x_data[12]),
-                # self.datain[7].eq(scan_bus.x_data[13]),
+                self.datain[0].eq(scan_bus.y_data[6]),
+                self.datain[1].eq(scan_bus.y_data[7]),
+                self.datain[2].eq(scan_bus.y_data[8]),
+                self.datain[3].eq(scan_bus.y_data[9]),
+                self.datain[4].eq(scan_bus.y_data[10]),
+                self.datain[5].eq(scan_bus.y_data[11]),
+                self.datain[6].eq(scan_bus.y_data[12]),
+                self.datain[7].eq(scan_bus.y_data[13]),
 
 
                 ## Fixed Value
@@ -161,14 +161,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 # self.datain[7].eq(0),
 
                 ## Actual input
-                self.datain[0].eq(self.pads.g_t.i), 
-                self.datain[1].eq(self.pads.h_t.i),
-                self.datain[2].eq(self.pads.i_t.i),
-                self.datain[3].eq(self.pads.j_t.i),
-                self.datain[4].eq(self.pads.k_t.i),
-                self.datain[5].eq(self.pads.l_t.i),
-                self.datain[6].eq(self.pads.m_t.i),
-                self.datain[7].eq(self.pads.n_t.i),## MSB
+                # self.datain[0].eq(self.pads.g_t.i), 
+                # self.datain[1].eq(self.pads.h_t.i),
+                # self.datain[2].eq(self.pads.i_t.i),
+                # self.datain[3].eq(self.pads.j_t.i),
+                # self.datain[4].eq(self.pads.k_t.i),
+                # self.datain[5].eq(self.pads.l_t.i),
+                # self.datain[6].eq(self.pads.m_t.i),
+                # self.datain[7].eq(self.pads.n_t.i),## MSB
 
                 ### Only reading 8 bits right now
                 ### so just ignore the rest
@@ -181,7 +181,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
             ]
 
-        with m.If(scan_bus.bus_state == BUS_FIFO_2):
+        with m.If(scan_bus.bus_state == BUS_FIFO_1):
             with m.If(self.in_fifo.w_rdy):
                 with m.If(self.datain <= 1): #restrict image data to 2-255, save 0-1 for frame/line sync
                     m.d.comb += [
@@ -194,7 +194,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         self.in_fifo.w_en.eq(1),
                     ]
 
-        with m.If(scan_bus.bus_state == BUS_FIFO_1):
+        with m.If(scan_bus.bus_state == BUS_FIFO_2):
             with m.If(self.in_fifo.w_rdy):
                 with m.If(scan_bus.line_sync & scan_bus.frame_sync):
                     m.d.comb += [
@@ -264,7 +264,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
 
         resolution_bits = args.res
-        dimension = pow(2,resolution_bits) + 1
+        dimension = pow(2,resolution_bits)
         
         current = ScanDataRun(dimension)
         cli = CommandLine() 
@@ -334,28 +334,38 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         empty_frame = np.zeros(shape = dimension*dimension)
 
         def fn(raw_data):
+            # print("-----------")
+            # print("frame", current.n)
             data = raw_data.tolist()
+            #current.packet_to_txt_file(data)
             d = np.array(data)
             zero_index = np.nonzero(d < 1)[0]
-            print("buffer length:", len(buf))
-            print("last pixel:",current.last_pixel)
-            print("d length:", len(d))
-            print("zero index:",zero_index)
+            # print("buffer length:", len(buf))
+            # print("last pixel:",current.last_pixel)
+            # print("d length:", len(d))
+            # print("d:",d)
+            
             if len(zero_index) > 0: #if a zero was found
+                # current.n += 1
+                # print("zero index:",zero_index)
                 zero_index = int(zero_index)
                 buf[dimension * dimension - zero_index:] = d[:zero_index]
+                # print(buf[dimension * dimension - zero_index:])
                 #rem = len(buf) - len(d[zero_index:])
-                buf[0:len(d[zero_index:])] = d[zero_index:]
-                current.last_pixel = len(d[:zero_index])
+                buf[:d[zero_index+1:].size] = d[zero_index+1:]
+                # print(buf[:d[zero_index+1:].size])
+                # print(d[:zero_index+1].size)
+                current.last_pixel = d[zero_index+1:].size
                 
 
             else: 
-                if len(buf[current.last_pixel:current.last_pixel+len(d)]) < len(d):
-                    print("data too long to fit in end of frame, but no zero")
-                    for i in range(dimension):
-                        print(d[i*dimension:(i+1)*dimension])
-                buf[current.last_pixel:current.last_pixel + d.size + 1 - 1] = d
+                # if len(buf[current.last_pixel:current.last_pixel+len(d)]) < len(d):
+                #     print("data too long to fit in end of frame, but no zero")
+                #     print(d[:dimension])
+                buf[current.last_pixel:current.last_pixel + d.size] = d
+                # print(buf[current.last_pixel:current.last_pixel + d.size])
                 current.last_pixel = current.last_pixel + d.size
+            
             
 
         background_tasks = set()
@@ -367,7 +377,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         #     if (start-start_time) > .01:
         #         self.logger.error(msg = ("Raw read start:",start-start_time))
         #     start_time = start
-        # #for i in range(1000):
+        # for i in range(20):
             raw_data = await iface.read()
             # end1 = time.perf_counter()
             # print("raw data read", end1-start)

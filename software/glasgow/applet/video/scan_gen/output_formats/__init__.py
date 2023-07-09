@@ -19,7 +19,7 @@ class ScanDataRun:
         self.save_dir = os.path.join(os.getcwd(), "Scan Capture", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
         os.makedirs(self.save_dir)
 
-        
+        self.text_file = open(self.save_dir + "/" + "packets.txt","w")
         #csvfile = open('waveform.csv', 'w', newline='')
         #csvwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         
@@ -50,7 +50,7 @@ class ScanDataRun:
             )
             plt.close() #clear figure
 
-    def packet_to_txt_file(self,data):
+    def packet_to_txt_file_xy(self,data):
         packet_length = len(data)
         self.text_file.write("<=======================================================================================================================================>\n")
         self.text_file.write(f'PACKET LENGTH: {packet_length}\n')
@@ -66,6 +66,12 @@ class ScanDataRun:
                     pass
                 else:
                     self.text_file.write(f'LINE OVERFLOW\n')
+
+    def packet_to_txt_file(self,data):
+        packet_length = len(data)
+        self.text_file.write("<=======================================================================================================================================>\n")
+        self.text_file.write(f'PACKET LENGTH: {packet_length}\n')
+        self.text_file.write(", ".join([str(x) for x in data]))
 
     ### Methods for one complete frame
 
