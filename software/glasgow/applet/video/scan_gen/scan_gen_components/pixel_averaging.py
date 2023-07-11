@@ -56,5 +56,5 @@ def test():
     with sim.write_vcd("scan_sim_average.vcd"):
         sim.run()
 
-# if __name__ == "__main__":
-#     test()
+if __name__ == "__main__":
+    test()
