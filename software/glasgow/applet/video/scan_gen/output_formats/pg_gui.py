@@ -1,13 +1,14 @@
 from time import perf_counter
 
 import numpy as np
+import os
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore
 
 app = pg.mkQApp("Scan Live View")
 
-settings = np.loadtxt("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_display_setting")
+settings = np.loadtxt(os.path.join(os.getcwd(), "Scan Capture/current_display_setting"))
 dimension = int(settings)
 
 ## Create window with GraphicsView widget
@@ -34,13 +35,12 @@ timer = QtCore.QTimer()
 timer.setSingleShot(True)
 # not using QTimer.singleShot() because of persistence on PyQt. see PR #1605
 
-
+FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
 
 def updateData():
     global img, updateTime, elapsed
 
-    d = np.memmap("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_frame",
-        shape = (dimension*dimension))
+    d = np.memmap(FrameBufDirectory, shape = (dimension*dimension))
     data = np.reshape(d,(dimension,dimension))
     #data = np.random.rand(dimension,dimension)
 

@@ -140,14 +140,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_READ):
             m.d.sync += [
                 ## LOOPBACK
-                self.datain[0].eq(scan_bus.y_data[6]),
-                self.datain[1].eq(scan_bus.y_data[7]),
-                self.datain[2].eq(scan_bus.y_data[8]),
-                self.datain[3].eq(scan_bus.y_data[9]),
-                self.datain[4].eq(scan_bus.y_data[10]),
-                self.datain[5].eq(scan_bus.y_data[11]),
-                self.datain[6].eq(scan_bus.y_data[12]),
-                self.datain[7].eq(scan_bus.y_data[13]),
+                # self.datain[0].eq(scan_bus.y_data[6]),
+                # self.datain[1].eq(scan_bus.y_data[7]),
+                # self.datain[2].eq(scan_bus.y_data[8]),
+                # self.datain[3].eq(scan_bus.y_data[9]),
+                # self.datain[4].eq(scan_bus.y_data[10]),
+                # self.datain[5].eq(scan_bus.y_data[11]),
+                # self.datain[6].eq(scan_bus.y_data[12]),
+                # self.datain[7].eq(scan_bus.y_data[13]),
 
 
                 ## Fixed Value
@@ -161,14 +161,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 # self.datain[7].eq(0),
 
                 ## Actual input
-                # self.datain[0].eq(self.pads.g_t.i), 
-                # self.datain[1].eq(self.pads.h_t.i),
-                # self.datain[2].eq(self.pads.i_t.i),
-                # self.datain[3].eq(self.pads.j_t.i),
-                # self.datain[4].eq(self.pads.k_t.i),
-                # self.datain[5].eq(self.pads.l_t.i),
-                # self.datain[6].eq(self.pads.m_t.i),
-                # self.datain[7].eq(self.pads.n_t.i),## MSB
+                self.datain[0].eq(self.pads.g_t.i), 
+                self.datain[1].eq(self.pads.h_t.i),
+                self.datain[2].eq(self.pads.i_t.i),
+                self.datain[3].eq(self.pads.j_t.i),
+                self.datain[4].eq(self.pads.k_t.i),
+                self.datain[5].eq(self.pads.l_t.i),
+                self.datain[6].eq(self.pads.m_t.i),
+                self.datain[7].eq(self.pads.n_t.i),## MSB
 
                 ### Only reading 8 bits right now
                 ### so just ignore the rest
