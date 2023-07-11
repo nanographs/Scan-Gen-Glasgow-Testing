@@ -12,6 +12,7 @@ if "glasgow" in __name__: ## running as applet
 else: ## running as script (simulation)
     from min_dwell_ctr import MinDwellCtr
     from xy_ramp_gen import ScanGenerator
+    from ramps import RampGenerator
 
 BUS_WRITE_X = 0x01
 BUS_WRITE_Y = 0x02
@@ -23,8 +24,9 @@ FIFO_WAIT = 0x06
 
 
 class ScanIOBus(Elaboratable):
-    def __init__(self, resolution_bits):
+    def __init__(self, resolution_bits, dwell_time=10):
         self.resolution_bits = resolution_bits
+        self.dwell_time = dwell_time
 
         self.bus_state = Signal(8)
         self.x_data = Signal(14)
@@ -51,6 +53,7 @@ class ScanIOBus(Elaboratable):
         m = Module()
 
         m.submodules.min_dwell_ctr = min_dwell_ctr = MinDwellCtr()
+        m.submodules.dwell_ctr = dwell_ctr = RampGenerator(self.dwell_time)
         
 
         m.submodules.scan_gen = scan_gen = ScanGenerator(self.resolution_bits) 
@@ -87,7 +90,13 @@ class ScanIOBus(Elaboratable):
         with m.FSM() as fsm:
             with m.State("WAIT"):
                 with m.If(self.count_one):
-                    m.d.comb += scan_gen.en.eq(1) 
+                    with m.If(dwell_ctr.ovf):
+                        m.d.comb += [
+                        dwell_ctr.en.eq(1),
+                        scan_gen.en.eq(1)
+                        ]
+                    with m.Else():
+                        m.d.comb += dwell_ctr.en.eq(1)
                     m.next = "X WRITE"
                 with m.Else():
                     m.next = "WAIT"
