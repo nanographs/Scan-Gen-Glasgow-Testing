@@ -3,16 +3,15 @@ from amaranth import *
 from amaranth.sim import Simulator
 
 ### turn a tiff into a stream of bits
-from tifffile import imread, imwrite, TiffFile
+from tifffile import imread, imwrite, imshow, TiffFile
 import numpy as np
 import random
+from statistics import mean
 
 image = imread("software/glasgow/applet/video/scan_gen/scan_gen_components/WD25.tif")
 height, width = image.shape
 
-
-image_container = np.zeros(image.shape)
-
+## turn a tiff into a stream of integers or bits
 # image_bits = []
 image_bytes = []
 for i in range(height):
@@ -28,7 +27,11 @@ for i in range(height):
 #image_bits_ = iter(image_bits)
 image_bytes_ = iter(image_bytes)
 
-
+## test - reconstitute the original image
+# split = np.array([round(mean(image_bytes[i:i+10])) for i in range(0,len(image_bytes),10)],dtype = np.uint8)
+# split = np.reshape(split,(height, width))
+# print(split)
+# imwrite("WD25-out.tif",split)
 
 
 class Pixel_Average(Elaboratable):
@@ -53,5 +56,5 @@ def test():
     with sim.write_vcd("scan_sim_average.vcd"):
         sim.run()
 
-if __name__ == "__main__":
-    test()
+# if __name__ == "__main__":
+#     test()
