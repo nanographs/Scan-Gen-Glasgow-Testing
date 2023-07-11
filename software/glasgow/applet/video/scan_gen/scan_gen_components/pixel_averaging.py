@@ -33,7 +33,7 @@ image_bytes_ = iter(image_bytes)
 
 class Pixel_Average(Elaboratable):
     def __init__(self):
-        self.in_pixel = Signal(8)
+        self.in_pixel = Signal(14)
         self.s = Signal()
     def elaborate(self,platform):
         m = Module()
@@ -45,7 +45,7 @@ def test():
     dut = Pixel_Average()
     def bench():
         for _ in range(200):
-            yield dut.in_pixel.eq(Const(next(image_bytes_),unsigned(8)))
+            yield dut.in_pixel.eq(Const(next(image_bytes_),unsigned(14)))
             yield
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
