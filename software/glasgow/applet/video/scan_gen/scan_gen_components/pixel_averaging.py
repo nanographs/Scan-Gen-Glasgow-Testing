@@ -1,9 +1,10 @@
 import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
+from ramps import RampGenerator
 
 ### turn a tiff into a stream of bits
-from tifffile import imread, imwrite, imshow, TiffFile
+from tifffile import imread, imwrite
 import numpy as np
 import random
 from statistics import mean
@@ -27,24 +28,31 @@ for i in range(height):
 #image_bits_ = iter(image_bits)
 image_bytes_ = iter(image_bytes)
 
-## test - reconstitute the original image
-# split = np.array([round(mean(image_bytes[i:i+10])) for i in range(0,len(image_bytes),10)],dtype = np.uint8)
-# split = np.reshape(split,(height, width))
-# print(split)
-# imwrite("WD25-out.tif",split)
-
 
 class Pixel_Average(Elaboratable):
     def __init__(self):
+        self.running_average = Signal(15)
         self.in_pixel = Signal(14)
-        self.s = Signal()
+        self.current_pixel = Signal(14)
+        self.dwell_time = 10
+        self.ovf = Signal()
     def elaborate(self,platform):
         m = Module()
-        m.d.sync += self.s.eq(1)
-        m.d.comb += self.in_pixel.eq(0)
+        m.submodules.dwell_ctr = dwell_ctr = RampGenerator(self.dwell_time)
+        m.d.comb += [self.in_pixel.eq(0), dwell_ctr.en.eq(1)]
+        m.d.sync += [
+        self.current_pixel.eq(self.in_pixel)]
+        with m.If(dwell_ctr.ovf):
+            m.d.comb += self.running_average.eq(0)
+        with m.Else():
+            m.d.comb += self.running_average.eq((self.running_average + self.current_pixel)//2)
         return m
+    def ports(self):
+        return[self.submodules.dwell_ctr, self.ovf, self.running_average, 
+        self.in_pixel, self.current_pixel]
 
 def test():
+    
     dut = Pixel_Average()
     def bench():
         for _ in range(200):
@@ -57,4 +65,10 @@ def test():
         sim.run()
 
 if __name__ == "__main__":
+
+    ## test - reconstitute the original image
+    # split = np.array([round(mean(image_bytes[i:i+10])) for i in range(0,len(image_bytes),10)],dtype = np.uint8)
+    # split = np.reshape(split,(height, width))
+    # print(split)
+    # imwrite("WD25-out.tif",split)
     test()
