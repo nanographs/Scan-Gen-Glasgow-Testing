@@ -25,7 +25,7 @@ BUS_READ = 0x03
 BUS_FIFO_1 = 0x04
 BUS_FIFO_2 = 0x05
 FIFO_WAIT = 0x06
-
+A_RELEASE = 0x07
 
 
 ######################
@@ -35,19 +35,22 @@ FIFO_WAIT = 0x06
 
 
 class DataBusAndFIFOSubtarget(Elaboratable):
-    def __init__(self, pads, in_fifo, out_fifo, resolution_bits):
+    def __init__(self, pads, in_fifo, out_fifo, resolution_bits, dwell_time):
         self.pads     = pads
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
 
         self.resolution_bits = resolution_bits ## 9x9 = 512, etc.
+        self.dwell_time = dwell_time
 
         self.datain = Signal(14)
+
+        self.running_average_two = Signal(14)
 
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits)
+        m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time)
 
         x_latch = platform.request("X_LATCH")
         x_enable = platform.request("X_ENABLE")
@@ -140,14 +143,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_READ):
             m.d.sync += [
                 ## LOOPBACK
-                # self.datain[0].eq(scan_bus.y_data[6]),
-                # self.datain[1].eq(scan_bus.y_data[7]),
-                # self.datain[2].eq(scan_bus.y_data[8]),
-                # self.datain[3].eq(scan_bus.y_data[9]),
-                # self.datain[4].eq(scan_bus.y_data[10]),
-                # self.datain[5].eq(scan_bus.y_data[11]),
-                # self.datain[6].eq(scan_bus.y_data[12]),
-                # self.datain[7].eq(scan_bus.y_data[13]),
+                # self.datain[0].eq(scan_bus.x_data[6]),
+                # self.datain[2].eq(scan_bus.x_data[8]),
+                # self.datain[1].eq(scan_bus.x_data[7]),
+                # self.datain[3].eq(scan_bus.x_data[9]),
+                # self.datain[4].eq(scan_bus.x_data[10]),
+                # self.datain[5].eq(scan_bus.x_data[11]),
+                # self.datain[6].eq(scan_bus.x_data[12]),
+                # self.datain[7].eq(scan_bus.x_data[13]),
 
 
                 ## Fixed Value
@@ -178,29 +181,39 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 self.datain[11].eq(0),
                 self.datain[12].eq(0),
                 self.datain[13].eq(0),
-
             ]
 
-        with m.If(scan_bus.bus_state == BUS_FIFO_1):
-            with m.If(self.in_fifo.w_rdy):
-                with m.If(self.datain <= 1): #restrict image data to 2-255, save 0-1 for frame/line sync
-                    m.d.comb += [
-                        self.in_fifo.din.eq(2),
-                        self.in_fifo.w_en.eq(1),
-                    ]
-                with m.Else():
-                    m.d.comb += [
-                        self.in_fifo.din.eq(self.datain[0:8]),
-                        self.in_fifo.w_en.eq(1),
-                    ]
+        with m.If(scan_bus.bus_state == A_RELEASE):
+            with m.If(scan_bus.dwell_ctr_ovf):
+                m.d.sync += [
+                    self.running_average_two.eq(self.datain),
+                ]
+            with m.Else():
+                m.d.sync += [
+                    self.running_average_two.eq((self.running_average_two + self.datain)//2),
+                ]
 
-        with m.If(scan_bus.bus_state == BUS_FIFO_2):
-            with m.If(self.in_fifo.w_rdy):
-                with m.If(scan_bus.line_sync & scan_bus.frame_sync):
-                    m.d.comb += [
-                        self.in_fifo.din.eq(0),
-                        self.in_fifo.w_en.eq(1),
-                    ]
+        with m.If(scan_bus.dwell_ctr_ovf):
+            with m.If(scan_bus.bus_state == BUS_FIFO_1):
+                with m.If(self.in_fifo.w_rdy):
+                    with m.If(self.running_average_two <= 1): #restrict image data to 2-255, save 0-1 for frame/line sync
+                        m.d.comb += [
+                            self.in_fifo.din.eq(2),
+                            self.in_fifo.w_en.eq(1),
+                        ]
+                    with m.Else():
+                        m.d.comb += [
+                            self.in_fifo.din.eq(self.running_average_two[0:8]),
+                            self.in_fifo.w_en.eq(1),
+                        ]
+
+            with m.If(scan_bus.bus_state == BUS_FIFO_2):
+                with m.If(self.in_fifo.w_rdy):
+                    with m.If(scan_bus.line_sync & scan_bus.frame_sync):
+                        m.d.comb += [
+                            self.in_fifo.din.eq(0),
+                            self.in_fifo.w_en.eq(1),
+                        ]
                 # with m.Elif(scan_bus.line_sync):
                 #     m.d.comb += [
                 #         self.in_fifo.din.eq(1),
@@ -243,6 +256,9 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             "-r", "--res", type=int, default=9,
             help="resolution bits (default: %(default)s)")
         parser.add_argument(
+            "-d", "--dwell", type=int, default=1,
+            help="dwell time in clock cycles (default: %(default)s)")
+        parser.add_argument(
             "-c", "--captures", type=int, default=1,
             help="number of captures (default: %(default)s)")
 
@@ -253,7 +269,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             pads=iface.get_pads(args, pins=self.__pins),
             in_fifo = iface.get_in_fifo(auto_flush=False),
             out_fifo = iface.get_out_fifo(),
-            resolution_bits = args.res
+            resolution_bits = args.res,
+            dwell_time = args.dwell
         ))
     
     @classmethod
@@ -349,12 +366,18 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 # current.n += 1
                 # print("zero index:",zero_index)
                 zero_index = int(zero_index)
-                buf[dimension * dimension - zero_index:] = d[:zero_index]
-                # print(buf[dimension * dimension - zero_index:])
+                ## save frame as .tif
+                print("saving frame")
+                current.n += 1
+                current.frame_data = np.reshape(buf,(dimension,dimension))
+                imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
+
                 #rem = len(buf) - len(d[zero_index:])
                 buf[:d[zero_index+1:].size] = d[zero_index+1:]
                 # print(buf[:d[zero_index+1:].size])
                 # print(d[:zero_index+1].size)
+                buf[dimension * dimension - zero_index:] = d[:zero_index]
+                # print(buf[dimension * dimension - zero_index:])
                 current.last_pixel = d[zero_index+1:].size
                 
 
@@ -379,6 +402,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         #     start_time = start
         # for i in range(20):
             raw_data = await iface.read()
+            # data = raw_data.tolist()
+            # current.packet_to_txt_file(data)
             # end1 = time.perf_counter()
             # print("raw data read", end1-start)
             # if (end1-start) > .01:

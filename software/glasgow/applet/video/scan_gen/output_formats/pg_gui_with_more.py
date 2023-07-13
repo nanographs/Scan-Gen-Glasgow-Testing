@@ -8,9 +8,11 @@ import pyqtgraph as pg
 from pyqtgraph.exporters import Exporter
 from pyqtgraph.Qt import QtCore
 
+import os
+
 app = pg.mkQApp("Scan Live View")
 
-settings = np.loadtxt("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_display_setting")
+settings = np.loadtxt(os.path.join(os.getcwd(), "Scan Capture/current_display_setting"))
 dimension = int(settings)
 
 ## Define a top-level widget to hold everything
@@ -43,7 +45,8 @@ view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
 # exporter = Exporter(img)
 # def button_action():
 #     print("button")
-#     exporter.export()
+#     save_path = os.path.join(os.getcwd(), "Scan Capture/saved.tif)
+#     imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
 # btn.clicked.connect(button_action)
 
 ## add widgets to layout
@@ -58,12 +61,13 @@ timer = QtCore.QTimer()
 timer.setSingleShot(True)
 # not using QTimer.singleShot() because of persistence on PyQt. see PR #1605
 
+FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
 
 
 def updateData():
     global img, updateTime, elapsed
 
-    data = np.memmap("/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/Scan Capture/current_frame",
+    data = np.memmap(FrameBufDirectory,
     shape = (dimension,dimension))
 
     #print(data)
