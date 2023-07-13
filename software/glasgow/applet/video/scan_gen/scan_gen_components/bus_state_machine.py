@@ -20,11 +20,12 @@ BUS_READ = 0x03
 BUS_FIFO_1 = 0x04
 BUS_FIFO_2 = 0x05
 FIFO_WAIT = 0x06
+A_RELEASE = 0x07
 
 
 
 class ScanIOBus(Elaboratable):
-    def __init__(self, resolution_bits, dwell_time=10):
+    def __init__(self, resolution_bits, dwell_time):
         self.resolution_bits = resolution_bits
         self.dwell_time = dwell_time
 
@@ -49,11 +50,14 @@ class ScanIOBus(Elaboratable):
         self.count_one = Signal()
         self.count_six = Signal()
 
+        self.dwell_ctr_ovf = Signal()
+
     def elaborate(self, platform):
         m = Module()
 
         m.submodules.min_dwell_ctr = min_dwell_ctr = MinDwellCtr()
         m.submodules.dwell_ctr = dwell_ctr = RampGenerator(self.dwell_time)
+        m.d.comb += self.dwell_ctr_ovf.eq(dwell_ctr.ovf)
         
 
         m.submodules.scan_gen = scan_gen = ScanGenerator(self.resolution_bits) 
@@ -147,8 +151,10 @@ class ScanIOBus(Elaboratable):
 
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
+                m.d.comb += self.bus_state.eq(A_RELEASE)
                 with m.If(self.fifo_ready):
-                    m.next = "FIFO_1"
+                    
+                        m.next = "FIFO_1"
 
             # with m.State("FIFO_wait_1"):
             #     m.d.comb += self.bus_state.eq(FIFO_WAIT)
