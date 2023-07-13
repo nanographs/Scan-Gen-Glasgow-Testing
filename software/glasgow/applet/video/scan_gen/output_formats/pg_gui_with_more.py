@@ -8,7 +8,10 @@ import pyqtgraph as pg
 from pyqtgraph.exporters import Exporter
 from pyqtgraph.Qt import QtCore
 
-import os
+import tifffile
+from tifffile import imwrite
+
+import os, datetime
 
 app = pg.mkQApp("Scan Live View")
 
@@ -41,17 +44,17 @@ view.addItem(img)
 ## Set initial view bounds
 view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
 
-# btn = QtWidgets.QPushButton('press me')
-# exporter = Exporter(img)
-# def button_action():
-#     print("button")
-#     save_path = os.path.join(os.getcwd(), "Scan Capture/saved.tif)
-#     imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
-# btn.clicked.connect(button_action)
+btn = QtWidgets.QPushButton('save image')
+def button_action():
+    data = np.memmap(FrameBufDirectory,
+    shape = (dimension,dimension))
+    save_path = os.path.join(os.getcwd(), "Scan Capture/saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif")
+    imwrite(save_path, data.astype(np.uint8), photometric='minisblack') 
+btn.clicked.connect(button_action)
 
 ## add widgets to layout
-#layout.addWidget(btn,0,0)
-layout.addWidget(win,0,1)
+layout.addWidget(btn,1,0)
+layout.addWidget(win,0,0)
 w.show()
 
 updateTime = perf_counter()
@@ -62,6 +65,36 @@ timer.setSingleShot(True)
 # not using QTimer.singleShot() because of persistence on PyQt. see PR #1605
 
 FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
+
+# Custom ROI for selecting an image region
+# roi = pg.ROI([10,100], [100, 500])
+# roi.addScaleHandle([0.5, 1], [0.5, 0.5])
+# roi.addScaleHandle([0, 0.5], [0.5, 0.5])
+# view.addItem(roi)
+# roi.setZValue(10)  # make sure ROI is drawn above image
+
+
+
+
+# # Isocurve drawing
+# iso = pg.IsocurveItem(level=0.8, pen='g')
+# iso.setParentItem(img)
+# iso.setZValue(5)
+
+# Contrast/color control
+hist = pg.HistogramLUTItem()
+hist.setImageItem(img)
+hist.disableAutoHistogramRange()
+win.addItem(hist)
+
+# # Draggable line for setting isocurve level
+# isoLine = pg.InfiniteLine(angle=0, movable=True, pen='g')
+# hist.vb.addItem(isoLine)
+# hist.vb.setMouseEnabled(y=False) # makes user interaction a little easier
+# isoLine.setValue(0.8)
+# isoLine.setZValue(1000) # bring iso line above contrast controls
+
+
 
 
 def updateData():
@@ -86,32 +119,6 @@ def updateData():
 timer.timeout.connect(updateData)
 updateData()
 
-# Custom ROI for selecting an image region
-# roi = pg.ROI([10,100], [100, 500])
-# roi.addScaleHandle([0.5, 1], [0.5, 0.5])
-# roi.addScaleHandle([0, 0.5], [0.5, 0.5])
-# view.addItem(roi)
-# roi.setZValue(10)  # make sure ROI is drawn above image
-
-
-
-
-# Isocurve drawing
-iso = pg.IsocurveItem(level=0.8, pen='g')
-iso.setParentItem(img)
-iso.setZValue(5)
-
-# Contrast/color control
-hist = pg.HistogramLUTItem()
-hist.setImageItem(img)
-win.addItem(hist)
-
-# Draggable line for setting isocurve level
-isoLine = pg.InfiniteLine(angle=0, movable=True, pen='g')
-hist.vb.addItem(isoLine)
-hist.vb.setMouseEnabled(y=False) # makes user interaction a little easier
-isoLine.setValue(0.8)
-isoLine.setZValue(1000) # bring iso line above contrast controls
 
 if __name__ == '__main__':
     pg.exec()

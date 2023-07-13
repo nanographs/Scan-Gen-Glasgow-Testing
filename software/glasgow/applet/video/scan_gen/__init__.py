@@ -367,10 +367,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 # print("zero index:",zero_index)
                 zero_index = int(zero_index)
                 ## save frame as .tif
-                print("saving frame")
-                current.n += 1
-                current.frame_data = np.reshape(buf,(dimension,dimension))
-                imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
+                # print("saving frame")
+                # current.n += 1
+                # current.frame_data = np.reshape(buf,(dimension,dimension))
+                # imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
 
                 #rem = len(buf) - len(d[zero_index:])
                 buf[:d[zero_index+1:].size] = d[zero_index+1:]
