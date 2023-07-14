@@ -188,7 +188,8 @@ class ScanIOBus(Elaboratable):
 
 
 # --- TEST ---
-if __name__ == "__main__":
+
+def run_sim():
     dut = ScanIOBus(4) # 16 x 16
     def bench():
         yield dut.fifo_ready.eq(1)
@@ -202,3 +203,19 @@ if __name__ == "__main__":
     sim.add_sync_process(bench)
     with sim.write_vcd("scan_sim_bus.vcd"):
         sim.run()
+
+def test_case():
+    dut = ScanIOBus(4) # 16 x 16
+    def bench():
+        yield dut.fifo_ready.eq(1)
+
+
+    sim = Simulator(dut)
+    sim.add_clock(1e-6) # 1 MHz
+    sim.add_sync_process(bench)
+    sim.run()
+
+
+if __name__ == "__main__":
+    test_case()
+    #run_sim()
