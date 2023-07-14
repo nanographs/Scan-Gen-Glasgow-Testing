@@ -11,12 +11,12 @@ class Wire:
         self.width = width
         self.symbol = symbol
         self.name = name
-        self.values = []
+        self.time_series = {}
 
 class VCD:
-    def __init__(self,vcd):
+    def __init__(self):
         self.wire_dict = {}
-        self.parse_vcd(vcd)
+        self.wire_name_dict = {}
     def parse_vcd(self,vcd):
         self.comment = next(vcd)[9:-6]
         self.date = next(vcd)[6:-6]
@@ -31,38 +31,43 @@ class VCD:
                 self.module_path.append(Module(module_name))
             elif m[1:4] == "var":
                 if m[5:9] == "wire":
-                    wire_info = m[10:-6].split()
-                    wire = Wire(wire_info[0],wire_info[1],wire_info[2])
+                    wire_width, wire_symbol, wire_name = m[10:-6].split()
+                    wire = Wire(wire_width,wire_symbol,wire_name)
                     current_module = self.module_path[::-1][0]
                     current_module.wires.append(wire)
-                    self.wire_dict.update({wire_info[1]:wire_info[2]})
+                    self.wire_dict.update({wire_symbol:wire})
+                    self.wire_name_dict.update({wire_name:wire})
             elif m[1:8] == "upscope":
                 self.module_path = self.module_path[:-1]
             elif m[1:9] == "dumpvars":
-                print("end")
                 data_section = True
                 break
-            # else:
-            #     for module in self.module_path:
-            #         print(module.name)
-            #         for wire in module.wires:
-            #             print(wire.name)
-            #     break
+        self.current_time = 0
         while data_section:
-            d = next(vcd)
-            if d.startswith("#"):
-                pass #timestamp
-            else:
-                d = d.split()
-                if len(d) == 1:
-                    val = d[0][0]
-                    symbol = d[0][1]
+            try:
+                d = next(vcd)
+                if d.startswith("#"):
+                    self.current_time = d[1:].strip("\n")
                 else:
-                    val = d[0]
-                    symbol = d[1]
-                wire = self.wire_dict.get(symbol)
-                print(wire, val,symbol)
+                    d = d.split()
+                    if len(d) == 1:
+                        val = d[0][0]
+                        symbol = d[0][1]
+                    else:
+                        val = d[0]
+                        symbol = d[1]
+                    wire = self.wire_dict.get(symbol)
+                    if wire: 
+                        wire.time_series.update({self.current_time:val})
+            except StopIteration as e:
+                break
                     
 
 
-vcd_obj = VCD(vcd)
+vcd_obj = VCD()
+vcd_obj.parse_vcd(vcd)
+
+image_data_name = "in_pixel"
+image_bits = vcd_obj.wire_name_dict.get(image_data_name).time_series.values()
+image_bytes = [int(n[1:],2) for n in image_bits]
+print(image_bytes)
