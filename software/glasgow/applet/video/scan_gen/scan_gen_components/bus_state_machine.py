@@ -190,7 +190,7 @@ class ScanIOBus(Elaboratable):
 # --- TEST ---
 
 def run_sim():
-    dut = ScanIOBus(4) # 16 x 16
+    dut = ScanIOBus(4,3) # 16 x 16
     def bench():
         yield dut.fifo_ready.eq(1)
         for _ in range(4096):
@@ -217,5 +217,4 @@ def test_case():
 
 
 if __name__ == "__main__":
-    test_case()
-    #run_sim()
+    run_sim()
