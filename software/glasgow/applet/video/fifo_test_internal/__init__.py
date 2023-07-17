@@ -25,11 +25,36 @@ class FIFOTestSubtarget(Elaboratable):
                     ]
                 m.next = "WRITE"
             with m.State("WRITE"):
-                with m.If(self.in_fifo.w_rdy):
-                    m.d.sync += [
-                        self.in_fifo.din.eq(self.datain[7:]),
-                        self.in_fifo.w_en.eq(1),
-                    ]
+                m.d.comb += [
+                self.pads.a_t.oe.eq(1), 
+                self.pads.a_t.o.eq(self.datain[0]), ## LSB
+                self.pads.b_t.oe.eq(1),
+                self.pads.b_t.o.eq(self.datain[1]),
+                self.pads.c_t.oe.eq(1),
+                self.pads.c_t.o.eq(self.datain[2]),
+                self.pads.d_t.oe.eq(1),
+                self.pads.d_t.o.eq(self.datain[3]),
+                self.pads.e_t.oe.eq(1),
+                self.pads.e_t.o.eq(self.datain[4]),
+                self.pads.f_t.oe.eq(1),
+                self.pads.f_t.o.eq(self.datain[5]),
+                self.pads.g_t.oe.eq(1),
+                self.pads.g_t.o.eq(self.datain[6]),
+                self.pads.h_t.oe.eq(1),
+                self.pads.h_t.o.eq(self.datain[7]),
+                # self.pads.i_t.oe.eq(1),
+                # self.pads.i_t.o.eq(self.datain[8]),
+                # self.pads.j_t.oe.eq(1),
+                # self.pads.j_t.o.eq(self.datain[9]),
+                # self.pads.k_t.oe.eq(1),
+                # self.pads.k_t.o.eq(self.datain[10]),
+                # self.pads.l_t.oe.eq(1),
+                # self.pads.l_t.o.eq(self.datain[11]),
+                # self.pads.m_t.oe.eq(1),
+                # self.pads.m_t.o.eq(self.datain[12]),
+                # self.pads.n_t.oe.eq(1),
+                # self.pads.n_t.o.eq(self.datain[13]), ## MSB
+            ]
 
                 m.next = "READ"
 
@@ -78,20 +103,20 @@ class FIFOTestInternalApplet(GlasgowApplet, name="fifo-test-internal"):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        file = open("fifo_output.txt", "w")
-        async def read_data():
-            print("reading")
-            ## actually get the data from the fifo
-            raw_data = await iface.read()
-            data = raw_data.tolist()
-            print(data)
-            print("done")
+        # file = open("fifo_output.txt", "w")
+        # async def read_data():
+        #     print("reading")
+        #     ## actually get the data from the fifo
+        #     raw_data = await iface.read()
+        #     data = raw_data.tolist()
+        #     print(data)
+        #     print("done")
             
-            ## write output to txt file
-            raw_length = len(raw_data)
-            file.write("<=======================================================================================================================================>\n")
-            file.write(f'RAW PACKET LENGTH: {raw_length}\n')
-            file.write(", ".join([str(x) for x in data]))
+        #     ## write output to txt file
+        #     raw_length = len(raw_data)
+        #     file.write("<=======================================================================================================================================>\n")
+        #     file.write(f'RAW PACKET LENGTH: {raw_length}\n')
+        #     file.write(", ".join([str(x) for x in data]))
         
         ## do read_data() four times (get 4 packets)
         async def write_data():
@@ -101,9 +126,6 @@ class FIFOTestInternalApplet(GlasgowApplet, name="fifo-test-internal"):
 
         for n in range(2000):
             await write_data()
-        await read_data()
-        await read_data()
-        await read_data()
 
 
     @classmethod
