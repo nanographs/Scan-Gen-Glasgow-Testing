@@ -17,6 +17,8 @@ class RampGenerator(Elaboratable):
         its value otherwise.
     ovf : Signal, out
         ``ovf`` is asserted when the counter reaches its limit.
+    rst: Signal, in
+        Count is reset when rst is asserted
     """
     def __init__(self, limit: int):
         ## Number of unique steps to count up to
@@ -25,6 +27,7 @@ class RampGenerator(Elaboratable):
         # Ports
         self.en  = Signal()
         self.ovf = Signal()
+        self.rst = Signal()
 
         # State
         self.count = Signal(limit.bit_length())
@@ -32,17 +35,21 @@ class RampGenerator(Elaboratable):
 
     def elaborate(self, platform):
         m = Module()
-        ## evaluate whether counter is at its limit
-        m.d.comb += self.ovf.eq(self.count == self.limit-1)
+        with m.If(self.rst):
+            m.d.sync += self.count.eq(0)
+        
+        with m.Else():
+            ## evaluate whether counter is at its limit
+            m.d.comb += self.ovf.eq(self.count == self.limit-1)
 
-        ## incrementing the counter
-        with m.If(self.en):
-            with m.If(self.ovf):
-                ## if the counter is at overflow, set it to 0
-                m.d.sync += self.count.eq(0)
-            with m.Else():
-                ## else, increment the counter by 1
-                m.d.sync += self.count.eq(self.count + 1)
+            ## incrementing the counter
+            with m.If(self.en):
+                with m.If(self.ovf):
+                    ## if the counter is at overflow, set it to 0
+                    m.d.sync += self.count.eq(0)
+                with m.Else():
+                    ## else, increment the counter by 1
+                    m.d.sync += self.count.eq(self.count + 1)
 
         return m
     def ports(self):
