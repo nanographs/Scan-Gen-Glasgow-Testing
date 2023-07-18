@@ -40,7 +40,9 @@ class ScanGenerator(Elaboratable):
         self.x_data.eq(x_ramp.count*pow(2,14-self.bits)), 
         self.y_data.eq(y_ramp.count*pow(2,14-self.bits)), 
         self.line_sync.eq(x_ramp.ovf),
-        self.frame_sync.eq(y_ramp.ovf)
+        self.frame_sync.eq(y_ramp.ovf),
+        x_ramp.limit.eq(self.width.bit_length()),
+        y_ramp.limit.eq(self.width.bit_length())
         ]
 
         with m.If(self.en):

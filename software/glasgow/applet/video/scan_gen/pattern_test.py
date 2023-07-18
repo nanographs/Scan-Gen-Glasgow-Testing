@@ -65,26 +65,18 @@ def read_rows(path):
 
     return rows
 
-def repack_sub_pixels(rows):
-    print("Repacking pixels...")
-    sub_pixels = []
-    for row in rows:
-        for sub_pixel in row:
-            sub_pixels.append(sub_pixel)
 
-    diff = len(sub_pixels) - 1920 * 1080 #* 3
-    print("Packed", len(sub_pixels), "sub-pixels.")
-    if diff != 0:
-        print("Error! Number of sub-pixels packed does not match 1920*1080: (" + str(len(sub_pixels)) + " - 1920 * 1080 * 3 = " + str(diff) +").")
-
-    return sub_pixels
 
 rows = read_rows(file_name)
-#sub_pixels = repack_sub_pixels(rows)
+
 rows = np.array(rows)
-print(rows.shape)
-plt.imshow(rows)
-plt.show()
+
+bitstream = str(list(np.ravel(rows)))
+with open("patternbytes.txt","w") as file:
+    file.write(bitstream)
+# print(rows.shape)
+# plt.imshow(rows)
+# plt.show()
 
 # This list is raw sub-pixel values. A red image is for example (255, 0, 0, 255, 0, 0, ...).
 
