@@ -7,9 +7,11 @@ import unittest
 
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.ramps import RampGenerator
+    from ..scan_gen_components.dwell_ctr import DwellCtr
     from ..scan_gen_components.min_dwell_ctr import MinDwellCtr
     from ..scan_gen_components.xy_ramp_gen import ScanGenerator
 else: ## running as script (simulation)
+    from dwell_ctr import DwellCtr
     from min_dwell_ctr import MinDwellCtr
     from xy_ramp_gen import ScanGenerator
     from ramps import RampGenerator
@@ -21,17 +23,22 @@ BUS_FIFO_1 = 0x04
 BUS_FIFO_2 = 0x05
 FIFO_WAIT = 0x06
 A_RELEASE = 0x07
+OUT_FIFO = 0x08
 
 
 
 class ScanIOBus(Elaboratable):
-    def __init__(self, resolution_bits, dwell_time):
+    def __init__(self, resolution_bits, dwell_time_user):
         self.resolution_bits = resolution_bits
-        self.dwell_time = dwell_time
+        self.dwell_time_user = dwell_time_user
+        self.dwell_time = Signal(8)
+        self.out_fifo = Signal(8)
 
         self.bus_state = Signal(8)
         self.x_data = Signal(14)
         self.y_data = Signal(14)
+
+
 
         self.x_latch = Signal()
         self.x_enable = Signal()
@@ -45,19 +52,22 @@ class ScanIOBus(Elaboratable):
         self.line_sync = Signal() 
         self.frame_sync = Signal()
 
-        self.fifo_ready = Signal()
+        self.in_fifo_ready = Signal()
+        self.out_fifo_ready = Signal()
 
         self.count_one = Signal()
         self.count_six = Signal()
 
         self.dwell_ctr_ovf = Signal()
 
+        self.dwell_ctr_limit = Signal(8)
+
     def elaborate(self, platform):
         m = Module()
 
         m.submodules.min_dwell_ctr = min_dwell_ctr = MinDwellCtr()
-        m.submodules.dwell_ctr = dwell_ctr = RampGenerator(self.dwell_time)
-        m.d.comb += self.dwell_ctr_ovf.eq(dwell_ctr.ovf)
+        m.submodules.dwell_ctr = dwell_ctr = DwellCtr()
+
         
 
         m.submodules.scan_gen = scan_gen = ScanGenerator(self.resolution_bits) 
@@ -68,15 +78,15 @@ class ScanIOBus(Elaboratable):
             self.y_data.eq(scan_gen.y_data),
             self.line_sync.eq(scan_gen.line_sync),
             self.frame_sync.eq(scan_gen.frame_sync),
-
             self.x_enable.eq(0), ## default state for X enable
             self.y_enable.eq(0),
-            self.a_enable.eq(1),
+            self.a_enable.eq(1)
         ]
 
         m.d.sync += [
             self.count_one.eq(min_dwell_ctr.count == 1),
             self.count_six.eq(min_dwell_ctr.count > 5),
+            
         ]
 
         with m.If(self.count_six):
@@ -91,14 +101,33 @@ class ScanIOBus(Elaboratable):
             ]
 
 
+
+
+        with m.If(dwell_ctr.count == self.out_fifo):
+            m.d.comb += [
+                self.dwell_ctr_ovf.eq(1),
+            ]
+
+
+
+
         with m.FSM() as fsm:
+            with m.State("Wait_For_First_USB_Data"):
+                with m.If(self.out_fifo_ready):
+                    m.next = "WAIT"
+
             with m.State("WAIT"):
                 with m.If(self.count_one):
-                    with m.If(dwell_ctr.ovf):
+                    with m.If(self.dwell_ctr_ovf):
                         m.d.comb += [
-                        dwell_ctr.en.eq(1),
-                        scan_gen.en.eq(1)
+                            self.bus_state.eq(OUT_FIFO),
+                            dwell_ctr.rst.eq(1),
+                            dwell_ctr.en.eq(1),
+                            scan_gen.en.eq(1)
                         ]
+
+
+
                     with m.Else():
                         m.d.comb += dwell_ctr.en.eq(1)
                     m.next = "X WRITE"
@@ -152,30 +181,16 @@ class ScanIOBus(Elaboratable):
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
                 m.d.comb += self.bus_state.eq(A_RELEASE)
-                with m.If(self.fifo_ready):
+                with m.If(self.in_fifo_ready):
                     
                         m.next = "FIFO_1"
 
-            # with m.State("FIFO_wait_1"):
-            #     m.d.comb += self.bus_state.eq(FIFO_WAIT)
-
-            #     with m.If(self.fifo_ready):
-            #         m.next = "FIFO_1"
-            #     with m.Else():
-            #         m.next = "FIFO_wait_1"
 
             with m.State("FIFO_1"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                with m.If(self.fifo_ready):
+                with m.If(self.in_fifo_ready):
                     m.next = "FIFO_2"
 
-            # with m.State("FIFO_wait_2"):
-            #     m.d.comb += self.bus_state.eq(FIFO_WAIT)
-
-            #     with m.If(self.fifo_ready):
-            #         m.next = "FIFO_2"
-            #     with m.Else():
-            #         m.next = "FIFO_wait_2"
                     
             with m.State("FIFO_2"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_2)
@@ -190,9 +205,11 @@ class ScanIOBus(Elaboratable):
 # --- TEST ---
 
 def run_sim():
-    dut = ScanIOBus(4,3) # 16 x 16
+    dut = ScanIOBus(4,8) # 16 x 16
     def bench():
-        yield dut.fifo_ready.eq(1)
+        yield dut.in_fifo_ready.eq(1)
+        yield dut.out_fifo_ready.eq(1)
+        yield dut.out_fifo.eq(3)
         for _ in range(4096):
             yield
         yield
@@ -207,7 +224,8 @@ def run_sim():
 def test_case():
     dut = ScanIOBus(4) # 16 x 16
     def bench():
-        yield dut.fifo_ready.eq(1)
+        yield dut.in_fifo_ready.eq(1)
+        
 
 
     sim = Simulator(dut)
