@@ -239,14 +239,17 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                             self.in_fifo.din.eq(0),
                             self.in_fifo.w_en.eq(1),
                         ]
-        if self.mode == "pattern":
+        
             with m.If(scan_bus.bus_state == OUT_FIFO):
-                with m.If(self.out_fifo.r_rdy):
-                    m.d.sync += [
-                        #scan_bus.out_fifo.eq(self.out_fifo.r_data),
-                        scan_bus.out_fifo.eq(self.out_fifo.r_data),
-                        self.out_fifo.r_en.eq(1),
-                    ]
+                if self.mode == "pattern":
+                    with m.If(self.out_fifo.r_rdy):
+                        m.d.sync += [
+                            #scan_bus.out_fifo.eq(self.out_fifo.r_data),
+                            scan_bus.out_fifo.eq(self.out_fifo.r_data),
+                            self.out_fifo.r_en.eq(1),
+                        ]
+                if self.mode == "image":
+                    m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
 
 
 
