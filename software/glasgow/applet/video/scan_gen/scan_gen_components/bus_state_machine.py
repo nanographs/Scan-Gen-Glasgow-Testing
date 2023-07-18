@@ -28,9 +28,11 @@ OUT_FIFO = 0x08
 
 
 class ScanIOBus(Elaboratable):
-    def __init__(self, resolution_bits, dwell_time_user):
+    def __init__(self, resolution_bits, dwell_time_user, mode):
         self.resolution_bits = resolution_bits
         self.dwell_time_user = dwell_time_user
+        self.mode = mode #image or pattern
+
         self.dwell_time = Signal(8)
         self.out_fifo = Signal(8)
 
@@ -105,14 +107,24 @@ class ScanIOBus(Elaboratable):
         with m.If(dwell_ctr.count >= self.out_fifo):
             m.d.sync += self.dwell_ctr_ovf.eq(1)
         
+
+        if self.mode == "pattern":
+            m.d.comb += [scan_gen.rst.eq(0)]
+            with m.If(self.out_fifo == 0):
+                m.d.comb += [scan_gen.rst.eq(1)]
+
+            m.d.comb += [scan_gen.x_rst.eq(0)]
+            with m.If(self.out_fifo == 1):
+                m.d.comb += [scan_gen.x_rst.eq(1)]
     
         
 
         with m.FSM() as fsm:
-            with m.State("Wait_For_First_USB_Data"):
-                with m.If(self.out_fifo_ready):
-                    #m.d.comb += self.bus_state.eq(OUT_FIFO)
-                    m.next = "WAIT"
+            if self.mode == "pattern":
+                with m.State("Wait_For_First_USB_Data"):
+                    with m.If(self.out_fifo_ready):
+                        m.d.comb += self.bus_state.eq(OUT_FIFO)
+                        m.next = "WAIT"
 
             with m.State("WAIT"):
                 with m.If(self.count_one):
@@ -177,14 +189,20 @@ class ScanIOBus(Elaboratable):
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
                 m.d.comb += self.bus_state.eq(A_RELEASE)
-                #with m.If(self.in_fifo_ready):
-                m.next = "FIFO_1"
+                if self.mode == "image":
+                    with m.If(self.in_fifo_ready):
+                        m.next = "FIFO_1"
+                if self.mode == "pattern":
+                    m.next = "FIFO_1"
 
 
             with m.State("FIFO_1"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                #with m.If(self.in_fifo_ready):
-                m.next = "FIFO_2"
+                if self.mode == "image":
+                    with m.If(self.in_fifo_ready):
+                        m.next = "FIFO_2"
+                if self.mode == "pattern":
+                    m.next = "FIFO_2"
 
                     
             with m.State("FIFO_2"):
@@ -200,7 +218,7 @@ class ScanIOBus(Elaboratable):
 # --- TEST ---
 
 def run_sim():
-    dut = ScanIOBus(4,8) # 16 x 16
+    dut = ScanIOBus(4,8,mode="pattern") # 16 x 16
     def bench():
         yield dut.in_fifo_ready.eq(1)
         yield dut.out_fifo_ready.eq(1)

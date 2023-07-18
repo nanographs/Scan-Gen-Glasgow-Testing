@@ -1,6 +1,6 @@
 #pattern_file = open("software/glasgow/applet/video/scan_gen/1-3ML.bmp","rb")
 import struct
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 
 file_name = "software/glasgow/applet/video/scan_gen/1-3ML.bmp"
@@ -81,5 +81,12 @@ with open("patternbytes.txt","w") as file:
 # This list is raw sub-pixel values. A red image is for example (255, 0, 0, 255, 0, 0, ...).
 
 #print(sub_pixels)
+
+pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/Nanographs Pattern Test Logo and Gradients.bmp'))
+pattern_array = np.array(pattern_img)
+pattern_array[0] = [1]*pattern_array.shape[0]
+pattern_array[0][0] = 0
+pattern_stream = np.ravel(pattern_array)
+print(pattern_stream)
 
 
