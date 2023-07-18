@@ -101,19 +101,17 @@ class ScanIOBus(Elaboratable):
             ]
 
 
-
-
-        with m.If(dwell_ctr.count == self.out_fifo):
-            m.d.comb += [
-                self.dwell_ctr_ovf.eq(1),
-            ]
-
-
-
+        m.d.sync += self.dwell_ctr_ovf.eq(0)
+        with m.If(dwell_ctr.count >= self.out_fifo):
+            m.d.sync += self.dwell_ctr_ovf.eq(1)
+        
+    
+        
 
         with m.FSM() as fsm:
             with m.State("Wait_For_First_USB_Data"):
                 with m.If(self.out_fifo_ready):
+                    #m.d.comb += self.bus_state.eq(OUT_FIFO)
                     m.next = "WAIT"
 
             with m.State("WAIT"):
@@ -122,11 +120,9 @@ class ScanIOBus(Elaboratable):
                         m.d.comb += [
                             self.bus_state.eq(OUT_FIFO),
                             dwell_ctr.rst.eq(1),
-                            dwell_ctr.en.eq(1),
                             scan_gen.en.eq(1)
                         ]
-
-
+                        
 
                     with m.Else():
                         m.d.comb += dwell_ctr.en.eq(1)
@@ -181,15 +177,14 @@ class ScanIOBus(Elaboratable):
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
                 m.d.comb += self.bus_state.eq(A_RELEASE)
-                with m.If(self.in_fifo_ready):
-                    
-                        m.next = "FIFO_1"
+                #with m.If(self.in_fifo_ready):
+                m.next = "FIFO_1"
 
 
             with m.State("FIFO_1"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                with m.If(self.in_fifo_ready):
-                    m.next = "FIFO_2"
+                #with m.If(self.in_fifo_ready):
+                m.next = "FIFO_2"
 
                     
             with m.State("FIFO_2"):
