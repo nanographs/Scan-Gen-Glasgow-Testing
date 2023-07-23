@@ -64,7 +64,7 @@ class AnalyzerInterface:
         return self.decoder.flush()
 
 
-class AnalyzerApplet(GlasgowApplet, name="analyzer"):
+class AnalyzerApplet(GlasgowApplet):
     logger = logging.getLogger(__name__)
     help = "capture logic waveforms"
     description = """
