@@ -1,3 +1,4 @@
+*.vcd
 /venv/
 
 *.gtkw
