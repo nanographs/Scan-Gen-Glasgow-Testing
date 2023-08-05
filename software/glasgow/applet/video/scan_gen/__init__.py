@@ -159,7 +159,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                             self.datain[6].eq(scan_bus.x_data[12]),
                             self.datain[7].eq(scan_bus.x_data[13]),
                         ]
-                    if self.mode == "pattern":
+                    if self.mode == "pattern" or self.mode == "both":
                         ## LOOPBACK PATTERN
                         m.d.sync += [
                             self.datain[0].eq(scan_bus.out_fifo[7]),
@@ -241,14 +241,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         ]
         
             with m.If(scan_bus.bus_state == OUT_FIFO):
-                if self.mode == "pattern":
+                if self.mode == "pattern" or self.mode == "both":
                     with m.If(self.out_fifo.r_rdy):
                         m.d.sync += [
                             #scan_bus.out_fifo.eq(self.out_fifo.r_data),
                             scan_bus.out_fifo.eq(self.out_fifo.r_data),
                             self.out_fifo.r_en.eq(1),
                         ]
-                if self.mode == "image":
+                if self.mode == "image" or self.mode == "both":
                     m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
 
 
@@ -438,7 +438,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         pattern_stream = np.ravel(pattern_array)
 
         while True: 
-            if args.mode == "pattern":
+            if args.mode == "pattern" or args.mode == "both":
                 for i in range(0,len(pattern_stream),512):
                     pattern_slice = pattern_stream[i:i+512]
                     print("writing")
@@ -446,7 +446,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     await iface.flush()
                     print("done")
                 print("pattern done")
-            if args.mode == "image":
+            if args.mode == "image" or args.mode == "both":
                 print("reading")
                 raw_data = await iface.read()
                 print("start thread")
