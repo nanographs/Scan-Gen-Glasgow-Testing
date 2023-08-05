@@ -62,8 +62,6 @@ class ScanIOBus(Elaboratable):
 
         self.dwell_ctr_ovf = Signal()
 
-        self.dwell_ctr_limit = Signal(8)
-
     def elaborate(self, platform):
         m = Module()
 
@@ -104,11 +102,15 @@ class ScanIOBus(Elaboratable):
 
 
         m.d.sync += self.dwell_ctr_ovf.eq(0)
-        with m.If(dwell_ctr.count >= self.out_fifo):
-            m.d.sync += self.dwell_ctr_ovf.eq(1)
+        if self.mode == "image":
+            with m.If(dwell_ctr.count >= self.dwell_time_user):
+                m.d.sync += self.dwell_ctr_ovf.eq(1)
         
-
+        
         if self.mode == "pattern":
+            with m.If(dwell_ctr.count >= self.out_fifo):
+                m.d.sync += self.dwell_ctr_ovf.eq(1)
+
             m.d.comb += [scan_gen.rst.eq(0)]
             with m.If(self.out_fifo == 0):
                 m.d.comb += [scan_gen.rst.eq(1)]

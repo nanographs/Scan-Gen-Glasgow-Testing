@@ -16,3 +16,4 @@ scan_sim_bus.vcd
 .gitignore
 array_output.txt
 newlogs.txt
+software/glasgow/applet/video/scan_gen/tanishq 02.bmp

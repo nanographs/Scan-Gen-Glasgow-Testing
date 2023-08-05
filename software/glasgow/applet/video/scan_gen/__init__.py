@@ -423,10 +423,18 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
       
        
 
-        pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/Nanographs Pattern Test Logo and Gradients.bmp'))
-        pattern_array = np.asarray(pattern_img)
-        # pattern_array[0] = [1]*pattern_array.shape[0]
-        # pattern_array[0][0] = 0
+        #pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/Nanographs Pattern Test Logo and Gradients.bmp'))
+        pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/test pattern.bmp'))
+        pattern_array = np.array(pattern_img)
+        height = pattern_array.shape[0]
+        for i in range(height):
+            pattern_array[i][0] = 1
+            for j in range(1,height):
+                pattern_array[i][j] = 255 - pattern_array[i][j]
+                if pattern_array[i][j] == 11: ## happens to be the original background value
+                    pattern_array[i][j] = 2 ## background non-pattern value
+        pattern_array[0][0] = 0
+        print(pattern_array[255])
         pattern_stream = np.ravel(pattern_array)
 
         while True: 
