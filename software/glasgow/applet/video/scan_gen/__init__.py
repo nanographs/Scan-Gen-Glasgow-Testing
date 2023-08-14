@@ -416,14 +416,15 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             # print("-----------")
             # print("frame", current.n)
             data = raw_data.tolist()
-            current.packet_to_txt_file(data)
+            # current.packet_to_txt_file(data)
+            # current.packet_to_waveform(data)
             d = np.array(data)
-            print(d)
-            print(buf)
+            # print(d)
+            # print(buf)
             zero_index = np.nonzero(d < 1)[0]
-            print("buffer length:", len(buf))
-            print("last pixel:",current.last_pixel)
-            print("d length:", len(d))
+            # print("buffer length:", len(buf))
+            # print("last pixel:",current.last_pixel)
+            # print("d length:", len(d))
             # print("d:",d)
             
             if len(zero_index) > 0: #if a zero was found
@@ -432,16 +433,14 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 zero_index = int(zero_index)
 
                 buf[:d[zero_index+1:].size] = d[zero_index+1:]
-                print(buf[:d[zero_index+1:].size])
+                # print(buf[:d[zero_index+1:].size])
                 # print(d[:zero_index+1].size)
                 buf[dimension * dimension - zero_index:] = d[:zero_index]
-                print(buf[dimension * dimension - zero_index:])
+                # print(buf[dimension * dimension - zero_index:])
                 current.last_pixel = d[zero_index+1:].size
                 
 
             else: 
-                if current.last_pixel == 262144:
-                    current.last_pixel = 0
                 # if len(buf[current.last_pixel:current.last_pixel+len(d)]) < len(d):
                 #     print("data too long to fit in end of frame, but no zero")
                 #     print(d[:dimension])
@@ -470,19 +469,23 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
         #pattern_stream.tofile("patternbytes_v3.txt", sep = ", ")
 
-        for n in range(256):
-            print("writing")
-            #await iface.write([n]*16384)
-            pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-            #pattern_slice = ([3]*256 + [254]*256)*32
-            current.packet_to_txt_file(pattern_slice, "o")
-            await iface.write(pattern_slice)
-            #await iface.flush()
-            print("done")
-            print("reading")
-            raw_data = await iface.read()
-            print("start thread")
-            threading.Thread(target=imgout(raw_data)).start()
+        while True:
+            for n in range(256):
+                current.n += 1
+                # print("writing")
+                #await iface.write([n]*16384)
+                pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+                #pattern_slice = ([3]*256 + [254]*256)*32
+                # current.packet_to_txt_file(pattern_slice, "o")
+                # current.packet_to_waveform(pattern_slice, "o")
+                await iface.write(pattern_slice)
+                #await iface.flush()
+                # print("done")
+                #print("reading", current.n)
+                raw_data = await iface.read(16384)
+                # print("start thread")
+                threading.Thread(target=imgout(raw_data)).start()
+            print("pattern complete", current.n)
 
 
         # while True: 
