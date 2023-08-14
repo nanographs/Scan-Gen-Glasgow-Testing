@@ -69,7 +69,7 @@ class ScanDataRun:
 
     def packet_to_txt_file(self,data,direction="i"):
         packet_length = len(data)
-        self.text_file.write("<=======================================================================================================================================>\n")
+        self.text_file.write("\n<=======================================================================================================================================>\n")
         if direction == "i":
             self.text_file.write(f'RECIEVED PACKET LENGTH: {packet_length}\n')
         elif direction == "o":

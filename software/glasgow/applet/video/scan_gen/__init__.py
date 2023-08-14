@@ -269,12 +269,13 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             with m.If(scan_bus.bus_state == OUT_FIFO):
                 if self.mode == "pattern":
                     #m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
+                    m.d.comb += [self.out_fifo.r_en.eq(1)]
                     with m.If(self.out_fifo.r_rdy):
                         m.d.sync += [
                             #self.out_fifo_f.eq(5),
                             self.out_fifo_f.eq(self.out_fifo.r_data),
                             scan_bus.out_fifo.eq(5),
-                            self.out_fifo.r_en.eq(1),
+                            
                         ]
                 if self.mode == "image":
                     m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
@@ -459,17 +460,21 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             pattern_array = np.array(pattern_img)
             pattern_array[0] = [2]*pattern_array.shape[0]
             pattern_array[0][0] = 2
+            for i in range(2048):
+                for j in range(2048):
+                    if pattern_array[i][j] < 2:
+                        pattern_array[i][j] = 2
             pattern_stream = np.ravel(pattern_array)
 
             #print(pattern_array)
 
         #pattern_stream.tofile("patternbytes_v3.txt", sep = ", ")
 
-        for n in range(64):
+        for n in range(256):
             print("writing")
             #await iface.write([n]*16384)
-            #pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-            pattern_slice = ([3]*256 + [254]*256)*32
+            pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+            #pattern_slice = ([3]*256 + [254]*256)*32
             current.packet_to_txt_file(pattern_slice, "o")
             await iface.write(pattern_slice)
             #await iface.flush()
