@@ -274,7 +274,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         m.d.sync += [
                             #self.out_fifo_f.eq(5),
                             self.out_fifo_f.eq(self.out_fifo.r_data),
-                            scan_bus.out_fifo.eq(5),
+                            #scan_bus.out_fifo.eq(5),
+                            scan_bus.out_fifo.eq(self.out_fifo.r_data),
                             
                         ]
                 if self.mode == "image":
@@ -441,7 +442,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 
 
             else: 
-                # if len(buf[current.last_pixel:current.last_pixel+len(d)]) < len(d):
+                if len(buf[current.last_pixel:current.last_pixel+len(d)]) < len(d):
+                    pass
                 #     print("data too long to fit in end of frame, but no zero")
                 #     print(d[:dimension])
                 buf[current.last_pixel:current.last_pixel + d.size] = d
@@ -463,7 +465,9 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 for j in range(2048):
                     if pattern_array[i][j] < 2:
                         pattern_array[i][j] = 2
-            pattern_stream = np.ravel(pattern_array)
+            pattern_stream_og = np.ravel(pattern_array)
+            offset_px = 32
+            pattern_stream = np.concatenate((pattern_stream_og[offset_px:],pattern_stream_og[0:offset_px]),axis=None)
 
             #print(pattern_array)
 
