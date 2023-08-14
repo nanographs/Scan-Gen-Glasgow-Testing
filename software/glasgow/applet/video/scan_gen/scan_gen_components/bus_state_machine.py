@@ -108,14 +108,14 @@ class ScanIOBus(Elaboratable):
             m.d.sync += self.dwell_ctr_ovf.eq(1)
         
 
-        if self.mode == "pattern":
-            m.d.comb += [scan_gen.rst.eq(0)]
-            with m.If(self.out_fifo == 0):
-                m.d.comb += [scan_gen.rst.eq(1)]
+        # if self.mode == "pattern":
+        #     m.d.comb += [scan_gen.rst.eq(0)]
+        #     with m.If(self.out_fifo == 0):
+        #         m.d.comb += [scan_gen.rst.eq(1)]
 
-            m.d.comb += [scan_gen.x_rst.eq(0)]
-            with m.If(self.out_fifo == 1):
-                m.d.comb += [scan_gen.x_rst.eq(1)]
+        #     m.d.comb += [scan_gen.x_rst.eq(0)]
+        #     with m.If(self.out_fifo == 1):
+        #         m.d.comb += [scan_gen.x_rst.eq(1)]
     
         
 
@@ -123,7 +123,7 @@ class ScanIOBus(Elaboratable):
             if self.mode == "pattern":
                 with m.State("Wait_For_First_USB_Data"):
                     with m.If(self.out_fifo_ready):
-                        m.d.comb += self.bus_state.eq(OUT_FIFO)
+                        m.d.comb += [self.bus_state.eq(OUT_FIFO)]
                         m.next = "WAIT"
 
             with m.State("WAIT"):
@@ -193,7 +193,8 @@ class ScanIOBus(Elaboratable):
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_1"
                 if self.mode == "pattern":
-                    m.next = "FIFO_1"
+                    with m.If(self.in_fifo_ready):
+                        m.next = "FIFO_1"
 
 
             with m.State("FIFO_1"):
@@ -202,7 +203,8 @@ class ScanIOBus(Elaboratable):
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_2"
                 if self.mode == "pattern":
-                    m.next = "FIFO_2"
+                    with m.If(self.in_fifo_ready):
+                        m.next = "FIFO_2"
 
                     
             with m.State("FIFO_2"):

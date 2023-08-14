@@ -67,10 +67,13 @@ class ScanDataRun:
                 else:
                     self.text_file.write(f'LINE OVERFLOW\n')
 
-    def packet_to_txt_file(self,data):
+    def packet_to_txt_file(self,data,direction="i"):
         packet_length = len(data)
         self.text_file.write("<=======================================================================================================================================>\n")
-        self.text_file.write(f'PACKET LENGTH: {packet_length}\n')
+        if direction == "i":
+            self.text_file.write(f'RECIEVED PACKET LENGTH: {packet_length}\n')
+        elif direction == "o":
+            self.text_file.write(f'SENT PACKET LENGTH: {packet_length}\n')
         self.text_file.write(", ".join([str(x) for x in data]))
 
     ### Methods for one complete frame
