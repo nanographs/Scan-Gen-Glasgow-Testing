@@ -172,35 +172,35 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                             self.datain[6].eq(scan_bus.x_data[12]),
                             self.datain[7].eq(scan_bus.x_data[13]),
                         ]
-                    if self.mode == "pattern":
-                        m.d.sync += [
-                            # self.datain[0].eq(scan_bus.x_data[6]),
-                            # self.datain[1].eq(scan_bus.x_data[7]),
-                            # self.datain[2].eq(scan_bus.x_data[8]),
-                            # self.datain[3].eq(scan_bus.x_data[9]),
-                            # self.datain[4].eq(scan_bus.x_data[10]),
-                            # self.datain[5].eq(scan_bus.x_data[11]),
-                            # self.datain[6].eq(scan_bus.x_data[12]),
-                            # self.datain[7].eq(scan_bus.x_data[13]),
+            if self.mode == "pattern":
+                m.d.sync += [
+                    # self.datain[0].eq(scan_bus.x_data[6]),
+                    # self.datain[1].eq(scan_bus.x_data[7]),
+                    # self.datain[2].eq(scan_bus.x_data[8]),
+                    # self.datain[3].eq(scan_bus.x_data[9]),
+                    # self.datain[4].eq(scan_bus.x_data[10]),
+                    # self.datain[5].eq(scan_bus.x_data[11]),
+                    # self.datain[6].eq(scan_bus.x_data[12]),
+                    # self.datain[7].eq(scan_bus.x_data[13]),
 
-                            # self.datain[0].eq(scan_bus.out_fifo[0]),
-                            # self.datain[1].eq(scan_bus.out_fifo[1]),
-                            # self.datain[2].eq(scan_bus.out_fifo[2]),
-                            # self.datain[3].eq(scan_bus.out_fifo[3]),
-                            # self.datain[4].eq(scan_bus.out_fifo[4]),
-                            # self.datain[5].eq(scan_bus.out_fifo[5]),
-                            # self.datain[6].eq(scan_bus.out_fifo[6]),
-                            # self.datain[7].eq(scan_bus.out_fifo[7]),
+                    # self.datain[0].eq(scan_bus.out_fifo[0]),
+                    # self.datain[1].eq(scan_bus.out_fifo[1]),
+                    # self.datain[2].eq(scan_bus.out_fifo[2]),
+                    # self.datain[3].eq(scan_bus.out_fifo[3]),
+                    # self.datain[4].eq(scan_bus.out_fifo[4]),
+                    # self.datain[5].eq(scan_bus.out_fifo[5]),
+                    # self.datain[6].eq(scan_bus.out_fifo[6]),
+                    # self.datain[7].eq(scan_bus.out_fifo[7]),
 
-                            self.datain[0].eq(self.out_fifo_f[0]),
-                            self.datain[1].eq(self.out_fifo_f[1]),
-                            self.datain[2].eq(self.out_fifo_f[2]),
-                            self.datain[3].eq(self.out_fifo_f[3]),
-                            self.datain[4].eq(self.out_fifo_f[4]),
-                            self.datain[5].eq(self.out_fifo_f[5]),
-                            self.datain[6].eq(self.out_fifo_f[6]),
-                            self.datain[7].eq(self.out_fifo_f[7]),
-                        ]
+                    self.datain[0].eq(self.out_fifo_f[0]),
+                    self.datain[1].eq(self.out_fifo_f[1]),
+                    self.datain[2].eq(self.out_fifo_f[2]),
+                    self.datain[3].eq(self.out_fifo_f[3]),
+                    self.datain[4].eq(self.out_fifo_f[4]),
+                    self.datain[5].eq(self.out_fifo_f[5]),
+                    self.datain[6].eq(self.out_fifo_f[6]),
+                    self.datain[7].eq(self.out_fifo_f[7]),
+                ]
 
 
                 ## Fixed Value
