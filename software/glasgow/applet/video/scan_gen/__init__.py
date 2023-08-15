@@ -88,7 +88,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
         # m.d.sync += [scan_bus.out_fifo.eq(20)]
         if self.loopback:
-            m.d.sync += [scan_bus.out_fifo.eq(3)]
+            m.d.sync += [scan_bus.out_fifo.eq(5)]
         else:
             m.d.sync += [scan_bus.out_fifo.eq(self.out_fifo.r_data)]
         # m.d.sync += [self.datain.eq(2)]
@@ -421,15 +421,15 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             # print("-----------")
             # print("frame", current.n)
             data = raw_data.tolist()
-            # current.packet_to_txt_file(data)
-            # current.packet_to_waveform(data)
+            current.packet_to_txt_file(data)
+            current.packet_to_waveform(data)
             d = np.array(data)
             # print(d)
             # print(buf)
             zero_index = np.nonzero(d < 1)[0]
             # print("buffer length:", len(buf))
             # print("last pixel:",current.last_pixel)
-            # print("d length:", len(d))
+            print("d length:", len(d))
             # print("d:",d)
             
             if len(zero_index) > 0: #if a zero was found
@@ -476,17 +476,23 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             #print(pattern_array)
 
         #pattern_stream.tofile("patternbytes_v3.txt", sep = ", ")
+        
+        def patternin(pattern_slice):
+            current.n += 1
+            current.packet_to_txt_file(pattern_slice, "o")
+            current.packet_to_waveform(pattern_slice, "o")
+
 
         while True:
             for n in range(256):
-                current.n += 1
+                #time.sleep(.05)
+                
                 # print("writing")
                 #await iface.write([n]*16384)
                 pattern_slice = pattern_stream[n*16384:(n+1)*16384]
                 #pattern_slice = ([3]*256 + [254]*256)*32
-                # current.packet_to_txt_file(pattern_slice, "o")
-                # current.packet_to_waveform(pattern_slice, "o")
                 await iface.write(pattern_slice)
+                threading.Thread(target=patternin(pattern_slice)).start()
                 #await iface.flush()
                 # print("done")
                 #print("reading", current.n)

@@ -184,8 +184,11 @@ class ScanIOBus(Elaboratable):
             with m.State("A READ"):
                 m.d.comb += self.a_enable.eq(0)
                 m.d.comb += self.bus_state.eq(BUS_READ)
-                
-                m.next = "A RELEASE"
+                if self.mode == "image":
+                    m.next = "A RELEASE"
+                if self.mode == "pattern":
+                    with m.If(self.out_fifo_ready):
+                        m.next = "A RELEASE"
 
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
@@ -210,7 +213,13 @@ class ScanIOBus(Elaboratable):
                     
             with m.State("FIFO_2"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_2)
-                m.next = "WAIT"
+                if self.mode == "image":
+                    m.next = "WAIT"
+                if self.mode == "pattern":
+                    # with m.If(self.dwell_ctr_ovf):
+                    #     m.next = "Wait_For_First_USB_Data"
+                    # with m.Else():
+                    m.next = "WAIT"
 
         return m
     def ports(self):
