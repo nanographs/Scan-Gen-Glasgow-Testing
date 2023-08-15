@@ -103,9 +103,10 @@ class ScanIOBus(Elaboratable):
             ]
 
 
-        m.d.sync += self.dwell_ctr_ovf.eq(0)
+        m.d.comb += self.dwell_ctr_ovf.eq(0)
         with m.If(dwell_ctr.count >= self.out_fifo):
-            m.d.sync += self.dwell_ctr_ovf.eq(1)
+        #with m.If(dwell_ctr.count >= 1):
+            m.d.comb += self.dwell_ctr_ovf.eq(1)
         
 
         # if self.mode == "pattern":
