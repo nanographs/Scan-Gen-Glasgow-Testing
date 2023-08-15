@@ -86,7 +86,11 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             
         ]
 
-        m.d.sync += [scan_bus.out_fifo.eq(3)]
+        # m.d.sync += [scan_bus.out_fifo.eq(20)]
+        if self.loopback:
+            m.d.sync += [scan_bus.out_fifo.eq(3)]
+        else:
+            m.d.sync += [scan_bus.out_fifo.eq(self.out_fifo.r_data)]
         # m.d.sync += [self.datain.eq(2)]
 
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
@@ -274,8 +278,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         m.d.sync += [
                             #self.out_fifo_f.eq(5),
                             self.out_fifo_f.eq(self.out_fifo.r_data),
-                            #scan_bus.out_fifo.eq(5),
-                            scan_bus.out_fifo.eq(self.out_fifo.r_data),
+                            #scan_bus.out_fifo.eq(20),
+                            #scan_bus.out_fifo.eq(self.out_fifo.r_data),
                             
                         ]
                 if self.mode == "image":
@@ -466,7 +470,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                     if pattern_array[i][j] < 2:
                         pattern_array[i][j] = 2
             pattern_stream_og = np.ravel(pattern_array)
-            offset_px = 32
+            offset_px = 0
             pattern_stream = np.concatenate((pattern_stream_og[offset_px:],pattern_stream_og[0:offset_px]),axis=None)
 
             #print(pattern_array)
