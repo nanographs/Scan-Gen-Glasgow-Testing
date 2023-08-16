@@ -184,11 +184,7 @@ class ScanIOBus(Elaboratable):
             with m.State("A READ"):
                 m.d.comb += self.a_enable.eq(0)
                 m.d.comb += self.bus_state.eq(BUS_READ)
-                if self.mode == "image":
-                    m.next = "A RELEASE"
-                if self.mode == "pattern":
-                    with m.If(self.out_fifo_ready):
-                        m.next = "A RELEASE"
+                m.next = "A RELEASE"
 
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
@@ -197,8 +193,9 @@ class ScanIOBus(Elaboratable):
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_1"
                 if self.mode == "pattern":
-                    with m.If(self.in_fifo_ready):
+                    with m.If(self.in_fifo_ready & self.out_fifo_ready):
                         m.next = "FIFO_1"
+                        
 
 
             with m.State("FIFO_1"):
