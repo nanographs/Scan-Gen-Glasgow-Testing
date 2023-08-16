@@ -422,7 +422,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             # print("frame", current.n)
             data = raw_data.tolist()
             current.packet_to_txt_file(data)
-            current.packet_to_waveform(data)
+            #current.packet_to_waveform(data)
             d = np.array(data)
             # print(d)
             # print(buf)
@@ -458,33 +458,65 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         start_time = time.perf_counter()
         
         #while True:
-      
-       
-        if args.mode == "pattern":
-            pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/Nanographs Pattern Test Logo and Gradients.bmp'))
-            pattern_array = np.array(pattern_img)
-            pattern_array[0] = [2]*pattern_array.shape[0]
+
+        def bmp_to_bitstream(filename, boolean=False):
+            pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename))
+            pattern_array = np.array(pattern_img).astype(np.uint8)
+            height, width = pattern_array.shape
+
+            padding_tb = dimension - height
+            padding_lr = dimension - width
+            padding_top = round(padding_tb/2)
+            padding_bottom = padding_tb - padding_top
+            padding_left = round(padding_lr/2)
+            padding_right = padding_lr - padding_left
+            padding = ((padding_top, padding_bottom),(padding_left,padding_right))
+
+            pattern_array[0] = [2]*width
             pattern_array[0][0] = 2
-            for i in range(2048):
-                for j in range(2048):
-                    if pattern_array[i][j] < 2:
-                        pattern_array[i][j] = 2
+
+            pattern_array = np.pad(pattern_array,pad_width = padding, constant_values = 2)
+            
+            for i in range(dimension):
+                for j in range(dimension):
+                    if not boolean:
+                        if pattern_array[i][j] < 2:
+                            pattern_array[i][j] = 2
+                    if boolean:
+                        if pattern_array[i][j] == 1:
+                            pattern_array[i][j] = 2
+                        if pattern_array[i][j] == 0:
+                            pattern_array[i][j] = 254
+
+            print(pattern_array)
+            pattern_array.tofile("patternbytes_v4.txt", sep = ", ")
             pattern_stream_og = np.ravel(pattern_array)
             offset_px = 0
             pattern_stream = np.concatenate((pattern_stream_og[offset_px:],pattern_stream_og[0:offset_px]),axis=None)
+            return pattern_stream
+
+        
+        
+        if args.mode == "pattern":
+            #filename = "Nanographs Pattern Test Logo and Gradients.bmp"
+            filename = "tanishq 02.bmp"
+            pattern_stream = bmp_to_bitstream(filename, boolean=True)
+            
+
+
 
             #print(pattern_array)
 
-        #pattern_stream.tofile("patternbytes_v3.txt", sep = ", ")
+        
         
         def patternin(pattern_slice):
             current.n += 1
             current.packet_to_txt_file(pattern_slice, "o")
-            current.packet_to_waveform(pattern_slice, "o")
+            #current.packet_to_waveform(pattern_slice, "o")
 
 
         while True:
-            for n in range(256):
+            for n in range(int(dimension*dimension/16384)):
                 #time.sleep(.05)
                 
                 # print("writing")
