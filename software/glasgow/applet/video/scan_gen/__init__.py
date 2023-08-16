@@ -513,8 +513,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 # print("writing")
                 #await iface.write([n]*16384)
                 if n == dimension*dimension/16384:
-                    ## add a frame sync bit at the end of the pattern
-                    pattern_slice = pattern_stream[n*16384:(n+1)*16384] + [0]
+                    pattern_slice = pattern_stream[n*16384:(n+1)*16384]
                 else:
                     pattern_slice = pattern_stream[n*16384:(n+1)*16384]
                 #pattern_slice = ([3]*256 + [254]*256)*32
