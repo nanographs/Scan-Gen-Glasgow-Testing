@@ -71,9 +71,10 @@ rows = read_rows(file_name)
 
 rows = np.array(rows)
 
-bitstream = str(list(np.ravel(rows)))
-with open("patternbytes.txt","w") as file:
-    file.write(bitstream)
+# bitstream = str(list(np.ravel(rows)))
+# with open("patternbytes.txt","w") as file:
+#     file.write(bitstream)
+
 # print(rows.shape)
 # plt.imshow(rows)
 # plt.show()
