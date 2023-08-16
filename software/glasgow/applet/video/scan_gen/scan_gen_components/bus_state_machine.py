@@ -109,17 +109,16 @@ class ScanIOBus(Elaboratable):
             m.d.comb += self.dwell_ctr_ovf.eq(1)
         
 
-        if self.mode == "pattern":
-            m.d.comb += [scan_gen.rst.eq(0)]
-            with m.If(self.out_fifo == 0):
-                m.d.comb += [scan_gen.rst.eq(1),
-                scan_gen.en.eq(1),
-                ]
 
-        #     m.d.comb += [scan_gen.x_rst.eq(0)]
-        #     with m.If(self.out_fifo == 1):
-        #         m.d.comb += [scan_gen.x_rst.eq(1)]
-    
+        # m.d.comb += [scan_gen.rst.eq(0),
+        #     scan_gen.x_rst.eq(0)]
+
+        # with m.If(self.out_fifo == 0): ## frame sync
+        #     m.d.comb += [scan_gen.rst.eq(1)]
+
+        # with m.If(self.out_fifo == 1): ## line sync
+        #     m.d.comb += [scan_gen.x_rst.eq(1)]
+
         
 
         with m.FSM() as fsm:
@@ -137,7 +136,7 @@ class ScanIOBus(Elaboratable):
                             dwell_ctr.rst.eq(1),
                             scan_gen.en.eq(1)
                         ]
-                        
+
 
                     with m.Else():
                         m.d.comb += dwell_ctr.en.eq(1)
@@ -185,24 +184,24 @@ class ScanIOBus(Elaboratable):
 
             with m.State("A READ"):
                 m.d.comb += self.a_enable.eq(0)
-                m.d.comb += self.bus_state.eq(BUS_READ)
+                with m.If(self.out_fifo >= 2):
+                    m.d.comb += self.bus_state.eq(BUS_READ)
                 m.next = "A RELEASE"
 
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
-                m.d.comb += self.bus_state.eq(A_RELEASE)
+                with m.If(self.out_fifo >= 2):
+                    m.d.comb += self.bus_state.eq(A_RELEASE)
                 if self.mode == "image":
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_1"
                 if self.mode == "pattern":
-                    with m.If(self.in_fifo_ready):
-                    # with m.If(self.in_fifo_ready & self.out_fifo_ready):
+                    with m.If(self.in_fifo_ready & self.out_fifo_ready):
                         m.next = "FIFO_1"
                         
-
-
             with m.State("FIFO_1"):
-                m.d.comb += self.bus_state.eq(BUS_FIFO_1)
+                with m.If(self.out_fifo >= 2):
+                    m.d.comb += self.bus_state.eq(BUS_FIFO_1)
                 if self.mode == "image":
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_2"
