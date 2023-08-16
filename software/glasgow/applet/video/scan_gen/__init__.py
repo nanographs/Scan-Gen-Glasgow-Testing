@@ -366,35 +366,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 print(display)
 
 
-
-
-        # def image_array(data): ## this could be moved to output_formats
-        #     ## but leaving it here for now, for context
-        #     for index in range(0,len(data)):
-        #         pixel = data[index]
-        #         if pixel == 0: # frame sync
-        #             current.x = 0
-        #             current.y = 0
-        #             #print(f'frame {current.n}')
-        #             #print(current.frame_data)
-        #             current.n += 1 #count frames for unique file names
-        #             ## save frame as .tif
-        #             #imwrite(f'{current.save_dir}/frame {current.n}.tif', current.frame_data.astype(np.uint8), photometric='minisblack') 
-        #             ## display frame using matplotlib
-        #             #current.frame_display_mpl()
-        #         elif pixel == 1: #line sync
-        #             current.x = 0 ## reset x position to beginning of line
-        #             current.y += 1 ## move to next line
-        #         else:
-        #             ## if there are more than {dimension} data points in one line, ignore them
-        #             if (current.x < dimension) and (current.y < dimension):
-        #                 current.frame_data[current.y][current.x] = pixel
-        #                 #current.frame_data[current.y][current.x] = random.randint(2,255) #use randomly generated data instead
-        #                 current.x += 1 ## move to the next pixel in line
-
-
-
-
         async def get_limited_output():
             ## get approx the number of packets you need 
             # to contain {captures} images
@@ -557,36 +528,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 threading.Thread(target=imgout(raw_data)).start()
             print("pattern complete", current.n)
 
-
-        # while True: 
-        #     if args.mode == "pattern":
-                
-
-        #         print("reading")
-        #         raw_data = await iface.read()
-        #         print("start thread")
-        #         threading.Thread(target=imgout(raw_data)).start()
-
-        #         # for i in range(0,len(pattern_stream),512):
-        #         #     pattern_slice = pattern_stream[i:i+512]
-        #         #     print("writing")
-        #         #     await iface.write(pattern_slice)
-        #         #     await iface.flush()
-        #         #     print("done")
-        #         # print("pattern done")
-        #     if args.mode == "image":
-
-        #         print("reading")
-        #         raw_data = await iface.read()
-        #         print("start thread")
-        #         threading.Thread(target=imgout(raw_data)).start()
-                
-        
-
-
-
-
-        
 
 
 
