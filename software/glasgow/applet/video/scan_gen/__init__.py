@@ -88,7 +88,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
         # m.d.sync += [scan_bus.out_fifo.eq(20)]
         if self.loopback:
-            m.d.sync += [scan_bus.out_fifo.eq(5)]
+            m.d.sync += [scan_bus.out_fifo.eq(5)] ## don't actually use the dwell times
+            ## this way the pattern is returned faster for debugging
         else:
             m.d.sync += [scan_bus.out_fifo.eq(self.out_fifo.r_data)]
         # m.d.sync += [self.datain.eq(2)]
@@ -173,6 +174,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                             self.datain[7].eq(scan_bus.x_data[13]),
                         ]
             if self.mode == "pattern":
+                ## in pattern mode, currently, the transmitted data will always loop back
+                ## todo: a mode that returns live signal instead
                 m.d.sync += [
                     # self.datain[0].eq(scan_bus.x_data[6]),
                     # self.datain[1].eq(scan_bus.x_data[7]),
@@ -461,38 +464,55 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
         def bmp_to_bitstream(filename, boolean=False):
             pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename))
+            ## boolean images will have pixel values of True or False
+            ## this will convert that to 1 or 0
             pattern_array = np.array(pattern_img).astype(np.uint8)
+            
             height, width = pattern_array.shape
 
-            padding_tb = dimension - height
-            padding_lr = dimension - width
-            padding_top = round(padding_tb/2)
+            ## pad the array to fit the full frame resolution
+            padding_tb = dimension - height ## difference between height of frame and full resolution
+            padding_lr = dimension - width ## difference between width of frame and full resolution
+            #   dimension
+            # ───────┬──────┐
+            #        │      │
+            #        │ top  │
+            #    ┌───┴───┐  │
+            #  l │       │r │
+            # ◄──┤       ├──┤
+            #    │       │  │
+            #    └───┬───┘  │
+            #        │      │
+            #        ▼ btm  │
+            padding_top = round(padding_tb/2) 
             padding_bottom = padding_tb - padding_top
             padding_left = round(padding_lr/2)
             padding_right = padding_lr - padding_left
             padding = ((padding_top, padding_bottom),(padding_left,padding_right))
 
-            pattern_array[0] = [2]*width
-            pattern_array[0][0] = 2
-
             pattern_array = np.pad(pattern_array,pad_width = padding, constant_values = 2)
             
             for i in range(dimension):
                 for j in range(dimension):
-                    if not boolean:
+                    if not boolean: ## pixel values are from 0 to 255
                         if pattern_array[i][j] < 2:
                             pattern_array[i][j] = 2
-                    if boolean:
+                    if boolean: ## pixel values are 1 or 0 only
                         if pattern_array[i][j] == 1:
                             pattern_array[i][j] = 2
                         if pattern_array[i][j] == 0:
                             pattern_array[i][j] = 254
 
+            #pattern_array[dimension-1][dimension-1] = 0
             print(pattern_array)
             pattern_array.tofile("patternbytes_v4.txt", sep = ", ")
+
+            ## "cut the deck" - move some bits from the beginning of the stream to the end
             pattern_stream_og = np.ravel(pattern_array)
             offset_px = 0
             pattern_stream = np.concatenate((pattern_stream_og[offset_px:],pattern_stream_og[0:offset_px]),axis=None)
+
+            
             return pattern_stream
 
         
@@ -516,12 +536,16 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
 
         while True:
-            for n in range(int(dimension*dimension/16384)):
+            for n in range(int(dimension*dimension/16384)): #packets per frame
                 #time.sleep(.05)
                 
                 # print("writing")
                 #await iface.write([n]*16384)
-                pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+                if n == dimension*dimension/16384:
+                    ## add a frame sync bit at the end of the pattern
+                    pattern_slice = pattern_stream[n*16384:(n+1)*16384] + [0]
+                else:
+                    pattern_slice = pattern_stream[n*16384:(n+1)*16384]
                 #pattern_slice = ([3]*256 + [254]*256)*32
                 await iface.write(pattern_slice)
                 threading.Thread(target=patternin(pattern_slice)).start()

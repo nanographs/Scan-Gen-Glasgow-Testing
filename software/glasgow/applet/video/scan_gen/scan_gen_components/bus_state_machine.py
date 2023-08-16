@@ -109,10 +109,12 @@ class ScanIOBus(Elaboratable):
             m.d.comb += self.dwell_ctr_ovf.eq(1)
         
 
-        # if self.mode == "pattern":
-        #     m.d.comb += [scan_gen.rst.eq(0)]
-        #     with m.If(self.out_fifo == 0):
-        #         m.d.comb += [scan_gen.rst.eq(1)]
+        if self.mode == "pattern":
+            m.d.comb += [scan_gen.rst.eq(0)]
+            with m.If(self.out_fifo == 0):
+                m.d.comb += [scan_gen.rst.eq(1),
+                scan_gen.en.eq(1),
+                ]
 
         #     m.d.comb += [scan_gen.x_rst.eq(0)]
         #     with m.If(self.out_fifo == 1):
@@ -193,7 +195,8 @@ class ScanIOBus(Elaboratable):
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_1"
                 if self.mode == "pattern":
-                    with m.If(self.in_fifo_ready & self.out_fifo_ready):
+                    with m.If(self.in_fifo_ready):
+                    # with m.If(self.in_fifo_ready & self.out_fifo_ready):
                         m.next = "FIFO_1"
                         
 
