@@ -87,15 +87,17 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         ]
 
         # m.d.sync += [scan_bus.out_fifo.eq(20)]
-        if self.loopback:
-            m.d.sync += [scan_bus.out_fifo.eq(5)] ## don't actually use the dwell times
-            ## this way the pattern is returned faster for debugging
-        else:
-            m.d.sync += [scan_bus.out_fifo.eq(self.out_fifo.r_data)]
-        # m.d.sync += [self.datain.eq(2)]
+        if self.mode == "pattern":
+            if self.loopback:
+                m.d.sync += [scan_bus.out_fifo.eq(5)] ## don't actually use the dwell times
+                ## this way the pattern is returned faster for debugging
+            else:
+                m.d.sync += [scan_bus.out_fifo.eq(self.out_fifo.r_data)]
+            # m.d.sync += [self.datain.eq(2)]
+        if self.mode == "image":
+            m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
 
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
-            m.d.sync += [scan_bus.out_fifo.eq(6)]
             m.d.comb += [
                 self.pads.a_t.oe.eq(self.pads.p_t.i), 
                 self.pads.a_t.o.eq(scan_bus.x_data[0]), ## LSB
@@ -126,6 +128,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 self.pads.n_t.oe.eq(self.pads.p_t.i),
                 self.pads.n_t.o.eq(scan_bus.x_data[13]), ## MSB
             ]
+
+            
         
         with m.If(scan_bus.bus_state == BUS_WRITE_Y):
             m.d.comb += [
@@ -158,21 +162,57 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 self.pads.n_t.oe.eq(self.pads.p_t.i),
                 self.pads.n_t.o.eq(scan_bus.y_data[13]), ## MSB
             ]
+
+            
         
         with m.If(scan_bus.bus_state == BUS_READ):
-            if self.loopback:
-                    if self.mode == "image":
-                        m.d.sync += [
-                            ## LOOPBACK
-                            self.datain[0].eq(scan_bus.x_data[6]),
-                            self.datain[1].eq(scan_bus.x_data[7]),
-                            self.datain[2].eq(scan_bus.x_data[8]),
-                            self.datain[3].eq(scan_bus.x_data[9]),
-                            self.datain[4].eq(scan_bus.x_data[10]),
-                            self.datain[5].eq(scan_bus.x_data[11]),
-                            self.datain[6].eq(scan_bus.x_data[12]),
-                            self.datain[7].eq(scan_bus.x_data[13]),
+            if self.mode == "image":
+                if self.loopback:
+                    m.d.sync += [
+                        ## LOOPBACK
+                        self.datain[0].eq(scan_bus.x_data[6]),
+                        self.datain[1].eq(scan_bus.x_data[7]),
+                        self.datain[2].eq(scan_bus.x_data[8]),
+                        self.datain[3].eq(scan_bus.x_data[9]),
+                        self.datain[4].eq(scan_bus.x_data[10]),
+                        self.datain[5].eq(scan_bus.x_data[11]),
+                        self.datain[6].eq(scan_bus.x_data[12]),
+                        self.datain[7].eq(scan_bus.x_data[13]),
+
+                        # ## Fixed Value
+                        # self.datain[0].eq(1),
+                        # self.datain[1].eq(1),
+                        # self.datain[2].eq(1),
+                        # self.datain[3].eq(1),
+                        # self.datain[4].eq(1),
+                        # self.datain[5].eq(1),
+                        # self.datain[6].eq(1),
+                        # self.datain[7].eq(0),
+                    ]
+                    
+                else:
+                    m.d.sync += [
+                        # Actual input
+                        # self.datain[0].eq(self.pads.g_t.i), 
+                        # self.datain[1].eq(self.pads.h_t.i),
+                        # self.datain[2].eq(self.pads.i_t.i),
+                        # self.datain[3].eq(self.pads.j_t.i),
+                        # self.datain[4].eq(self.pads.k_t.i),
+                        # self.datain[5].eq(self.pads.l_t.i),
+                        # self.datain[6].eq(self.pads.m_t.i),
+                        # self.datain[7].eq(self.pads.n_t.i),## MSB
+                        self.datain[0].eq(1),
+                        self.datain[1].eq(1),
+                        self.datain[2].eq(1),
+                        self.datain[3].eq(1),
+                        self.datain[4].eq(1),
+                        self.datain[5].eq(1),
+                        self.datain[6].eq(1),
+                        self.datain[7].eq(0),
                         ]
+
+                
+
             if self.mode == "pattern":
                 ## in pattern mode, currently, the transmitted data will always loop back
                 ## todo: a mode that returns live signal instead
@@ -204,34 +244,11 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                     self.datain[6].eq(self.out_fifo_f[6]),
                     self.datain[7].eq(self.out_fifo_f[7]),
                 ]
+                
 
-
-                ## Fixed Value
-                # self.datain[0].eq(1),
-                # self.datain[1].eq(1),
-                # self.datain[2].eq(1),
-                # self.datain[3].eq(1),
-                # self.datain[4].eq(1),
-                # self.datain[5].eq(1),
-                # self.datain[6].eq(1),
-                # self.datain[7].eq(0),
-
-            else:
-                    m.d.sync += [
-                    # Actual input
-                    self.datain[0].eq(self.pads.g_t.i), 
-                    self.datain[1].eq(self.pads.h_t.i),
-                    self.datain[2].eq(self.pads.i_t.i),
-                    self.datain[3].eq(self.pads.j_t.i),
-                    self.datain[4].eq(self.pads.k_t.i),
-                    self.datain[5].eq(self.pads.l_t.i),
-                    self.datain[6].eq(self.pads.m_t.i),
-                    self.datain[7].eq(self.pads.n_t.i),## MSB
-                    ]
-
-                ### Only reading 8 bits right now
-                ### so just ignore the rest
-
+                
+            ### Only reading 8 bits right now
+            ### so just ignore the rest
             m.d.sync += [
                 self.datain[8].eq(0),
                 self.datain[9].eq(0),
@@ -274,7 +291,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         ]
         
             with m.If(scan_bus.bus_state == OUT_FIFO):
-                if self.mode == "pattern":
+                if self.mode == "pattern" or self.mode == "pattern_out":
                     #m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
                     m.d.comb += [self.out_fifo.r_en.eq(1)]
                     with m.If(self.out_fifo.r_rdy):
@@ -285,8 +302,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                             #scan_bus.out_fifo.eq(self.out_fifo.r_data),
                             
                         ]
-                if self.mode == "image":
-                    m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
+                
 
 
 
@@ -395,10 +411,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             # print("-----------")
             # print("frame", current.n)
             data = raw_data.tolist()
-            current.packet_to_txt_file(data)
+            #current.packet_to_txt_file(data)
             #current.packet_to_waveform(data)
             d = np.array(data)
-            # print(d)
+            print(d)
             # print(buf)
             zero_index = np.nonzero(d < 1)[0]
             # print("buffer length:", len(buf))
@@ -433,13 +449,19 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         #while True:
 
-        def bmp_to_bitstream(filename, boolean=False):
+        def bmp_to_bitstream(filename, boolean=False, invert_color=False):
             pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename))
+            print(pattern_img)
             ## boolean images will have pixel values of True or False
             ## this will convert that to 1 or 0
             pattern_array = np.array(pattern_img).astype(np.uint8)
             
-            height, width = pattern_array.shape
+            height, width = pattern_array.shape[0], pattern_array.shape[1]
+
+            if invert_color:
+                for i in range(height):
+                    for j in range(width):
+                        pattern_array[i][j] = 255 - pattern_array[i][j]
 
             ## pad the array to fit the full frame resolution
             padding_tb = dimension - height ## difference between height of frame and full resolution
@@ -462,6 +484,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             padding = ((padding_top, padding_bottom),(padding_left,padding_right))
 
             pattern_array = np.pad(pattern_array,pad_width = padding, constant_values = 2)
+            pattern_array = np.flip(pattern_array, axis=1)
             
             for i in range(dimension):
                 for j in range(dimension):
@@ -473,6 +496,8 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                             pattern_array[i][j] = 2
                         if pattern_array[i][j] == 0:
                             pattern_array[i][j] = 254
+
+            
 
             #pattern_array[dimension-1][dimension-1] = 0
             print(pattern_array)
@@ -488,10 +513,11 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
         
         
-        if args.mode == "pattern":
-            #filename = "Nanographs Pattern Test Logo and Gradients.bmp"
-            filename = "tanishq 02.bmp"
-            pattern_stream = bmp_to_bitstream(filename, boolean=True)
+        if args.mode == "pattern" or args.mode == "pattern_out":
+            #pattern_stream = bmp_to_bitstream("tanishq02.bmp", reverse=True)
+            #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", boolean=True)
+            pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
+            #pattern_stream = bmp_to_bitstream("isabelle.bmp", invert_color=True)
             
 
 
@@ -502,30 +528,35 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         def patternin(pattern_slice):
             current.n += 1
-            current.packet_to_txt_file(pattern_slice, "o")
+            #current.packet_to_txt_file(pattern_slice, "o")
             #current.packet_to_waveform(pattern_slice, "o")
 
 
         while True:
-            for n in range(int(dimension*dimension/16384)): #packets per frame
-                #time.sleep(.05)
-                
-                # print("writing")
-                #await iface.write([n]*16384)
-                if n == dimension*dimension/16384:
-                    pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-                else:
-                    pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-                #pattern_slice = ([3]*256 + [254]*256)*32
-                await iface.write(pattern_slice)
-                threading.Thread(target=patternin(pattern_slice)).start()
-                #await iface.flush()
-                # print("done")
-                #print("reading", current.n)
-                raw_data = await iface.read(16384)
-                # print("start thread")
+            if args.mode == "pattern" or args.mode == "pattern_out":
+                for n in range(int(dimension*dimension/16384)): #packets per frame
+                    #time.sleep(.05)
+                    
+                    #await iface.write([n]*16384)
+                    if n == dimension*dimension/16384:
+                        pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+                    else:
+                        pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+                    #pattern_slice = ([3]*256 + [254]*256)*32
+                    await iface.write(pattern_slice)
+                    threading.Thread(target=patternin(pattern_slice)).start()
+                    #await iface.flush()
+                    #print("reading", current.n)
+                    if args.mode == "pattern":
+                        raw_data = await iface.read(16384)
+                        # print("start thread")
+                        threading.Thread(target=imgout(raw_data)).start()
+                print("pattern complete", current.n)
+            if args.mode == "image":
+                print("reading")
+                raw_data = await iface.read()
+                print("start thread")
                 threading.Thread(target=imgout(raw_data)).start()
-            print("pattern complete", current.n)
 
 
 
