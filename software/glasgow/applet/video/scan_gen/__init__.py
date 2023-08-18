@@ -87,7 +87,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         ]
 
         # m.d.sync += [scan_bus.out_fifo.eq(20)]
-        if self.mode == "pattern":
+        if self.mode == "pattern" or self.mode == "pattern_out":
             if self.loopback:
                 m.d.sync += [scan_bus.out_fifo.eq(5)] ## don't actually use the dwell times
                 ## this way the pattern is returned faster for debugging
@@ -193,22 +193,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 else:
                     m.d.sync += [
                         # Actual input
-                        # self.datain[0].eq(self.pads.g_t.i), 
-                        # self.datain[1].eq(self.pads.h_t.i),
-                        # self.datain[2].eq(self.pads.i_t.i),
-                        # self.datain[3].eq(self.pads.j_t.i),
-                        # self.datain[4].eq(self.pads.k_t.i),
-                        # self.datain[5].eq(self.pads.l_t.i),
-                        # self.datain[6].eq(self.pads.m_t.i),
-                        # self.datain[7].eq(self.pads.n_t.i),## MSB
-                        self.datain[0].eq(1),
-                        self.datain[1].eq(1),
-                        self.datain[2].eq(1),
-                        self.datain[3].eq(1),
-                        self.datain[4].eq(1),
-                        self.datain[5].eq(1),
-                        self.datain[6].eq(1),
-                        self.datain[7].eq(0),
+                        self.datain[0].eq(self.pads.g_t.i), 
+                        self.datain[1].eq(self.pads.h_t.i),
+                        self.datain[2].eq(self.pads.i_t.i),
+                        self.datain[3].eq(self.pads.j_t.i),
+                        self.datain[4].eq(self.pads.k_t.i),
+                        self.datain[5].eq(self.pads.l_t.i),
+                        self.datain[6].eq(self.pads.m_t.i),
+                        self.datain[7].eq(self.pads.n_t.i),## MSB
                         ]
 
                 
@@ -514,9 +506,9 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         
         if args.mode == "pattern" or args.mode == "pattern_out":
-            #pattern_stream = bmp_to_bitstream("tanishq02.bmp", reverse=True)
+            pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", invert_color=True)
             #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", boolean=True)
-            pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
+            #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
             #pattern_stream = bmp_to_bitstream("isabelle.bmp", invert_color=True)
             
 

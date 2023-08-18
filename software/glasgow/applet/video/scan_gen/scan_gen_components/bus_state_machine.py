@@ -174,12 +174,12 @@ class ScanIOBus(Elaboratable):
             with m.State("Y RELEASE"):
                 m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
                 m.d.comb += self.y_latch.eq(0)
-                if self.mode == "pattern_out":
-                    #with m.If(self.out_fifo_ready):
-                    m.next = "WAIT"
-                        #m.next = "Wait_For_First_USB_Data"
-                else: 
-                    m.next = "A LATCH & ENABLE"
+                # if self.mode == "pattern_out":
+                #     with m.If(self.out_fifo_ready):
+                #         m.next = "WAIT"
+                #         #m.next = "Wait_For_First_USB_Data"
+                # else: 
+                m.next = "A LATCH & ENABLE"
 
             with m.State("A LATCH & ENABLE"):
                 m.d.comb += [                  
@@ -202,6 +202,8 @@ class ScanIOBus(Elaboratable):
                 if self.mode == "pattern":
                     with m.If(self.in_fifo_ready & self.out_fifo_ready):
                         m.next = "FIFO_1"
+                if self.mode == "pattern_out":
+                    m.next = "FIFO_1"
 
                         
             with m.State("FIFO_1"):
@@ -216,14 +218,13 @@ class ScanIOBus(Elaboratable):
                 if self.mode == "pattern":
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_2"
+                if self.mode == "pattern_out":
+                    m.next = "FIFO_2"
 
                     
             with m.State("FIFO_2"):
                 m.d.comb += self.bus_state.eq(BUS_FIFO_2)
-                if self.mode == "image":
-                    m.next = "WAIT"
-                if self.mode == "pattern":
-                    m.next = "WAIT"
+                m.next = "WAIT"
 
         return m
     def ports(self):
