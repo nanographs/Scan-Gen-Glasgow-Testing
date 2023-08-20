@@ -441,7 +441,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         #while True:
 
-        def bmp_to_bitstream(filename, boolean=False, invert_color=False):
+        def bmp_to_bitstream(filename, boolean=False, invert_color=False, flip_lr=False):
             pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename))
             print(pattern_img)
             ## boolean images will have pixel values of True or False
@@ -476,7 +476,9 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
             padding = ((padding_top, padding_bottom),(padding_left,padding_right))
 
             pattern_array = np.pad(pattern_array,pad_width = padding, constant_values = 2)
-            pattern_array = np.flip(pattern_array, axis=1)
+
+            if flip_lr:
+                pattern_array = np.flip(pattern_array, axis=1)
             
             for i in range(dimension):
                 for j in range(dimension):
