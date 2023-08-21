@@ -16,3 +16,5 @@ scan_sim_bus.vcd
 .gitignore
 array_output.txt
 newlogs.txt
+.DS_Store
+**/.DS_Store
