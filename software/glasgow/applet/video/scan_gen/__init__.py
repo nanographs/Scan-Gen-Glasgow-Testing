@@ -37,8 +37,10 @@ OUT_FIFO = 0x08
 
 
 class DataBusAndFIFOSubtarget(Elaboratable):
-    def __init__(self, pads, in_fifo, out_fifo, resolution_bits, dwell_time, mode, loopback):
-        self.pads     = pads
+    def __init__(self, data, power_ok, in_fifo, out_fifo, resolution_bits, dwell_time, mode, loopback):
+        self.data = data
+        self.power_ok = power_ok
+        #print(vars(self.pads))
         self.in_fifo  = in_fifo
         self.out_fifo = out_fifo
         self.mode = mode #image or pattern
@@ -98,72 +100,23 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
 
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
-            m.d.comb += [
-                self.pads.a_t.oe.eq(self.pads.p_t.i), 
-                self.pads.a_t.o.eq(scan_bus.x_data[0]), ## LSB
-                self.pads.b_t.oe.eq(self.pads.p_t.i),
-                self.pads.b_t.o.eq(scan_bus.x_data[1]),
-                self.pads.c_t.oe.eq(self.pads.p_t.i),
-                self.pads.c_t.o.eq(scan_bus.x_data[2]),
-                self.pads.d_t.oe.eq(self.pads.p_t.i),
-                self.pads.d_t.o.eq(scan_bus.x_data[3]),
-                self.pads.e_t.oe.eq(self.pads.p_t.i),
-                self.pads.e_t.o.eq(scan_bus.x_data[4]),
-                self.pads.f_t.oe.eq(self.pads.p_t.i),
-                self.pads.f_t.o.eq(scan_bus.x_data[5]),
-                self.pads.g_t.oe.eq(self.pads.p_t.i),
-                self.pads.g_t.o.eq(scan_bus.x_data[6]),
-                self.pads.h_t.oe.eq(self.pads.p_t.i),
-                self.pads.h_t.o.eq(scan_bus.x_data[7]),
-                self.pads.i_t.oe.eq(self.pads.p_t.i),
-                self.pads.i_t.o.eq(scan_bus.x_data[8]),
-                self.pads.j_t.oe.eq(self.pads.p_t.i),
-                self.pads.j_t.o.eq(scan_bus.x_data[9]),
-                self.pads.k_t.oe.eq(self.pads.p_t.i),
-                self.pads.k_t.o.eq(scan_bus.x_data[10]),
-                self.pads.l_t.oe.eq(self.pads.p_t.i),
-                self.pads.l_t.o.eq(scan_bus.x_data[11]),
-                self.pads.m_t.oe.eq(self.pads.p_t.i),
-                self.pads.m_t.o.eq(scan_bus.x_data[12]),
-                self.pads.n_t.oe.eq(self.pads.p_t.i),
-                self.pads.n_t.o.eq(scan_bus.x_data[13]), ## MSB
-            ]
+            ## 0: LSB ----> 13: MSB
+            for i, pad in enumerate(self.data):
+                m.d.comb += [
+                    pad.oe.eq(self.power_ok.i),
+                    pad.o.eq(scan_bus.x_data[i]),
+                ]
 
             
         
         with m.If(scan_bus.bus_state == BUS_WRITE_Y):
-            m.d.comb += [
-                self.pads.a_t.oe.eq(self.pads.p_t.i),
-                self.pads.a_t.o.eq(scan_bus.y_data[0]), ## LSB
-                self.pads.b_t.oe.eq(self.pads.p_t.i),
-                self.pads.b_t.o.eq(scan_bus.y_data[1]),
-                self.pads.c_t.oe.eq(self.pads.p_t.i),
-                self.pads.c_t.o.eq(scan_bus.y_data[2]),
-                self.pads.d_t.oe.eq(self.pads.p_t.i),
-                self.pads.d_t.o.eq(scan_bus.y_data[3]),
-                self.pads.e_t.oe.eq(self.pads.p_t.i),
-                self.pads.e_t.o.eq(scan_bus.y_data[4]),
-                self.pads.f_t.oe.eq(self.pads.p_t.i),
-                self.pads.f_t.o.eq(scan_bus.y_data[5]),
-                self.pads.g_t.oe.eq(self.pads.p_t.i),
-                self.pads.g_t.o.eq(scan_bus.y_data[6]),
-                self.pads.h_t.oe.eq(self.pads.p_t.i),
-                self.pads.h_t.o.eq(scan_bus.y_data[7]),
-                self.pads.i_t.oe.eq(self.pads.p_t.i),
-                self.pads.i_t.o.eq(scan_bus.y_data[8]),
-                self.pads.j_t.oe.eq(self.pads.p_t.i),
-                self.pads.j_t.o.eq(scan_bus.y_data[9]),
-                self.pads.k_t.oe.eq(self.pads.p_t.i),
-                self.pads.k_t.o.eq(scan_bus.y_data[10]),
-                self.pads.l_t.oe.eq(self.pads.p_t.i),
-                self.pads.l_t.o.eq(scan_bus.y_data[11]),
-                self.pads.m_t.oe.eq(self.pads.p_t.i),
-                self.pads.m_t.o.eq(scan_bus.y_data[12]),
-                self.pads.n_t.oe.eq(self.pads.p_t.i),
-                self.pads.n_t.o.eq(scan_bus.y_data[13]), ## MSB
-            ]
+            ## 0: LSB ----> 13: MSB
+            for i, pad in enumerate(self.data):
+                m.d.comb += [
+                    pad.oe.eq(self.power_ok.i),
+                    pad.o.eq(scan_bus.y_data[i]),
+                ]
 
-            
         
         with m.If(scan_bus.bus_state == BUS_READ):
             if self.mode == "image":
@@ -190,18 +143,18 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         # self.datain[7].eq(0),
                     ]
                     
-                else:
-                    m.d.sync += [
-                        # Actual input
-                        self.datain[0].eq(self.pads.g_t.i), 
-                        self.datain[1].eq(self.pads.h_t.i),
-                        self.datain[2].eq(self.pads.i_t.i),
-                        self.datain[3].eq(self.pads.j_t.i),
-                        self.datain[4].eq(self.pads.k_t.i),
-                        self.datain[5].eq(self.pads.l_t.i),
-                        self.datain[6].eq(self.pads.m_t.i),
-                        self.datain[7].eq(self.pads.n_t.i),## MSB
-                        ]
+                # else:
+                #     m.d.sync += [
+                #         # Actual input
+                #         self.datain[0].eq(self.pads.g_t.i), 
+                #         self.datain[1].eq(self.pads.h_t.i),
+                #         self.datain[2].eq(self.pads.i_t.i),
+                #         self.datain[3].eq(self.pads.j_t.i),
+                #         self.datain[4].eq(self.pads.k_t.i),
+                #         self.datain[5].eq(self.pads.l_t.i),
+                #         self.datain[6].eq(self.pads.m_t.i),
+                #         self.datain[7].eq(self.pads.n_t.i),## MSB
+                #         ]
 
                 
 
@@ -313,14 +266,12 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
     /|/|/|/|/|/|/|/|
     """
 
-    __pins = ("a", "b", "c", "d", "e","f","g","h",
-    "i","j","k","l","m","n", "o","p")
 
     @classmethod
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
-        for pin in cls.__pins:
-            access.add_pin_argument(parser, pin, default=True)
+        access.add_pin_set_argument(parser, "data", width=14, default=range(0,13))
+        access.add_pin_argument(parser, "power_ok", default=15)
         parser.add_argument(
             "-r", "--res", type=int, default=9,
             help="resolution bits (default: %(default)s)")
@@ -339,9 +290,11 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
 
     def build(self, target, args):
+        print(args)
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
-            pads=iface.get_pads(args, pins=self.__pins),
+            data=[iface.get_pin(pin) for pin in args.pin_set_data],
+            power_ok=iface.get_pin(args.pin_power_ok),
             in_fifo = iface.get_in_fifo(auto_flush=False),
             out_fifo = iface.get_out_fifo(),
             resolution_bits = args.res,
