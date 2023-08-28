@@ -18,3 +18,9 @@ array_output.txt
 newlogs.txt
 .DS_Store
 **/.DS_Store
+.DS_Store
+software/.DS_Store
+software/glasgow/.DS_Store
+software/glasgow/applet/.DS_Store
+software/glasgow/applet/video/.DS_Store
+software/glasgow/applet/video/scan_gen/.DS_Store
