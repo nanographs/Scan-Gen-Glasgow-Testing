@@ -2,13 +2,8 @@ import logging
 import asyncio
 from amaranth import *
 from amaranth.sim import Simulator
-import csv
-import matplotlib.pyplot as plt
-import os, datetime
 import numpy as np
 from PIL import Image
-from tifffile import imread, imwrite, TiffFile
-import random
 import time
 import threading
 from rich import print
