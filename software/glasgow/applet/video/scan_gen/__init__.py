@@ -230,9 +230,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         parser.add_argument(
             "-l", "--loopback", type=bool, default=False,
             help="loopback  (default: %(default)s)")
-        parser.add_argument(
-            "-c", "--captures", type=int, default=1,
-            help="number of captures (default: %(default)s)")
 
 
     def build(self, target, args):
@@ -271,30 +268,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 first = data[0] ## just read the first byte of every packet
                 display = "#"*round(first/5) ## scale it to fit in one line in the terminal
                 print(display)
-
-
-        async def get_limited_output():
-            ## get approx the number of packets you need 
-            # to contain {captures} images
-            ## and then some more
-
-            for n in range((args.captures+1)*(round(dimension*dimension/2000)+1)): 
-                if current.n < args.captures:
-                    #print("Reading...")0                    raw_data = await iface.read()
-                    data = raw_data.tolist()
-                    #current.text_file = open(f'{current.save_dir}/fifo_output.txt', "w")
-                    #current.packet_to_txt_file(data) 
-                    #packets_to_waveforms(raw_data)
-                    image_array(data) 
-                    cli.show_progress_bar(current)
-                ## at minimum you are going to get the number of images that fit in one packet
-
-        #await get_limited_output()
-
-        current.last_x = 0
-        current.last_y = 0
-
-        empty_frame = np.zeros(shape = dimension*dimension)
 
 
 
