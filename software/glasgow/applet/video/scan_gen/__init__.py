@@ -119,89 +119,35 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
         
         with m.If(scan_bus.bus_state == BUS_READ):
-            if self.mode == "image":
-                if self.loopback:
+            for i in range(7):
+                if self.mode == "image":
+                        if self.loopback:
+                            ## LOOPBACK
+                            m.d.sync += self.datain[i].eq(scan_bus.x_data[i+6])
+
+                            # ## Fixed Value
+                            # m.d.sync += self.datain[i].eq(1)
+                        
+                        else:
+                            # Actual input
+                            # MSB = data[13] = datain[7]
+                            m.d.sync += self.datain[i].eq(self.data[i+6].i)
+    
+
+                if self.mode == "pattern":
+                    ## in pattern mode, currently, the transmitted data will always loop back
+                    ## todo: a mode that returns live signal instead
                     m.d.sync += [
-                        ## LOOPBACK
-                        self.datain[0].eq(scan_bus.x_data[6]),
-                        self.datain[1].eq(scan_bus.x_data[7]),
-                        self.datain[2].eq(scan_bus.x_data[8]),
-                        self.datain[3].eq(scan_bus.x_data[9]),
-                        self.datain[4].eq(scan_bus.x_data[10]),
-                        self.datain[5].eq(scan_bus.x_data[11]),
-                        self.datain[6].eq(scan_bus.x_data[12]),
-                        self.datain[7].eq(scan_bus.x_data[13]),
-
-                        # ## Fixed Value
-                        # self.datain[0].eq(1),
-                        # self.datain[1].eq(1),
-                        # self.datain[2].eq(1),
-                        # self.datain[3].eq(1),
-                        # self.datain[4].eq(1),
-                        # self.datain[5].eq(1),
-                        # self.datain[6].eq(1),
-                        # self.datain[7].eq(0),
-                    ]
-                    
-                # else:
-                #     m.d.sync += [
-                #         # Actual input
-                #         self.datain[0].eq(self.pads.g_t.i), 
-                #         self.datain[1].eq(self.pads.h_t.i),
-                #         self.datain[2].eq(self.pads.i_t.i),
-                #         self.datain[3].eq(self.pads.j_t.i),
-                #         self.datain[4].eq(self.pads.k_t.i),
-                #         self.datain[5].eq(self.pads.l_t.i),
-                #         self.datain[6].eq(self.pads.m_t.i),
-                #         self.datain[7].eq(self.pads.n_t.i),## MSB
-                #         ]
-
-                
-
-            if self.mode == "pattern":
-                ## in pattern mode, currently, the transmitted data will always loop back
-                ## todo: a mode that returns live signal instead
-                m.d.sync += [
-                    # self.datain[0].eq(scan_bus.x_data[6]),
-                    # self.datain[1].eq(scan_bus.x_data[7]),
-                    # self.datain[2].eq(scan_bus.x_data[8]),
-                    # self.datain[3].eq(scan_bus.x_data[9]),
-                    # self.datain[4].eq(scan_bus.x_data[10]),
-                    # self.datain[5].eq(scan_bus.x_data[11]),
-                    # self.datain[6].eq(scan_bus.x_data[12]),
-                    # self.datain[7].eq(scan_bus.x_data[13]),
-
-                    # self.datain[0].eq(scan_bus.out_fifo[0]),
-                    # self.datain[1].eq(scan_bus.out_fifo[1]),
-                    # self.datain[2].eq(scan_bus.out_fifo[2]),
-                    # self.datain[3].eq(scan_bus.out_fifo[3]),
-                    # self.datain[4].eq(scan_bus.out_fifo[4]),
-                    # self.datain[5].eq(scan_bus.out_fifo[5]),
-                    # self.datain[6].eq(scan_bus.out_fifo[6]),
-                    # self.datain[7].eq(scan_bus.out_fifo[7]),
-
-                    self.datain[0].eq(self.out_fifo_f[0]),
-                    self.datain[1].eq(self.out_fifo_f[1]),
-                    self.datain[2].eq(self.out_fifo_f[2]),
-                    self.datain[3].eq(self.out_fifo_f[3]),
-                    self.datain[4].eq(self.out_fifo_f[4]),
-                    self.datain[5].eq(self.out_fifo_f[5]),
-                    self.datain[6].eq(self.out_fifo_f[6]),
-                    self.datain[7].eq(self.out_fifo_f[7]),
-                ]
-                
+                        # self.datain[i].eq(scan_bus.x_data[i+6])
+                        # self.datain[i].eq(scan_bus.out_fifo[i])
+                        self.datain[i].eq(self.out_fifo_f[i])
+                        ]
 
                 
             ### Only reading 8 bits right now
             ### so just ignore the rest
-            m.d.sync += [
-                self.datain[8].eq(0),
-                self.datain[9].eq(0),
-                self.datain[10].eq(0),
-                self.datain[11].eq(0),
-                self.datain[12].eq(0),
-                self.datain[13].eq(0),
-            ]
+            for i in range(8,14):
+                m.d.sync += self.datain[i] = 0
 
         with m.If(scan_bus.bus_state == A_RELEASE):
             with m.If(scan_bus.dwell_ctr_ovf):
