@@ -10,7 +10,7 @@ from rich import print
 from .scan_gen_components.bus_state_machine import ScanIOBus
 #from .scan_gen_components import pg_gui 
 from .output_formats import ScanDataRun, CommandLine
-import .input_formats as input_formats
+from .input_formats import bmp_to_bitstream
 
 
 from ... import *
@@ -142,7 +142,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             ### Only reading 8 bits right now
             ### so just ignore the rest
             for i in range(8,14):
-                m.d.sync += self.datain[i] = 0
+                m.d.sync += self.datain[i].eq(0)
 
         with m.If(scan_bus.bus_state == A_RELEASE):
             with m.If(scan_bus.dwell_ctr_ovf):
@@ -225,7 +225,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
 
     def build(self, target, args):
-        print(args)
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -310,10 +309,11 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         
         if args.mode == "pattern" or args.mode == "pattern_out":
-            pattern_stream = input_formats.bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", invert_color=True)
-            #pattern_stream = input_formats.bmp_to_bitstream("tanishq 02.bmp", boolean=True)
-            #pattern_stream = input_formats.bmp_to_bitstream("green.bmp", invert_color=True)
-            #pattern_stream = input_formats.bmp_to_bitstream("isabelle.bmp", invert_color=True)
+            #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
+            pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=True)
+            #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", boolean=True)
+            #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
+            #pattern_stream = bmp_to_bitstream("isabelle.bmp", invert_color=True)
             
 
 

@@ -1,8 +1,9 @@
 import numpy as np
 from PIL import Image
+import os
 
 
-def bmp_to_bitstream(filename, boolean=False, invert_color=False, flip_lr=False):
+def bmp_to_bitstream(filename, dimension, boolean=False, invert_color=False, flip_lr=False):
     pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename))
     print(pattern_img)
     ## boolean images will have pixel values of True or False
