@@ -7,7 +7,7 @@ import time
 import threading
 from rich import print
 
-from .scan_gen_components.bus_state_machine import ScanIOBus
+from .scan_gen_components.bus_state_machine import ScanIOBus, ScanIOBus_Point
 #from .scan_gen_components import pg_gui 
 from .output_formats import ScanDataRun, CommandLine
 from .input_formats import bmp_to_bitstream
@@ -53,7 +53,10 @@ class DataBusAndFIFOSubtarget(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
+        if self.mode == "point":
+            m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
+        else:
+            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
 
         x_latch = platform.request("X_LATCH")
         x_enable = platform.request("X_ENABLE")
@@ -137,6 +140,18 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         # self.datain[i].eq(scan_bus.out_fifo[i])
                         self.datain[i].eq(self.out_fifo_f[i])
                         ]
+                    if self.mode == "point":
+                        m.d.sync += [
+                            self.datain[0].eq(scan_bus.dwell_time[0]),
+                            self.datain[1].eq(scan_bus.dwell_time[1]),
+                            self.datain[2].eq(scan_bus.dwell_time[2]),
+                            self.datain[3].eq(scan_bus.dwell_time[3]),
+                            self.datain[4].eq(scan_bus.dwell_time[4]),
+                            self.datain[5].eq(scan_bus.dwell_time[5]),
+                            self.datain[6].eq(scan_bus.dwell_time[6]),
+                            self.datain[7].eq(scan_bus.dwell_time[7]),
+                        ]
+
 
                 
             ### Only reading 8 bits right now
@@ -145,14 +160,19 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 m.d.sync += self.datain[i].eq(0)
 
         with m.If(scan_bus.bus_state == A_RELEASE):
-            with m.If(scan_bus.dwell_ctr_ovf):
+            if self.mode != "point":
+                with m.If(scan_bus.dwell_ctr_ovf):
+                    m.d.sync += [
+                        self.running_average_two.eq(self.datain),
+                    ]
+                with m.Else():
+                    m.d.sync += [
+                        self.running_average_two.eq((self.running_average_two + self.datain)//2),
+                    ]
+            if self.mode == "point":
                 m.d.sync += [
-                    self.running_average_two.eq(self.datain),
-                ]
-            with m.Else():
-                m.d.sync += [
-                    self.running_average_two.eq((self.running_average_two + self.datain)//2),
-                ]
+                        self.running_average_two.eq(self.datain),
+                    ]
 
         with m.If(scan_bus.dwell_ctr_ovf):
             with m.If(scan_bus.bus_state == BUS_FIFO_1):
@@ -170,11 +190,12 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
             with m.If(scan_bus.bus_state == BUS_FIFO_2):
                 with m.If(self.in_fifo.w_rdy):
-                    with m.If(scan_bus.line_sync & scan_bus.frame_sync):
-                        m.d.comb += [
-                            self.in_fifo.din.eq(0),
-                            self.in_fifo.w_en.eq(1),
-                        ]
+                    if self.mode != "point":
+                        with m.If(scan_bus.line_sync & scan_bus.frame_sync):
+                            m.d.comb += [
+                                self.in_fifo.din.eq(0),
+                                self.in_fifo.w_en.eq(1),
+                            ]
         
             with m.If(scan_bus.bus_state == OUT_FIFO):
                 if self.mode == "pattern" or self.mode == "pattern_out":
