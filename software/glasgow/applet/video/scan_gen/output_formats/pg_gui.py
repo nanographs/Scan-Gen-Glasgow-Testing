@@ -40,7 +40,7 @@ FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
 def updateData():
     global img, updateTime, elapsed
 
-    d = np.memmap(FrameBufDirectory, shape = (dimension*dimension))
+    d = np.memmap(FrameBufDirectory, shape = (dimension*dimension),mode = "r+")
     data = np.reshape(d,(dimension,dimension))
     #data = np.random.rand(dimension,dimension)
 

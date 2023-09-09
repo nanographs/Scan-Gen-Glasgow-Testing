@@ -26,29 +26,42 @@ class ScanDataRun:
 
     ### Methods for one data packet
 
-    def packet_to_waveform(self,data):
+    def packet_to_waveform(self,data,direction="i"):
         packet_length = len(data)
 
-        ## break down data into smaller chunks
-        for index in range (0,len(data), 500):
-            data_chunk = data[index:index+500]
+        # ## break down data into smaller chunks
+        # for index in range (0,len(data), 2048):
+        #     data_chunk = data[index:index+2048]
 
-            fig, ax = plt.subplots()
-            ax.plot(data_chunk)
-            plt.title(f'capture {self.n}, {index} - {index+500} / {packet_length} bytes')
+        fig, ax = plt.subplots()
+            #ax.plot(data_chunk)
+        ax.plot(data)
+            #plt.title(f'capture {self.n}, {index} - {index+2048} / {packet_length} bytes')
+        plt.title(f'capture {self.n}, {packet_length} bytes')
 
-            ## set aspect ratio of plot
-            ratio = .5
-            x_left, x_right = ax.get_xlim()
-            y_low, y_high = ax.get_ylim()
-            ax.set_aspect(abs((x_right-x_left)/(y_low-y_high))*ratio)
+        ## set aspect ratio of plot
+        ratio = .5
+        x_left, x_right = ax.get_xlim()
+        y_low, y_high = ax.get_ylim()
+        ax.set_aspect(abs((x_right-x_left)/(y_low-y_high))*ratio)
 
-            plt.tight_layout()
+        plt.tight_layout()
 
-            plt.savefig(f'{save_dir}/capture {self.n}: {index} - {index+500}.png',
+        if direction == "i":
+            plt.savefig(f'{self.save_dir}/capture {self.n}.png',
                 dpi=300
             )
-            plt.close() #clear figure
+            # plt.savefig(f'{self.save_dir}/capture {self.n}: {index} - {index+500}.png',
+            #     dpi=300
+            # )
+        elif direction == "o":
+            plt.savefig(f'{self.save_dir}/outgoing capture {self.n}.png',
+                dpi=300
+            )
+            # plt.savefig(f'{self.save_dir}/outgoing capture {self.n}: {index} - {index+500}.png',
+            #     dpi=300
+            # )
+        plt.close() #clear figure
 
     def packet_to_txt_file_xy(self,data):
         packet_length = len(data)
@@ -67,10 +80,13 @@ class ScanDataRun:
                 else:
                     self.text_file.write(f'LINE OVERFLOW\n')
 
-    def packet_to_txt_file(self,data):
+    def packet_to_txt_file(self,data,direction="i"):
         packet_length = len(data)
-        self.text_file.write("<=======================================================================================================================================>\n")
-        self.text_file.write(f'PACKET LENGTH: {packet_length}\n')
+        self.text_file.write("\n<=======================================================================================================================================>\n")
+        if direction == "i":
+            self.text_file.write(f'RECIEVED PACKET LENGTH: {packet_length}\n')
+        elif direction == "o":
+            self.text_file.write(f'SENT PACKET LENGTH: {packet_length}\n')
         self.text_file.write(", ".join([str(x) for x in data]))
 
     ### Methods for one complete frame

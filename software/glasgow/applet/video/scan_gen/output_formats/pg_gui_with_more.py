@@ -38,7 +38,7 @@ view = win.addViewBox()
 view.setAspectLocked(True)
 
 ## Create image item
-img = pg.ImageItem(border='w')
+img = pg.ImageItem(border='w', levels = (0,255))
 view.addItem(img)
 
 ## Set initial view bounds
@@ -52,9 +52,34 @@ def button_action():
     imwrite(save_path, data.astype(np.uint8), photometric='minisblack') 
 btn.clicked.connect(button_action)
 
+
+resolution_options = QtWidgets.QGridLayout()
+
+resolution_dropdown = QtWidgets.QComboBox()
+resolutionLabel = QtWidgets.QLabel("Resolution")
+resolution_dropdown.addItem('512x512')
+resolution_dropdown.addItem('1024x1024')
+resolution_dropdown.addItem('2048x2048')
+resolution_dropdown.addItem('4096x4096')
+resolution_dropdown.addItem('8192x8192')
+resolution_dropdown.addItem('16384x16384')
+resolution_options.addWidget(resolutionLabel,0,1)
+resolution_options.addWidget(resolution_dropdown,1,1)
+
+dwellLabel = QtWidgets.QLabel("Dwell Time")
+dwelltime_options = QtWidgets.QSpinBox()
+dwelltime_options.setRange(0,255)
+dwelltime_options.setSingleStep(1)
+resolution_options.addWidget(dwellLabel,0,0)
+resolution_options.addWidget(dwelltime_options,1,0)
+
+
+
 ## add widgets to layout
-layout.addWidget(btn,1,0)
 layout.addWidget(win,0,0)
+layout.addWidget(btn,1,0)
+layout.addLayout(resolution_options, 2,0)
+
 w.show()
 
 updateTime = perf_counter()
@@ -93,6 +118,7 @@ win.addItem(hist)
 # hist.vb.setMouseEnabled(y=False) # makes user interaction a little easier
 # isoLine.setValue(0.8)
 # isoLine.setZValue(1000) # bring iso line above contrast controls
+
 
 
 
