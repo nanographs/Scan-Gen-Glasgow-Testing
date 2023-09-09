@@ -2,6 +2,11 @@ import logging
 import asyncio
 from amaranth import *
 from amaranth.sim import Simulator
+from amaranth.lib.cdc import FFSynchronizer
+
+from ....gateware.pads import *
+from ....gateware.analyzer import *
+
 
 from ... import *
 
@@ -39,8 +44,13 @@ class ScanGenSubtarget(Elaboratable):
     ovf : Signal, out
         ``ovf`` is asserted when the counter reaches its limit.
     """
-    def __init__(self,pads):
+    def __init__(self,pads, in_fifo):
         self.pads = pads
+
+        self.in_fifo = in_fifo
+
+        self.analyzer = EventAnalyzer(in_fifo)
+        self.event_source = self.analyzer.add_event_source("pin", "change",1)
 
         self.limit = 255
 
@@ -61,20 +71,10 @@ class ScanGenSubtarget(Elaboratable):
         self.h  = Signal()
         #self.p = Signal()
 
+        self.datain = Signal()
+
     def elaborate(self, platform):
         m = Module()
-
-        ## C0-7
-        x_latch = platform.request("X_LATCH")
-        #x_enable = platform.request("X_ENABLE")
-        y_latch = platform.request("Y_LATCH")
-        #y_enable = platform.request("Y_ENABLE")
-        # a_latch = platform.request("A_LATCH")
-        a_enable = platform.request("A_ENABLE")
-        #d_clock = platform.request("D_CLOCK")
-        #a_clock = platform.request("A_CLOCK")
-        # v_ok = platform.request("port_b",7)
-        #data = platform.request("port_a",0)
 
         led = platform.request("led",0)
         led2 = platform.request("led",1)
@@ -100,153 +100,41 @@ class ScanGenSubtarget(Elaboratable):
                 ## else, increment the counter by 1
                 m.d.sync += self.count.eq(self.count + 1)
 
+    ## Pins Doing Things
+        pins_i = Signal.like(self.pads.p_t.i)
+        pins_r = Signal.like(self.pads.p_t.i)
+        m.submodules += FFSynchronizer(self.pads.p_t.i, pins_i)
 
+        m.d.sync += [
+        self.pads.a_t.oe.eq(1),
+        self.pads.a_t.o.eq(led),
+        self.datain.eq(pins_i),
+        led2.eq(~self.datain)
+        ]
 
-
-
-        self.dataout = Signal(14)
-
-        self.MinDwelCounter_limit = 20
-        self.UpCount_limit = 16383
-        self.DownCount_limit = 16383
-
-        # Ports
-        self.UpCount_ovf = Signal()
-        self.DownCount_ovf = Signal()
-        self.MinDwelCounter_ovf = Signal()
-
-        # State
-        self.MinDwelCounter = Signal(4)
-        self.UpCount = Signal(14)
-        self.DownCount = Signal(14)
-
-## Countes
-    # Ovf Monitors
-        m.d.comb += self.MinDwelCounter_ovf.eq(self.MinDwelCounter == self.MinDwelCounter_limit)
-        m.d.comb += self.UpCount_ovf.eq(self.UpCount == self.UpCount_limit)
-        m.d.comb += self.DownCount_ovf.eq(self.DownCount == self.DownCount_limit)
-    
-
-        # MinDwelCounter
-        with m.If(1):
-            with m.If(self.MinDwelCounter_ovf):
-                ## if the counter is at overflow, set it to 0
-                m.d.sync += self.MinDwelCounter.eq(0)
-            with m.Else():
-                ## else, increment the counter by 1
-                m.d.sync += self.MinDwelCounter.eq(self.MinDwelCounter + 1)
-
-        # Up Count
-        with m.If(1):
-            with m.If(self.UpCount_ovf):
-                ## if the counter is at overflow, set it to 0
-                m.d.sync += self.UpCount.eq(0)
-            with m.Else():
-                ## else, increment the counter by 1
-                m.d.sync += self.UpCount.eq(self.UpCount + 1)
-
-        # Down Count
-        with m.If(1):
-            with m.If(self.DownCount_ovf):
-                ## if the counter is at overflow, set it to 0
-                m.d.sync += self.DownCount.eq(0)
-            with m.Else():
-                ## else, increment the counter by 1
-                m.d.sync += self.DownCount.eq(self.DownCount + 1)
-
-
-
-## Pins Doing Things
-
-        
-
-        # X Data
-        with m.If((self.MinDwelCounter >= 1)|(self.MinDwelCounter <= 3)):
-            m.d.sync += self.dataout.eq(self.UpCount)
-
-        # Y Data
-        with m.If((self.MinDwelCounter >= 4)|(self.MinDwelCounter <= 6)):
-            m.d.sync += self.dataout.eq(self.DownCount)
-
-        # X Latch
-        with m.If(self.MinDwelCounter == 2):
-            m.d.sync += x_latch.eq(1)
-        with m.Else():
-            m.d.sync += x_latch.eq(0)
-
-        # Y Latch
-        with m.If(self.MinDwelCounter == 5):
-            m.d.sync += y_latch.eq(1)
-        with m.Else():
-            m.d.sync += y_latch.eq(0)
-        
-        # ADC Enable
-        with m.If((self.MinDwelCounter >= 12)|(self.MinDwelCounter <= 14)):
-            m.d.sync += a_enable.eq(1)
-        with m.Else():
-            m.d.sync += a_enable.eq(0)
-
-
-
-        # R/W Config
-        with m.If(self.MinDwelCounter > 10):
-            m.d.sync += [
-            self.pads.a_t.oe.eq(0),
-            self.pads.b_t.oe.eq(0),
-            self.pads.c_t.oe.eq(0),
-            self.pads.d_t.oe.eq(0),
-            self.pads.e_t.oe.eq(0),
-            self.pads.f_t.oe.eq(0),
-            self.pads.g_t.oe.eq(0),
-            self.pads.h_t.oe.eq(0),
-            self.pads.i_t.oe.eq(0),
-            self.pads.j_t.oe.eq(0),
-            self.pads.k_t.oe.eq(0),
-            self.pads.l_t.oe.eq(0),
-            self.pads.m_t.oe.eq(0),
-            self.pads.n_t.oe.eq(0),
-            ]
+        m.d.comb += [
+        self.event_source.data.eq(pins_i),
+        self.event_source.trigger.eq(pins_i != pins_r)
+        ]
             
-        with m.Else():
-            m.d.sync += [
-            self.pads.a_t.oe.eq(self.pads.p_t.i),
-            self.pads.a_t.o.eq(self.dataout[0]),
-            self.pads.b_t.oe.eq(self.pads.p_t.i),
-            self.pads.b_t.o.eq(self.dataout[1]),
-            self.pads.c_t.oe.eq(self.pads.p_t.i),
-            self.pads.c_t.o.eq(self.dataout[2]),
-            self.pads.d_t.oe.eq(self.pads.p_t.i),
-            self.pads.d_t.o.eq(self.dataout[3]),
-            self.pads.e_t.oe.eq(self.pads.p_t.i),
-            self.pads.e_t.o.eq(self.dataout[4]),
-            self.pads.f_t.oe.eq(self.pads.p_t.i),
-            self.pads.f_t.o.eq(self.dataout[5]),
-            self.pads.g_t.oe.eq(self.pads.p_t.i),
-            self.pads.g_t.o.eq(self.dataout[6]),
-            self.pads.h_t.oe.eq(self.pads.p_t.i),
-            self.pads.h_t.o.eq(self.dataout[7]),
-            self.pads.i_t.oe.eq(self.pads.p_t.i),
-            self.pads.i_t.o.eq(self.dataout[8]),
-            self.pads.j_t.oe.eq(self.pads.p_t.i),
-            self.pads.j_t.o.eq(self.dataout[9]),
-            self.pads.k_t.oe.eq(self.pads.p_t.i),
-            self.pads.k_t.o.eq(self.dataout[10]),
-            self.pads.l_t.oe.eq(self.pads.p_t.i),
-            self.pads.l_t.o.eq(self.dataout[11]),
-            self.pads.m_t.oe.eq(self.pads.p_t.i),
-            self.pads.m_t.o.eq(self.dataout[12]),
-            self.pads.n_t.oe.eq(self.pads.p_t.i),
-            self.pads.n_t.o.eq(self.dataout[13]),
-            ]
-
-            m.d.sync += [  
-            led2.eq(self.pads.p_t.i)
-            ]
-            
-
-
 
         return m
+
+class AnalyzerInterface:
+    def __init__(self, interface, event_sources):
+        self.lower   = interface
+        self.decoder = TraceDecoder(event_sources)
+        self.logger = logging.getLogger("analyzerinterface")
+
+    async def read(self):
+        print("reading AnalyzerInterface")
+        print(vars(self.decoder))
+        print(vars(self.lower))
+        print(self.lower)
+        self.logger.trace("reading AnalyzerInterface")
+        self.decoder.process(await self.lower.read())
+        print("Done reading")
+        return self.decoder.flush()
 
 class LVDSTestApplet(GlasgowApplet, name="lvds-test"):
     logger = logging.getLogger(__name__)
@@ -282,23 +170,57 @@ class LVDSTestApplet(GlasgowApplet, name="lvds-test"):
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         #iface.add_subtarget(LEDBlinker())
-        iface.add_subtarget(ScanGenSubtarget(
-            pads=iface.get_pads(args, pins=self.__pins)
+        subtarget = iface.add_subtarget(ScanGenSubtarget(
+            pads=iface.get_pads(args, pins=self.__pins),
+            in_fifo=iface.get_in_fifo(),
         ))
+
+        self._event_sources = subtarget.analyzer.event_sources
+        self._sample_freq = target.sys_clk_freq
     
     @classmethod
     def add_run_arguments(cls, parser, access):
         super().add_run_arguments(parser, access)
 
     async def run(self, device, args):
-        return await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        iface =  await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        return AnalyzerInterface(iface, self._event_sources)
 
     @classmethod
     def add_interact_arguments(cls, parser):
         pass
 
     async def interact(self, device, args, iface):
-        pass
+        print(self._event_sources)
+        print(vars(self._event_sources))
+        for index in range(self._event_sources[0].width):
+            print("index", index)
+        try:
+            overrun = False
+            timestamp = 0
+            while not overrun:
+                print("reading")
+                for cycle, events in await iface.read():
+                    print("cycle",cycle)
+                    print("events", events)
+                    timestamp = cycle * 1_000_000_000 // self._sample_freq
+
+                    if events == "overrun":
+                        self.logger.error("FIFO overrun, shutting down")
+                        for signal in signals:
+                            print(signal)
+                            #vcd_writer.change(signal, timestamp, "x")
+                        overrun = True
+                        break
+
+                    if "pin" in events: # could be also "throttle"
+                        value = events["pin"]
+                        for bit, signal in enumerate(signals):
+                            print("bit", bit,"signal",signal)
+                            #vcd_writer.change(signal, timestamp, (value >> bit) & 1)
+
+        finally:
+            print("finally")
 
 # -------------------------------------------------------------------------------------------------
 

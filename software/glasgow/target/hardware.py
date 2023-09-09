@@ -87,7 +87,7 @@ class GlasgowHardwareTarget(Module):
     def build_plan(self, **kwargs):
         overrides = {
             "synth_opts": "-abc9",
-            "nextpnr_opts": "--placer heap",
+            "nextpnr_opts": ["--placer heap","--routed-svg 'nextpnr_test.svg'"],
         }
         overrides.update(kwargs)
         return GlasgowBuildPlan(self.platform.prepare(self, **overrides))

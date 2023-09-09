@@ -53,6 +53,7 @@ from .video.rgb_input import VideoRGBInputApplet
 from .video.vga_output import VGAOutputApplet
 from .video.scan_gen import ScanGenApplet
 from .video.lvds_test import LVDSTestApplet
+from .video.fifo_test_internal import FIFOTestInternalApplet
 from .video.ws2812_output import VideoWS2812OutputApplet
 
 from .radio.nrf24l01 import RadioNRF24L01Applet

@@ -1,4 +1,4 @@
-*.vcd
+
 *.gtkw
 *.log
 /*.v
@@ -12,3 +12,13 @@
 /*.json
 /*.csv
 Scan Capture/*
+scan_sim_bus.vcd
+.gitignore
+array_output.txt
+newlogs.txt
+.DS_Store
+**/.DS_Store
+socketlogs.txt
+software/glasgow/applet/video/scan_gen/*.bmp
+*.vcd
+
