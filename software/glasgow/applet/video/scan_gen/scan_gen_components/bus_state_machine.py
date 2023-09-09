@@ -62,8 +62,6 @@ class ScanIOBus(Elaboratable):
 
         self.dwell_ctr_ovf = Signal()
 
-        self.dwell_ctr_limit = Signal(8)
-
     def elaborate(self, platform):
         m = Module()
 
@@ -196,7 +194,7 @@ class ScanIOBus(Elaboratable):
             with m.State("A RELEASE"):
                 m.d.comb += self.a_enable.eq(0)
                 m.d.comb += self.bus_state.eq(A_RELEASE)
-                if self.mode == "image":
+                if self.mode == "image" or self.mode == "both":
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_1"
                 if self.mode == "pattern":
@@ -216,9 +214,6 @@ class ScanIOBus(Elaboratable):
                     with m.If(self.in_fifo_ready):
                         m.next = "FIFO_2"
                 if self.mode == "pattern":
-                    with m.If(self.in_fifo_ready):
-                        m.next = "FIFO_2"
-                if self.mode == "pattern_out":
                     m.next = "FIFO_2"
 
                     
@@ -230,6 +225,173 @@ class ScanIOBus(Elaboratable):
     def ports(self):
         return [self.x_data, self.y_data, self.x_latch, self.x_enable,
         self.y_latch, self.y_enable, self.a_latch, self.a_enable, self.bus_state]
+
+
+class ScanIOBus_Point(Elaboratable):
+
+    def __init__(self, x_position, y_position, dwell_time):
+        self.dwell_time = Signal(8)
+
+        self.x_position = x_position
+        self.y_position = y_position
+        self.dwell_time_i = dwell_time
+
+        self.bus_state = Signal(8)
+        self.x_data = Signal(14)
+        self.y_data = Signal(14)
+
+
+
+        self.x_latch = Signal()
+        self.x_enable = Signal()
+        self.y_latch = Signal()
+        self.y_enable = Signal()
+        self.a_latch = Signal()
+        self.a_enable = Signal()
+        self.a_clock = Signal()
+        self.d_clock = Signal()
+
+        self.in_fifo_ready = Signal()
+        self.out_fifo_ready = Signal()
+
+        self.count_one = Signal()
+        self.count_six = Signal()
+
+        self.dwell_ctr_ovf = Signal()
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.min_dwell_ctr = min_dwell_ctr = MinDwellCtr()
+        m.submodules.dwell_ctr = dwell_ctr = DwellCtr()
+
+    
+        m.d.comb += [
+            self.x_data.eq(self.x_position),
+            self.y_data.eq(self.y_position),
+            self.x_enable.eq(0), ## default state for X enable
+            self.y_enable.eq(0),
+            self.a_enable.eq(1),
+            self.dwell_time.eq(self.dwell_time_i)
+        ]
+
+        m.d.sync += [
+            self.count_one.eq(min_dwell_ctr.count == 1),
+            self.count_six.eq(min_dwell_ctr.count > 5),
+        ]
+
+        with m.If(self.count_six):
+            m.d.sync += [
+                self.a_clock.eq(0),
+                self.d_clock.eq(1)
+            ]
+        with m.Else():
+            m.d.sync += [
+                self.a_clock.eq(1),
+                self.d_clock.eq(0)
+            ]
+
+
+        m.d.sync += self.dwell_ctr_ovf.eq(0)
+        with m.If(dwell_ctr.count >= self.dwell_time):
+            m.d.sync += self.dwell_ctr_ovf.eq(1)
+
+        with m.FSM() as fsm:
+            # with m.State("Wait_For_First_USB_Data"):
+            #     with m.If(self.out_fifo_ready):
+            #         m.d.comb += self.bus_state.eq(OUT_FIFO)
+            #         m.next = "WAIT"
+
+            with m.State("WAIT"):
+                with m.If(self.count_one):
+                    with m.If(self.dwell_ctr_ovf):
+                        m.d.comb += [
+                            self.bus_state.eq(OUT_FIFO),
+                            dwell_ctr.rst.eq(1),
+                        ]
+                        m.next = "DO_NOTHING"
+                        
+                    with m.Else():
+                        m.d.comb += dwell_ctr.en.eq(1)
+                        m.next = "X WRITE"
+                with m.Else():
+                    m.next = "WAIT"
+
+            with m.State("X WRITE"):
+                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
+                m.d.comb += self.x_latch.eq(0)
+                m.next = "X LATCH"
+
+            with m.State("X LATCH"):
+                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
+                m.d.comb += self.x_latch.eq(1)
+                m.next = "X RELEASE"
+            
+            with m.State("X RELEASE"):
+                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
+                m.d.comb += self.x_latch.eq(0)
+                m.next = "Y WRITE"
+
+            with m.State("Y WRITE"):
+                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
+                m.d.comb += self.y_latch.eq(0)
+                m.next = "Y LATCH"
+
+            with m.State("Y LATCH"):
+                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
+                m.d.comb += self.y_latch.eq(1)
+                m.next = "Y RELEASE"
+
+            with m.State("Y RELEASE"):
+                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
+                m.d.comb += self.y_latch.eq(0)
+                m.next = "A LATCH & ENABLE"
+
+            with m.State("A LATCH & ENABLE"):
+                m.d.comb += [                  
+                    self.a_latch.eq(1),
+                    self.a_enable.eq(0)
+                ]
+                m.next = "A READ"
+
+            with m.State("A READ"):
+                m.d.comb += self.a_enable.eq(0)
+                m.d.comb += self.bus_state.eq(BUS_READ)
+                
+                m.next = "A RELEASE"
+
+            with m.State("A RELEASE"):
+                m.d.comb += self.a_enable.eq(0)
+                m.d.comb += self.bus_state.eq(A_RELEASE)
+                # if self.mode == "image" or self.mode == "both":
+                #     with m.If(self.in_fifo_ready):
+                #         m.next = "FIFO_1"
+                # if self.mode == "pattern" or self.mode == "both":
+                m.next = "FIFO_1"
+
+
+            with m.State("FIFO_1"):
+                m.d.comb += self.bus_state.eq(BUS_FIFO_1)
+                m.next = "WAIT"
+                # if self.mode == "image" or self.mode == "both":
+                #     with m.If(self.in_fifo_ready):
+                #         m.next = "FIFO_2"
+                # if self.mode == "pattern" or self.mode == "both":
+                #     m.next = "FIFO_2"
+            
+            with m.State("DO_NOTHING"):
+                pass
+
+                    
+            # with m.State("FIFO_2"):
+            #     m.d.comb += self.bus_state.eq(BUS_FIFO_2)
+            #     m.next = "WAIT"
+
+        return m
+    def ports(self):
+        return [self.x_data, self.y_data, self.x_latch, self.x_enable,
+        self.y_latch, self.y_enable, self.a_latch, self.a_enable, self.bus_state]
+
 
 
 # --- TEST ---
