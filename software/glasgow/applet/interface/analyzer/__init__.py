@@ -21,6 +21,26 @@ class AnalyzerSubtarget(Elaboratable):
         m = Module()
         m.submodules += self.analyzer
 
+        a_enable = platform.request("A_ENABLE")
+        a_latch = platform.request("A_LATCH")
+        a_clock = platform.request("A_CLOCK")
+
+        ## ADC clocking
+        adc_increment = Signal()
+        adc_frequency = int(24) 
+        adc_timer = Signal(range(adc_frequency + 1))
+        
+        with m.If(adc_timer == adc_frequency):
+            m.d.sync += a_clock.eq(~a_clock)
+            m.d.sync += adc_timer.eq(0)
+        with m.Else():
+            m.d.sync += adc_timer.eq(adc_timer + 1) 
+
+        # ADC Data Latch Permanent
+        m.d.comb += a_latch.eq(1)
+        m.d.comb += a_enable.eq(0)
+        
+
         pins_i = Signal.like(self.pads.i_t.i)
         pins_r = Signal.like(self.pads.i_t.i)
         m.submodules += FFSynchronizer(self.pads.i_t.i, pins_i)
