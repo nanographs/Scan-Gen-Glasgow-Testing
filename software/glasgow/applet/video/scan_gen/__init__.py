@@ -1,6 +1,7 @@
 import logging
 import asyncio
 from amaranth import *
+from amaranth.build import *
 from amaranth.sim import Simulator
 import numpy as np
 import time
@@ -117,7 +118,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
         
         with m.If(scan_bus.bus_state == BUS_READ):
-            for i in range(7):
+            for i in range(8):
                 if self.mode == "image":
                         if self.loopback:
                             ## LOOPBACK
@@ -229,7 +230,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
     @classmethod
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
-        access.add_pin_set_argument(parser, "data", width=14, default=range(0,13))
+        access.add_pin_set_argument(parser, "data", width=14, default=range(0,14))
         access.add_pin_argument(parser, "power_ok", default=15)
         parser.add_argument(
             "-r", "--res", type=int, default=9,
@@ -246,6 +247,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
 
     def build(self, target, args):
+        print(vars(target))
+        # testpin = [Resource("TEST", 0, Pins("H2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33"))]
+        # target.platform.add_resources(testpin)
+        # print(type(target))
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
