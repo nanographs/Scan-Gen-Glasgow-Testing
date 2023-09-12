@@ -24,6 +24,8 @@ BUS_FIFO_2 = 0x05
 FIFO_WAIT = 0x06
 A_RELEASE = 0x07
 OUT_FIFO = 0x08
+OUT_FIFO_X = 0x09
+OUT_FIFO_Y = 0x10
 
 
 ######################
@@ -51,13 +53,13 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
         self.out_fifo_f = Signal(8)
 
+        self.out_fifo_x = Signal(8)
+        self.out_fifo_y = Signal(8)
+
     def elaborate(self, platform):
         m = Module()
 
-        if self.mode == "point":
-            m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
-        else:
-            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
+        m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
 
         x_latch = platform.request("X_LATCH")
         x_enable = platform.request("X_ENABLE")
@@ -88,6 +90,12 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         ]
 
         # m.d.sync += [scan_bus.out_fifo.eq(20)]
+        if self.mode == "vector":
+            m.d.sync += [ 
+                scan_bus.out_fifo.eq(255),
+                scan_bus.x_data.eq(self.out_fifo_x),
+                scan_bus.y_data.eq(self.out_fifo_y)
+            ]
         if self.mode == "pattern" or self.mode == "pattern_out":
             if self.loopback:
                 m.d.sync += [scan_bus.out_fifo.eq(5)] ## don't actually use the dwell times
@@ -119,6 +127,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         
         with m.If(scan_bus.bus_state == BUS_READ):
             for i in range(8):
+                if self.mode == "vector":
+                    m.d.sync += self.datain[i].eq(scan_bus.x_data[i+6])
                 if self.mode == "image":
                         if self.loopback:
                             ## LOOPBACK
@@ -141,17 +151,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                         # self.datain[i].eq(scan_bus.out_fifo[i])
                         self.datain[i].eq(self.out_fifo_f[i])
                         ]
-                    if self.mode == "point":
-                        m.d.sync += [
-                            self.datain[0].eq(scan_bus.dwell_time[0]),
-                            self.datain[1].eq(scan_bus.dwell_time[1]),
-                            self.datain[2].eq(scan_bus.dwell_time[2]),
-                            self.datain[3].eq(scan_bus.dwell_time[3]),
-                            self.datain[4].eq(scan_bus.dwell_time[4]),
-                            self.datain[5].eq(scan_bus.dwell_time[5]),
-                            self.datain[6].eq(scan_bus.dwell_time[6]),
-                            self.datain[7].eq(scan_bus.dwell_time[7]),
-                        ]
+
 
 
                 
@@ -191,12 +191,11 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
             with m.If(scan_bus.bus_state == BUS_FIFO_2):
                 with m.If(self.in_fifo.w_rdy):
-                    if self.mode != "point":
-                        with m.If(scan_bus.line_sync & scan_bus.frame_sync):
-                            m.d.comb += [
-                                self.in_fifo.din.eq(0),
-                                self.in_fifo.w_en.eq(1),
-                            ]
+                    with m.If(scan_bus.line_sync & scan_bus.frame_sync):
+                        m.d.comb += [
+                            self.in_fifo.din.eq(0),
+                            self.in_fifo.w_en.eq(1),
+                        ]
         
             with m.If(scan_bus.bus_state == OUT_FIFO):
                 if self.mode == "pattern" or self.mode == "pattern_out":
@@ -210,7 +209,28 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                             #scan_bus.out_fifo.eq(self.out_fifo.r_data),
                             
                         ]
-                
+
+            with m.If(scan_bus.bus_state == OUT_FIFO_X):
+                m.d.comb += [self.out_fifo.r_en.eq(1)]
+                with m.If(self.out_fifo.r_rdy):
+                    m.d.sync += [
+                        #self.out_fifo_f.eq(5),
+                        self.out_fifo_x.eq(self.out_fifo.r_data),
+                        #scan_bus.out_fifo.eq(20),
+                        #scan_bus.out_fifo.eq(self.out_fifo.r_data),
+                        
+                    ]
+
+            with m.If(scan_bus.bus_state == OUT_FIFO_Y):
+                m.d.comb += [self.out_fifo.r_en.eq(1)]
+                with m.If(self.out_fifo.r_rdy):
+                    m.d.sync += [
+                        #self.out_fifo_f.eq(5),
+                        self.out_fifo_y.eq(self.out_fifo.r_data),
+                        #scan_bus.out_fifo.eq(20),
+                        #scan_bus.out_fifo.eq(self.out_fifo.r_data),
+                        
+                    ]
 
         return m
 
@@ -247,7 +267,6 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
 
     def build(self, target, args):
-        print(vars(target))
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -376,6 +395,16 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
                 raw_data = await iface.read()
                 print("start thread")
                 threading.Thread(target=imgout(raw_data)).start()
+            if args.mode == "vector":
+                # await iface.write(0)
+                # await iface.write(255)
+                # await iface.flush()
+                for n in range(2,255,20):
+                    print(n)
+                    await iface.write(n)
+                    await iface.flush(wait=False)
+                    await asyncio.sleep(1)
+
 
 
 

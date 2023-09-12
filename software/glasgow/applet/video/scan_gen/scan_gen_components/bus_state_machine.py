@@ -24,6 +24,11 @@ BUS_FIFO_2 = 0x05
 FIFO_WAIT = 0x06
 A_RELEASE = 0x07
 OUT_FIFO = 0x08
+OUT_FIFO_X = 0x09
+OUT_FIFO_Y = 0x10
+WAIT = 0x11
+WAIT_FIRST = 0x12
+
 
 
 
@@ -72,16 +77,22 @@ class ScanIOBus(Elaboratable):
 
         m.submodules.scan_gen = scan_gen = ScanGenerator(self.resolution_bits) 
 
-    
-        m.d.comb += [
-            self.x_data.eq(scan_gen.x_data),
-            self.y_data.eq(scan_gen.y_data),
-            self.line_sync.eq(scan_gen.line_sync),
-            self.frame_sync.eq(scan_gen.frame_sync),
-            self.x_enable.eq(0), ## default state for X enable
-            self.y_enable.eq(0),
-            self.a_enable.eq(1)
-        ]
+        if self.mode != "vector":
+            m.d.comb += [
+                self.x_data.eq(scan_gen.x_data),
+                self.y_data.eq(scan_gen.y_data),
+                self.line_sync.eq(scan_gen.line_sync),
+                self.frame_sync.eq(scan_gen.frame_sync),
+                self.x_enable.eq(0), ## default state for X enable
+                self.y_enable.eq(0),
+                self.a_enable.eq(1)
+            ]
+        else:
+            m.d.comb += [
+                self.x_enable.eq(0), ## default state for X enable
+                self.y_enable.eq(0),
+                self.a_enable.eq(1)
+            ]
 
         m.d.sync += [
             self.count_one.eq(min_dwell_ctr.count == 1),
@@ -122,26 +133,45 @@ class ScanIOBus(Elaboratable):
         with m.FSM() as fsm:
             if self.mode == "pattern" or self.mode == "pattern_out":
                 with m.State("Wait_For_First_USB_Data"):
+                    m.d.comb += [self.bus_state.eq(WAIT_FIRST)]
                     with m.If(self.out_fifo_ready):
                         m.d.comb += [self.bus_state.eq(OUT_FIFO)]
                         m.next = "WAIT"
+            
+
+
+
 
             with m.State("WAIT"):
+                m.d.comb += self.bus_state.eq(WAIT)
                 with m.If(self.count_one):
                     with m.If(self.dwell_ctr_ovf):
                         m.d.comb += [
                             dwell_ctr.rst.eq(1),
-                            scan_gen.en.eq(1)
+                            scan_gen.en.eq(1),
                         ]
                         if self.mode == "pattern" or self.mode == "pattern_out":
                             m.d.comb += self.bus_state.eq(OUT_FIFO)
+                        if self.mode == "vector":
+                            m.d.comb += [self.bus_state.eq(OUT_FIFO_X),
+                            ]
 
-
+                        m.next = "X WRITE"
                     with m.Else():
                         m.d.comb += dwell_ctr.en.eq(1)
-                    m.next = "X WRITE"
                 with m.Else():
                     m.next = "WAIT"
+
+            # #if self.mode == "vector":
+            # with m.State("READ_X"):
+            #     #with m.If(self.out_fifo_ready):
+            #     m.d.comb += self.bus_state.eq(OUT_FIFO_X)
+            #     m.next = "READ_Y"
+
+            # with m.State("READ_Y"):
+            #     #with m.If(self.out_fifo_ready):
+            #     m.d.comb += self.bus_state.eq(OUT_FIFO_Y)
+            #     m.next = "X WRITE"
 
 
             with m.State("X WRITE"):
@@ -202,6 +232,8 @@ class ScanIOBus(Elaboratable):
                         m.next = "FIFO_1"
                 if self.mode == "pattern_out":
                     m.next = "FIFO_1"
+                if self.mode == "vector":
+                    m.next = "WAIT"
 
                         
             with m.State("FIFO_1"):
@@ -367,7 +399,10 @@ class ScanIOBus_Point(Elaboratable):
                 #     with m.If(self.in_fifo_ready):
                 #         m.next = "FIFO_1"
                 # if self.mode == "pattern" or self.mode == "both":
-                m.next = "FIFO_1"
+                if self.mode == "vector":
+                    m.next = "READ_X"
+                else:
+                    m.next = "FIFO_1"
 
 
             with m.State("FIFO_1"):
@@ -397,12 +432,14 @@ class ScanIOBus_Point(Elaboratable):
 # --- TEST ---
 
 def run_sim():
-    dut = ScanIOBus(4,8,mode="image") # 16 x 16
+    dut = ScanIOBus(8,8,mode="vector") # 16 x 16
     def bench():
-        yield dut.in_fifo_ready.eq(1)
-        yield dut.out_fifo_ready.eq(1)
+        # yield dut.in_fifo_ready.eq(1)
+        # yield dut.out_fifo_ready.eq(1)
         yield dut.out_fifo.eq(3)
-        for _ in range(4096):
+        for i in range(2,256):
+            # yield dut.x_data.eq(i)
+            # yield dut.y_data.eq(i)
             yield
         yield
 
