@@ -1,21 +1,24 @@
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageChops
 import os
+import time
 
 
-def bmp_to_bitstream(filename, dimension, boolean=False, invert_color=False, flip_lr=False):
-    pattern_img = Image.open(os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename))
-    print(pattern_img)
-    ## boolean images will have pixel values of True or False
-    ## this will convert that to 1 or 0
-    pattern_array = np.array(pattern_img).astype(np.uint8)
-    
-    height, width = pattern_array.shape[0], pattern_array.shape[1]
+def window(pixel):
+    if pixel <= 1:
+        pixel = 2
+    return pixel
 
+
+def bmp_to_bitstream(filename, dimension, invert_color = False):
+    img_path = os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename)
+    im = Image.open(img_path)
+    height, width = im.size
+    im = im.convert("L")
     if invert_color:
-        for i in range(height):
-            for j in range(width):
-                pattern_array[i][j] = 255 - pattern_array[i][j]
+        im = ImageChops.invert(im)
+    im = im.point(lambda i: window(i))
+    pattern_array = np.array(im).astype(np.uint8)
 
     ## pad the array to fit the full frame resolution
     padding_tb = dimension - height ## difference between height of frame and full resolution
@@ -38,31 +41,7 @@ def bmp_to_bitstream(filename, dimension, boolean=False, invert_color=False, fli
     padding = ((padding_top, padding_bottom),(padding_left,padding_right))
 
     pattern_array = np.pad(pattern_array,pad_width = padding, constant_values = 2)
-
-    if flip_lr:
-        pattern_array = np.flip(pattern_array, axis=1)
-    
-    for i in range(dimension):
-        for j in range(dimension):
-            if not boolean: ## pixel values are from 0 to 255
-                if pattern_array[i][j] < 2:
-                    pattern_array[i][j] = 2
-            if boolean: ## pixel values are 1 or 0 only
-                if pattern_array[i][j] == 1:
-                    pattern_array[i][j] = 2
-                if pattern_array[i][j] == 0:
-                    pattern_array[i][j] = 254
-
-    
-
-    #pattern_array[dimension-1][dimension-1] = 0
     print(pattern_array)
-    pattern_array.tofile("patternbytes_v4.txt", sep = ", ")
 
-    ## "cut the deck" - move some bits from the beginning of the stream to the end
-    pattern_stream_og = np.ravel(pattern_array)
-    offset_px = 0
-    pattern_stream = np.concatenate((pattern_stream_og[offset_px:],pattern_stream_og[0:offset_px]),axis=None)
-
-    
+    pattern_stream = np.ravel(pattern_array)
     return pattern_stream
