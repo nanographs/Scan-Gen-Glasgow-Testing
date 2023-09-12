@@ -121,25 +121,7 @@ class GlasgowPlatformRevC123(GlasgowPlatformICE40):
         # Since the default pin state is a weak pullup, we need to tristate them explicitly.
         Resource("unused", 0, Pins("A6 B5", dir="oe"), Attrs(IO_STANDARD="SB_LVCMOS33")),
 
-        ### LVDS Header (Not used as LVDS, but still using the same pin names)
-        Resource("X_ENABLE", 0, Pins("B1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-        #Resource("0N", 0, Pins("B2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-        
-        Resource("X_LATCH", 0, Pins("C4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-        #Resource("1N", 0, Pins("C3", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
 
-        Resource("Y_ENABLE", 0, Pins("C2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-        #Resource("2N", 0, Pins("C1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-
-        Resource("Y_LATCH", 0, Pins("E1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-
-        Resource("A_ENABLE", 0, Pins("D2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-
-        Resource("A_LATCH", 0, Pins("E2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-
-        Resource("D_CLOCK", 0, Pins("F1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-
-        Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
     ]
     connectors = [
 
