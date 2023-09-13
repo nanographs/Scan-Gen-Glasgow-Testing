@@ -607,12 +607,12 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 with m.If(self.in_fifo.w_rdy):
                     with m.If(self.running_average_two <= 1): #restrict image data to 2-255, save 0-1 for frame/line sync
                         m.d.comb += [
-                            self.in_fifo.din.eq(2),
+                            self.in_fifo.w_data.eq(2),
                             self.in_fifo.w_en.eq(1),
                         ]
                     with m.Else():
                         m.d.comb += [
-                            self.in_fifo.din.eq(self.running_average_two[0:8]),
+                            self.in_fifo.w_data.eq(self.running_average_two[0:8]),
                             self.in_fifo.w_en.eq(1),
                         ]
 
@@ -621,7 +621,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                     if self.mode != "point":
                         with m.If(scan_bus.line_sync & scan_bus.frame_sync):
                             m.d.comb += [
-                                self.in_fifo.din.eq(0),
+                                self.in_fifo.w_data.eq(0),
                                 self.in_fifo.w_en.eq(1),
                             ]
         
