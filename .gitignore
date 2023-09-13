@@ -1,6 +1,6 @@
-*.vcd
+/env/
 /venv/
-
+*.pyc
 *.gtkw
 *.log
 /*.v
@@ -24,3 +24,4 @@ socketlogs.txt
 software/glasgow/applet/video/scan_gen/*.bmp
 *.vcd
 
+env/lib/python3.11/site-packages/pkg_resources/_vendor/jaraco/__pycache__/__init__.cpython-311.pyc
