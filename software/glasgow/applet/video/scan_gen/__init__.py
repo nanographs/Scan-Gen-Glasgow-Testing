@@ -11,7 +11,8 @@ from rich import print
 from .scan_gen_components.bus_state_machine import ScanIOBus, ScanIOBus_Point
 #from .scan_gen_components import pg_gui 
 from .output_formats import ScanDataRun, CommandLine
-from .input_formats import bmp_to_bitstream
+from .input_formats import bmp_to_bitstreamls
+
 
 
 from ... import *
