@@ -24,6 +24,9 @@ dependencies = [
   "libusb1>=1.8.1",
   "pyvcd",
   "bitarray",
+  "numpy",
+  "rich",
+  "matplotlib",
 ]
 
 [project.optional-dependencies]

@@ -11,7 +11,7 @@ from rich import print
 from .scan_gen_components.bus_state_machine import ScanIOBus, ScanIOBus_Point
 #from .scan_gen_components import pg_gui 
 from .output_formats import ScanDataRun, CommandLine
-from .input_formats import bmp_to_bitstreamls
+from .input_formats import bmp_to_bitstream
 
 
 
@@ -72,14 +72,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
 
         m.d.comb += [
-            x_latch.eq(scan_bus.x_latch),
-            x_enable.eq(scan_bus.x_enable),
-            y_latch.eq(scan_bus.y_latch),
-            y_enable.eq(scan_bus.y_enable),
-            a_latch.eq(scan_bus.a_latch),
-            a_enable.eq(scan_bus.a_enable),
-            a_clock.eq(scan_bus.a_clock),
-            d_clock.eq(scan_bus.d_clock),
+            x_latch.o.eq(scan_bus.x_latch),
+            x_enable.o.eq(scan_bus.x_enable),
+            y_latch.o.eq(scan_bus.y_latch),
+            y_enable.o.eq(scan_bus.y_enable),
+            a_latch.o.eq(scan_bus.a_latch),
+            a_enable.o.eq(scan_bus.a_enable),
+            a_clock.o.eq(scan_bus.a_clock),
+            d_clock.o.eq(scan_bus.d_clock),
             #scan_bus.fifo_ready.eq(0)
             scan_bus.in_fifo_ready.eq(self.in_fifo.w_rdy),
             scan_bus.out_fifo_ready.eq(self.out_fifo.r_rdy),
@@ -206,7 +206,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         return m
 
 
-class ScanGenApplet(GlasgowApplet, name="scan-gen"):
+class ScanGenApplet(GlasgowApplet):
     logger = logging.getLogger(__name__)
     help = "boilerplate applet"
     preview = True
