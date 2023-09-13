@@ -144,14 +144,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
     
 
                 if self.mode == "pattern":
-                    ## in pattern mode, currently, the transmitted data will always loop back
-                    ## todo: a mode that returns live signal instead
-                    m.d.sync += [
-                        # self.datain[i].eq(scan_bus.x_data[i+6])
-                        # self.datain[i].eq(scan_bus.out_fifo[i])
-                        self.datain[i].eq(self.out_fifo_f[i])
+                    if self.loopback:
+                        m.d.sync += [
+                            self.datain[i].eq(self.data[i+6].i)
                         ]
-
+                    else:
+                        m.d.sync += [
+                            self.datain[i].eq(self.out_fifo_f[i])
+                            ]
 
 
                 
@@ -267,6 +267,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
 
     def build(self, target, args):
+        print(vars(target))
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -352,10 +353,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         if args.mode == "pattern" or args.mode == "pattern_out":
             #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
-            #pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
+            pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
             #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension, boolean=True)
             #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
-            pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
+            #pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
             
 
 
