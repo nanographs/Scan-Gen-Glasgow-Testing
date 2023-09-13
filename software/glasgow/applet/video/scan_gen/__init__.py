@@ -573,11 +573,11 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 if self.mode == "pattern":
                     if self.loopback:
                         m.d.sync += [
-                            self.datain[i].eq(self.data[i+6].i)
+                            self.datain[i].eq(self.out_fifo_f[i])
                         ]
                     else:
                         m.d.sync += [
-                            self.datain[i].eq(self.out_fifo_f[i])
+                            self.datain[i].eq(self.data[i+6].i)
                             ]
 
 
@@ -727,7 +727,7 @@ class ScanGenApplet(GlasgowApplet):
             # print("-----------")
             # print("frame", current.n)
             data = raw_data.tolist()
-            #current.packet_to_txt_file(data)
+            current.packet_to_txt_file(data)
             #current.packet_to_waveform(data)
             d = np.array(data)
             print(d)
@@ -785,7 +785,7 @@ class ScanGenApplet(GlasgowApplet):
         
         def patternin(pattern_slice):
             current.n += 1
-            #current.packet_to_txt_file(pattern_slice, "o")
+            current.packet_to_txt_file(pattern_slice, "o")
             #current.packet_to_waveform(pattern_slice, "o")
 
 
