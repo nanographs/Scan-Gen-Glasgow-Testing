@@ -134,24 +134,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
     
 
                 if self.mode == "pattern":
-                    ## in pattern mode, currently, the transmitted data will always loop back
-                    ## todo: a mode that returns live signal instead
-                    m.d.sync += [
-                        # self.datain[i].eq(scan_bus.x_data[i+6])
-                        # self.datain[i].eq(scan_bus.out_fifo[i])
-                        self.datain[i].eq(self.out_fifo_f[i])
-                        ]
-                    if self.mode == "point":
+                    if self.loopback:
                         m.d.sync += [
-                            self.datain[0].eq(scan_bus.dwell_time[0]),
-                            self.datain[1].eq(scan_bus.dwell_time[1]),
-                            self.datain[2].eq(scan_bus.dwell_time[2]),
-                            self.datain[3].eq(scan_bus.dwell_time[3]),
-                            self.datain[4].eq(scan_bus.dwell_time[4]),
-                            self.datain[5].eq(scan_bus.dwell_time[5]),
-                            self.datain[6].eq(scan_bus.dwell_time[6]),
-                            self.datain[7].eq(scan_bus.dwell_time[7]),
+                            self.datain[i].eq(self.data[i+6].i)
                         ]
+                    else:
+                        m.d.sync += [
+                            self.datain[i].eq(self.out_fifo_f[i])
+                            ]
 
 
                 
@@ -247,7 +237,7 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
 
 
     def build(self, target, args):
-        print(vars(target))
+        # print(vars(target))
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -333,10 +323,10 @@ class ScanGenApplet(GlasgowApplet, name="scan-gen"):
         
         if args.mode == "pattern" or args.mode == "pattern_out":
             #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
-            #pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
+            pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
             #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension, boolean=True)
             #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
-            pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
+            #pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
             
 
 

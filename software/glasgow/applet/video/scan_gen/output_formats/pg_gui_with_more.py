@@ -78,7 +78,7 @@ resolution_options.addWidget(dwelltime_options,1,0)
 ## add widgets to layout
 layout.addWidget(win,0,0)
 layout.addWidget(btn,1,0)
-# layout.addLayout(resolution_options, 2,0)
+layout.addLayout(resolution_options, 2,0)
 
 w.show()
 
