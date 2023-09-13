@@ -45,3 +45,6 @@ def bmp_to_bitstream(filename, dimension, invert_color = False):
 
     pattern_stream = np.ravel(pattern_array)
     return pattern_stream
+
+if __name__ == "__main__":
+    bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", 2048, invert_color=False)
