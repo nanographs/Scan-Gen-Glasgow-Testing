@@ -28,8 +28,8 @@ OUT_FIFO = 0x08
 
 
 class ScanIOBus(Elaboratable):
-    def __init__(self, resolution_bits, dwell_time_user, mode):
-        self.resolution_bits = resolution_bits
+    def __init__(self, dwell_time_user, mode):
+        self.resolution_bits = Signal(3)
         self.dwell_time_user = dwell_time_user
         self.mode = mode #image or pattern
 
@@ -70,7 +70,7 @@ class ScanIOBus(Elaboratable):
 
         
 
-        m.submodules.scan_gen = scan_gen = ScanGenerator(self.resolution_bits) 
+        m.submodules.scan_gen = scan_gen = ScanGenerator(self.resolution_bits)
 
     
         m.d.comb += [
@@ -397,7 +397,7 @@ class ScanIOBus_Point(Elaboratable):
 # --- TEST ---
 
 def run_sim():
-    dut = ScanIOBus(4,8,mode="image") # 16 x 16
+    dut = ScanIOBus(4,8) # 16 x 16
     def bench():
         yield dut.in_fifo_ready.eq(1)
         yield dut.out_fifo_ready.eq(1)
