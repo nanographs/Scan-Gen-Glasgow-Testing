@@ -34,7 +34,8 @@ class AsyncInteractiveConsole:
         self._history_filename = os.path.expanduser("~/.glasgow-history")
         try:
             readline.read_history_file(self._history_filename)
-        except FileNotFoundError:
+        #except FileNotFoundError:
+        except OSError:
             pass
 
         completer = rlcompleter.Completer(self.locals)
