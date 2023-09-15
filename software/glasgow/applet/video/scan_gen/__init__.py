@@ -34,16 +34,18 @@ OUT_FIFO = 0x08
 
 
 class DataBusAndFIFOSubtarget(Elaboratable):
-    def __init__(self, data, power_ok, in_fifo, out_fifo, resolution_bits, dwell_time, mode, loopback):
+    def __init__(self, data, power_ok, in_fifo, out_fifo, resolution_bits, dwell_time, mode, loopback, resolution):
         self.data = data
         self.power_ok = power_ok
         #print(vars(self.pads))
         self.in_fifo  = in_fifo
+        print(type(in_fifo))
         self.out_fifo = out_fifo
         self.mode = mode #image or pattern
         self.loopback = loopback #True if in loopback 
 
         self.resolution_bits = resolution_bits ## 9x9 = 512, etc.
+        self.resolution = resolution
         self.dwell_time = dwell_time
 
         self.datain = Signal(14)
@@ -58,7 +60,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         if self.mode == "point":
             m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
         else:
-            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
+            #m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
+            m.submodules.scan_bus = scan_bus = ScanIOBus(self.dwell_time, self.mode)
 
         x_latch = platform.request("X_LATCH")
         x_enable = platform.request("X_ENABLE")
@@ -83,7 +86,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             #scan_bus.fifo_ready.eq(0)
             scan_bus.in_fifo_ready.eq(self.in_fifo.w_rdy),
             scan_bus.out_fifo_ready.eq(self.out_fifo.r_rdy),
-            
+            scan_bus.resolution_bits.eq(9)
 
             
         ]
@@ -250,6 +253,8 @@ class ScanGenApplet(GlasgowApplet):
             Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),]
 
         target.platform.add_resources(LVDS)
+        self.resolution = target.registers.add_rw(3, reset = 9)
+
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -259,7 +264,8 @@ class ScanGenApplet(GlasgowApplet):
             resolution_bits = args.res,
             dwell_time = args.dwell,
             mode = args.mode,
-            loopback = args.loopback
+            loopback = args.loopback,
+            resolution = self.resolution
         ))
     
     @classmethod

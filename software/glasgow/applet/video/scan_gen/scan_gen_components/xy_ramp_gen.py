@@ -12,9 +12,10 @@ else: ## running as script (simulation)
 
 class ScanGenerator(Elaboratable):
     def __init__(self, resolution_bits):
-        assert resolution_bits <= 14
+        #assert resolution_bits <= 14
         self.bits = resolution_bits
-        self.width = pow(2,self.bits)
+        #self.width = pow(2,self.bits)
+        self.width = self.bits.shape()
 
         ## state
         self.rst = Signal()
@@ -22,8 +23,6 @@ class ScanGenerator(Elaboratable):
         self.line_sync = Signal()
         self.frame_sync = Signal()
 
-        ## frame counter
-        self.frame_size = self.width*self.width
         
         ## x and y position values
         self.x_data = Signal(14)
@@ -36,13 +35,14 @@ class ScanGenerator(Elaboratable):
     def elaborate(self,platform):
         m = Module()
 
-        m.submodules.x_ramp = x_ramp = RampGenerator(self.width)
-        m.submodules.y_ramp = y_ramp = RampGenerator(self.width)
+        m.submodules.x_ramp = x_ramp = RampGenerator(self.bits)
+        m.submodules.y_ramp = y_ramp = RampGenerator(self.bits)
         m.d.comb += [x_ramp.en.eq(0),y_ramp.en.eq(0)]
 
         m.d.comb += [            
-        self.x_data.eq(x_ramp.count*pow(2,14-self.bits)), 
-        self.y_data.eq(y_ramp.count*pow(2,14-self.bits)), 
+        # self.x_data.eq(x_ramp.count*pow(2,14-self.bits)), 
+        self.x_data.eq(x_ramp.count >> (14-self.bits).as_unsigned()),
+        self.y_data.eq(y_ramp.count >> (14-self.bits).as_unsigned()), 
         self.line_sync.eq(x_ramp.ovf),
         self.frame_sync.eq(y_ramp.ovf),
         ]

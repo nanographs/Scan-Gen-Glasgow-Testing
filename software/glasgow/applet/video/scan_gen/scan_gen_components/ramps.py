@@ -20,7 +20,7 @@ class RampGenerator(Elaboratable):
     rst: Signal, in
         Count is reset when rst is asserted
     """
-    def __init__(self, limit: int):
+    def __init__(self, limit):
         ## Number of unique steps to count up to
         self.limit = limit
 
@@ -30,7 +30,8 @@ class RampGenerator(Elaboratable):
         self.rst = Signal()
 
         # State
-        self.count = Signal(limit.bit_length())
+        #self.count = Signal(limit.bit_length())
+        self.count = Signal(limit.shape())
        
 
     def elaborate(self, platform):
@@ -40,7 +41,8 @@ class RampGenerator(Elaboratable):
         
         with m.Else():
             ## evaluate whether counter is at its limit
-            m.d.comb += self.ovf.eq(self.count == self.limit-1)
+            #m.d.comb += self.ovf.eq(self.count == self.limit - Value.cast(1))
+            m.d.comb += self.ovf.eq(self.count == self.limit -1)
 
             ## incrementing the counter
             with m.If(self.en):

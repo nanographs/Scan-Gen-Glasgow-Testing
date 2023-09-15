@@ -8,6 +8,7 @@ class FIFOTestSubtarget(Elaboratable):
     def __init__(self, pads, in_fifo, out_fifo):
         self.pads     = pads
         self.in_fifo  = in_fifo
+        print(type(in_fifo))
         self.out_fifo = out_fifo
         self.datain = Signal(14)
 
