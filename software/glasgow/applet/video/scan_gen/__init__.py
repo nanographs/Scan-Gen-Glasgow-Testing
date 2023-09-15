@@ -253,7 +253,7 @@ class ScanGenApplet(GlasgowApplet):
             Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),]
 
         target.platform.add_resources(LVDS)
-        self.resolution = target.registers.add_rw(3, reset = 9)
+        self.resolution = target.registers.add_rw(4, reset = 9)
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
@@ -274,116 +274,116 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-
-        resolution_bits = args.res
-        dimension = pow(2,resolution_bits)
+        return iface
+        # resolution_bits = args.res
+        # dimension = pow(2,resolution_bits)
         
-        current = ScanDataRun(dimension)
-        cli = CommandLine() 
+        # current = ScanDataRun(dimension)
+        # cli = CommandLine() 
         
-        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
+        # np.savetxt(f'Scan Capture/current_display_setting', [dimension])
 
-        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
+        # buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
 
-        def display_data(data): ## use to create a basic live display in terminal
-            if len(data) > 0:
-                first = data[0] ## just read the first byte of every packet
-                display = "#"*round(first/5) ## scale it to fit in one line in the terminal
-                print(display)
+        # def display_data(data): ## use to create a basic live display in terminal
+        #     if len(data) > 0:
+        #         first = data[0] ## just read the first byte of every packet
+        #         display = "#"*round(first/5) ## scale it to fit in one line in the terminal
+        #         print(display)
 
 
 
-        def imgout(raw_data):
-            # print("-----------")
-            # print("frame", current.n)
-            data = raw_data.tolist()
-            current.packet_to_txt_file(data)
-            #current.packet_to_waveform(data)
-            d = np.array(data)
-            print(d)
-            # print(buf)
-            zero_index = np.nonzero(d < 1)[0]
-            # print("buffer length:", len(buf))
-            # print("last pixel:",current.last_pixel)
-            print("d length:", len(d))
-            # print("d:",d)
+        # def imgout(raw_data):
+        #     # print("-----------")
+        #     # print("frame", current.n)
+        #     data = raw_data.tolist()
+        #     current.packet_to_txt_file(data)
+        #     #current.packet_to_waveform(data)
+        #     d = np.array(data)
+        #     print(d)
+        #     # print(buf)
+        #     zero_index = np.nonzero(d < 1)[0]
+        #     # print("buffer length:", len(buf))
+        #     # print("last pixel:",current.last_pixel)
+        #     print("d length:", len(d))
+        #     # print("d:",d)
             
-            if len(zero_index) > 0: #if a zero was found
-                # current.n += 1
-                # print("zero index:",zero_index)
-                zero_index = int(zero_index)
+        #     if len(zero_index) > 0: #if a zero was found
+        #         # current.n += 1
+        #         # print("zero index:",zero_index)
+        #         zero_index = int(zero_index)
 
-                buf[:d[zero_index+1:].size] = d[zero_index+1:]
-                # print(buf[:d[zero_index+1:].size])
-                # print(d[:zero_index+1].size)
-                buf[dimension * dimension - zero_index:] = d[:zero_index]
-                # print(buf[dimension * dimension - zero_index:])
-                current.last_pixel = d[zero_index+1:].size
+        #         buf[:d[zero_index+1:].size] = d[zero_index+1:]
+        #         # print(buf[:d[zero_index+1:].size])
+        #         # print(d[:zero_index+1].size)
+        #         buf[dimension * dimension - zero_index:] = d[:zero_index]
+        #         # print(buf[dimension * dimension - zero_index:])
+        #         current.last_pixel = d[zero_index+1:].size
                 
 
-            else: 
-                if len(buf[current.last_pixel:current.last_pixel+len(d)]) < len(d):
-                    pass
-                #     print("data too long to fit in end of frame, but no zero")
-                #     print(d[:dimension])
-                buf[current.last_pixel:current.last_pixel + d.size] = d
-                # print(buf[current.last_pixel:current.last_pixel + d.size])
-                current.last_pixel = current.last_pixel + d.size
+        #     else: 
+        #         if len(buf[current.last_pixel:current.last_pixel+len(d)]) < len(d):
+        #             pass
+        #         #     print("data too long to fit in end of frame, but no zero")
+        #         #     print(d[:dimension])
+        #         buf[current.last_pixel:current.last_pixel + d.size] = d
+        #         # print(buf[current.last_pixel:current.last_pixel + d.size])
+        #         current.last_pixel = current.last_pixel + d.size
             
 
-        start_time = time.perf_counter()
+        # start_time = time.perf_counter()
         
-        #while True:
+        # #while True:
 
 
 
         
         
-        if args.mode == "pattern" or args.mode == "pattern_out":
-            #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
-            pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
-            #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension, boolean=True)
-            #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
-            #pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
+        # if args.mode == "pattern" or args.mode == "pattern_out":
+        #     #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
+        #     pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
+        #     #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension, boolean=True)
+        #     #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
+        #     #pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
             
 
 
 
-            #print(pattern_array)
+        #     #print(pattern_array)
 
         
         
-        def patternin(pattern_slice):
-            current.n += 1
-            current.packet_to_txt_file(pattern_slice, "o")
-            #current.packet_to_waveform(pattern_slice, "o")
+        # def patternin(pattern_slice):
+        #     current.n += 1
+        #     current.packet_to_txt_file(pattern_slice, "o")
+        #     #current.packet_to_waveform(pattern_slice, "o")
 
 
-        while True:
-            if args.mode == "pattern" or args.mode == "pattern_out":
-                for n in range(int(dimension*dimension/16384)): #packets per frame
-                    #time.sleep(.05)
+        # while True:
+        #     if args.mode == "pattern" or args.mode == "pattern_out":
+        #         for n in range(int(dimension*dimension/16384)): #packets per frame
+        #             #time.sleep(.05)
                     
-                    #await iface.write([n]*16384)
-                    if n == dimension*dimension/16384:
-                        pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-                    else:
-                        pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-                    #pattern_slice = ([3]*256 + [254]*256)*32
-                    await iface.write(pattern_slice)
-                    threading.Thread(target=patternin(pattern_slice)).start()
-                    #await iface.flush()
-                    #print("reading", current.n)
-                    if args.mode == "pattern":
-                        raw_data = await iface.read(16384)
-                        # print("start thread")
-                        threading.Thread(target=imgout(raw_data)).start()
-                print("pattern complete", current.n)
-            if args.mode == "image":
-                print("reading")
-                raw_data = await iface.read()
-                print("start thread")
-                threading.Thread(target=imgout(raw_data)).start()
+        #             #await iface.write([n]*16384)
+        #             if n == dimension*dimension/16384:
+        #                 pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+        #             else:
+        #                 pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+        #             #pattern_slice = ([3]*256 + [254]*256)*32
+        #             await iface.write(pattern_slice)
+        #             threading.Thread(target=patternin(pattern_slice)).start()
+        #             #await iface.flush()
+        #             #print("reading", current.n)
+        #             if args.mode == "pattern":
+        #                 raw_data = await iface.read(16384)
+        #                 # print("start thread")
+        #                 threading.Thread(target=imgout(raw_data)).start()
+        #         print("pattern complete", current.n)
+        #     if args.mode == "image":
+        #         print("reading")
+        #         raw_data = await iface.read()
+        #         print("start thread")
+        #         threading.Thread(target=imgout(raw_data)).start()
 
 
 
