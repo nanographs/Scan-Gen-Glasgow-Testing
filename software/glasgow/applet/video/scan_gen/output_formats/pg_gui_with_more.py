@@ -58,39 +58,6 @@ def save_image():
     imwrite(save_path, data.astype(np.uint8), photometric='minisblack') 
 save_btn.clicked.connect(save_image)
 
-scanning = False
-start_btn = QtWidgets.QPushButton('▶️')
-start_btn.setCheckable(True)
-def start():
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
-    sock.send(b'scan\n')
-    if start_btn.isChecked():
-        start_btn.setText('⏸️')
-        # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
-    else:
-        start_btn.setText('▶️')
-
-
-start_btn.clicked.connect(start)
-
-def update_dimension():
-    global dimension
-    dimension = 1024
-    view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
-    updateData()
-
-res_btn = QtWidgets.QPushButton('!!')
-def res():
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
-    sock.send(b'res10')
-    update_dimension()
-res_btn.clicked.connect(res)
 
 resolution_options = QtWidgets.QGridLayout()
 
@@ -111,9 +78,51 @@ dwelltime_options.setRange(0,255)
 dwelltime_options.setSingleStep(1)
 resolution_options.addWidget(dwellLabel,0,0)
 resolution_options.addWidget(dwelltime_options,1,0)
+
+res_btn = QtWidgets.QPushButton('!!')
 resolution_options.addWidget(res_btn,1,2)
 
+start_btn = QtWidgets.QPushButton('▶️')
+start_btn.setCheckable(True)
+def start():
+    resolution_dropdown.setEnabled(False)
+    dwelltime_options.setEnabled(False)
+    res_btn.setEnabled(False)
+    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+    PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+    sock.send(b'scan\n')
+    if start_btn.isChecked():
+        start_btn.setText('⏸️')
+        # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
+    else:
+        start_btn.setText('▶️')
+        resolution_dropdown.setEnabled(True)
+        dwelltime_options.setEnabled(True)
+        res_btn.setEnabled(True)
+        
 
+
+start_btn.clicked.connect(start)
+
+def update_dimension(dim):
+    global dimension
+    dimension = dim
+    view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
+    updateData()
+
+def res():
+    res_bits = resolution_dropdown.currentIndex() + 8 #9 through 14, index start at 1
+    dimension = pow(2,res_bits)
+    msg = ("res" + str(res_bits)).encode("UTF-8")
+    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+    PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+    sock.send(msg)
+    update_dimension(dimension)
+res_btn.clicked.connect(res)
 
 ## add widgets to layout
 layout.addWidget(win,0,0)
