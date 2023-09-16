@@ -455,6 +455,7 @@ class ScanGenApplet(GlasgowApplet):
                         buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
                         await device.write_register(self.reset, 1)
                         await device.write_register(self.resolution, new_bits)
+                        print("resolution:",dimension)
                         
                     # await read_some(time_3)
 
