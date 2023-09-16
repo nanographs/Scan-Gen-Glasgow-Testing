@@ -6,6 +6,20 @@ import os
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore
 
+import socket
+
+# echo-server.py
+
+import socket
+
+HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((HOST, PORT))
+sock.send(b'Hello')
+
+
 app = pg.mkQApp("Scan Live View")
 
 settings = np.loadtxt(os.path.join(os.getcwd(), "Scan Capture/current_display_setting"))
