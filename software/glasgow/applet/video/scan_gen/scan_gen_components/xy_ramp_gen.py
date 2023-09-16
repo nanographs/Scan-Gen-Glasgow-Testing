@@ -14,8 +14,8 @@ class ScanGenerator(Elaboratable):
     def __init__(self, resolution_bits):
         #assert resolution_bits <= 14
         self.bits = resolution_bits
-        #self.width = pow(2,self.bits)
-        self.width = self.bits.shape()
+        self.max_resolution = Signal(14, reset = 16383)
+        self.width = Signal(14)
 
         ## state
         self.rst = Signal()
@@ -35,14 +35,15 @@ class ScanGenerator(Elaboratable):
     def elaborate(self,platform):
         m = Module()
 
-        m.submodules.x_ramp = x_ramp = RampGenerator(self.bits)
-        m.submodules.y_ramp = y_ramp = RampGenerator(self.bits)
+        m.submodules.x_ramp = x_ramp = RampGenerator(self.width)
+        m.submodules.y_ramp = y_ramp = RampGenerator(self.width)
         m.d.comb += [x_ramp.en.eq(0),y_ramp.en.eq(0)]
 
         m.d.comb += [            
+        self.width.eq(self.max_resolution >> (14-self.bits).as_unsigned()),
         # self.x_data.eq(x_ramp.count*pow(2,14-self.bits)), 
-        self.x_data.eq(x_ramp.count >> (14-self.bits).as_unsigned()),
-        self.y_data.eq(y_ramp.count >> (14-self.bits).as_unsigned()), 
+        self.x_data.eq(x_ramp.count << (14-self.bits).as_unsigned()),
+        self.y_data.eq(y_ramp.count << (14-self.bits).as_unsigned()), 
         self.line_sync.eq(x_ramp.ovf),
         self.frame_sync.eq(y_ramp.ovf),
         ]
@@ -67,12 +68,13 @@ class ScanGenerator(Elaboratable):
         return m
         def ports(self):
             return[self.en, self.line_sync, self.frame_sync,
-            self.x_data,self.y_data]
+            self.x_data,self.y_data, self.width]
 
 # --- TEST ---
 if __name__ == "__main__":
-    test_bits = 3
-    test_width = pow(2,test_bits)
+    print("testing")
+    test_bits = Signal(4, reset=9)
+    test_width = 8
     dut = ScanGenerator(test_bits)
     def bench():
         yield dut.en.eq(1)
