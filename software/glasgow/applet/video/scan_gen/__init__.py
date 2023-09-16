@@ -45,7 +45,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         self.loopback = loopback #True if in loopback 
 
         self.resolution_bits = resolution_bits ## 9x9 = 512, etc.
-        self.resolution = resolution
+        self.resolution = resolution[0]
+        print(self.resolution)
         self.dwell_time = dwell_time
 
         self.datain = Signal(14)
@@ -61,7 +62,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
         else:
             #m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
-            m.submodules.scan_bus = scan_bus = ScanIOBus(self.dwell_time, self.mode)
+            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, self.dwell_time, self.mode)
 
         x_latch = platform.request("X_LATCH")
         x_enable = platform.request("X_ENABLE")
@@ -86,9 +87,6 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             #scan_bus.fifo_ready.eq(0)
             scan_bus.in_fifo_ready.eq(self.in_fifo.w_rdy),
             scan_bus.out_fifo_ready.eq(self.out_fifo.r_rdy),
-            scan_bus.resolution_bits.eq(9)
-
-            
         ]
 
         # m.d.sync += [scan_bus.out_fifo.eq(20)]

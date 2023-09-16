@@ -73,12 +73,12 @@ class ScanGenerator(Elaboratable):
 # --- TEST ---
 if __name__ == "__main__":
     print("testing")
-    test_bits = Signal(4, reset=9)
-    test_width = 8
+    test_bits = Signal(4, reset=4)
+    test_width = 64
     dut = ScanGenerator(test_bits)
     def bench():
         yield dut.en.eq(1)
-        for _ in range(3*test_width*test_width):
+        for _ in range(2*test_width*test_width):
             yield
         yield
 
