@@ -38,7 +38,7 @@ OUT_FIFO = 0x08
 
 class DataBusAndFIFOSubtarget(Elaboratable):
     def __init__(self, data, power_ok, in_fifo, out_fifo, resolution_bits, 
-    dwell_time, mode, loopback, resolution, reset):
+    dwell_time, mode, loopback, resolution, reset, enable):
         self.data = data
         self.power_ok = power_ok
         #print(vars(self.pads))
@@ -54,6 +54,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         self.dwell_time = dwell_time
 
         self.reset = reset
+        self.enable = enable
 
         self.datain = Signal(14)
 
@@ -68,7 +69,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
         else:
             #m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
-            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, self.dwell_time, self.mode, self.reset)
+            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, self.dwell_time, 
+                                                        self.mode, self.reset, self.enable)
 
         x_latch = platform.request("X_LATCH")
         x_enable = platform.request("X_ENABLE")
@@ -259,6 +261,7 @@ class ScanGenApplet(GlasgowApplet):
         target.platform.add_resources(LVDS)
         resolution, self.resolution = target.registers.add_rw(4, reset = 9)
         reset, self.reset = target.registers.add_rw()
+        enable, self.enable = target.registers.add_rw(reset=0)
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
@@ -271,7 +274,8 @@ class ScanGenApplet(GlasgowApplet):
             mode = args.mode,
             loopback = args.loopback,
             resolution = resolution,
-            reset = reset
+            reset = reset,
+            enable = enable
         ))
     
     @classmethod
@@ -401,10 +405,12 @@ class ScanGenApplet(GlasgowApplet):
         #         print("start thread")
         #         threading.Thread(target=imgout(raw_data)).start()
         
-        async def read_some():
+        async def read_some(start_time):
             for n in range(10):
                 print("reading")
                 raw_data = await iface.read()
+                time_2 = time.perf_counter()
+                print(time_2 - start_time)
                 print("start thread")
                 threading.Thread(target=imgout(raw_data)).start()
 
@@ -412,18 +418,25 @@ class ScanGenApplet(GlasgowApplet):
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
         while True:
             try:
+                start_time = time.perf_counter()
                 data = await asyncio.shield(endpoint.recv(buffer_size))
                 cmd = data.removesuffix(b'\n').decode(encoding='utf-8', errors='strict')
                 print(cmd)
+                time_2 = time.perf_counter()
+                print(time_2 - start_time)
                 if cmd == "scan":
                     print(True)
-                    await read_some()
+                    time_3 = time.perf_counter()
+                    print(time_3-time_2)
+                    await device.write_register(self.enable, 1)
+                    await read_some(time_3)
+                    
             except asyncio.CancelledError:
                 pass
 
 
-
-        # await read_some()
+        # start_time = time.perf_counter()
+        # await read_some(start_time)
 
         # new_bits = 10
         # dimension = pow(2,new_bits)
