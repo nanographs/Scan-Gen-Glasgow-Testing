@@ -113,7 +113,7 @@ def update_dimension(dim):
     updateData()
 
 def res():
-    res_bits = resolution_dropdown.currentIndex() + 8 #9 through 14, index start at 1
+    res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     dimension = pow(2,res_bits)
     msg = ("res" + str(res_bits)).encode("UTF-8")
     HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
@@ -121,6 +121,7 @@ def res():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
     sock.send(msg)
+    print("sent", msg)
     update_dimension(dimension)
 res_btn.clicked.connect(res)
 
