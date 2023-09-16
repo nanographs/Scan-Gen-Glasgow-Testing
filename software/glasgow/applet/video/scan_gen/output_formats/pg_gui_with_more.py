@@ -115,7 +115,8 @@ def update_dimension(dim):
 def res():
     res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     dimension = pow(2,res_bits)
-    msg = ("res" + str(res_bits)).encode("UTF-8")
+    
+    msg = ("res" + format(res_bits, '02d')).encode("UTF-8")
     HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
     PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -444,11 +444,11 @@ class ScanGenApplet(GlasgowApplet):
                 elif cmd.startswith("res"):
                         new_bits = int(cmd.strip("res"))
                         self.scanning = False
-                        await device.write_register(self.enable, 0)
-                        if not task.cancelled():
-                            task.cancel()
-                        else:
-                            task = None
+                        # await device.write_register(self.enable, 0)
+                        # if not task.cancelled():
+                        #     task.cancel()
+                        # else:
+                        #     task = None
                         #new_bits = 10
                         dimension = pow(2,new_bits)
                         np.savetxt(f'Scan Capture/current_display_setting', [dimension])
