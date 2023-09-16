@@ -26,6 +26,6 @@ software/glasgow/applet/video/scan_gen/*.bmp
 
 env/lib/python3.11/site-packages/pkg_resources/_vendor/jaraco/__pycache__/__init__.cpython-311.pyc
 software/Scan Capture/current_display_setting
-software/Scan Capture/current_frame
-software/Scan Capture/2023-09-15_15-51-27/packets.txt
-software/Scan Capture/current_display_setting
+**/current_frame
+**/current_display_setting
+**/packets.txt

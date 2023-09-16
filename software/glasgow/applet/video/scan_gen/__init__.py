@@ -34,7 +34,8 @@ OUT_FIFO = 0x08
 
 
 class DataBusAndFIFOSubtarget(Elaboratable):
-    def __init__(self, data, power_ok, in_fifo, out_fifo, resolution_bits, dwell_time, mode, loopback, resolution):
+    def __init__(self, data, power_ok, in_fifo, out_fifo, resolution_bits, 
+    dwell_time, mode, loopback, resolution, reset):
         self.data = data
         self.power_ok = power_ok
         #print(vars(self.pads))
@@ -45,9 +46,11 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         self.loopback = loopback #True if in loopback 
 
         self.resolution_bits = resolution_bits ## 9x9 = 512, etc.
-        self.resolution = resolution[0]
+        self.resolution = resolution
         print(self.resolution)
         self.dwell_time = dwell_time
+
+        self.reset = reset
 
         self.datain = Signal(14)
 
@@ -62,7 +65,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
         else:
             #m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
-            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, self.dwell_time, self.mode)
+            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, self.dwell_time, self.mode, self.reset)
 
         x_latch = platform.request("X_LATCH")
         x_enable = platform.request("X_ENABLE")
@@ -251,7 +254,8 @@ class ScanGenApplet(GlasgowApplet):
             Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),]
 
         target.platform.add_resources(LVDS)
-        self.resolution = target.registers.add_rw(4, reset = 9)
+        resolution, self.resolution = target.registers.add_rw(4, reset = 9)
+        reset, self.reset = target.registers.add_rw()
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(DataBusAndFIFOSubtarget(
@@ -263,7 +267,8 @@ class ScanGenApplet(GlasgowApplet):
             dwell_time = args.dwell,
             mode = args.mode,
             loopback = args.loopback,
-            resolution = self.resolution
+            resolution = resolution,
+            reset = reset
         ))
     
     @classmethod
@@ -288,6 +293,7 @@ class ScanGenApplet(GlasgowApplet):
         current = ScanDataRun(dimension)
         cli = CommandLine() 
         
+
         np.savetxt(f'Scan Capture/current_display_setting', [dimension])
 
         buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
@@ -366,31 +372,51 @@ class ScanGenApplet(GlasgowApplet):
             #current.packet_to_waveform(pattern_slice, "o")
 
 
-        while True:
-            if args.mode == "pattern" or args.mode == "pattern_out":
-                for n in range(int(dimension*dimension/16384)): #packets per frame
-                    #time.sleep(.05)
+        # while True:
+        #     if args.mode == "pattern" or args.mode == "pattern_out":
+        #         for n in range(int(dimension*dimension/16384)): #packets per frame
+        #             #time.sleep(.05)
                     
-                    #await iface.write([n]*16384)
-                    if n == dimension*dimension/16384:
-                        pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-                    else:
-                        pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-                    #pattern_slice = ([3]*256 + [254]*256)*32
-                    await iface.write(pattern_slice)
-                    threading.Thread(target=patternin(pattern_slice)).start()
-                    #await iface.flush()
-                    #print("reading", current.n)
-                    if args.mode == "pattern":
-                        raw_data = await iface.read(16384)
-                        # print("start thread")
-                        threading.Thread(target=imgout(raw_data)).start()
-                print("pattern complete", current.n)
-            if args.mode == "image":
+        #             #await iface.write([n]*16384)
+        #             if n == dimension*dimension/16384:
+        #                 pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+        #             else:
+        #                 pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+        #             #pattern_slice = ([3]*256 + [254]*256)*32
+        #             await iface.write(pattern_slice)
+        #             threading.Thread(target=patternin(pattern_slice)).start()
+        #             #await iface.flush()
+        #             #print("reading", current.n)
+        #             if args.mode == "pattern":
+        #                 raw_data = await iface.read(16384)
+        #                 # print("start thread")
+        #                 threading.Thread(target=imgout(raw_data)).start()
+        #         print("pattern complete", current.n)
+        #     if args.mode == "image":
+        #         print("reading")
+        #         raw_data = await iface.read()
+        #         print("start thread")
+        #         threading.Thread(target=imgout(raw_data)).start()
+        
+        async def read_some():
+            for n in range(10):
                 print("reading")
                 raw_data = await iface.read()
                 print("start thread")
                 threading.Thread(target=imgout(raw_data)).start()
+
+        await read_some()
+
+        new_bits = 10
+        dimension = pow(2,new_bits)
+        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
+        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
+        await device.write_register(self.reset, 1)
+        await device.write_register(self.resolution, new_bits)
+        
+        await read_some()
+
+
 
 
 # -------------------------------------------------------------------------------------------------
