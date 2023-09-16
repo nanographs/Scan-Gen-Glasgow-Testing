@@ -87,11 +87,11 @@ class ScanIOBus(Elaboratable):
             self.a_enable.eq(1)
         ]
 
-        with m.If(self.enable):
-            m.d.sync += [
-                self.count_one.eq(min_dwell_ctr.count == 1),
-                self.count_six.eq(min_dwell_ctr.count > 5),
-            ]
+        
+        m.d.sync += [
+            self.count_one.eq(min_dwell_ctr.count == 1),
+            self.count_six.eq(min_dwell_ctr.count > 5),
+        ]
 
         with m.If(self.count_six):
             m.d.sync += [
@@ -124,108 +124,108 @@ class ScanIOBus(Elaboratable):
         #     m.d.comb += [scan_gen.x_rst.eq(1)]
 
         
+        with m.If(self.enable):
+            with m.FSM() as fsm:
+                if self.mode == "pattern" or self.mode == "pattern_out":
+                    with m.State("Wait_For_First_USB_Data"):
+                        with m.If(self.out_fifo_ready):
+                            m.d.comb += [self.bus_state.eq(OUT_FIFO)]
+                            m.next = "WAIT"
 
-        with m.FSM() as fsm:
-            if self.mode == "pattern" or self.mode == "pattern_out":
-                with m.State("Wait_For_First_USB_Data"):
-                    with m.If(self.out_fifo_ready):
-                        m.d.comb += [self.bus_state.eq(OUT_FIFO)]
+                with m.State("WAIT"):
+                    with m.If(self.count_one):
+                        with m.If(self.dwell_ctr_ovf):
+                            m.d.comb += [
+                                dwell_ctr.rst.eq(1),
+                                scan_gen.en.eq(1)
+                            ]
+                            if self.mode == "pattern" or self.mode == "pattern_out":
+                                m.d.comb += self.bus_state.eq(OUT_FIFO)
+
+
+                        with m.Else():
+                            m.d.comb += dwell_ctr.en.eq(1)
+                        m.next = "X WRITE"
+                    with m.Else():
                         m.next = "WAIT"
 
-            with m.State("WAIT"):
-                with m.If(self.count_one):
-                    with m.If(self.dwell_ctr_ovf):
-                        m.d.comb += [
-                            dwell_ctr.rst.eq(1),
-                            scan_gen.en.eq(1)
-                        ]
-                        if self.mode == "pattern" or self.mode == "pattern_out":
-                            m.d.comb += self.bus_state.eq(OUT_FIFO)
 
+                with m.State("X WRITE"):
+                    m.d.comb += self.bus_state.eq(BUS_WRITE_X)
+                    m.d.comb += self.x_latch.eq(0)
+                    m.next = "X LATCH"
 
-                    with m.Else():
-                        m.d.comb += dwell_ctr.en.eq(1)
-                    m.next = "X WRITE"
-                with m.Else():
-                    m.next = "WAIT"
+                with m.State("X LATCH"):
+                    m.d.comb += self.bus_state.eq(BUS_WRITE_X)
+                    m.d.comb += self.x_latch.eq(1)
+                    m.next = "X RELEASE"
+                
+                with m.State("X RELEASE"):
+                    m.d.comb += self.bus_state.eq(BUS_WRITE_X)
+                    m.d.comb += self.x_latch.eq(0)
+                    m.next = "Y WRITE"
 
+                with m.State("Y WRITE"):
+                    m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
+                    m.d.comb += self.y_latch.eq(0)
+                    m.next = "Y LATCH"
 
-            with m.State("X WRITE"):
-                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
-                m.d.comb += self.x_latch.eq(0)
-                m.next = "X LATCH"
+                with m.State("Y LATCH"):
+                    m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
+                    m.d.comb += self.y_latch.eq(1)
+                    m.next = "Y RELEASE"
 
-            with m.State("X LATCH"):
-                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
-                m.d.comb += self.x_latch.eq(1)
-                m.next = "X RELEASE"
-            
-            with m.State("X RELEASE"):
-                m.d.comb += self.bus_state.eq(BUS_WRITE_X)
-                m.d.comb += self.x_latch.eq(0)
-                m.next = "Y WRITE"
+                with m.State("Y RELEASE"):
+                    m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
+                    m.d.comb += self.y_latch.eq(0)
+                    # if self.mode == "pattern_out":
+                    #     with m.If(self.out_fifo_ready):
+                    #         m.next = "WAIT"
+                    #         #m.next = "Wait_For_First_USB_Data"
+                    # else: 
+                    m.next = "A LATCH & ENABLE"
 
-            with m.State("Y WRITE"):
-                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
-                m.d.comb += self.y_latch.eq(0)
-                m.next = "Y LATCH"
+                with m.State("A LATCH & ENABLE"):
+                    m.d.comb += [                  
+                        self.a_latch.eq(1),
+                        self.a_enable.eq(0)
+                    ]
+                    m.next = "A READ"
 
-            with m.State("Y LATCH"):
-                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
-                m.d.comb += self.y_latch.eq(1)
-                m.next = "Y RELEASE"
+                with m.State("A READ"):
+                    m.d.comb += self.a_enable.eq(0)
+                    m.d.comb += self.bus_state.eq(BUS_READ)
+                    m.next = "A RELEASE"
 
-            with m.State("Y RELEASE"):
-                m.d.comb += self.bus_state.eq(BUS_WRITE_Y)
-                m.d.comb += self.y_latch.eq(0)
-                # if self.mode == "pattern_out":
-                #     with m.If(self.out_fifo_ready):
-                #         m.next = "WAIT"
-                #         #m.next = "Wait_For_First_USB_Data"
-                # else: 
-                m.next = "A LATCH & ENABLE"
-
-            with m.State("A LATCH & ENABLE"):
-                m.d.comb += [                  
-                    self.a_latch.eq(1),
-                    self.a_enable.eq(0)
-                ]
-                m.next = "A READ"
-
-            with m.State("A READ"):
-                m.d.comb += self.a_enable.eq(0)
-                m.d.comb += self.bus_state.eq(BUS_READ)
-                m.next = "A RELEASE"
-
-            with m.State("A RELEASE"):
-                m.d.comb += self.a_enable.eq(0)
-                m.d.comb += self.bus_state.eq(A_RELEASE)
-                if self.mode == "image" or self.mode == "both":
-                    with m.If(self.in_fifo_ready):
+                with m.State("A RELEASE"):
+                    m.d.comb += self.a_enable.eq(0)
+                    m.d.comb += self.bus_state.eq(A_RELEASE)
+                    if self.mode == "image" or self.mode == "both":
+                        with m.If(self.in_fifo_ready):
+                            m.next = "FIFO_1"
+                    if self.mode == "pattern":
+                        with m.If(self.in_fifo_ready & self.out_fifo_ready):
+                            m.next = "FIFO_1"
+                    if self.mode == "pattern_out":
                         m.next = "FIFO_1"
-                if self.mode == "pattern":
-                    with m.If(self.in_fifo_ready & self.out_fifo_ready):
-                        m.next = "FIFO_1"
-                if self.mode == "pattern_out":
-                    m.next = "FIFO_1"
+
+                            
+                with m.State("FIFO_1"):
+                    if self.mode == "pattern" or self.mode == "pattern_out":
+                        with m.If(self.out_fifo >= 2):
+                            m.d.comb += self.bus_state.eq(BUS_FIFO_1)
+                    else:
+                        m.d.comb += self.bus_state.eq(BUS_FIFO_1)
+                    if self.mode == "image":
+                        with m.If(self.in_fifo_ready):
+                            m.next = "FIFO_2"
+                    if self.mode == "pattern":
+                        m.next = "FIFO_2"
 
                         
-            with m.State("FIFO_1"):
-                if self.mode == "pattern" or self.mode == "pattern_out":
-                    with m.If(self.out_fifo >= 2):
-                        m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                else:
-                    m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                if self.mode == "image":
-                    with m.If(self.in_fifo_ready):
-                        m.next = "FIFO_2"
-                if self.mode == "pattern":
-                    m.next = "FIFO_2"
-
-                    
-            with m.State("FIFO_2"):
-                m.d.comb += self.bus_state.eq(BUS_FIFO_2)
-                m.next = "WAIT"
+                with m.State("FIFO_2"):
+                    m.d.comb += self.bus_state.eq(BUS_FIFO_2)
+                    m.next = "WAIT"
 
         return m
     def ports(self):
