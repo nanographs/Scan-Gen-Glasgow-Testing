@@ -2,11 +2,14 @@ import logging
 import asyncio
 from amaranth import *
 from amaranth.build import *
+from ....support.endpoint import *
 from amaranth.sim import Simulator
 import numpy as np
 import time
 import threading
 from rich import print
+
+
 
 from .scan_gen_components.bus_state_machine import ScanIOBus, ScanIOBus_Point
 #from .scan_gen_components import pg_gui 
@@ -284,7 +287,7 @@ class ScanGenApplet(GlasgowApplet):
 
     @classmethod
     def add_interact_arguments(cls, parser):
-        pass
+        ServerEndpoint.add_argument(parser, "endpoint")
 
     async def interact(self, device, args, iface):
         resolution_bits = args.res
@@ -405,16 +408,30 @@ class ScanGenApplet(GlasgowApplet):
                 print("start thread")
                 threading.Thread(target=imgout(raw_data)).start()
 
-        await read_some()
+        buffer_size = 5
+        endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
+        while True:
+            try:
+                data = await asyncio.shield(endpoint.recv(buffer_size))
+                cmd = data.removesuffix(b'\n').decode(encoding='utf-8', errors='strict')
+                print(cmd)
+                if cmd == "scan":
+                    print(True)
+            except asyncio.CancelledError:
+                pass
 
-        new_bits = 10
-        dimension = pow(2,new_bits)
-        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
-        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
-        await device.write_register(self.reset, 1)
-        await device.write_register(self.resolution, new_bits)
+
+
+        # await read_some()
+
+        # new_bits = 10
+        # dimension = pow(2,new_bits)
+        # np.savetxt(f'Scan Capture/current_display_setting', [dimension])
+        # buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
+        # await device.write_register(self.reset, 1)
+        # await device.write_register(self.resolution, new_bits)
         
-        await read_some()
+        # await read_some()
 
 
 
