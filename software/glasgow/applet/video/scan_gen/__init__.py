@@ -379,31 +379,33 @@ class ScanGenApplet(GlasgowApplet):
             #current.packet_to_waveform(pattern_slice, "o")
 
 
-        # while True:
-        #     if args.mode == "pattern" or args.mode == "pattern_out":
-        #         for n in range(int(dimension*dimension/16384)): #packets per frame
-        #             #time.sleep(.05)
-                    
-        #             #await iface.write([n]*16384)
-        #             if n == dimension*dimension/16384:
-        #                 pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-        #             else:
-        #                 pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-        #             #pattern_slice = ([3]*256 + [254]*256)*32
-        #             await iface.write(pattern_slice)
-        #             threading.Thread(target=patternin(pattern_slice)).start()
-        #             #await iface.flush()
-        #             #print("reading", current.n)
-        #             if args.mode == "pattern":
-        #                 raw_data = await iface.read(16384)
-        #                 # print("start thread")
-        #                 threading.Thread(target=imgout(raw_data)).start()
-        #         print("pattern complete", current.n)
-        #     if args.mode == "image":
-        #         print("reading")
-        #         raw_data = await iface.read()
-        #         print("start thread")
-        #         threading.Thread(target=imgout(raw_data)).start()
+        async def scan():
+            await device.write_register(self.enable, 1)
+            while True:
+                if args.mode == "pattern" or args.mode == "pattern_out":
+                    for n in range(int(dimension*dimension/16384)): #packets per frame
+                        #time.sleep(.05)
+                        
+                        #await iface.write([n]*16384)
+                        if n == dimension*dimension/16384:
+                            pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+                        else:
+                            pattern_slice = pattern_stream[n*16384:(n+1)*16384]
+                        #pattern_slice = ([3]*256 + [254]*256)*32
+                        await iface.write(pattern_slice)
+                        threading.Thread(target=patternin(pattern_slice)).start()
+                        #await iface.flush()
+                        #print("reading", current.n)
+                        if args.mode == "pattern":
+                            raw_data = await iface.read(16384)
+                            # print("start thread")
+                            threading.Thread(target=imgout(raw_data)).start()
+                    print("pattern complete", current.n)
+                if args.mode == "image":
+                    print("reading")
+                    raw_data = await iface.read()
+                    print("start thread")
+                    threading.Thread(target=imgout(raw_data)).start()
         
         async def read_some(start_time):
             await device.write_register(self.enable, 1)
@@ -418,6 +420,10 @@ class ScanGenApplet(GlasgowApplet):
 
         buffer_size = 5
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
+
+        self.scanning = False
+        await iface.flush()
+        task = None
         while True:
             try:
                 start_time = time.perf_counter()
@@ -430,7 +436,19 @@ class ScanGenApplet(GlasgowApplet):
                     print(True)
                     time_3 = time.perf_counter()
                     print(time_3-time_2)
-                    await read_some(time_3)
+                    if not self.scanning:
+                        self.scanning = True
+                        task = asyncio.ensure_future(scan())
+                    elif self.scanning:
+                        self.scanning = False
+                        await device.write_register(self.enable, 0)
+                        if not task.cancelled():
+                            task.cancel()
+                        else:
+                            task = None
+                        
+                    # await read_some(time_3)
+
                     
             except asyncio.CancelledError:
                 pass
