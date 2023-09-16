@@ -406,6 +406,7 @@ class ScanGenApplet(GlasgowApplet):
         #         threading.Thread(target=imgout(raw_data)).start()
         
         async def read_some(start_time):
+            await device.write_register(self.enable, 1)
             for n in range(10):
                 print("reading")
                 raw_data = await iface.read()
@@ -413,6 +414,7 @@ class ScanGenApplet(GlasgowApplet):
                 print(time_2 - start_time)
                 print("start thread")
                 threading.Thread(target=imgout(raw_data)).start()
+            await device.write_register(self.enable, 0)
 
         buffer_size = 5
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
@@ -428,7 +430,6 @@ class ScanGenApplet(GlasgowApplet):
                     print(True)
                     time_3 = time.perf_counter()
                     print(time_3-time_2)
-                    await device.write_register(self.enable, 1)
                     await read_some(time_3)
                     
             except asyncio.CancelledError:
