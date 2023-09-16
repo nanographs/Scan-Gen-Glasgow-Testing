@@ -28,8 +28,9 @@ OUT_FIFO = 0x08
 
 
 class ScanIOBus(Elaboratable):
-    def __init__(self, dwell_time_user, mode):
-        self.resolution_bits = Signal(3)
+    def __init__(self, resolution, dwell_time_user, mode):
+        #self.resolution_bits = Signal(3)
+        self.resolution_bits = resolution
         self.dwell_time_user = dwell_time_user
         self.mode = mode #image or pattern
 

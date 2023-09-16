@@ -42,7 +42,7 @@ class RampGenerator(Elaboratable):
         with m.Else():
             ## evaluate whether counter is at its limit
             #m.d.comb += self.ovf.eq(self.count == self.limit - Value.cast(1))
-            m.d.comb += self.ovf.eq(self.count == self.limit -1)
+            m.d.comb += self.ovf.eq(self.count == self.limit)
 
             ## incrementing the counter
             with m.If(self.en):
