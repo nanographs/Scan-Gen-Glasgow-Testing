@@ -28,11 +28,13 @@ OUT_FIFO = 0x08
 
 
 class ScanIOBus(Elaboratable):
-    def __init__(self, resolution, dwell_time_user, mode):
+    def __init__(self, resolution, dwell_time_user, mode, reset):
         #self.resolution_bits = Signal(3)
         self.resolution_bits = resolution
         self.dwell_time_user = dwell_time_user
         self.mode = mode #image or pattern
+
+        self.reset = reset
 
         self.dwell_time = Signal(8)
         self.out_fifo = Signal(8)
@@ -108,6 +110,8 @@ class ScanIOBus(Elaboratable):
             m.d.comb += self.dwell_ctr_ovf.eq(1)
         
 
+        with m.If(self.reset):
+            scan_gen.rst.eq(1)
 
         # m.d.comb += [scan_gen.rst.eq(0),
         #     scan_gen.x_rst.eq(0)]
