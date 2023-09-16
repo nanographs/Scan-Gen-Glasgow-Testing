@@ -417,6 +417,7 @@ class ScanGenApplet(GlasgowApplet):
                 print(cmd)
                 if cmd == "scan":
                     print(True)
+                    await read_some()
             except asyncio.CancelledError:
                 pass
 

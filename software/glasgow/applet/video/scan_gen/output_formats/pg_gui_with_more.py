@@ -13,6 +13,12 @@ from tifffile import imwrite
 
 import os, datetime
 
+import socket
+
+
+
+
+
 app = pg.mkQApp("Scan Live View")
 
 settings = np.loadtxt(os.path.join(os.getcwd(), "Scan Capture/current_display_setting"))
@@ -44,14 +50,24 @@ view.addItem(img)
 ## Set initial view bounds
 view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
 
-btn = QtWidgets.QPushButton('save image')
-def button_action():
+save_btn = QtWidgets.QPushButton('save image')
+def save_image():
     data = np.memmap(FrameBufDirectory,
     shape = (dimension,dimension))
     save_path = os.path.join(os.getcwd(), "Scan Capture/saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif")
     imwrite(save_path, data.astype(np.uint8), photometric='minisblack') 
-btn.clicked.connect(button_action)
+save_btn.clicked.connect(save_image)
 
+def start():
+    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+    PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+    sock.send(b'scan\n')
+
+
+start_btn = QtWidgets.QPushButton('▶️')
+start_btn.clicked.connect(start)
 
 resolution_options = QtWidgets.QGridLayout()
 
@@ -77,7 +93,8 @@ resolution_options.addWidget(dwelltime_options,1,0)
 
 ## add widgets to layout
 layout.addWidget(win,0,0)
-layout.addWidget(btn,1,0)
+layout.addWidget(save_btn,1,0)
+layout.addWidget(start_btn,1,1)
 layout.addLayout(resolution_options, 2,0)
 
 w.show()
