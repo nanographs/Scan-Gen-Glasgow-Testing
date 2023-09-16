@@ -58,16 +58,39 @@ def save_image():
     imwrite(save_path, data.astype(np.uint8), photometric='minisblack') 
 save_btn.clicked.connect(save_image)
 
+scanning = False
+start_btn = QtWidgets.QPushButton('▶️')
+start_btn.setCheckable(True)
 def start():
     HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
     PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
     sock.send(b'scan\n')
+    if start_btn.isChecked():
+        start_btn.setText('⏸️')
+        # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
+    else:
+        start_btn.setText('▶️')
 
 
-start_btn = QtWidgets.QPushButton('▶️')
 start_btn.clicked.connect(start)
+
+def update_dimension():
+    global dimension
+    dimension = 1024
+    view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
+    updateData()
+
+res_btn = QtWidgets.QPushButton('!!')
+def res():
+    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+    PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+    sock.send(b'res10')
+    update_dimension()
+res_btn.clicked.connect(res)
 
 resolution_options = QtWidgets.QGridLayout()
 
@@ -88,6 +111,7 @@ dwelltime_options.setRange(0,255)
 dwelltime_options.setSingleStep(1)
 resolution_options.addWidget(dwellLabel,0,0)
 resolution_options.addWidget(dwelltime_options,1,0)
+resolution_options.addWidget(res_btn,1,2)
 
 
 
@@ -141,10 +165,11 @@ win.addItem(hist)
 
 
 def updateData():
-    global img, updateTime, elapsed
+    global img, updateTime, elapsed, dimension
 
     data = np.memmap(FrameBufDirectory,
     shape = (dimension,dimension))
+    # data = np.random.rand(dimension,dimension)
 
     #print(data)
     #print(data.shape)

@@ -426,16 +426,11 @@ class ScanGenApplet(GlasgowApplet):
         task = None
         while True:
             try:
-                start_time = time.perf_counter()
                 data = await asyncio.shield(endpoint.recv(buffer_size))
                 cmd = data.removesuffix(b'\n').decode(encoding='utf-8', errors='strict')
                 print(cmd)
-                time_2 = time.perf_counter()
-                print(time_2 - start_time)
                 if cmd == "scan":
                     print(True)
-                    time_3 = time.perf_counter()
-                    print(time_3-time_2)
                     if not self.scanning:
                         self.scanning = True
                         task = asyncio.ensure_future(scan())
@@ -446,6 +441,20 @@ class ScanGenApplet(GlasgowApplet):
                             task.cancel()
                         else:
                             task = None
+                elif cmd.startswith("res"):
+                        new_bits = int(cmd.strip("res"))
+                        self.scanning = False
+                        await device.write_register(self.enable, 0)
+                        if not task.cancelled():
+                            task.cancel()
+                        else:
+                            task = None
+                        #new_bits = 10
+                        dimension = pow(2,new_bits)
+                        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
+                        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
+                        await device.write_register(self.reset, 1)
+                        await device.write_register(self.resolution, new_bits)
                         
                     # await read_some(time_3)
 
