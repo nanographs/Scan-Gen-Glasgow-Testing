@@ -50,6 +50,17 @@ view.addItem(img)
 ## Set initial view bounds
 view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
 
+
+updateTime = perf_counter()
+elapsed = 0
+
+timer = QtCore.QTimer()
+timer.setSingleShot(True)
+# not using QTimer.singleShot() because of persistence on PyQt. see PR #1605
+
+FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
+
+
 save_btn = QtWidgets.QPushButton('save image')
 def save_image():
     data = np.memmap(FrameBufDirectory,
@@ -85,6 +96,7 @@ resolution_options.addWidget(res_btn,1,2)
 start_btn = QtWidgets.QPushButton('▶️')
 start_btn.setCheckable(True)
 def start():
+    global timer, updateData
     resolution_dropdown.setEnabled(False)
     dwelltime_options.setEnabled(False)
     res_btn.setEnabled(False)
@@ -95,12 +107,15 @@ def start():
     sock.send(b'scan\n')
     if start_btn.isChecked():
         start_btn.setText('⏸️')
+        timer.timeout.connect(updateData)
         # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
     else:
+        # timer.timeout.disconnect(updateData)
         start_btn.setText('▶️')
         resolution_dropdown.setEnabled(True)
         dwelltime_options.setEnabled(True)
         res_btn.setEnabled(True)
+        
         
 
 
@@ -115,7 +130,6 @@ def update_dimension(dim):
 def res():
     res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     dimension = pow(2,res_bits)
-    
     msg = ("res" + format(res_bits, '02d')).encode("UTF-8")
     HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
     PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
@@ -134,14 +148,7 @@ layout.addLayout(resolution_options, 2,0)
 
 w.show()
 
-updateTime = perf_counter()
-elapsed = 0
 
-timer = QtCore.QTimer()
-timer.setSingleShot(True)
-# not using QTimer.singleShot() because of persistence on PyQt. see PR #1605
-
-FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
 
 # Custom ROI for selecting an image region
 # roi = pg.ROI([10,100], [100, 500])
@@ -177,15 +184,16 @@ win.addItem(hist)
 
 def updateData():
     global img, updateTime, elapsed, dimension
+    if start_btn.isChecked():
+        data = np.memmap(FrameBufDirectory,
+        shape = (dimension,dimension))
+        # data = np.random.rand(dimension,dimension)
 
-    data = np.memmap(FrameBufDirectory,
-    shape = (dimension,dimension))
-    # data = np.random.rand(dimension,dimension)
-
-    #print(data)
-    #print(data.shape)
+        # print(data)
+    else:
+        data = np.ones(shape = (dimension,dimension))
     img.setImage(np.rot90(data,k=3)) #this is the correct orientation to display the image
-    
+        
 
     timer.start(1)
     now = perf_counter()
@@ -193,10 +201,12 @@ def updateData():
     updateTime = now
     elapsed = elapsed * 0.9 + elapsed_now * 0.1
 
-    #print(f"{1 / elapsed:.1f} fps")
-    
-timer.timeout.connect(updateData)
+    print(data.shape)
+    print(f"{1 / elapsed:.1f} fps")
+
 updateData()
+timer.timeout.connect(updateData)
+
 
 
 if __name__ == '__main__':

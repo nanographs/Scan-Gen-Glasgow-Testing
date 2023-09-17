@@ -1,3 +1,4 @@
+import os
 import logging
 import asyncio
 from amaranth import *
@@ -430,26 +431,20 @@ class ScanGenApplet(GlasgowApplet):
                 cmd = data.removesuffix(b'\n').decode(encoding='utf-8', errors='strict')
                 print(cmd)
                 if cmd == "scan":
-                    print(True)
                     if not self.scanning:
                         self.scanning = True
-                        task = asyncio.ensure_future(scan())
+                        task = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
                     elif self.scanning:
                         self.scanning = False
-                        await device.write_register(self.enable, 0)
-                        if not task.cancelled():
-                            task.cancel()
+                        if not task.cancelled(): #extra check before "stop scanning"
+                            task.cancel() #stop scanning
                         else:
-                            task = None
+                            task = None 
+                        await device.write_register(self.enable, 0)
+                        await iface.flush()
+                        print("Stopped scanning")
                 elif cmd.startswith("res"):
                         new_bits = int(cmd.strip("res"))
-                        self.scanning = False
-                        # await device.write_register(self.enable, 0)
-                        # if not task.cancelled():
-                        #     task.cancel()
-                        # else:
-                        #     task = None
-                        #new_bits = 10
                         dimension = pow(2,new_bits)
                         np.savetxt(f'Scan Capture/current_display_setting', [dimension])
                         buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
