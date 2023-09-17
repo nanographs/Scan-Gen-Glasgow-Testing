@@ -404,7 +404,7 @@ class ScanGenApplet(GlasgowApplet):
                     print("pattern complete", current.n)
                 if args.mode == "image":
                     print("reading")
-                    raw_data = await iface.read()
+                    raw_data = await iface.read(16384)
                     print("start thread")
                     threading.Thread(target=imgout(raw_data)).start()
         
@@ -435,15 +435,20 @@ class ScanGenApplet(GlasgowApplet):
                         self.scanning = True
                         task = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
                     elif self.scanning:
+                        print("stopping scanning")
                         self.scanning = False
-                        if not task.cancelled(): #extra check before "stop scanning"
-                            task.cancel() #stop scanning
-                        else:
-                            task = None 
-                        await device.write_register(self.enable, 0)
-                        await iface.flush()
-                        print("Stopped scanning")
+                       
+                        asyncio.gather(device.write_register(self.enable, 0), iface.flush())
+                        #stop scanning
+                        task.cancel()
+                        try:
+                            await task
+                        except asyncio.CancelledError:
+                            print("Stopped scanning")
                 elif cmd.startswith("res"):
+                        # await device.write_register(self.enable, 0)
+                        # await iface.flush()
+                        current.last_pixel = 0
                         new_bits = int(cmd.strip("res"))
                         dimension = pow(2,new_bits)
                         np.savetxt(f'Scan Capture/current_display_setting', [dimension])
