@@ -428,52 +428,67 @@ class ScanGenApplet(GlasgowApplet):
             await device.write_register(self.enable, 0)
             return raw_data
 
-        buffer_size = 5
+
+
+        # self.scanning = False
+        # await iface.flush()
+        # task_scan = None
+        # while True:
+
+        buffer_size = 16384
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
-
-        self.scanning = False
-        await iface.flush()
-        task_scan = None
+ 
         while True:
-            try:
-                data = await asyncio.shield(endpoint.recv(buffer_size))
-                cmd = data.removesuffix(b'\n').decode(encoding='utf-8', errors='strict')
-                print(cmd)
-                if cmd == "scan":
-                    if not self.scanning:
-                        self.scanning = True
-                        data = await read_some()
-                        await endpoint.send(data)
-                    #     task_scan = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
-                    # elif self.scanning:
-                    #     print("stopping scanning")
-                    #     self.scanning = False
-                    #     asyncio.gather(device.write_register(self.enable, 0), iface.flush()) #things that should happen together
-                    #     #stop scanning
-                    #     if not task_scan.cancelled():
-                    #         task_scan.cancel() 
+            try: 
+                d = await asyncio.shield(endpoint.recv(4))
+                d = d.decode(encoding='utf-8', errors='strict')
+                print(d)
+                if d == "scan":
+                    await device.write_register(self.enable, 1)
+                    data = await iface.read(16384)
+                    await device.write_register(self.enable, 0)
+                    await asyncio.shield(endpoint.send(data))
+                # # print("sent")
+            except AttributeError:
+                pass
 
-                    #     try:
-                    #         await task_scan
-                    #     except asyncio.CancelledError:
-                    #         print("Stopped scanning")
-                elif cmd.startswith("res"):
-                        # await device.write_register(self.enable, 0)
-                        # await iface.flush()
-                        current.last_pixel = 0
-                        new_bits = int(cmd.strip("res"))
-                        dimension = pow(2,new_bits)
-                        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
-                        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
-                        await device.write_register(self.reset, 1)
-                        await device.write_register(self.resolution, new_bits)
-                        print("resolution:",dimension)
+
+                # cmd = data.removesuffix(b'\n').decode(encoding='utf-8', errors='strict')
+                # print(cmd)
+                # if cmd == "scan":
+                #     if not self.scanning:
+                #         self.scanning = True
+                #         data = await read_some()
+                #         await endpoint.send(data)
+                #     #     task_scan = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
+                #     # elif self.scanning:
+                #     #     print("stopping scanning")
+                #     #     self.scanning = False
+                #     #     asyncio.gather(device.write_register(self.enable, 0), iface.flush()) #things that should happen together
+                #     #     #stop scanning
+                #     #     if not task_scan.cancelled():
+                #     #         task_scan.cancel() 
+
+                #     #     try:
+                #     #         await task_scan
+                #     #     except asyncio.CancelledError:
+                #     #         print("Stopped scanning")
+                # elif cmd.startswith("res"):
+                #         # await device.write_register(self.enable, 0)
+                #         # await iface.flush()
+                #         current.last_pixel = 0
+                #         new_bits = int(cmd.strip("res"))
+                #         dimension = pow(2,new_bits)
+                #         np.savetxt(f'Scan Capture/current_display_setting', [dimension])
+                #         buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
+                #         await device.write_register(self.reset, 1)
+                #         await device.write_register(self.resolution, new_bits)
+                #         print("resolution:",dimension)
                         
-                    # await read_some(time_3)
+                #     # await read_some(time_3)
 
                     
-            except asyncio.CancelledError:
-                pass
+
 
 
         # start_time = time.perf_counter()
