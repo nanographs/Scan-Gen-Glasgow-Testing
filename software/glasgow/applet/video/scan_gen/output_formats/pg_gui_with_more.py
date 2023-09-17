@@ -17,7 +17,7 @@ import socket
 
 HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
 PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 
 
 app = pg.mkQApp("Scan Live View")
@@ -63,9 +63,14 @@ FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
 
 
 conn_btn = QtWidgets.QPushButton('💼')
+conn_btn.setCheckable(True)
 def conn():
     global HOST, PORT, sock
-    sock.connect((HOST, PORT))
+    if conn_btn.isChecked():
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((HOST, PORT))
+    else:
+        sock.close()
 conn_btn.clicked.connect(conn)
 
 
@@ -105,25 +110,62 @@ resolution_options.addWidget(res_btn,1,2)
 
 start_btn = QtWidgets.QPushButton('▶️')
 start_btn.setCheckable(True)
+
+buf = np.ones(shape=(dimension*dimension))
+last_pixel = 0
+
+def imgout(raw_data):
+    global buf, last_pixel
+    # print("-----------")
+    # print("frame", current.n)
+    data = list(raw_data)
+    d = np.array(data)
+    print(d)
+    # print(buf)
+    zero_index = np.nonzero(d < 1)[0]
+    # print("buffer length:", len(buf))
+    # print("last pixel:",current.last_pixel)
+    print("d length:", len(d))
+    # print("d:",d)
+    
+    if len(zero_index) > 0: #if a zero was found
+        # current.n += 1
+        # print("zero index:",zero_index)
+        zero_index = int(zero_index)
+
+        buf[:d[zero_index+1:].size] = d[zero_index+1:]
+        # print(buf[:d[zero_index+1:].size])
+        # print(d[:zero_index+1].size)
+        buf[dimension * dimension - zero_index:] = d[:zero_index]
+        # print(buf[dimension * dimension - zero_index:])
+        last_pixel = d[zero_index+1:].size
+    
+    else: 
+        if len(buf[last_pixel:last_pixel+len(d)]) < len(d):
+            pass
+        #     print("data too long to fit in end of frame, but no zero")
+        #     print(d[:dimension])
+        print(d.shape)
+        print(buf.shape)
+        print(buf[last_pixel:last_pixel + d.size].shape)
+        buf[last_pixel:last_pixel + d.size] = d
+        # print(buf[current.last_pixel:current.last_pixel + d.size])
+        last_pixel = last_pixel + d.size
+    
+    print(buf)
+
+
 def start():
-    global timer, updateData, dimension, HOST, PORT
+    global timer, updateData, dimension, sock
     resolution_dropdown.setEnabled(False)
     dwelltime_options.setEnabled(False)
     res_btn.setEnabled(False)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
-    sock.send(b'scan\n')
-    buf = np.ones(shape=(dimension,dimension))
     if start_btn.isChecked():
         start_btn.setText('⏸️')
-        for n in range(16):
-            print(n)
-            data = sock.recv(16384)
-            d = np.array(list(data))
-            d.shape = (32,dimension)
-            buf[n*32:(n+1)*32][0:dimension] = d
-            updateData(buf)
-        # timer.timeout.connect(updateData)
+        msg = ("scan").encode("UTF-8") ## ex: res09, res10
+        sock.send(msg)
+        updateData()
+        #timer.timeout.connect(updateData)
         # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
     else:
         # timer.timeout.disconnect(updateData)
@@ -199,16 +241,21 @@ win.addItem(hist)
 
 
 
-def updateData(data_in=None):
-    global img, updateTime, elapsed, dimension
+def updateData():
+    print("update")
+    global img, updateTime, elapsed, dimension, sock, buf
     if start_btn.isChecked():
+        data = sock.recv(16384)
+        imgout(data)
         # data = np.memmap(FrameBufDirectory,
         # shape = (dimension,dimension))
         # data = np.random.rand(dimension,dimension)
 
         # print(data)
-        data = data_in
+        data = buf.copy()
+        data.shape = (dimension, dimension)
     else:
+        print("no data")
         data = np.ones(shape = (dimension,dimension))
     img.setImage(np.rot90(data,k=3)) #this is the correct orientation to display the image
         
@@ -222,8 +269,8 @@ def updateData(data_in=None):
     # print(data.shape)
     # print(f"{1 / elapsed:.1f} fps")
 
-updateData()
-timer.timeout.connect(updateData)
+# updateData()
+# timer.timeout.connect(updateData)
 
 
 
