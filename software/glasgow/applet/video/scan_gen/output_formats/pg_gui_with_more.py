@@ -15,8 +15,9 @@ import os, datetime
 
 import socket
 
-
-
+HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
 app = pg.mkQApp("Scan Live View")
@@ -61,6 +62,13 @@ timer.setSingleShot(True)
 FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
 
 
+conn_btn = QtWidgets.QPushButton('💼')
+def conn():
+    global HOST, PORT, sock
+    sock.connect((HOST, PORT))
+conn_btn.clicked.connect(conn)
+
+
 save_btn = QtWidgets.QPushButton('save image')
 def save_image():
     data = np.memmap(FrameBufDirectory,
@@ -93,21 +101,29 @@ resolution_options.addWidget(dwelltime_options,1,0)
 res_btn = QtWidgets.QPushButton('!!')
 resolution_options.addWidget(res_btn,1,2)
 
+
+
 start_btn = QtWidgets.QPushButton('▶️')
 start_btn.setCheckable(True)
 def start():
-    global timer, updateData
+    global timer, updateData, dimension, HOST, PORT
     resolution_dropdown.setEnabled(False)
     dwelltime_options.setEnabled(False)
     res_btn.setEnabled(False)
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
     sock.send(b'scan\n')
+    buf = np.ones(shape=(dimension,dimension))
     if start_btn.isChecked():
         start_btn.setText('⏸️')
-        timer.timeout.connect(updateData)
+        for n in range(16):
+            print(n)
+            data = sock.recv(16384)
+            d = np.array(list(data))
+            d.shape = (32,dimension)
+            buf[n*32:(n+1)*32][0:dimension] = d
+            updateData(buf)
+        # timer.timeout.connect(updateData)
         # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
     else:
         # timer.timeout.disconnect(updateData)
@@ -130,7 +146,7 @@ def update_dimension(dim):
 def res():
     res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     dimension = pow(2,res_bits)
-    msg = ("res" + format(res_bits, '02d')).encode("UTF-8")
+    msg = ("res" + format(res_bits, '02d')).encode("UTF-8") ## ex: res09, res10
     HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
     PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -144,6 +160,7 @@ res_btn.clicked.connect(res)
 layout.addWidget(win,0,0)
 layout.addWidget(save_btn,1,0)
 layout.addWidget(start_btn,1,1)
+layout.addWidget(conn_btn,1,2)
 layout.addLayout(resolution_options, 2,0)
 
 w.show()
@@ -182,14 +199,15 @@ win.addItem(hist)
 
 
 
-def updateData():
+def updateData(data_in=None):
     global img, updateTime, elapsed, dimension
     if start_btn.isChecked():
-        data = np.memmap(FrameBufDirectory,
-        shape = (dimension,dimension))
+        # data = np.memmap(FrameBufDirectory,
+        # shape = (dimension,dimension))
         # data = np.random.rand(dimension,dimension)
 
         # print(data)
+        data = data_in
     else:
         data = np.ones(shape = (dimension,dimension))
     img.setImage(np.rot90(data,k=3)) #this is the correct orientation to display the image
@@ -201,8 +219,8 @@ def updateData():
     updateTime = now
     elapsed = elapsed * 0.9 + elapsed_now * 0.1
 
-    print(data.shape)
-    print(f"{1 / elapsed:.1f} fps")
+    # print(data.shape)
+    # print(f"{1 / elapsed:.1f} fps")
 
 updateData()
 timer.timeout.connect(updateData)

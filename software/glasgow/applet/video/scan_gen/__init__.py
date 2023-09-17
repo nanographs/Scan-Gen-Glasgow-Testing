@@ -407,24 +407,33 @@ class ScanGenApplet(GlasgowApplet):
                     raw_data = await iface.read(16384)
                     print("start thread")
                     threading.Thread(target=imgout(raw_data)).start()
-        
-        async def read_some(start_time):
+
+        async def scan_endpoint(endpoint):
             await device.write_register(self.enable, 1)
-            for n in range(10):
-                print("reading")
-                raw_data = await iface.read()
-                time_2 = time.perf_counter()
-                print(time_2 - start_time)
-                print("start thread")
-                threading.Thread(target=imgout(raw_data)).start()
+            while True:
+                raw_data = await iface.read(16384)
+                threading.Thread(target=endpoint.send(raw_data)).start()
+
+        
+        async def read_some():
+            await device.write_register(self.enable, 1)
+            # for n in range(10):
+            #     print("reading")
+            #     raw_data = await iface.read()
+            #     time_2 = time.perf_counter()
+            #     print(time_2 - start_time)
+            #     print("start thread")
+            raw_data = await iface.read(16384)
+            threading.Thread(target=imgout(raw_data)).start()
             await device.write_register(self.enable, 0)
+            return raw_data
 
         buffer_size = 5
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
 
         self.scanning = False
         await iface.flush()
-        task = None
+        task_scan = None
         while True:
             try:
                 data = await asyncio.shield(endpoint.recv(buffer_size))
@@ -433,18 +442,21 @@ class ScanGenApplet(GlasgowApplet):
                 if cmd == "scan":
                     if not self.scanning:
                         self.scanning = True
-                        task = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
-                    elif self.scanning:
-                        print("stopping scanning")
-                        self.scanning = False
-                       
-                        asyncio.gather(device.write_register(self.enable, 0), iface.flush())
-                        #stop scanning
-                        task.cancel()
-                        try:
-                            await task
-                        except asyncio.CancelledError:
-                            print("Stopped scanning")
+                        data = await read_some()
+                        await endpoint.send(data)
+                    #     task_scan = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
+                    # elif self.scanning:
+                    #     print("stopping scanning")
+                    #     self.scanning = False
+                    #     asyncio.gather(device.write_register(self.enable, 0), iface.flush()) #things that should happen together
+                    #     #stop scanning
+                    #     if not task_scan.cancelled():
+                    #         task_scan.cancel() 
+
+                    #     try:
+                    #         await task_scan
+                    #     except asyncio.CancelledError:
+                    #         print("Stopped scanning")
                 elif cmd.startswith("res"):
                         # await device.write_register(self.enable, 0)
                         # await iface.flush()
