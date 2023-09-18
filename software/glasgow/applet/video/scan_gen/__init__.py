@@ -271,7 +271,7 @@ class ScanGenApplet(GlasgowApplet):
         iface.add_subtarget(DataBusAndFIFOSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
-            in_fifo = iface.get_in_fifo(auto_flush=False),
+            in_fifo = iface.get_in_fifo(),
             out_fifo = iface.get_out_fifo(),
             resolution_bits = args.res,
             dwell_time = args.dwell,
@@ -371,7 +371,8 @@ class ScanGenApplet(GlasgowApplet):
                         await device.write_register(self.resolution, new_bits)
                         print("resolution:",new_bits)
                         res_changed = True
-                        await iface.flush()
+                        data = await iface.read()
+                        print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
                         # iface._in_buffer.clear()
                 except ConnectionResetError:
                     pass
