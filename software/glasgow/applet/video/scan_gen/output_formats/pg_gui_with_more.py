@@ -17,6 +17,7 @@ import socket
 import asyncio
 import threading
 
+#from .....support.endpoint import *
 
 
 HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
@@ -166,74 +167,73 @@ def imgout(raw_data):
     
     # print(buf)
 
-n = 0
-async def scan():
-    global n, updateData
-    # global sock, n
-    await asyncio.sleep(0)
-    msg = ("scan").encode("UTF-8")
-    event_loop = asyncio.get_event_loop()
-    print(event_loop)
-    print("scan", n), 
-    sock.send(msg)
-    data = sock.recv(16384)
-    if data is not None:
-        imgout(data)
-        return True
-        # threading.Thread(target=updateData).start()
-        # return updateData()
-    # return data
-    #threading.Thread(target=updateData).start()
-    #return "result"
-    # event_loop.close()
+# n = 0
+# async def scan():
+#     global n, updateData
+#     # global sock, n
+#     msg = ("scan").encode("UTF-8")
+#     event_loop = asyncio.get_event_loop()
+#     print(event_loop)
+#     print("scan", n), 
+#     sock.send(msg)
+#     data = sock.recv(16384)
+#     if data is not None:
+#         imgout(data)
+#         return True
+#         # threading.Thread(target=updateData).start()
+#         # return updateData()
+#     # return data
+#     #threading.Thread(target=updateData).start()
+#     #return "result"
+#     # event_loop.close()
 
 
 
-scanning = False
-def watch_scan(loop):
-    global scanning, n, updateData
-    event_loop = asyncio.set_event_loop(loop)
-    print(asyncio.get_event_loop())
-    # scanning = True
-    task_scan = None
-    print("Start")
-    while True:
-        n += 1
-        print("In loop", n)
-        if n >= 80:
-            scanning = False
-            print("Adios")
-            break
-        if scanning and task_scan is None:
-            event_loop = asyncio.get_event_loop()
-            # print(event_loop)
-            task_scan = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
-            print("set task")
-            # #event_loop.run_forever()
-            event_loop.run_until_complete(task_scan)
-            print('task: {!r}'.format(task_scan))
-            data = task_scan.result()
-            print("result", data)
-            # if data is not None:
-            #     print((list(data))[0], ":", (list(data))[-1])
+# scanning = False
+# def watch_scan(loop):
+#     global scanning, n, updateData
+#     event_loop = asyncio.set_event_loop(loop)
+#     print(asyncio.get_event_loop())
+#     # scanning = True
+#     task_scan = None
+#     print("Start")
+#     while True:
+#         n += 1
+#         print("In loop", n)
+#         if n >= 80:
+#             scanning = False
+#             print("Adios")
+#             break
+#         if scanning and task_scan is None:
+#             event_loop = asyncio.get_event_loop()
+#             # print(event_loop)
+#             task_scan = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
+#             print("set task")
+#             # #event_loop.run_forever()
+#             event_loop.run_until_complete(task_scan)
+#             print('task: {!r}'.format(task_scan))
+#             data = task_scan.result()
+#             print("result", data)
+#             # if data is not None:
+#             #     print((list(data))[0], ":", (list(data))[-1])
                 
-            print("eeee")
-            task_scan = None
-        elif not scanning and task_scan:
-            print("End")
-            if not task_scan.cancelled():
-                task_scan.cancel()
-            else:
-                task_scan = None
-            break
-        elif not scanning:
-            print("Bye")
-            break
+#             print("eeee")
+#             task_scan = None
+#         elif not scanning and task_scan:
+#             print("End")
+#             if not task_scan.cancelled():
+#                 task_scan.cancel()
+#             else:
+#                 task_scan = None
+#             break
+#         elif not scanning:
+#             print("Bye")
+#             break
             
 
 
-        elif not scanning and not task_scan:
-            print("Nothing to see here")
+#         elif not scanning and not task_scan:
+#             print("Nothing to see here")
 
 
 
@@ -244,14 +244,14 @@ def start():
     res_btn.setEnabled(False)
     if start_btn.isChecked():
         start_btn.setText('🔄')
-        scanning = True
-        loop = asyncio.new_event_loop()
-        threading.Thread(target=watch_scan(loop)).start()
+        # scanning = True
+        # loop = asyncio.new_event_loop()
+        # threading.Thread(target=watch_scan(loop)).start()
+        updateData()
         timer.timeout.connect(updateData)
-        timer.start(1)
         start_btn.setText('⏸️')
-        tasks = asyncio.all_tasks()
-        print(tasks)
+        # tasks = asyncio.all_tasks()
+        # print(tasks)
         
         #
         # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
@@ -331,11 +331,16 @@ win.addItem(hist)
 
 
 
-
+msg = ("scan").encode("UTF-8")
 def updateData():
-    global img, updateTime, elapsed, dimension, sock, buf, n, task_scan, timer
-    print("update", n)
+    global img, updateTime, elapsed, dimension, sock, buf, n, task_scan, timer, msg
+    # print("update", n)
     # img.setImage(buf)
+    if conn_btn.isChecked() and start_btn.isChecked():
+        sock.send(msg)
+        data = sock.recv(16384)
+        if data is not None:
+            imgout(data)
     img.setImage(np.rot90(buf,k=3)) #this is the correct orientation to display the image
     timer.start(1)
 
