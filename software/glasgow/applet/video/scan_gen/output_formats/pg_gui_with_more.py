@@ -116,46 +116,53 @@ resolution_options.addWidget(res_btn,1,2)
 start_btn = QtWidgets.QPushButton('▶️')
 start_btn.setCheckable(True)
 
-buf = np.ones(shape=(dimension*dimension))
-last_pixel = 0
+buf = np.ones(shape=(dimension,dimension))
+#buf_px = np.nditer(buf, flags=['multi_index'], itershape=(32, dimension))
+line = 0
 
 def imgout(raw_data):
-    global buf, last_pixel
+    global buf, line
     # print("-----------")
     # print("frame", current.n)
     data = list(raw_data)
     d = np.array(data)
-    # print(d)
-    # print(buf)
-    zero_index = np.nonzero(d < 1)[0]
-    # print("buffer length:", len(buf))
-    # print("last pixel:",current.last_pixel)
-    print("d length:", len(d))
-    # print("d:",d)
+    d.shape = (32,512)
+    buf[line:line+32] = d
+    line += 32
+    if line == 512:
+        line = 0
+    #next(buf_px) = d
+    # # print(d)
+    # # print(buf)
+    # zero_index = np.nonzero(d < 1)[0]
+    # # print("buffer length:", len(buf))
+    # # print("last pixel:",current.last_pixel)
+    # print("d length:", len(d))
+    # # print("d:",d)
     
-    if len(zero_index) > 0: #if a zero was found
-        # current.n += 1
-        # print("zero index:",zero_index)
-        zero_index = int(zero_index)
+    # if len(zero_index) > 0: #if a zero was found
+    #     # current.n += 1
+    #     # print("zero index:",zero_index)
+    #     zero_index = int(zero_index)
 
-        buf[:d[zero_index+1:].size] = d[zero_index+1:]
-        # print(buf[:d[zero_index+1:].size])
-        # print(d[:zero_index+1].size)
-        buf[dimension * dimension - zero_index:] = d[:zero_index]
-        # print(buf[dimension * dimension - zero_index:])
-        last_pixel = d[zero_index+1:].size
+    #     buf[:d[zero_index+1:].size] = d[zero_index+1:]
+    #     # print(buf[:d[zero_index+1:].size])
+    #     # print(d[:zero_index+1].size)
+    #     buf[dimension * dimension - zero_index:] = d[:zero_index]
+    #     # print(buf[dimension * dimension - zero_index:])
+    #     last_pixel = d[zero_index+1:].size
     
-    else: 
-        if len(buf[last_pixel:last_pixel+len(d)]) < len(d):
-            pass
-        #     print("data too long to fit in end of frame, but no zero")
-        #     print(d[:dimension])
-        # print(d.shape)
-        # print(buf.shape)
-        # print(buf[last_pixel:last_pixel + d.size].shape)
-        buf[last_pixel:last_pixel + d.size] = d
-        # print(buf[current.last_pixel:current.last_pixel + d.size])
-        last_pixel = last_pixel + d.size
+    # else: 
+    #     if len(buf[last_pixel:last_pixel+len(d)]) < len(d):
+    #         pass
+    #     #     print("data too long to fit in end of frame, but no zero")
+    #     #     print(d[:dimension])
+    #     # print(d.shape)
+    #     # print(buf.shape)
+    #     # print(buf[last_pixel:last_pixel + d.size].shape)
+    #     buf[last_pixel:last_pixel + d.size] = d
+    #     # print(buf[current.last_pixel:current.last_pixel + d.size])
+    #     last_pixel = last_pixel + d.size
     
     # print(buf)
 
@@ -172,9 +179,9 @@ async def scan():
     data = sock.recv(16384)
     if data is not None:
         imgout(data)
-        updateData()
-        # threading.Thread(target=updateData).start()
         return True
+        # threading.Thread(target=updateData).start()
+        # return updateData()
     # return data
     #threading.Thread(target=updateData).start()
     #return "result"
@@ -186,14 +193,14 @@ scanning = False
 def watch_scan(loop):
     global scanning, n, updateData
     event_loop = asyncio.set_event_loop(loop)
-    print(event_loop)
+    print(asyncio.get_event_loop())
     # scanning = True
     task_scan = None
     print("Start")
     while True:
         n += 1
         print("In loop", n)
-        if n >= 40:
+        if n >= 80:
             scanning = False
             print("Adios")
             break
@@ -205,8 +212,8 @@ def watch_scan(loop):
             # #event_loop.run_forever()
             event_loop.run_until_complete(task_scan)
             print('task: {!r}'.format(task_scan))
-            # data = task_scan.result()
-            # print("result", data)
+            data = task_scan.result()
+            print("result", data)
             # if data is not None:
             #     print((list(data))[0], ":", (list(data))[-1])
                 
@@ -240,7 +247,12 @@ def start():
         scanning = True
         loop = asyncio.new_event_loop()
         threading.Thread(target=watch_scan(loop)).start()
+        timer.timeout.connect(updateData)
+        timer.start(1)
         start_btn.setText('⏸️')
+        tasks = asyncio.all_tasks()
+        print(tasks)
+        
         #
         # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
     else:
@@ -322,10 +334,9 @@ win.addItem(hist)
 
 def updateData():
     global img, updateTime, elapsed, dimension, sock, buf, n, task_scan, timer
-    # print("update", n)
-    data = buf.copy()
-    data.shape = (dimension, dimension)
-    img.setImage(np.rot90(data,k=3)) #this is the correct orientation to display the image
+    print("update", n)
+    # img.setImage(buf)
+    img.setImage(np.rot90(buf,k=3)) #this is the correct orientation to display the image
     timer.start(1)
 
     return True
@@ -338,7 +349,7 @@ def updateData():
     # print(f"{1 / elapsed:.1f} fps")
 
 updateData()
-timer.timeout.connect(updateData)
+
 
 
 
