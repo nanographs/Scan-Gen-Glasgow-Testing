@@ -161,7 +161,7 @@ def imgout(raw_data):
 
 n = 0
 async def scan():
-    global n
+    global n, updateData
     # global sock, n
     await asyncio.sleep(0)
     msg = ("scan").encode("UTF-8")
@@ -170,7 +170,12 @@ async def scan():
     print("scan", n), 
     sock.send(msg)
     data = sock.recv(16384)
-    return data
+    if data is not None:
+        imgout(data)
+        updateData()
+        # threading.Thread(target=updateData).start()
+        return True
+    # return data
     #threading.Thread(target=updateData).start()
     #return "result"
     # event_loop.close()
@@ -178,15 +183,17 @@ async def scan():
 
 
 scanning = False
-def watch_scan():
+def watch_scan(loop):
     global scanning, n, updateData
+    event_loop = asyncio.set_event_loop(loop)
+    print(event_loop)
     # scanning = True
     task_scan = None
     print("Start")
     while True:
         n += 1
         print("In loop", n)
-        if n >= 20:
+        if n >= 40:
             scanning = False
             print("Adios")
             break
@@ -198,11 +205,11 @@ def watch_scan():
             # #event_loop.run_forever()
             event_loop.run_until_complete(task_scan)
             print('task: {!r}'.format(task_scan))
-            data = task_scan.result()
-            if data is not None:
-                print((list(data))[0], ":", (list(data))[-1])
-                imgout(data)
-                updateData()
+            # data = task_scan.result()
+            # print("result", data)
+            # if data is not None:
+            #     print((list(data))[0], ":", (list(data))[-1])
+                
             print("eeee")
             task_scan = None
         elif not scanning and task_scan:
@@ -224,16 +231,17 @@ def watch_scan():
 
 
 def start():
-    global scanning
+    global scanning, timer, updateData
     resolution_dropdown.setEnabled(False)
     dwelltime_options.setEnabled(False)
     res_btn.setEnabled(False)
     if start_btn.isChecked():
-        start_btn.setText('⏸️')
+        start_btn.setText('🔄')
         scanning = True
-        watch_scan()
-
-        #timer.timeout.connect(updateData)
+        loop = asyncio.new_event_loop()
+        threading.Thread(target=watch_scan(loop)).start()
+        start_btn.setText('⏸️')
+        #
         # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
     else:
         # timer.timeout.disconnect(updateData)
@@ -313,26 +321,14 @@ win.addItem(hist)
 
 
 def updateData():
-    global img, updateTime, elapsed, dimension, sock, buf, n, task_scan
-    print("update", n)
-    if start_btn.isChecked():
-        # data = [n*5]*16384
-        # # data = sock.recv(16384)
-        # imgout(data)
-        # data = np.memmap(FrameBufDirectory,
-        # shape = (dimension,dimension))
-        # data = np.random.rand(dimension,dimension)
-
-        # print(data)
-        data = buf.copy()
-        data.shape = (dimension, dimension)
-    else:
-        print("no data")
-        data = np.ones(shape = (dimension,dimension))
+    global img, updateTime, elapsed, dimension, sock, buf, n, task_scan, timer
+    # print("update", n)
+    data = buf.copy()
+    data.shape = (dimension, dimension)
     img.setImage(np.rot90(data,k=3)) #this is the correct orientation to display the image
-        
+    timer.start(1)
 
-    # timer.start(1)
+    return True
     # now = perf_counter()
     # elapsed_now = now - updateTime
     # updateTime = now
@@ -341,8 +337,8 @@ def updateData():
     # print(data.shape)
     # print(f"{1 / elapsed:.1f} fps")
 
-# updateData()
-# timer.timeout.connect(updateData)
+updateData()
+timer.timeout.connect(updateData)
 
 
 
