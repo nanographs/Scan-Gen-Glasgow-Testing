@@ -8,6 +8,7 @@ from amaranth.sim import Simulator
 import numpy as np
 import time
 import threading
+# import itertools
 from rich import print
 
 
@@ -39,20 +40,21 @@ OUT_FIFO = 0x08
 
 class DataBusAndFIFOSubtarget(Elaboratable):
     def __init__(self, data, power_ok, in_fifo, out_fifo, resolution_bits, 
-    dwell_time, mode, loopback, resolution, reset, enable):
+    dwell_time, mode, loopback, resolution, dwell, reset, enable):
         self.data = data
         self.power_ok = power_ok
         #print(vars(self.pads))
         self.in_fifo  = in_fifo
-        print(type(in_fifo))
+
         self.out_fifo = out_fifo
         self.mode = mode #image or pattern
         self.loopback = loopback #True if in loopback 
 
-        self.resolution_bits = resolution_bits ## 9x9 = 512, etc.
-        self.resolution = resolution
-        print(self.resolution)
-        self.dwell_time = dwell_time
+        self.resolution_bits = resolution_bits ## cli arg. 9x9 = 512, etc.
+        self.resolution = resolution #register
+
+        self.dwell_time = dwell_time #cli arg
+        self.dwell = dwell #register
 
         self.reset = reset
         self.enable = enable
@@ -110,7 +112,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 m.d.sync += [scan_bus.out_fifo.eq(self.out_fifo.r_data)]
             # m.d.sync += [self.datain.eq(2)]
         if self.mode == "image":
-            m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
+            #m.d.sync += [scan_bus.out_fifo.eq(self.dwell_time)]
+            m.d.sync += [scan_bus.out_fifo.eq(self.dwell)]
 
         with m.If(scan_bus.bus_state == BUS_WRITE_X):
             ## 0: LSB ----> 13: MSB
@@ -263,6 +266,7 @@ class ScanGenApplet(GlasgowApplet):
             Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),]
 
         target.platform.add_resources(LVDS)
+        dwell, self.dwell = target.registers.add_rw(8, reset = 1)
         resolution, self.resolution = target.registers.add_rw(4, reset = 9)
         reset, self.reset = target.registers.add_rw()
         enable, self.enable = target.registers.add_rw(reset=0)
@@ -278,6 +282,7 @@ class ScanGenApplet(GlasgowApplet):
             mode = args.mode,
             loopback = args.loopback,
             resolution = resolution,
+            dwell = dwell,
             reset = reset,
             enable = enable
         ))
@@ -346,36 +351,55 @@ class ScanGenApplet(GlasgowApplet):
 
         txt_file = open("frames.txt", "w")
 
-        async def scan_packet(res_changed):
+        async def scan_packet():
             await device.write_register(self.enable, 1)
             data = await iface.read(16384)
             await device.write_register(self.enable, 0)
             await asyncio.shield(endpoint.send(data))
-            if res_changed:
-                txt_file.write(", ".join([str(x) for x in data.tolist()]))
+            txt_file.write(", ".join([str(x) for x in data.tolist()]))
             print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
 
-        res_changed = False
-        
+        # settings_changed = itertools.cycle(["start", "mid", "stop"])
+
+        setting_state_list = ["start", "done"]
+        # https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
+        def gentr_fn(alist):
+            while 1:
+                for j in alist:
+                    yield j
+
+        setting_states = gentr_fn(setting_state_list)
+        state = next(setting_states)
+        # why an iterator instead of just True/False?
+        # i thought i might need a third state so here we are
+
         while True:
                 try: 
                     cmd = await asyncio.shield(endpoint.recv(4))
                     cmd = cmd.decode(encoding='utf-8', errors='strict')
+                    print("cmd:", cmd)
                     if cmd == "scan":
-                        await scan_packet(res_changed)
-                        res_changed = False
-                    elif cmd.startswith("re"):
-                        data = await iface.read()
-                        print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
+                        if state == "done":
+                            await device.write_register(self.reset, 0)
+                            state = next(setting_states)
+                        await scan_packet()
+                    else:
+                        print("else state", state)
+                        if state == "start":
+                            state = next(setting_states)
+                            data = await iface.read()
+                            print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
+                            await device.write_register(self.reset, 1)
+                        if cmd.startswith("re"):
+                            new_bits = int(cmd.strip("re"))
+                            await device.write_register(self.resolution, new_bits)
+                            print("resolution:",new_bits)
+                            # iface._in_buffer.clear()
+                        elif cmd.startswith("d"):
+                            new_dwell = int(cmd.strip("d"))
+                            print("dwell time", new_dwell)
+                            await device.write_register(self.dwell, new_dwell)
 
-                        new_bits = int(cmd.strip("re"))
-                        print(new_bits)
-                        await device.write_register(self.reset, 1)
-                        await device.write_register(self.resolution, new_bits)
-                        await device.write_register(self.reset, 0)
-                        print("resolution:",new_bits)
-                        res_changed = True
-                        # iface._in_buffer.clear()
                 except (ConnectionResetError, AttributeError) as error:
                     pass
 

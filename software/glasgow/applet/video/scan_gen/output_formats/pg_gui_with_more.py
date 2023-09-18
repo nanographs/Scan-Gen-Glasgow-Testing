@@ -106,13 +106,13 @@ resolution_options.addWidget(resolution_dropdown,1,1)
 
 dwellLabel = QtWidgets.QLabel("Dwell Time")
 dwelltime_options = QtWidgets.QSpinBox()
-dwelltime_options.setRange(0,255)
+dwelltime_options.setRange(1,255)
 dwelltime_options.setSingleStep(1)
 resolution_options.addWidget(dwellLabel,0,0)
 resolution_options.addWidget(dwelltime_options,1,0)
 
-res_btn = QtWidgets.QPushButton('!!')
-resolution_options.addWidget(res_btn,1,2)
+# res_btn = QtWidgets.QPushButton('!!')
+# resolution_options.addWidget(res_btn,1,2)
 
 
 
@@ -142,20 +142,21 @@ def start():
     global scanning, timer, updateData
     resolution_dropdown.setEnabled(False)
     dwelltime_options.setEnabled(False)
-    res_btn.setEnabled(False)
+    # res_btn.setEnabled(False)
     if start_btn.isChecked():
         start_btn.setText('🔄')
         updateData()
         timer.timeout.connect(updateData)
         start_btn.setText('⏸️')
     else:
+        timer.timeout.disconnect(updateData)
         start_btn.setText('▶️')
         #stop scanning
         scanning = False
         print("Stopped scanning now")
         resolution_dropdown.setEnabled(True)
         dwelltime_options.setEnabled(True)
-        res_btn.setEnabled(True)
+        # res_btn.setEnabled(True)
         
         
 
@@ -172,14 +173,25 @@ def update_dimension(dim):
     updateData()
 
 def res():
-    timer.timeout.disconnect(updateData)
     res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     dimension = pow(2,res_bits)
     msg = ("re" + format(res_bits, '02d')).encode("UTF-8") ## ex: res09, res10
     sock.send(msg)
     print("sent", msg)
     update_dimension(dimension)
-res_btn.clicked.connect(res)
+resolution_dropdown.currentIndexChanged.connect(res)
+
+def dwell():
+    global dimension
+    #res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
+    #dimension = pow(2,res_bits)
+    dwell_time =int(dwelltime_options.cleanText()) 
+    msg = ("d" + format(dwell_time, '03d')).encode("UTF-8") ## ex: res09, res10
+    sock.send(msg)
+    print("sent", msg)
+    update_dimension(dimension)
+dwelltime_options.valueChanged.connect(dwell)
+#res_btn.clicked.connect(res)
 
 ## add widgets to layout
 layout.addWidget(win,0,0)
@@ -219,7 +231,6 @@ win.addItem(hist)
 # hist.vb.setMouseEnabled(y=False) # makes user interaction a little easier
 # isoLine.setValue(0.8)
 # isoLine.setZValue(1000) # bring iso line above contrast controls
-
 
 
 
