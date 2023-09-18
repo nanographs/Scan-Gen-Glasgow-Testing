@@ -181,12 +181,14 @@ def res():
     update_dimension(dimension)
 resolution_dropdown.currentIndexChanged.connect(res)
 
+dwelltime = 1
 def dwell():
-    global dimension
+    global dimension, dwelltime
     #res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     #dimension = pow(2,res_bits)
     dwell_time =int(dwelltime_options.cleanText()) 
-    msg = ("d" + format(dwell_time, '03d')).encode("UTF-8") ## ex: res09, res10
+    dwelltime = dwell_time
+    msg = ("d" + format(dwell_time, '03d')).encode("UTF-8") ## ex: d255, d001
     sock.send(msg)
     print("sent", msg)
     update_dimension(dimension)
@@ -236,7 +238,7 @@ win.addItem(hist)
 
 msg = ("scan").encode("UTF-8")
 def updateData():
-    global img, updateTime, elapsed, dimension, sock, buf, timer, msg
+    global img, updateTime, elapsed, dimension, sock, buf, timer, msg, dwelltime
     # img.setImage(buf)
     if conn_btn.isChecked() and start_btn.isChecked():
         sock.send(msg)
@@ -245,7 +247,7 @@ def updateData():
             print("recvd", (list(data))[0], ":", (list(data))[-1])
             imgout(data)
     img.setImage(np.rot90(buf,k=3)) #this is the correct orientation to display the image
-    timer.start(1)
+    timer.start(dwelltime)
 
     return True
     # now = perf_counter()

@@ -294,6 +294,7 @@ class ScanGenApplet(GlasgowApplet):
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
         await device.write_register(self.resolution, args.res)
+        await device.write_register(self.dwell, args.dwell)
 
         return iface
 
