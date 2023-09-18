@@ -133,7 +133,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 if self.mode == "image":
                         if self.loopback:
                             ## LOOPBACK
-                            m.d.sync += self.datain[i].eq(scan_bus.x_data[i+6])
+                            m.d.sync += self.datain[i].eq(scan_bus.y_data[i+6])
 
                             # ## Fixed Value
                             # m.d.sync += self.datain[i].eq(1)
@@ -437,20 +437,23 @@ class ScanGenApplet(GlasgowApplet):
 
         buffer_size = 16384
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
- 
+        n = 0
         while True:
-            try: 
-                d = await asyncio.shield(endpoint.recv(4))
-                d = d.decode(encoding='utf-8', errors='strict')
-                print(d)
-                if d == "scan":
-                    await device.write_register(self.enable, 1)
-                    data = await iface.read(16384)
-                    await device.write_register(self.enable, 0)
-                    await asyncio.shield(endpoint.send(data))
-                # # print("sent")
-            except AttributeError:
-                pass
+            if n < 100:
+                try: 
+                    d = await asyncio.shield(endpoint.recv(4))
+                    d = d.decode(encoding='utf-8', errors='strict')
+                    print(d, n)
+                    if d == "scan":
+                        n += 1
+                        await device.write_register(self.enable, 1)
+                        data = await iface.read(16384)
+                        await device.write_register(self.enable, 0)
+                        await asyncio.shield(endpoint.send(data))
+                        print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
+                    # # print("sent")
+                except AttributeError:
+                    pass
 
 
                 # cmd = data.removesuffix(b'\n').decode(encoding='utf-8', errors='strict')

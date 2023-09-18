@@ -14,6 +14,10 @@ from tifffile import imwrite
 import os, datetime
 
 import socket
+import asyncio
+import threading
+
+
 
 HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
 PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
@@ -83,6 +87,7 @@ def save_image():
 save_btn.clicked.connect(save_image)
 
 
+
 resolution_options = QtWidgets.QGridLayout()
 
 resolution_dropdown = QtWidgets.QComboBox()
@@ -120,7 +125,7 @@ def imgout(raw_data):
     # print("frame", current.n)
     data = list(raw_data)
     d = np.array(data)
-    print(d)
+    # print(d)
     # print(buf)
     zero_index = np.nonzero(d < 1)[0]
     # print("buffer length:", len(buf))
@@ -145,31 +150,97 @@ def imgout(raw_data):
             pass
         #     print("data too long to fit in end of frame, but no zero")
         #     print(d[:dimension])
-        print(d.shape)
-        print(buf.shape)
-        print(buf[last_pixel:last_pixel + d.size].shape)
+        # print(d.shape)
+        # print(buf.shape)
+        # print(buf[last_pixel:last_pixel + d.size].shape)
         buf[last_pixel:last_pixel + d.size] = d
         # print(buf[current.last_pixel:current.last_pixel + d.size])
         last_pixel = last_pixel + d.size
     
-    print(buf)
+    # print(buf)
+
+n = 0
+async def scan():
+    global n
+    # global sock, n
+    await asyncio.sleep(0)
+    msg = ("scan").encode("UTF-8")
+    event_loop = asyncio.get_event_loop()
+    print(event_loop)
+    print("scan", n), 
+    sock.send(msg)
+    data = sock.recv(16384)
+    return data
+    #threading.Thread(target=updateData).start()
+    #return "result"
+    # event_loop.close()
+
+
+
+scanning = False
+def watch_scan():
+    global scanning, n, updateData
+    # scanning = True
+    task_scan = None
+    print("Start")
+    while True:
+        n += 1
+        print("In loop", n)
+        if n >= 20:
+            scanning = False
+            print("Adios")
+            break
+        if scanning and task_scan is None:
+            event_loop = asyncio.get_event_loop()
+            # print(event_loop)
+            task_scan = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
+            print("set task")
+            # #event_loop.run_forever()
+            event_loop.run_until_complete(task_scan)
+            print('task: {!r}'.format(task_scan))
+            data = task_scan.result()
+            if data is not None:
+                print((list(data))[0], ":", (list(data))[-1])
+                imgout(data)
+                updateData()
+            print("eeee")
+            task_scan = None
+        elif not scanning and task_scan:
+            print("End")
+            if not task_scan.cancelled():
+                task_scan.cancel()
+            else:
+                task_scan = None
+            break
+        elif not scanning:
+            print("Bye")
+            break
+            
+
+
+        elif not scanning and not task_scan:
+            print("Nothing to see here")
+
 
 
 def start():
-    global timer, updateData, dimension, sock
+    global scanning
     resolution_dropdown.setEnabled(False)
     dwelltime_options.setEnabled(False)
     res_btn.setEnabled(False)
     if start_btn.isChecked():
         start_btn.setText('⏸️')
-        msg = ("scan").encode("UTF-8") ## ex: res09, res10
-        sock.send(msg)
-        updateData()
+        scanning = True
+        watch_scan()
+
         #timer.timeout.connect(updateData)
         # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
     else:
         # timer.timeout.disconnect(updateData)
         start_btn.setText('▶️')
+        #stop scanning
+        scanning = False
+        print("Stopped scanning now")
         resolution_dropdown.setEnabled(True)
         dwelltime_options.setEnabled(True)
         res_btn.setEnabled(True)
@@ -242,11 +313,12 @@ win.addItem(hist)
 
 
 def updateData():
-    print("update")
-    global img, updateTime, elapsed, dimension, sock, buf
+    global img, updateTime, elapsed, dimension, sock, buf, n, task_scan
+    print("update", n)
     if start_btn.isChecked():
-        data = sock.recv(16384)
-        imgout(data)
+        # data = [n*5]*16384
+        # # data = sock.recv(16384)
+        # imgout(data)
         # data = np.memmap(FrameBufDirectory,
         # shape = (dimension,dimension))
         # data = np.random.rand(dimension,dimension)
@@ -260,11 +332,11 @@ def updateData():
     img.setImage(np.rot90(data,k=3)) #this is the correct orientation to display the image
         
 
-    timer.start(1)
-    now = perf_counter()
-    elapsed_now = now - updateTime
-    updateTime = now
-    elapsed = elapsed * 0.9 + elapsed_now * 0.1
+    # timer.start(1)
+    # now = perf_counter()
+    # elapsed_now = now - updateTime
+    # updateTime = now
+    # elapsed = elapsed * 0.9 + elapsed_now * 0.1
 
     # print(data.shape)
     # print(f"{1 / elapsed:.1f} fps")
