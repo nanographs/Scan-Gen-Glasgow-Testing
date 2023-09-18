@@ -30,3 +30,6 @@ software/Scan Capture/current_display_setting
 **/current_display_setting
 **/packets.txt
 packetlogs.txt
+frames.txt
+frames.txt
+packetlogs.txt
