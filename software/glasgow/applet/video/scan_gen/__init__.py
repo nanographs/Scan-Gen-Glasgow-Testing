@@ -285,6 +285,8 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        await device.write_register(self.resolution, args.res)
+
         return iface
 
 
@@ -300,11 +302,6 @@ class ScanGenApplet(GlasgowApplet):
         
         current = ScanDataRun(dimension)
         cli = CommandLine() 
-        
-
-        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
-
-        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
 
         def display_data(data): ## use to create a basic live display in terminal
             if len(data) > 0:
@@ -312,53 +309,6 @@ class ScanGenApplet(GlasgowApplet):
                 display = "#"*round(first/5) ## scale it to fit in one line in the terminal
                 print(display)
 
-
-
-        def imgout(raw_data):
-            # print("-----------")
-            # print("frame", current.n)
-            data = raw_data.tolist()
-            current.packet_to_txt_file(data)
-            #current.packet_to_waveform(data)
-            d = np.array(data)
-            print(d)
-            # print(buf)
-            zero_index = np.nonzero(d < 1)[0]
-            # print("buffer length:", len(buf))
-            # print("last pixel:",current.last_pixel)
-            print("d length:", len(d))
-            # print("d:",d)
-            
-            if len(zero_index) > 0: #if a zero was found
-                # current.n += 1
-                # print("zero index:",zero_index)
-                zero_index = int(zero_index)
-
-                buf[:d[zero_index+1:].size] = d[zero_index+1:]
-                # print(buf[:d[zero_index+1:].size])
-                # print(d[:zero_index+1].size)
-                buf[dimension * dimension - zero_index:] = d[:zero_index]
-                # print(buf[dimension * dimension - zero_index:])
-                current.last_pixel = d[zero_index+1:].size
-                
-
-            else: 
-                if len(buf[current.last_pixel:current.last_pixel+len(d)]) < len(d):
-                    pass
-                #     print("data too long to fit in end of frame, but no zero")
-                #     print(d[:dimension])
-                buf[current.last_pixel:current.last_pixel + d.size] = d
-                # print(buf[current.last_pixel:current.last_pixel + d.size])
-                current.last_pixel = current.last_pixel + d.size
-            
-
-        start_time = time.perf_counter()
-        
-        #while True:
-
-
-
-        
         
         if args.mode == "pattern" or args.mode == "pattern_out":
             #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
@@ -380,55 +330,6 @@ class ScanGenApplet(GlasgowApplet):
             #current.packet_to_waveform(pattern_slice, "o")
 
 
-        async def scan():
-            await device.write_register(self.enable, 1)
-            while True:
-                if args.mode == "pattern" or args.mode == "pattern_out":
-                    for n in range(int(dimension*dimension/16384)): #packets per frame
-                        #time.sleep(.05)
-                        
-                        #await iface.write([n]*16384)
-                        if n == dimension*dimension/16384:
-                            pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-                        else:
-                            pattern_slice = pattern_stream[n*16384:(n+1)*16384]
-                        #pattern_slice = ([3]*256 + [254]*256)*32
-                        await iface.write(pattern_slice)
-                        threading.Thread(target=patternin(pattern_slice)).start()
-                        #await iface.flush()
-                        #print("reading", current.n)
-                        if args.mode == "pattern":
-                            raw_data = await iface.read(16384)
-                            # print("start thread")
-                            threading.Thread(target=imgout(raw_data)).start()
-                    print("pattern complete", current.n)
-                if args.mode == "image":
-                    print("reading")
-                    raw_data = await iface.read(16384)
-                    print("start thread")
-                    threading.Thread(target=imgout(raw_data)).start()
-
-        async def scan_endpoint(endpoint):
-            await device.write_register(self.enable, 1)
-            while True:
-                raw_data = await iface.read(16384)
-                threading.Thread(target=endpoint.send(raw_data)).start()
-
-        
-        async def read_some():
-            await device.write_register(self.enable, 1)
-            # for n in range(10):
-            #     print("reading")
-            #     raw_data = await iface.read()
-            #     time_2 = time.perf_counter()
-            #     print(time_2 - start_time)
-            #     print("start thread")
-            raw_data = await iface.read(16384)
-            threading.Thread(target=imgout(raw_data)).start()
-            await device.write_register(self.enable, 0)
-            return raw_data
-
-
 
         # self.scanning = False
         # await iface.flush()
@@ -437,60 +338,29 @@ class ScanGenApplet(GlasgowApplet):
 
         buffer_size = 16384
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
-        n = 0
         while True:
-            if n < 100:
                 try: 
-                    d = await asyncio.shield(endpoint.recv(4))
-                    d = d.decode(encoding='utf-8', errors='strict')
-                    print(d, n)
-                    if d == "scan":
-                        # n += 1
+                    cmd = await asyncio.shield(endpoint.recv(4))
+                    cmd = cmd.decode(encoding='utf-8', errors='strict')
+                    if cmd == "scan":
                         await device.write_register(self.enable, 1)
                         data = await iface.read(16384)
                         await device.write_register(self.enable, 0)
                         await asyncio.shield(endpoint.send(data))
                         print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
                     # # print("sent")
-                except AttributeError:
+                    elif cmd.startswith("re"):
+                        # await device.write_register(self.enable, 0)
+                        await iface.flush()
+                        new_bits = int(cmd.strip("re"))
+                        print(new_bits)
+                        await device.write_register(self.reset, 1)
+                        await device.write_register(self.resolution, new_bits)
+                        print("resolution:",new_bits)
+                except ConnectionResetError:
                     pass
 
 
-                # cmd = data.removesuffix(b'\n').decode(encoding='utf-8', errors='strict')
-                # print(cmd)
-                # if cmd == "scan":
-                #     if not self.scanning:
-                #         self.scanning = True
-                #         data = await read_some()
-                #         await endpoint.send(data)
-                #     #     task_scan = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
-                #     # elif self.scanning:
-                #     #     print("stopping scanning")
-                #     #     self.scanning = False
-                #     #     asyncio.gather(device.write_register(self.enable, 0), iface.flush()) #things that should happen together
-                #     #     #stop scanning
-                #     #     if not task_scan.cancelled():
-                #     #         task_scan.cancel() 
-
-                #     #     try:
-                #     #         await task_scan
-                #     #     except asyncio.CancelledError:
-                #     #         print("Stopped scanning")
-                # elif cmd.startswith("res"):
-                #         # await device.write_register(self.enable, 0)
-                #         # await iface.flush()
-                #         current.last_pixel = 0
-                #         new_bits = int(cmd.strip("res"))
-                #         dimension = pow(2,new_bits)
-                #         np.savetxt(f'Scan Capture/current_display_setting', [dimension])
-                #         buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
-                #         await device.write_register(self.reset, 1)
-                #         await device.write_register(self.resolution, new_bits)
-                #         print("resolution:",dimension)
-                        
-                #     # await read_some(time_3)
-
-                    
 
 
 
