@@ -112,12 +112,7 @@ class ScanIOBus(Elaboratable):
         
 
         with m.If(self.reset):
-            with m.FSM() as fsm:
-                with m.State("Resetting"):
-                    m.d.comb += scan_gen.rst.eq(1)
-                    m.next = "Done"
-                with m.State("Done"):
-                    m.d.comb += scan_gen.rst.eq(0)
+            m.d.comb += scan_gen.rst.eq(1)
 
         # m.d.comb += [scan_gen.rst.eq(0),
         #     scan_gen.x_rst.eq(0)]
