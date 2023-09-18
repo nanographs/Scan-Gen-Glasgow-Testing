@@ -117,123 +117,22 @@ resolution_options.addWidget(res_btn,1,2)
 start_btn = QtWidgets.QPushButton('▶️')
 start_btn.setCheckable(True)
 
+
 buf = np.ones(shape=(dimension,dimension))
-#buf_px = np.nditer(buf, flags=['multi_index'], itershape=(32, dimension))
-line = 0
+cur_line = 0
+packet_lines = int(16384/dimension)
 
 def imgout(raw_data):
-    global buf, line
+    global buf, cur_line, packet_lines
     # print("-----------")
     # print("frame", current.n)
     data = list(raw_data)
     d = np.array(data)
-    d.shape = (32,512)
-    buf[line:line+32] = d
-    line += 32
-    if line == 512:
-        line = 0
-    #next(buf_px) = d
-    # # print(d)
-    # # print(buf)
-    # zero_index = np.nonzero(d < 1)[0]
-    # # print("buffer length:", len(buf))
-    # # print("last pixel:",current.last_pixel)
-    # print("d length:", len(d))
-    # # print("d:",d)
-    
-    # if len(zero_index) > 0: #if a zero was found
-    #     # current.n += 1
-    #     # print("zero index:",zero_index)
-    #     zero_index = int(zero_index)
-
-    #     buf[:d[zero_index+1:].size] = d[zero_index+1:]
-    #     # print(buf[:d[zero_index+1:].size])
-    #     # print(d[:zero_index+1].size)
-    #     buf[dimension * dimension - zero_index:] = d[:zero_index]
-    #     # print(buf[dimension * dimension - zero_index:])
-    #     last_pixel = d[zero_index+1:].size
-    
-    # else: 
-    #     if len(buf[last_pixel:last_pixel+len(d)]) < len(d):
-    #         pass
-    #     #     print("data too long to fit in end of frame, but no zero")
-    #     #     print(d[:dimension])
-    #     # print(d.shape)
-    #     # print(buf.shape)
-    #     # print(buf[last_pixel:last_pixel + d.size].shape)
-    #     buf[last_pixel:last_pixel + d.size] = d
-    #     # print(buf[current.last_pixel:current.last_pixel + d.size])
-    #     last_pixel = last_pixel + d.size
-    
-    # print(buf)
-
-# n = 0
-# async def scan():
-#     global n, updateData
-#     # global sock, n
-#     msg = ("scan").encode("UTF-8")
-#     event_loop = asyncio.get_event_loop()
-#     print(event_loop)
-#     print("scan", n), 
-#     sock.send(msg)
-#     data = sock.recv(16384)
-#     if data is not None:
-#         imgout(data)
-#         return True
-#         # threading.Thread(target=updateData).start()
-#         # return updateData()
-#     # return data
-#     #threading.Thread(target=updateData).start()
-#     #return "result"
-#     # event_loop.close()
-
-
-
-# scanning = False
-# def watch_scan(loop):
-#     global scanning, n, updateData
-#     event_loop = asyncio.set_event_loop(loop)
-#     print(asyncio.get_event_loop())
-#     # scanning = True
-#     task_scan = None
-#     print("Start")
-#     while True:
-#         n += 1
-#         print("In loop", n)
-#         if n >= 80:
-#             scanning = False
-#             print("Adios")
-#             break
-#         if scanning and task_scan is None:
-#             event_loop = asyncio.get_event_loop()
-#             # print(event_loop)
-#             task_scan = asyncio.ensure_future(scan()) ## start scanning, in another thread or something
-#             print("set task")
-#             # #event_loop.run_forever()
-#             event_loop.run_until_complete(task_scan)
-#             print('task: {!r}'.format(task_scan))
-#             data = task_scan.result()
-#             print("result", data)
-#             # if data is not None:
-#             #     print((list(data))[0], ":", (list(data))[-1])
-                
-#             print("eeee")
-#             task_scan = None
-#         elif not scanning and task_scan:
-#             print("End")
-#             if not task_scan.cancelled():
-#                 task_scan.cancel()
-#             else:
-#                 task_scan = None
-#             break
-#         elif not scanning:
-#             print("Bye")
-#             break
-            
-
-
-#         elif not scanning and not task_scan:
-#             print("Nothing to see here")
+    d.shape = (packet_lines,dimension)
+    buf[cur_line:cur_line+packet_lines] = d
+    cur_line += packet_lines
+    if cur_line == dimension:
+        cur_line = 0 ## new frame, back to the top
 
 
 
@@ -271,19 +170,18 @@ def start():
 start_btn.clicked.connect(start)
 
 def update_dimension(dim):
-    global dimension
+    global dimension, cur_line, packet_lines, buf
     dimension = dim
+    cur_line = 0
+    packet_lines = int(16384/dimension)
+    buf = np.ones(shape=(dimension,dimension))
     view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
     updateData()
 
 def res():
     res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     dimension = pow(2,res_bits)
-    msg = ("res" + format(res_bits, '02d')).encode("UTF-8") ## ex: res09, res10
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
+    msg = ("re" + format(res_bits, '02d')).encode("UTF-8") ## ex: res09, res10
     sock.send(msg)
     print("sent", msg)
     update_dimension(dimension)
@@ -333,13 +231,13 @@ win.addItem(hist)
 
 msg = ("scan").encode("UTF-8")
 def updateData():
-    global img, updateTime, elapsed, dimension, sock, buf, n, task_scan, timer, msg
-    # print("update", n)
+    global img, updateTime, elapsed, dimension, sock, buf, timer, msg
     # img.setImage(buf)
     if conn_btn.isChecked() and start_btn.isChecked():
         sock.send(msg)
         data = sock.recv(16384)
         if data is not None:
+            print("recvd", (list(data))[0], ":", (list(data))[-1])
             imgout(data)
     img.setImage(np.rot90(buf,k=3)) #this is the correct orientation to display the image
     timer.start(1)
