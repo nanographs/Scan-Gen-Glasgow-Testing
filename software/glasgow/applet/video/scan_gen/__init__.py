@@ -445,7 +445,7 @@ class ScanGenApplet(GlasgowApplet):
                     d = d.decode(encoding='utf-8', errors='strict')
                     print(d, n)
                     if d == "scan":
-                        n += 1
+                        # n += 1
                         await device.write_register(self.enable, 1)
                         data = await iface.read(16384)
                         await device.write_register(self.enable, 0)
