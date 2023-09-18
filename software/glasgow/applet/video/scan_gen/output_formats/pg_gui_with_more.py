@@ -46,6 +46,12 @@ win = pg.GraphicsLayoutWidget()
 #view = win.addPlot(title="")
 view = win.addViewBox()
 
+## to do: add an arrow/line to track current scan position
+# axis = pg.AxisItem(orientation="right", linkView = view, showValues = False)
+# arrow = pg.ArrowItem(angle = 180)
+# view.addItem(arrow)
+# win.addItem(axis)
+
 ## lock the aspect ratio so pixels are always square
 view.setAspectLocked(True)
 
@@ -55,6 +61,7 @@ view.addItem(img)
 
 ## Set initial view bounds
 view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
+
 
 
 updateTime = perf_counter()
@@ -73,13 +80,31 @@ def conn():
     global HOST, PORT, sock
     if conn_btn.isChecked():
         conn_btn.setText('📳')
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((HOST, PORT))
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((HOST, PORT))
+        except ConnectionRefusedError:
+            conn_btn.setText('X')
     else:
         conn_btn.setText('📴')
         sock.close()
 conn_btn.clicked.connect(conn)
 
+
+## testing FeedbackButton widget - seems interesting
+# status_btn = pg.FeedbackButton("Connect")
+# def make_connection():
+#     global HOST, PORT, sock
+#     status_btn.processing()
+#     try:
+#         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#         sock.connect((HOST, PORT))
+#         status_btn.success(limitedTime=False)
+#     except ConnectionRefusedError:
+#         status_btn.failure(message = "Error", limitedTime=False)
+#     # 
+
+# status_btn.clicked.connect(make_connection)
 
 save_btn = QtWidgets.QPushButton('save image')
 def save_image():
