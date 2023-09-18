@@ -143,19 +143,10 @@ def start():
     res_btn.setEnabled(False)
     if start_btn.isChecked():
         start_btn.setText('🔄')
-        # scanning = True
-        # loop = asyncio.new_event_loop()
-        # threading.Thread(target=watch_scan(loop)).start()
         updateData()
         timer.timeout.connect(updateData)
         start_btn.setText('⏸️')
-        # tasks = asyncio.all_tasks()
-        # print(tasks)
-        
-        #
-        # start_btn.setStyleSheet("background-color : lightblue") #gets rid of native styles, button becomes uglier
     else:
-        # timer.timeout.disconnect(updateData)
         start_btn.setText('▶️')
         #stop scanning
         scanning = False
@@ -179,6 +170,7 @@ def update_dimension(dim):
     updateData()
 
 def res():
+    timer.timeout.disconnect(updateData)
     res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     dimension = pow(2,res_bits)
     msg = ("re" + format(res_bits, '02d')).encode("UTF-8") ## ex: res09, res10
