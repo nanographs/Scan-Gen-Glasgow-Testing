@@ -98,6 +98,9 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             scan_bus.out_fifo_ready.eq(self.out_fifo.r_rdy),
         ]
 
+        # with m.If(self.reset):
+        #     m.d.comb += self.in_fifo.flush.eq(1)
+
         # m.d.sync += [scan_bus.out_fifo.eq(20)]
         if self.mode == "pattern" or self.mode == "pattern_out":
             if self.loopback:
@@ -336,27 +339,40 @@ class ScanGenApplet(GlasgowApplet):
         # task_scan = None
         # while True:
 
+
+
         buffer_size = 16384
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
+
+        txt_file = open("frames.txt", "w")
+
+        async def scan_packet(res_changed):
+            await device.write_register(self.enable, 1)
+            data = await iface.read(16384)
+            await device.write_register(self.enable, 0)
+            await asyncio.shield(endpoint.send(data))
+            if res_changed:
+                txt_file.write(", ".join([str(x) for x in data.tolist()]))
+            print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
+
+        res_changed = False
+        
         while True:
                 try: 
                     cmd = await asyncio.shield(endpoint.recv(4))
                     cmd = cmd.decode(encoding='utf-8', errors='strict')
                     if cmd == "scan":
-                        await device.write_register(self.enable, 1)
-                        data = await iface.read(16384)
-                        await device.write_register(self.enable, 0)
-                        await asyncio.shield(endpoint.send(data))
-                        print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
-                    # # print("sent")
+                        await scan_packet(res_changed)
+                        res_changed = False
                     elif cmd.startswith("re"):
-                        # await device.write_register(self.enable, 0)
-                        await iface.flush()
                         new_bits = int(cmd.strip("re"))
                         print(new_bits)
                         await device.write_register(self.reset, 1)
                         await device.write_register(self.resolution, new_bits)
                         print("resolution:",new_bits)
+                        res_changed = True
+                        await iface.flush()
+                        # iface._in_buffer.clear()
                 except ConnectionResetError:
                     pass
 
