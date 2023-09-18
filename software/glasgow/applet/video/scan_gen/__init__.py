@@ -365,14 +365,16 @@ class ScanGenApplet(GlasgowApplet):
                         await scan_packet(res_changed)
                         res_changed = False
                     elif cmd.startswith("re"):
+                        data = await iface.read()
+                        print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
+
                         new_bits = int(cmd.strip("re"))
                         print(new_bits)
                         await device.write_register(self.reset, 1)
                         await device.write_register(self.resolution, new_bits)
+                        await device.write_register(self.reset, 0)
                         print("resolution:",new_bits)
                         res_changed = True
-                        data = await iface.read()
-                        print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
                         # iface._in_buffer.clear()
                 except ConnectionResetError:
                     pass
