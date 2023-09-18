@@ -376,7 +376,7 @@ class ScanGenApplet(GlasgowApplet):
                         print("resolution:",new_bits)
                         res_changed = True
                         # iface._in_buffer.clear()
-                except ConnectionResetError:
+                except (ConnectionResetError, AttributeError) as error:
                     pass
 
 

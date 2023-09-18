@@ -67,14 +67,16 @@ timer.setSingleShot(True)
 FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
 
 
-conn_btn = QtWidgets.QPushButton('💼')
+conn_btn = QtWidgets.QPushButton('📴')
 conn_btn.setCheckable(True)
 def conn():
     global HOST, PORT, sock
     if conn_btn.isChecked():
+        conn_btn.setText('📳')
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((HOST, PORT))
     else:
+        conn_btn.setText('📴')
         sock.close()
 conn_btn.clicked.connect(conn)
 
@@ -181,9 +183,9 @@ res_btn.clicked.connect(res)
 
 ## add widgets to layout
 layout.addWidget(win,0,0)
+layout.addWidget(conn_btn,0,1)
 layout.addWidget(save_btn,1,0)
 layout.addWidget(start_btn,1,1)
-layout.addWidget(conn_btn,1,2)
 layout.addLayout(resolution_options, 2,0)
 
 w.show()
