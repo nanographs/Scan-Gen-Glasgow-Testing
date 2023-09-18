@@ -218,14 +218,14 @@ class ScanIOBus(Elaboratable):
                         m.d.comb += self.bus_state.eq(BUS_FIFO_1)
                     if self.mode == "image":
                         with m.If(self.in_fifo_ready):
-                            m.next = "FIFO_2"
+                            m.next = "WAIT"
                     if self.mode == "pattern":
-                        m.next = "FIFO_2"
+                        m.next = "WAIT"
 
                         
-                with m.State("FIFO_2"):
-                    m.d.comb += self.bus_state.eq(BUS_FIFO_2)
-                    m.next = "WAIT"
+                # with m.State("FIFO_2"):
+                #     m.d.comb += self.bus_state.eq(BUS_FIFO_2)
+                #     m.next = "WAIT"
 
         return m
     def ports(self):
