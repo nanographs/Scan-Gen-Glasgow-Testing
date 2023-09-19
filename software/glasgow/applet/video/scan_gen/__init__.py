@@ -293,6 +293,8 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        await device.write_register(self.reset, 0)
+        await device.write_register(self.enable, 0)
         await device.write_register(self.resolution, args.res)
         await device.write_register(self.dwell, args.dwell)
 
@@ -353,14 +355,16 @@ class ScanGenApplet(GlasgowApplet):
         txt_file = open("frames.txt", "w")
 
         async def scan_packet():
-            await device.write_register(self.enable, 1)
-            data = await iface.read(16384)
-            await device.write_register(self.enable, 0)
-            await asyncio.shield(endpoint.send(data))
-            txt_file.write(", ".join([str(x) for x in data.tolist()]))
-            print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
+            while True:
+                #await device.write_register(self.enable, 1)
+                data = await iface.read(16384)
+                #await device.write_register(self.enable, 0)
+                #await asyncio.shield(endpoint.send(data))
+                await endpoint.send(data)
+                txt_file.write(", ".join([str(x) for x in data.tolist()]))
+                print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
 
-        # settings_changed = itertools.cycle(["start", "mid", "stop"])
+
 
         setting_state_list = ["start", "done"]
         # https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
@@ -374,6 +378,7 @@ class ScanGenApplet(GlasgowApplet):
         # why an iterator instead of just True/False?
         # i thought i might need a third state so here we are
 
+        task = None
         while True:
                 try: 
                     cmd = await asyncio.shield(endpoint.recv(4))
@@ -383,23 +388,36 @@ class ScanGenApplet(GlasgowApplet):
                         if state == "done":
                             await device.write_register(self.reset, 0)
                             state = next(setting_states)
-                        await scan_packet()
+                        loop = asyncio.get_running_loop()
+                        #print(loop)
+                        await device.write_register(self.enable, 1)
+                        task = asyncio.ensure_future(scan_packet()) ## start async task
+                        
+                        #await scan_packet()
                     else:
+                        await device.write_register(self.enable, 0)
                         print("else state", state)
-                        if state == "start":
-                            state = next(setting_states)
-                            data = await iface.read()
-                            print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
-                            await device.write_register(self.reset, 1)
-                        if cmd.startswith("re"):
-                            new_bits = int(cmd.strip("re"))
-                            await device.write_register(self.resolution, new_bits)
-                            print("resolution:",new_bits)
-                            # iface._in_buffer.clear()
-                        elif cmd.startswith("d"):
-                            new_dwell = int(cmd.strip("d"))
-                            print("dwell time", new_dwell)
-                            await device.write_register(self.dwell, new_dwell)
+                        if cmd == "stop":
+                            task.cancel()
+                            try:
+                                await task
+                            except asyncio.CancelledError:
+                                print("Task cancelled") ## make sure its canceled?
+                        else:
+                            if state == "start": ## transitioning between pausing the scan, and recieving commands
+                                state = next(setting_states)
+                                data = await iface.read()
+                                print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
+                                await device.write_register(self.reset, 1)
+                            if cmd.startswith("re"): ## Changing resolution
+                                new_bits = int(cmd.strip("re")) 
+                                await device.write_register(self.resolution, new_bits)
+                                print("resolution:",new_bits)
+                                # iface._in_buffer.clear()
+                            elif cmd.startswith("d"): ## Changing dwell time
+                                new_dwell = int(cmd.strip("d"))
+                                await device.write_register(self.dwell, new_dwell)
+                                print("dwell time", new_dwell)
 
                 except (ConnectionResetError, AttributeError) as error:
                     pass
