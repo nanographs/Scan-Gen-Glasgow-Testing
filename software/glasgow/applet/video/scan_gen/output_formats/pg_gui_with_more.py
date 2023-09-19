@@ -83,6 +83,9 @@ def conn():
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((HOST, PORT))
+            start_btn.setEnabled(True)
+            resolution_dropdown.setEnabled(True)
+            dwelltime_options.setEnabled(True)
         except ConnectionRefusedError:
             conn_btn.setText('X')
     else:
@@ -138,11 +141,16 @@ resolution_options.addWidget(dwelltime_options,1,0)
 
 # res_btn = QtWidgets.QPushButton('!!')
 # resolution_options.addWidget(res_btn,1,2)
+resolution_dropdown.setEnabled(False)
+dwelltime_options.setEnabled(False)
 
 
 
 start_btn = QtWidgets.QPushButton('▶️')
 start_btn.setCheckable(True)
+start_btn.setEnabled(False)
+resolution_dropdown.setEnabled(False)
+dwelltime_options.setEnabled(False)
 
 
 buf = np.ones(shape=(dimension,dimension))
@@ -164,20 +172,25 @@ def imgout(raw_data):
 
 
 def start():
-    global scanning, timer, updateData
+    global scanning, timer, updateData, msg
     resolution_dropdown.setEnabled(False)
     dwelltime_options.setEnabled(False)
     # res_btn.setEnabled(False)
     if start_btn.isChecked():
         start_btn.setText('🔄')
+        sock.send(msg)
         updateData()
         timer.timeout.connect(updateData)
         start_btn.setText('⏸️')
     else:
+        start_btn.setText('🔄')
+        smsg = ("stop").encode("UTF-8") 
+        sock.send(smsg)
         timer.timeout.disconnect(updateData)
         start_btn.setText('▶️')
         #stop scanning
         scanning = False
+        #print(sock)
         print("Stopped scanning now")
         resolution_dropdown.setEnabled(True)
         dwelltime_options.setEnabled(True)
@@ -195,9 +208,10 @@ def update_dimension(dim):
     packet_lines = int(16384/dimension)
     buf = np.ones(shape=(dimension,dimension))
     view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
-    updateData()
+    #updateData()
 
 def res():
+    global sock
     res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     dimension = pow(2,res_bits)
     msg = ("re" + format(res_bits, '02d')).encode("UTF-8") ## ex: res09, res10
@@ -208,7 +222,7 @@ resolution_dropdown.currentIndexChanged.connect(res)
 
 dwelltime = 1
 def dwell():
-    global dimension, dwelltime
+    global dimension, dwelltime, sock
     #res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
     #dimension = pow(2,res_bits)
     dwell_time =int(dwelltime_options.cleanText()) 
@@ -265,8 +279,7 @@ msg = ("scan").encode("UTF-8")
 def updateData():
     global img, updateTime, elapsed, dimension, sock, buf, timer, msg, dwelltime
     # img.setImage(buf)
-    if conn_btn.isChecked() and start_btn.isChecked():
-        sock.send(msg)
+    if conn_btn.isChecked(): #and start_btn.isChecked():
         data = sock.recv(16384)
         if data is not None:
             print("recvd", (list(data))[0], ":", (list(data))[-1])
