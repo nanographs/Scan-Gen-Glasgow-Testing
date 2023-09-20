@@ -419,7 +419,8 @@ class ScanGenApplet(GlasgowApplet):
                                 await device.write_register(self.dwell, new_dwell)
                                 print("dwell time", new_dwell)
 
-                except (ConnectionResetError, AttributeError) as error:
+                except (ConnectionResetError, AttributeError, BrokenPipeError) as error:
+                    # basically, if the other port closes, don't stop running
                     pass
 
 
