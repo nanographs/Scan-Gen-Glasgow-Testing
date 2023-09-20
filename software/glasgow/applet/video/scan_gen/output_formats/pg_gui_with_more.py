@@ -5,6 +5,7 @@ import numpy as np
 from PyQt6 import QtWidgets
 
 import pyqtgraph as pg
+from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.exporters import Exporter
 from pyqtgraph.Qt import QtCore
 
@@ -27,10 +28,10 @@ PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
 
 app = pg.mkQApp("Scan Live View")
 
-settings = np.loadtxt(os.path.join(os.getcwd(), "Scan Capture/current_display_setting"))
-dimension = int(settings)
+dimension = 512
 
 ## Define a top-level widget to hold everything
+ww = QtWidgets.QMainWindow()
 w = QtWidgets.QWidget()
 w.setWindowTitle('/|/|/|/| scanning /|/|/|/|')
 
@@ -41,6 +42,22 @@ w.setLayout(layout)
 ## Create window with GraphicsView widget
 win = pg.GraphicsLayoutWidget()
 #win.show()  ## show widget alone in its own window
+
+
+## experimenting with more complex layouts
+# tab_widget = QtWidgets.QTabWidget()
+# ww.setCentralWidget(tab_widget)
+
+# area = DockArea()
+# d = Dock("Hello", size = (800,20))
+# area.addDock(d)
+# tab_widget.addTab(area, "Hi")
+# tab_widget.addTab(w, "Win")
+
+
+
+
+
 
 # A plot area (ViewBox + axes) for displaying the image
 #view = win.addPlot(title="")
@@ -84,6 +101,7 @@ def conn():
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((HOST, PORT))
             start_btn.setEnabled(True)
+            save_btn.setEnabled(True)
             resolution_dropdown.setEnabled(True)
             dwelltime_options.setEnabled(True)
         except ConnectionRefusedError:
@@ -141,16 +159,23 @@ resolution_options.addWidget(dwelltime_options,1,0)
 
 # res_btn = QtWidgets.QPushButton('!!')
 # resolution_options.addWidget(res_btn,1,2)
-resolution_dropdown.setEnabled(False)
-dwelltime_options.setEnabled(False)
+# resolution_dropdown.setEnabled(False)
+# dwelltime_options.setEnabled(False)
 
 
 
 start_btn = QtWidgets.QPushButton('▶️')
-start_btn.setCheckable(True)
+start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
+
+new_scan_btn = QtWidgets.QPushButton('↻')
+
+
+## start w most controls disabled until connection is made
 start_btn.setEnabled(False)
 resolution_dropdown.setEnabled(False)
 dwelltime_options.setEnabled(False)
+new_scan_btn.setEnabled(False)
+save_btn.setEnabled(False)
 
 
 buf = np.ones(shape=(dimension,dimension))
@@ -182,6 +207,8 @@ def start():
         updateData()
         timer.timeout.connect(updateData)
         start_btn.setText('⏸️')
+        new_scan_btn.setEnabled(False)
+        
     else:
         start_btn.setText('🔄')
         smsg = ("stop").encode("UTF-8") 
@@ -194,6 +221,7 @@ def start():
         print("Stopped scanning now")
         resolution_dropdown.setEnabled(True)
         dwelltime_options.setEnabled(True)
+        new_scan_btn.setEnabled(True)
         # res_btn.setEnabled(True)
         
         
@@ -208,7 +236,19 @@ def update_dimension(dim):
     packet_lines = int(16384/dimension)
     buf = np.ones(shape=(dimension,dimension))
     view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
+    img.setImage(np.rot90(buf,k=3))
     #updateData()
+
+def new_scan():
+    res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
+    dimension = pow(2,res_bits)
+    msg = ("eeee").encode("UTF-8") ## ex: res09, res10
+    sock.send(msg)
+    update_dimension(dimension)
+    
+    
+
+new_scan_btn.clicked.connect(new_scan)
 
 def res():
     global sock
@@ -237,9 +277,14 @@ dwelltime_options.valueChanged.connect(dwell)
 ## add widgets to layout
 layout.addWidget(win,0,0)
 layout.addWidget(conn_btn,0,1)
-layout.addWidget(save_btn,1,0)
-layout.addWidget(start_btn,1,1)
+
+scan_buttons = QtWidgets.QGridLayout()
+scan_buttons.addWidget(save_btn,1,0)
+scan_buttons.addWidget(start_btn,1,1)
+scan_buttons.addWidget(new_scan_btn,1,2)
+layout.addLayout(scan_buttons,1,0)
 layout.addLayout(resolution_options, 2,0)
+
 
 w.show()
 
@@ -284,8 +329,9 @@ def updateData():
         if data is not None:
             print("recvd", (list(data))[0], ":", (list(data))[-1])
             imgout(data)
+        timer.start(dwelltime)
     img.setImage(np.rot90(buf,k=3)) #this is the correct orientation to display the image
-    timer.start(dwelltime)
+    
 
     return True
     # now = perf_counter()
