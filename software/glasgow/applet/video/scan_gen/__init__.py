@@ -221,6 +221,111 @@ class DataBusAndFIFOSubtarget(Elaboratable):
 
         return m
 
+class PointDataBusAndFIFOSubtarget(Elaboratable):
+    def __init__(self, data, power_ok, in_fifo, out_fifo, resolution_bits, 
+    dwell_time, mode, loopback, dwell, x_position, y_position):
+        self.data = data
+        self.power_ok = power_ok
+        #print(vars(self.pads))
+        self.in_fifo  = in_fifo
+
+        self.out_fifo = out_fifo
+        self.mode = mode #image or pattern
+        self.loopback = loopback #True if in loopback 
+
+        self.resolution_bits = resolution_bits ## cli arg. 9x9 = 512, etc.
+
+        self.dwell_time = dwell_time #cli arg
+        self.dwell = dwell #register
+
+        self.x_position = x_position
+        self.y_position = y_position
+
+        self.datain = Signal(14)
+
+        self.running_average_two = Signal(14)
+
+        self.out_fifo_f = Signal(8)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.scan_bus = scan_bus = ScanIOBus_Point(self.x_position, self.y_position, self.dwell)
+
+
+        x_latch = platform.request("X_LATCH")
+        x_enable = platform.request("X_ENABLE")
+        y_latch = platform.request("Y_LATCH")
+        y_enable = platform.request("Y_ENABLE")
+        a_latch = platform.request("A_LATCH")
+        a_enable = platform.request("A_ENABLE")
+
+        a_clock = platform.request("A_CLOCK")
+        d_clock = platform.request("D_CLOCK")
+
+
+        m.d.comb += [
+            x_latch.o.eq(scan_bus.x_latch),
+            x_enable.o.eq(scan_bus.x_enable),
+            y_latch.o.eq(scan_bus.y_latch),
+            y_enable.o.eq(scan_bus.y_enable),
+            a_latch.o.eq(scan_bus.a_latch),
+            a_enable.o.eq(scan_bus.a_enable),
+            a_clock.o.eq(scan_bus.a_clock),
+            d_clock.o.eq(scan_bus.d_clock),
+            #scan_bus.fifo_ready.eq(0)
+            scan_bus.in_fifo_ready.eq(self.in_fifo.w_rdy),
+            scan_bus.out_fifo_ready.eq(self.out_fifo.r_rdy),
+        ]
+
+        with m.If(scan_bus.bus_state == BUS_WRITE_X):
+            ## 0: LSB ----> 13: MSB
+            for i, pad in enumerate(self.data):
+                m.d.comb += [
+                    pad.oe.eq(self.power_ok.i),
+                    pad.o.eq(scan_bus.x_data[i]),
+                ]
+        
+        with m.If(scan_bus.bus_state == BUS_WRITE_Y):
+            ## 0: LSB ----> 13: MSB
+            for i, pad in enumerate(self.data):
+                m.d.comb += [
+                    pad.oe.eq(self.power_ok.i),
+                    pad.o.eq(scan_bus.y_data[i]),
+                ]
+
+        
+        with m.If(scan_bus.bus_state == BUS_READ):
+
+                
+            ### Only reading 8 bits right now
+            ### so just ignore the rest
+            for i in range(8,14):
+                m.d.sync += self.datain[i].eq(0)
+
+        with m.If(scan_bus.bus_state == A_RELEASE):
+            m.d.sync += [
+                    self.running_average_two.eq(self.datain),
+                ]
+
+        with m.If(scan_bus.dwell_ctr_ovf):
+            with m.If(scan_bus.bus_state == BUS_FIFO_1):
+                with m.If(self.in_fifo.w_rdy):
+                    with m.If(self.running_average_two <= 1): #restrict image data to 2-255, save 0-1 for frame/line sync
+                        m.d.comb += [
+                            self.in_fifo.w_data.eq(2),
+                            self.in_fifo.w_en.eq(1),
+                        ]
+                    with m.Else():
+                        m.d.comb += [
+                            self.in_fifo.w_data.eq(self.running_average_two[0:8]),
+                            self.in_fifo.w_en.eq(1),
+                        ]
+
+                
+
+        return m
+
 
 class ScanGenApplet(GlasgowApplet):
     logger = logging.getLogger(__name__)
@@ -267,25 +372,47 @@ class ScanGenApplet(GlasgowApplet):
 
         target.platform.add_resources(LVDS)
         dwell, self.dwell = target.registers.add_rw(8, reset = 1)
-        resolution, self.resolution = target.registers.add_rw(4, reset = 9)
-        reset, self.reset = target.registers.add_rw()
-        enable, self.enable = target.registers.add_rw(reset=0)
+
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
-        iface.add_subtarget(DataBusAndFIFOSubtarget(
-            data=[iface.get_pin(pin) for pin in args.pin_set_data],
-            power_ok=iface.get_pin(args.pin_power_ok),
-            in_fifo = iface.get_in_fifo(),
-            out_fifo = iface.get_out_fifo(),
-            resolution_bits = args.res,
-            dwell_time = args.dwell,
-            mode = args.mode,
-            loopback = args.loopback,
-            resolution = resolution,
-            dwell = dwell,
-            reset = reset,
-            enable = enable
-        ))
+
+        if args.mode == "point":
+            x_position, self.x_position = target.registers.add_rw(8)
+            print("x position:", self.x_position)
+            y_position, self.y_position = target.registers.add_rw(8)
+            print("y position:", self.y_position)
+            iface.add_subtarget(PointDataBusAndFIFOSubtarget(
+                data=[iface.get_pin(pin) for pin in args.pin_set_data],
+                power_ok=iface.get_pin(args.pin_power_ok),
+                in_fifo = iface.get_in_fifo(),
+                out_fifo = iface.get_out_fifo(),
+                resolution_bits = args.res,
+                dwell_time = args.dwell,
+                mode = args.mode,
+                loopback = args.loopback,
+                dwell = dwell,
+                x_position = x_position,
+                y_position = y_position
+            ))
+        else:
+            resolution, self.resolution = target.registers.add_rw(4, reset = 9)
+            reset, self.reset = target.registers.add_rw()
+            enable, self.enable = target.registers.add_rw(reset=0)
+
+            iface.add_subtarget(DataBusAndFIFOSubtarget(
+                data=[iface.get_pin(pin) for pin in args.pin_set_data],
+                power_ok=iface.get_pin(args.pin_power_ok),
+                in_fifo = iface.get_in_fifo(),
+                out_fifo = iface.get_out_fifo(),
+                resolution_bits = args.res,
+                dwell_time = args.dwell,
+                mode = args.mode,
+                loopback = args.loopback,
+                resolution = resolution,
+                dwell = dwell,
+                reset = reset,
+                enable = enable
+            ))
     
     @classmethod
     def add_run_arguments(cls, parser, access):
@@ -293,10 +420,12 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        await device.write_register(self.reset, 0)
-        await device.write_register(self.enable, 0)
-        await device.write_register(self.resolution, args.res)
-        await device.write_register(self.dwell, args.dwell)
+        if args.mode != "point":
+            await device.write_register(self.reset, 0)
+            await device.write_register(self.enable, 0)
+            await device.write_register(self.resolution, args.res)
+        else:
+            await device.write_register(self.dwell, args.dwell)
 
         return iface
 
