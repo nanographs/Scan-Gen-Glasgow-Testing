@@ -9,11 +9,11 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.ramps import RampGenerator
     from ..scan_gen_components.dwell_ctr import DwellCtr
     from ..scan_gen_components.min_dwell_ctr import MinDwellCtr
-    from ..scan_gen_components.xy_ramp_gen import ScanGenerator
+    from ..scan_gen_components.xy_ramp_gen import ScanGenerator, AnySizeScanGenerator
 else: ## running as script (simulation)
     from dwell_ctr import DwellCtr
     from min_dwell_ctr import MinDwellCtr
-    from xy_ramp_gen import ScanGenerator
+    from xy_ramp_gen import ScanGenerator, AnySizeScanGenerator
     from ramps import RampGenerator
 
 BUS_WRITE_X = 0x01
@@ -75,6 +75,8 @@ class ScanIOBus(Elaboratable):
         
 
         m.submodules.scan_gen = scan_gen = ScanGenerator(self.resolution_bits)
+
+        #m.submodules.scan_gen = scan_gen = AnySizeScanGenerator(self.resolution_bits, 23, 17)
 
     
         m.d.comb += [
@@ -403,10 +405,12 @@ class ScanIOBus_Point(Elaboratable):
 # --- TEST ---
 
 def run_sim():
-    dut = ScanIOBus(4,8) # 16 x 16
+    dut = ScanIOBus(resolution = Signal(4), dwell_time_user = 3, mode = "image", reset = Signal(), enable = Signal()) # 16 x 16
     def bench():
         yield dut.in_fifo_ready.eq(1)
         yield dut.out_fifo_ready.eq(1)
+        yield dut.enable.eq(1)
+        yield dut.resolution_bits.eq(9)
         yield dut.out_fifo.eq(3)
         for _ in range(4096):
             yield

@@ -290,8 +290,8 @@ w.show()
 
 
 
-# Custom ROI for selecting an image region
-# roi = pg.ROI([10,100], [100, 500])
+# # Custom ROI for selecting an image region
+# roi = pg.ROI([50,100], [100, 50])
 # roi.addScaleHandle([0.5, 1], [0.5, 0.5])
 # roi.addScaleHandle([0, 0.5], [0.5, 0.5])
 # view.addItem(roi)
