@@ -30,7 +30,7 @@ class RampGenerator(Elaboratable):
         self.rst = Signal()
 
         # State
-        #self.count = Signal(limit.bit_length())
+        # self.count = Signal(limit.bit_length())
         self.count = Signal(limit.shape())
        
 

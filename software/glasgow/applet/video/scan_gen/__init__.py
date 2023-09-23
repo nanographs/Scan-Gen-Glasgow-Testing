@@ -72,7 +72,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
         else:
             #m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
-            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, self.dwell_time, 
+            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, 3, 
                                                         self.mode, self.reset, self.enable)
 
         x_latch = platform.request("X_LATCH")
@@ -139,7 +139,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 if self.mode == "image":
                         if self.loopback:
                             ## LOOPBACK
-                            m.d.sync += self.datain[i].eq(scan_bus.y_data[i+6])
+                            m.d.sync += self.datain[i].eq(scan_bus.x_data[i+6])
 
                             # ## Fixed Value
                             # m.d.sync += self.datain[i].eq(1)
@@ -313,7 +313,7 @@ class PointDataBusAndFIFOSubtarget(Elaboratable):
                 with m.If(self.in_fifo.w_rdy):
                     with m.If(self.running_average_two <= 1): #restrict image data to 2-255, save 0-1 for frame/line sync
                         m.d.comb += [
-                            self.in_fifo.w_data.eq(2),
+                            self.in_fifo.w_data.eq(3),
                             self.in_fifo.w_en.eq(1),
                         ]
                     with m.Else():
@@ -397,7 +397,9 @@ class ScanGenApplet(GlasgowApplet):
         else:
             resolution, self.resolution = target.registers.add_rw(4, reset = 9)
             reset, self.reset = target.registers.add_rw()
+            print("reset:", self.reset)
             enable, self.enable = target.registers.add_rw(reset=0)
+            print("enable:", self.enable)
 
             iface.add_subtarget(DataBusAndFIFOSubtarget(
                 data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -427,7 +429,6 @@ class ScanGenApplet(GlasgowApplet):
         else:
             await device.write_register(self.dwell, args.dwell)
 
-        return iface
 
 
 
