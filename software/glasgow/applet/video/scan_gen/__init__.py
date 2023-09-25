@@ -139,7 +139,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 if self.mode == "image":
                         if self.loopback:
                             ## LOOPBACK
-                            m.d.sync += self.datain[i].eq(scan_bus.x_data[i+6])
+                            m.d.sync += self.datain[i].eq(scan_bus.y_data[i+6])
 
                             # ## Fixed Value
                             # m.d.sync += self.datain[i].eq(1)
@@ -502,10 +502,11 @@ class ScanGenApplet(GlasgowApplet):
                 print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
 
         async def single_bidirectional_transfer():
-            txt_file.write("\nSENT:\n")
-            pattern_slice = next(pattern)
-            txt_file.write(", ".join([str(x) for x in pattern_slice]))
-            await iface.write(pattern_slice)
+            if args.mode == "pattern":
+                txt_file.write("\nSENT:\n")
+                pattern_slice = next(pattern)
+                txt_file.write(", ".join([str(x) for x in pattern_slice]))
+                await iface.write(pattern_slice)
             await device.write_register(self.enable, 1)
             data = await iface.read(16384)
             txt_file.write("\nRCVD:\n")
