@@ -153,7 +153,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 if self.mode == "pattern":
                     if self.loopback:
                         m.d.sync += [
-                            self.datain[i].eq(self.out_fifo_f[i])
+                            # self.datain[i].eq(self.out_fifo_f[i])
+                            self.datain[i].eq(scan_bus.y_data[i+6])
                         ]
                     else:
                         m.d.sync += [
@@ -415,6 +416,8 @@ class ScanGenApplet(GlasgowApplet):
                 reset = reset,
                 enable = enable
             ))
+
+            
     
     @classmethod
     def add_run_arguments(cls, parser, access):
@@ -429,7 +432,7 @@ class ScanGenApplet(GlasgowApplet):
         else:
             await device.write_register(self.dwell, args.dwell)
 
-
+        return iface
 
 
 
@@ -453,15 +456,17 @@ class ScanGenApplet(GlasgowApplet):
         
         if args.mode == "pattern" or args.mode == "pattern_out":
             #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
-            pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
-            #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension, boolean=True)
+            #pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
+            pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension)
             #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
             #pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
             
 
-
-
-            #print(pattern_array)
+            def pattern_loop():
+                while 1:
+                    for n in range(int(dimension*dimension/16384)): #packets per frame
+                        yield pattern_stream[n*16384:(n+1)*16384]
+            pattern = pattern_loop()
 
         
         
@@ -486,14 +491,29 @@ class ScanGenApplet(GlasgowApplet):
 
         async def scan_packet():
             while True:
-                #await device.write_register(self.enable, 1)
-                data = await iface.read(16384)
-                #await device.write_register(self.enable, 0)
-                #await asyncio.shield(endpoint.send(data))
+                data = await single_bidirectional_transfer()
+                # await iface.write(next(pattern))
+                # #await device.write_register(self.enable, 1)
+                # data = await iface.read(16384)
+                # #await device.write_register(self.enable, 0)
+                # #await asyncio.shield(endpoint.send(data))
                 await endpoint.send(data)
-                txt_file.write(", ".join([str(x) for x in data.tolist()]))
+                # txt_file.write(", ".join([str(x) for x in data.tolist()]))
                 print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
 
+        async def single_bidirectional_transfer():
+            txt_file.write("\nSENT:\n")
+            pattern_slice = next(pattern)
+            txt_file.write(", ".join([str(x) for x in pattern_slice]))
+            await iface.write(pattern_slice)
+            await device.write_register(self.enable, 1)
+            data = await iface.read(16384)
+            txt_file.write("\nRCVD:\n")
+            txt_file.write(", ".join([str(x) for x in data.tolist()]))
+            await device.write_register(self.enable, 0)
+            return data
+
+        await single_bidirectional_transfer()
 
 
         setting_state_list = ["start", "done"]
@@ -515,11 +535,10 @@ class ScanGenApplet(GlasgowApplet):
                     cmd = cmd.decode(encoding='utf-8', errors='strict')
                     print("cmd:", cmd)
                     if cmd == "scan":
+                        
                         if state == "done":
                             await device.write_register(self.reset, 0)
                             state = next(setting_states)
-                        loop = asyncio.get_running_loop()
-                        #print(loop)
                         await device.write_register(self.enable, 1)
                         task = asyncio.ensure_future(scan_packet()) ## start async task
                         
@@ -557,17 +576,17 @@ class ScanGenApplet(GlasgowApplet):
 
 
 
-        # start_time = time.perf_counter()
-        # await read_some(start_time)
+        start_time = time.perf_counter()
+        await read_some(start_time)
 
-        # new_bits = 10
-        # dimension = pow(2,new_bits)
-        # np.savetxt(f'Scan Capture/current_display_setting', [dimension])
-        # buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
-        # await device.write_register(self.reset, 1)
-        # await device.write_register(self.resolution, new_bits)
+        new_bits = 10
+        dimension = pow(2,new_bits)
+        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
+        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
+        await device.write_register(self.reset, 1)
+        await device.write_register(self.resolution, new_bits)
         
-        # await read_some()
+        await read_some()
 
 
 
