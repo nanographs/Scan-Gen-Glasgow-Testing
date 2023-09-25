@@ -1,5 +1,9 @@
 from time import perf_counter
 
+import asyncio
+import functools
+import sys
+
 import numpy as np
 
 from PyQt6 import QtWidgets
@@ -14,9 +18,12 @@ from tifffile import imwrite
 
 import os, datetime
 
-import socket
-import asyncio
-import threading
+# import socket
+
+import qasync
+from qasync import asyncSlot, asyncClose, QApplication
+
+
 
 #from .....support.endpoint import *
 
@@ -31,7 +38,7 @@ app = pg.mkQApp("Scan Live View")
 dimension = 512
 
 ## Define a top-level widget to hold everything
-ww = QtWidgets.QMainWindow()
+
 w = QtWidgets.QWidget()
 w.setWindowTitle('/|/|/|/| scanning /|/|/|/|')
 
@@ -98,8 +105,9 @@ def conn():
     if conn_btn.isChecked():
         conn_btn.setText('📳')
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((HOST, PORT))
+            # reader, writer = await asyncio.open_connection(host, port)
+            # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # sock.connect((HOST, PORT))
             start_btn.setEnabled(True)
             save_btn.setEnabled(True)
             resolution_dropdown.setEnabled(True)
@@ -195,6 +203,11 @@ def imgout(raw_data):
         cur_line = 0 ## new frame, back to the top
 
 
+async def dataLoop():
+    while True:
+        updateData()
+
+
 
 def start():
     global scanning, timer, updateData, msg
@@ -205,7 +218,10 @@ def start():
         start_btn.setText('🔄')
         sock.send(msg)
         updateData()
-        timer.timeout.connect(updateData)
+        # timer.timeout.connect(updateData)
+        # task = asyncio.ensure_future(dataLoop()) ## start async task
+        event_loop = asyncio.get_event_loop()
+        event_loop.run_forever(updateData())
         start_btn.setText('⏸️')
         new_scan_btn.setEnabled(False)
         
@@ -213,7 +229,7 @@ def start():
         start_btn.setText('🔄')
         smsg = ("stop").encode("UTF-8") 
         sock.send(smsg)
-        timer.timeout.disconnect(updateData)
+        # timer.timeout.disconnect(updateData)
         start_btn.setText('▶️')
         #stop scanning
         scanning = False
@@ -223,7 +239,8 @@ def start():
         dwelltime_options.setEnabled(True)
         new_scan_btn.setEnabled(True)
         # res_btn.setEnabled(True)
-        
+
+
         
 
 
@@ -286,7 +303,7 @@ layout.addLayout(scan_buttons,1,0)
 layout.addLayout(resolution_options, 2,0)
 
 
-w.show()
+
 
 
 
@@ -329,7 +346,7 @@ def updateData():
         if data is not None:
             print("recvd", (list(data))[0], ":", (list(data))[-1])
             imgout(data)
-        timer.start(dwelltime)
+        # timer.start(dwelltime)
     img.setImage(np.rot90(buf,k=3)) #this is the correct orientation to display the image
     
 
@@ -342,10 +359,39 @@ def updateData():
     # print(data.shape)
     # print(f"{1 / elapsed:.1f} fps")
 
-updateData()
+# await updateData()
+
+
+async def main():
+    def close_future(future, loop):
+        loop.call_later(10, future.cancel)
+        future.cancel()
+
+    loop = asyncio.get_event_loop()
+    future = asyncio.Future()
+
+    app = QApplication.instance()
+    if hasattr(app, "aboutToQuit"):
+        getattr(app, "aboutToQuit").connect(
+            functools.partial(close_future, future, loop)
+        )
+
+    # mainWindow = MainWindow()
+    # mainWindow.addWidget(w)
+    # mainWindow.show()
+    w.show()
+
+    await future
+    return True
+
+
+if __name__ == "__main__":
+    try:
+        qasync.run(main())
+    except asyncio.exceptions.CancelledError:
+        sys.exit(0)
 
 
 
-
-if __name__ == '__main__':
-    pg.exec()
+# if __name__ == '__main__':
+#     pg.exec()
