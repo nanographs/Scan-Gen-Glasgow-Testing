@@ -10,6 +10,7 @@ import time
 import threading
 # import itertools
 from rich import print
+from asyncio.exceptions import TimeoutError
 
 
 
@@ -426,8 +427,9 @@ class ScanGenApplet(GlasgowApplet):
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
         if args.mode != "point":
-            await device.write_register(self.reset, 0)
             await device.write_register(self.enable, 0)
+            await device.write_register(self.reset, 1) # force reset
+            await device.write_register(self.reset, 0)
             await device.write_register(self.resolution, args.res)
         else:
             await device.write_register(self.dwell, args.dwell)
@@ -499,7 +501,7 @@ class ScanGenApplet(GlasgowApplet):
                 # #await asyncio.shield(endpoint.send(data))
                 await endpoint.send(data)
                 # txt_file.write(", ".join([str(x) for x in data.tolist()]))
-                print("sent", (data.tolist())[0], ":", (data.tolist())[-1])
+                print("sent", (data.tolist())[0], ":", (data.tolist())[-1], "-", len(data.tolist()))
 
         async def single_bidirectional_transfer():
             if args.mode == "pattern":
@@ -509,13 +511,20 @@ class ScanGenApplet(GlasgowApplet):
                 await iface.write(pattern_slice)
             await device.write_register(self.enable, 1)
             data = await iface.read(16384)
+            await device.write_register(self.enable, 0)
             txt_file.write("\nRCVD:\n")
             txt_file.write(", ".join([str(x) for x in data.tolist()]))
-            await device.write_register(self.enable, 0)
             return data
 
         await single_bidirectional_transfer()
 
+        async def read_until_empty():
+            data = await iface.read()
+            if data is not None:
+                if len(data) == 0:
+                    print("empty packet")
+                else:
+                    print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
 
         setting_state_list = ["start", "done"]
         # https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
@@ -525,10 +534,11 @@ class ScanGenApplet(GlasgowApplet):
                     yield j
 
         setting_states = gentr_fn(setting_state_list)
-        state = next(setting_states)
+        # state = next(setting_states)
         # why an iterator instead of just True/False?
         # i thought i might need a third state so here we are
 
+        state = "init"
         task = None
         while True:
                 try: 
@@ -536,11 +546,9 @@ class ScanGenApplet(GlasgowApplet):
                     cmd = cmd.decode(encoding='utf-8', errors='strict')
                     print("cmd:", cmd)
                     if cmd == "scan":
-                        
-                        if state == "done":
+                        if state == "new_scan":
                             await device.write_register(self.reset, 0)
-                            state = next(setting_states)
-                        await device.write_register(self.enable, 1)
+                            # state = next(setting_states)
                         task = asyncio.ensure_future(scan_packet()) ## start async task
                         
                         #await scan_packet()
@@ -548,17 +556,23 @@ class ScanGenApplet(GlasgowApplet):
                         await device.write_register(self.enable, 0)
                         print("else state", state)
                         if cmd == "stop":
+                            state = "paused"
                             task.cancel()
                             try:
                                 await task
                             except asyncio.CancelledError:
                                 print("Task cancelled") ## make sure its canceled?
                         else:
-                            if state == "start": ## transitioning between pausing the scan, and recieving commands
-                                state = next(setting_states)
-                                data = await iface.read()
-                                print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
+                            if (state == "paused") or (state == "init"): ## transitioning between pausing the scan, and recieving commands
+                                while True:
+                                    try:
+                                        await asyncio.wait_for(read_until_empty(), timeout=1)
+                                    except TimeoutError:
+                                        print('read timeout')
+                                        break
+                                    
                                 await device.write_register(self.reset, 1)
+                                state = "new_scan"
                             if cmd.startswith("re"): ## Changing resolution
                                 new_bits = int(cmd.strip("re")) 
                                 await device.write_register(self.resolution, new_bits)
@@ -574,20 +588,6 @@ class ScanGenApplet(GlasgowApplet):
                     pass
 
 
-
-
-
-        start_time = time.perf_counter()
-        await read_some(start_time)
-
-        new_bits = 10
-        dimension = pow(2,new_bits)
-        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
-        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (dimension*dimension), mode = "w+")
-        await device.write_register(self.reset, 1)
-        await device.write_register(self.resolution, new_bits)
-        
-        await read_some()
 
 
 

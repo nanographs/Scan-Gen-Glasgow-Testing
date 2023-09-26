@@ -54,8 +54,6 @@ class MainWindow(QtWidgets.QWidget):
         self.layout = QtWidgets.QGridLayout()
         self.setLayout(self.layout)
 
-        self.connection_panel = QtWidgets.QGridLayout()
-
         self.conn_btn = QtWidgets.QPushButton('Disconnected')
         self.conn_btn.setCheckable(True)
         self.conn_btn.clicked.connect(self.conn)
@@ -88,29 +86,35 @@ class MainWindow(QtWidgets.QWidget):
         self.start_btn.setEnabled(False)
         self.start_btn.clicked.connect(self.start)
 
+        self.new_scan_btn = QtWidgets.QPushButton('↻')
+        # self.new_scan_btn.setEnabled(False)
+        self.new_scan_btn.clicked.connect(self.new_scan)
+
 
     @asyncSlot()
     async def conn(self):
         global HOST, PORT
+        self.writer = None
         if self.conn_btn.isChecked():
             self.conn_btn.setText('Connecting...')
             try:
                 self.reader, self.writer = await asyncio.open_connection(HOST, PORT)
-                # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                # sock.connect((HOST, PORT))
+            except Exception as exc:
+                self.conn_btn.setText("Error: {}".format(exc))
+            else:
                 self.start_btn.setEnabled(True)
                 save_btn.setEnabled(True)
                 resolution_dropdown.setEnabled(True)
                 dwelltime_options.setEnabled(True)
-            except Exception as exc:
-                self.conn_btn.setText("Error: {}".format(exc))
-            else:
+
                 self.conn_btn.setText("Connected")
             # finally:
             #     self.btnFetch.setEnabled(True)
         else:
             self.conn_btn.setText("Disconnected")
-            # sock.close()
+            if self.writer is not None:
+                self.writer.close()
+                await self.writer.wait_closed()
 
     @asyncSlot()
     async def start(self):
@@ -123,36 +127,68 @@ class MainWindow(QtWidgets.QWidget):
             await self.writer.drain()
             self.update_continously = asyncio.ensure_future(self.keepUpdating())
             self.start_btn.setText('⏸️')
-            new_scan_btn.setEnabled(False)
+            self.new_scan_btn.setEnabled(False)
             
         else:
             self.start_btn.setText('🔄')
-            self.update_continously.cancel()
             self.writer.write(self._msg_stop)
-            # timer.timeout.disconnect(updateData)
+            #self.update_continously.cancel()
             self.start_btn.setText('▶️')
             print("Stopped scanning now")
             resolution_dropdown.setEnabled(True)
             dwelltime_options.setEnabled(True)
-            new_scan_btn.setEnabled(True)
+            self.new_scan_btn.setEnabled(True)
             # res_btn.setEnabled(True)
 
     async def keepUpdating(self):
-        while True:
-            await self.updateData()
+        while True:   
+            try:
+                await self.updateData()
+            except RuntimeError:
+                print("eep")
+                print(self.reader.at_eof())
+                break
 
     async def updateData(self):
         global dimension
         if self.conn_btn.isChecked(): #and start_btn.isChecked():
             data = await self.reader.read(16384)
+            #data = await self.reader.readexactly(16384)
             if data is not None:
-                print("recvd", (list(data))[0], ":", (list(data))[-1])
+                print("recvd", (list(data))[0], ":", (list(data))[-1], "-", len(list(data)))
                 imgout(data)
-            # timer.start(dwelltime)
+
         self.img.setImage(np.rot90(buf,k=3)) #this is the correct orientation to display the image
 
+    def update_dimension(self, dim):
+        global dimension, cur_line, packet_lines, buf
+        dimension = dim
+        cur_line = 0
+        packet_lines = int(16384/dimension)
+        buf = np.ones(shape=(dimension,dimension))
+        self.image_view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
+        self.img.setImage(np.rot90(buf,k=3))
+        #updateData()
 
-pg.ImageItem(border='w', levels = (0,255))
+    @asyncSlot()
+    async def new_scan(self):
+        res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
+        dimension = pow(2,res_bits)
+        msg = ("eeee").encode("UTF-8") ## ex: res09, res10
+        self.writer.write(msg)
+        await self.writer.drain()
+        self.update_dimension(dimension)
+
+    @asyncSlot()
+    async def res(self):
+        res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
+        dimension = pow(2,res_bits)
+        msg = ("re" + format(res_bits, '02d')).encode("UTF-8") ## ex: res09, res10
+        self.writer.write(msg)
+        await self.writer.drain()
+        print("sent", msg)
+        self.update_dimension(dimension)
+   
 
 class LiveScan(pg.ImageItem):
     def __init__(self):
@@ -205,36 +241,6 @@ w = MainWindow()
 # win.addItem(axis)
 
 
-
-
-updateTime = perf_counter()
-elapsed = 0
-
-timer = QtCore.QTimer()
-timer.setSingleShot(True)
-# not using QTimer.singleShot() because of persistence on PyQt. see PR #1605
-
-FrameBufDirectory = os.path.join(os.getcwd(), "Scan Capture/current_frame")
-
-
-
-
-
-## testing FeedbackButton widget - seems interesting
-# status_btn = pg.FeedbackButton("Connect")
-# def make_connection():
-#     global HOST, PORT, sock
-#     status_btn.processing()
-#     try:
-#         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#         sock.connect((HOST, PORT))
-#         status_btn.success(limitedTime=False)
-#     except ConnectionRefusedError:
-#         status_btn.failure(message = "Error", limitedTime=False)
-#     # 
-
-# status_btn.clicked.connect(make_connection)
-
 save_btn = QtWidgets.QPushButton('save image')
 def save_image():
     data = np.memmap(FrameBufDirectory,
@@ -271,22 +277,26 @@ resolution_options.addWidget(dwelltime_options,1,0)
 # dwelltime_options.setEnabled(False)
 
 
+resolution_dropdown.currentIndexChanged.connect(w.res)
 
 
 
-new_scan_btn = QtWidgets.QPushButton('↻')
+    
+    
+
 
 
 ## start w most controls disabled until connection is made
 
 resolution_dropdown.setEnabled(False)
 dwelltime_options.setEnabled(False)
-new_scan_btn.setEnabled(False)
+
 save_btn.setEnabled(False)
 
 
 buf = np.ones(shape=(dimension,dimension))
 cur_line = 0
+cur_x = 0
 packet_lines = int(16384/dimension)
 
 def imgout(raw_data):
@@ -294,56 +304,19 @@ def imgout(raw_data):
     # print("-----------")
     # print("frame", current.n)
     data = list(raw_data)
-    d = np.array(data)
-    d.shape = (packet_lines,dimension)
-    buf[cur_line:cur_line+packet_lines] = d
-    cur_line += packet_lines
-    if cur_line == dimension:
-        cur_line = 0 ## new frame, back to the top
+    if len(data) != 16384:
+        print(data)
+    else:
+        d = np.array(data)
+        d.shape = (packet_lines,dimension)
+        buf[cur_line:cur_line+packet_lines] = d
+        cur_line += packet_lines
+        if cur_line == dimension:
+            cur_line = 0 ## new frame, back to the top
 
 
 
 
-
-
-
-
-
-        
-
-
-
-
-def update_dimension(dim):
-    global dimension, cur_line, packet_lines, buf
-    dimension = dim
-    cur_line = 0
-    packet_lines = int(16384/dimension)
-    buf = np.ones(shape=(dimension,dimension))
-    view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
-    img.setImage(np.rot90(buf,k=3))
-    #updateData()
-
-def new_scan():
-    res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
-    dimension = pow(2,res_bits)
-    msg = ("eeee").encode("UTF-8") ## ex: res09, res10
-    sock.send(msg)
-    update_dimension(dimension)
-    
-    
-
-new_scan_btn.clicked.connect(new_scan)
-
-def res():
-    global sock
-    res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
-    dimension = pow(2,res_bits)
-    msg = ("re" + format(res_bits, '02d')).encode("UTF-8") ## ex: res09, res10
-    sock.send(msg)
-    print("sent", msg)
-    update_dimension(dimension)
-resolution_dropdown.currentIndexChanged.connect(res)
 
 dwelltime = 1
 def dwell():
@@ -365,7 +338,7 @@ dwelltime_options.valueChanged.connect(dwell)
 scan_buttons = QtWidgets.QGridLayout()
 scan_buttons.addWidget(save_btn,2,0)
 scan_buttons.addWidget(w.start_btn,2,1)
-scan_buttons.addWidget(new_scan_btn,2,2)
+scan_buttons.addWidget(w.new_scan_btn,2,2)
 w.layout.addLayout(scan_buttons,2,0)
 w.layout.addLayout(resolution_options, 3,0)
 
