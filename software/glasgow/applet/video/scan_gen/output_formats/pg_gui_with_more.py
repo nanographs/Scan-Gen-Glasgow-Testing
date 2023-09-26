@@ -188,6 +188,19 @@ class MainWindow(QtWidgets.QWidget):
         await self.writer.drain()
         print("sent", msg)
         self.update_dimension(dimension)
+
+    @asyncSlot()
+    async def dwell(self):
+        global dimension, dwelltime
+        #res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
+        #dimension = pow(2,res_bits)
+        dwell_time =int(dwelltime_options.cleanText()) 
+        dwelltime = dwell_time
+        msg = ("d" + format(dwell_time, '03d')).encode("UTF-8") ## ex: d255, d001
+        self.writer.write(msg)
+        await self.writer.drain()
+        print("sent", msg)
+        self.update_dimension(dimension)
    
 
 class LiveScan(pg.ImageItem):
@@ -278,19 +291,14 @@ resolution_options.addWidget(dwelltime_options,1,0)
 
 
 resolution_dropdown.currentIndexChanged.connect(w.res)
-
-
-
-    
-    
-
+dwelltime = 1
+dwelltime_options.valueChanged.connect(w.dwell)
 
 
 ## start w most controls disabled until connection is made
 
 resolution_dropdown.setEnabled(False)
 dwelltime_options.setEnabled(False)
-
 save_btn.setEnabled(False)
 
 
@@ -313,25 +321,6 @@ def imgout(raw_data):
         cur_line += packet_lines
         if cur_line == dimension:
             cur_line = 0 ## new frame, back to the top
-
-
-
-
-
-dwelltime = 1
-def dwell():
-    global dimension, dwelltime, sock
-    #res_bits = resolution_dropdown.currentIndex() + 9 #9 through 14
-    #dimension = pow(2,res_bits)
-    dwell_time =int(dwelltime_options.cleanText()) 
-    dwelltime = dwell_time
-    msg = ("d" + format(dwell_time, '03d')).encode("UTF-8") ## ex: d255, d001
-    sock.send(msg)
-    print("sent", msg)
-    update_dimension(dimension)
-dwelltime_options.valueChanged.connect(dwell)
-#res_btn.clicked.connect(res)
-
 
 
 
