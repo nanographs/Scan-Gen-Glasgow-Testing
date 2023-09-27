@@ -477,7 +477,7 @@ class ScanGenApplet(GlasgowApplet):
 
         txt_file = open("frames.txt", "w")
 
-        async def scan_packet():
+        async def scan_continously():
             while True:
                 data = await single_bidirectional_transfer()
                 await endpoint.send(data)
@@ -511,6 +511,7 @@ class ScanGenApplet(GlasgowApplet):
         task = None
         while True:
                 try: 
+                    ## get 4
                     cmd = await asyncio.shield(endpoint.recv(4))
                     cmd = cmd.decode(encoding='utf-8', errors='strict')
                     print("cmd:", cmd)
@@ -518,7 +519,7 @@ class ScanGenApplet(GlasgowApplet):
                         if state == "new_scan":
                             await device.write_register(self.reset, 0)
                             # state = next(setting_states)
-                        task = asyncio.ensure_future(scan_packet()) ## start async task
+                        scan = asyncio.ensure_future(scan_continously()) ## start async task
                         
                         #await scan_packet()
                     else:
@@ -526,12 +527,17 @@ class ScanGenApplet(GlasgowApplet):
                         print("else state", state)
                         if cmd == "stop": ## sent when pause button is clicked
                             state = "paused"
-                            task.cancel()
+                            scan.cancel()
                             try:
-                                await task
+                                await scan
                             except asyncio.CancelledError:
-                                print("Task cancelled") ## make sure its canceled?
+                                print("Scan cancelled") ## make sure its canceled?
+                        ## this will leave some packets in the buffer
+                        ## which is fine if you want to resume the scan with the same resolution etc.
+                        ## but if you want a new scan, then:
                         else:
+                            ## any command will trigger this behavior
+                            ## the new scan button sends "eeee"
                             if (state == "paused") or (state == "init"): ## transitioning between pausing the scan, and recieving commands
                                 while True:
                                     ## clear all the in-transit packets out of the buffer
@@ -543,11 +549,12 @@ class ScanGenApplet(GlasgowApplet):
                                     
                                 await device.write_register(self.reset, 1)
                                 state = "new_scan"
+                            ## if a resolution or dwell time command was sent
+                            ## then write a new value to a register
                             if cmd.startswith("re"): ## Changing resolution
                                 new_bits = int(cmd.strip("re")) 
                                 await device.write_register(self.resolution, new_bits)
                                 print("resolution:",new_bits)
-                                # iface._in_buffer.clear()
                             elif cmd.startswith("d"): ## Changing dwell time
                                 new_dwell = int(cmd.strip("d"))
                                 await device.write_register(self.dwell, new_dwell)
