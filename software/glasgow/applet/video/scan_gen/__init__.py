@@ -154,8 +154,8 @@ class DataBusAndFIFOSubtarget(Elaboratable):
                 if self.mode == "pattern":
                     if self.loopback:
                         m.d.sync += [
-                            # self.datain[i].eq(self.out_fifo_f[i])
-                            self.datain[i].eq(scan_bus.y_data[i+6])
+                            self.datain[i].eq(self.out_fifo_f[i])
+                            # self.datain[i].eq(scan_bus.y_data[i+6])
                         ]
                     else:
                         m.d.sync += [
@@ -458,33 +458,19 @@ class ScanGenApplet(GlasgowApplet):
         
         if args.mode == "pattern" or args.mode == "pattern_out":
             #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
-            #pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
-            pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension)
+            pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
+            #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension)
             #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
             #pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
             
+            print(len(pattern_stream))
 
+            # https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
             def pattern_loop():
                 while 1:
                     for n in range(int(dimension*dimension/16384)): #packets per frame
                         yield pattern_stream[n*16384:(n+1)*16384]
             pattern = pattern_loop()
-
-        
-        
-        def patternin(pattern_slice):
-            current.n += 1
-            current.packet_to_txt_file(pattern_slice, "o")
-            #current.packet_to_waveform(pattern_slice, "o")
-
-
-
-        # self.scanning = False
-        # await iface.flush()
-        # task_scan = None
-        # while True:
-
-
 
         buffer_size = 16384
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
@@ -494,13 +480,7 @@ class ScanGenApplet(GlasgowApplet):
         async def scan_packet():
             while True:
                 data = await single_bidirectional_transfer()
-                # await iface.write(next(pattern))
-                # #await device.write_register(self.enable, 1)
-                # data = await iface.read(16384)
-                # #await device.write_register(self.enable, 0)
-                # #await asyncio.shield(endpoint.send(data))
                 await endpoint.send(data)
-                # txt_file.write(", ".join([str(x) for x in data.tolist()]))
                 print("sent", (data.tolist())[0], ":", (data.tolist())[-1], "-", len(data.tolist()))
 
         async def single_bidirectional_transfer():
@@ -526,17 +506,6 @@ class ScanGenApplet(GlasgowApplet):
                 else:
                     print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
 
-        setting_state_list = ["start", "done"]
-        # https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
-        def gentr_fn(alist):
-            while 1:
-                for j in alist:
-                    yield j
-
-        setting_states = gentr_fn(setting_state_list)
-        # state = next(setting_states)
-        # why an iterator instead of just True/False?
-        # i thought i might need a third state so here we are
 
         state = "init"
         task = None
@@ -555,7 +524,7 @@ class ScanGenApplet(GlasgowApplet):
                     else:
                         await device.write_register(self.enable, 0)
                         print("else state", state)
-                        if cmd == "stop":
+                        if cmd == "stop": ## sent when pause button is clicked
                             state = "paused"
                             task.cancel()
                             try:
@@ -565,6 +534,7 @@ class ScanGenApplet(GlasgowApplet):
                         else:
                             if (state == "paused") or (state == "init"): ## transitioning between pausing the scan, and recieving commands
                                 while True:
+                                    ## clear all the in-transit packets out of the buffer
                                     try:
                                         await asyncio.wait_for(read_until_empty(), timeout=1)
                                     except TimeoutError:
