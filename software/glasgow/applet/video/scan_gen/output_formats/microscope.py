@@ -46,16 +46,17 @@ class ScanController:
         if dimension in valid_dimensions:
             print("dimension is a power of 2")
         buf = np.ones(shape=(dimension,dimension))
-        packet_lines = int(16384/dimension)
-        packets_per_frame = int(16384/packet_lines)
-        print(packets_per_frame, "packets per frame, ", packet_lines, "lines each")
-        for n in range(0,packets_per_frame, packet_lines):
-            print("packet", n/packet_lines)
+        packets_per_frame = int(dimension*dimension/16384)
+        lines_per_packet = int(16384/dimension)
+        print(packets_per_frame, "packets per frame, ", lines_per_packet, "lines each")
+        for n in range(0,packets_per_frame):
+            print(n,"/",packets_per_frame)
             raw_data = await self.reader.read(16384)
             data = list(raw_data)
+            print("recvd", (list(data))[0], ":", (list(data))[-1], "-", len(list(data)))
             d = np.array(data)
-            d.shape = (packet_lines,dimension)
-            buf[n:n+packet_lines] = d
+            d.shape = (lines_per_packet,dimension)
+            buf[n*lines_per_packet:(n+1)*lines_per_packet] = d
         await self.stop_scan()
         return buf
 
@@ -64,6 +65,7 @@ class ScanController:
 async def _main():
     scan_controller = ScanController()
     await scan_controller.connect()
+    await scan_controller.set_image_parameters(resolution_bits = 9, dwell_time = 5)
     image = await scan_controller.acquire_image(512)
     print(image)
 

@@ -429,7 +429,6 @@ class ScanGenApplet(GlasgowApplet):
         if args.mode != "point":
             await device.write_register(self.enable, 0)
             await device.write_register(self.reset, 1) # force reset
-            await device.write_register(self.reset, 0)
             await device.write_register(self.resolution, args.res)
         else:
             await device.write_register(self.dwell, args.dwell)
@@ -529,9 +528,9 @@ class ScanGenApplet(GlasgowApplet):
                     cmd = cmd.decode(encoding='utf-8', errors='strict')
                     print("cmd:", cmd)
                     if cmd == "scan":
-                        if state == "new_scan":
+                        if (state == "new_scan") or (state == "init"):
+                            print("un-resetting")
                             await device.write_register(self.reset, 0)
-                            # state = next(setting_states)
                         scan = asyncio.ensure_future(scan_continously()) ## start async task
                         
                         #await scan_packet()
@@ -572,7 +571,7 @@ class ScanGenApplet(GlasgowApplet):
 
                 except (ConnectionResetError, AttributeError, BrokenPipeError) as error:
                     # basically, if the other port closes, don't stop running
-                    print("Coneection lost, trying again...")
+                    print("Connection lost, trying again...")
                     pass
 
 
