@@ -1,0 +1,76 @@
+import asyncio
+import numpy as np
+
+class ScanController:
+    _msg_scan = ("scan").encode("UTF-8")
+    _msg_stop = ("stop").encode("UTF-8") 
+    _HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+    _PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
+    
+    def __init__(self):
+        pass
+
+    async def connect(self):
+        try:
+            self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT)
+        except Exception as exc:
+            print(exc)
+    
+    async def close(self):
+        if self.writer is not None:
+            self.writer.close()
+            await self.writer.wait_closed()
+
+    async def start_scan(self):
+        self.writer.write(self._msg_scan)
+        await self.writer.drain()
+
+    async def stop_scan(self):
+        self.writer.write(self._msg_stop)
+        await self.writer.drain()
+    
+    async def set_image_parameters(self, resolution_bits, dwell_time):
+        assert (9 <= resolution_bits <= 14)
+        msg_res = ("re" + format(resolution_bits, '02d')).encode("UTF-8") ## ex: res09, res10
+        self.writer.write(msg_res)
+        await self.writer.drain()
+        msg_dwell = ("d" + format(dwell_time, '03d')).encode("UTF-8") ## ex: d255, d001
+        self.writer.write(msg_dwell)
+        await self.writer.drain()
+
+    async def acquire_image(self, dimension:int):
+        await self.start_scan()
+        self.dimension= dimension
+        print("dimension:", dimension)
+        valid_dimensions = [512, 1024, 2048, 8096, 16384]
+        if dimension in valid_dimensions:
+            print("dimension is a power of 2")
+        buf = np.ones(shape=(dimension,dimension))
+        packet_lines = int(16384/dimension)
+        packets_per_frame = int(16384/packet_lines)
+        print(packets_per_frame, "packets per frame, ", packet_lines, "lines each")
+        for n in range(0,packets_per_frame, packet_lines):
+            print("packet", n/packet_lines)
+            raw_data = await self.reader.read(16384)
+            data = list(raw_data)
+            d = np.array(data)
+            d.shape = (packet_lines,dimension)
+            buf[n:n+packet_lines] = d
+        await self.stop_scan()
+        return buf
+
+
+
+async def _main():
+    scan_controller = ScanController()
+    await scan_controller.connect()
+    image = await scan_controller.acquire_image(512)
+    print(image)
+
+def main():
+    loop = asyncio.get_event_loop()
+    exit(loop.run_until_complete(_main()))
+
+
+if __name__ == "__main__":
+    main()

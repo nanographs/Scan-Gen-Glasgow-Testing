@@ -498,7 +498,7 @@ class ScanGenApplet(GlasgowApplet):
 
         await single_bidirectional_transfer()
 
-        async def read_until_empty():
+        async def read_and_ignore():
             data = await iface.read()
             if data is not None:
                 if len(data) == 0:
@@ -506,9 +506,22 @@ class ScanGenApplet(GlasgowApplet):
                 else:
                     print("discarded", (data.tolist())[0], ":", (data.tolist())[-1])
 
+        async def read_until_empty():
+            while True:
+                ## clear all the in-transit packets out of the buffer
+                try:
+                    await asyncio.wait_for(read_and_ignore(), timeout=1)
+                except TimeoutError:
+                    print('read timeout')
+                    break
 
+
+
+        await read_until_empty() 
+        ## sometimes on startup there's still packets in the buffer?
+        ## idk why, but this is to deal with that
         state = "init"
-        task = None
+
         while True:
                 try: 
                     ## get 4
@@ -527,11 +540,15 @@ class ScanGenApplet(GlasgowApplet):
                         print("else state", state)
                         if cmd == "stop": ## sent when pause button is clicked
                             state = "paused"
+                            if scan is None:
+                                print("No scan exists to be stopped")
+                                pass
                             scan.cancel()
                             try:
                                 await scan
                             except asyncio.CancelledError:
                                 print("Scan cancelled") ## make sure its canceled?
+                                pass
                         ## this will leave some packets in the buffer
                         ## which is fine if you want to resume the scan with the same resolution etc.
                         ## but if you want a new scan, then:
@@ -539,14 +556,7 @@ class ScanGenApplet(GlasgowApplet):
                             ## any command will trigger this behavior
                             ## the new scan button sends "eeee"
                             if (state == "paused") or (state == "init"): ## transitioning between pausing the scan, and recieving commands
-                                while True:
-                                    ## clear all the in-transit packets out of the buffer
-                                    try:
-                                        await asyncio.wait_for(read_until_empty(), timeout=1)
-                                    except TimeoutError:
-                                        print('read timeout')
-                                        break
-                                    
+                                await read_until_empty()
                                 await device.write_register(self.reset, 1)
                                 state = "new_scan"
                             ## if a resolution or dwell time command was sent
@@ -562,6 +572,7 @@ class ScanGenApplet(GlasgowApplet):
 
                 except (ConnectionResetError, AttributeError, BrokenPipeError) as error:
                     # basically, if the other port closes, don't stop running
+                    print("Coneection lost, trying again...")
                     pass
 
 
