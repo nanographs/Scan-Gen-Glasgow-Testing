@@ -72,11 +72,11 @@ class DataBusAndFIFOSubtarget(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        if self.mode == "point":
-            m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
-        else:
+        # with m.If(self.mode.eq(POINT)):
+        #     m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
+        # with m.Else():
             #m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
-            m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, 3, 
+        m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, 3, 
                                                         self.mode, self.reset, self.enable)
 
         x_latch = platform.request("X_LATCH")
@@ -104,15 +104,14 @@ class DataBusAndFIFOSubtarget(Elaboratable):
             scan_bus.out_fifo_ready.eq(self.out_fifo.r_rdy),
         ]
 
-        # with m.If(self.reset):
-        #     m.d.comb += self.in_fifo.flush.eq(1)
-
-        # m.d.sync += [scan_bus.out_fifo.eq(20)]
-        if self.mode == "pattern" or self.mode == "pattern_out":
-            if self.loopback:
+        
+        if self.mode == "pattern":
+            # if self.loopback:
+            with m.If(self.loopback):
                 m.d.sync += [scan_bus.out_fifo.eq(5)] ## don't actually use the dwell times
                 ## this way the pattern is returned faster for debugging
-            else:
+            #else:
+            with m.Else():
                 m.d.sync += [scan_bus.out_fifo.eq(self.out_fifo.r_data)]
             # m.d.sync += [self.datain.eq(2)]
         if self.mode == "image":
@@ -141,26 +140,30 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         with m.If(scan_bus.bus_state == BUS_READ):
             for i in range(8):
                 if self.mode == "image":
-                        if self.loopback:
+                        # if self.loopback:
+                        with m.If(self.loopback):
                             ## LOOPBACK
                             m.d.sync += self.datain[i].eq(scan_bus.y_data[i+6])
 
                             # ## Fixed Value
                             # m.d.sync += self.datain[i].eq(1)
                         
-                        else:
+                        with m.Else():
+                        # else:
                             # Actual input
                             # MSB = data[13] = datain[7]
                             m.d.sync += self.datain[i].eq(self.data[i+6].i)
     
 
                 if self.mode == "pattern":
-                    if self.loopback:
+                    with m.If(self.loopback):
+                    # if self.loopback:
                         m.d.sync += [
                             self.datain[i].eq(self.out_fifo_f[i])
                             # self.datain[i].eq(scan_bus.y_data[i+6])
                         ]
-                    else:
+                    # else:
+                    with m.Else():
                         m.d.sync += [
                             self.datain[i].eq(self.data[i+6].i)
                             ]
@@ -405,8 +408,9 @@ class ScanGenApplet(GlasgowApplet):
             print("reset:", self.reset)
             enable, self.enable = target.registers.add_rw(reset=0)
             print("enable:", self.enable)
-            mode, self.mode = target.registers.add_rw(reset=0)
-            print("mode:", self.mode)
+            # mode, self.mode = target.registers.add_rw(reset=0)
+            # print("mode:", self.mode)
+            loopback, self.loopback = target.registers.add_rw(reset=0)
 
             iface.add_subtarget(DataBusAndFIFOSubtarget(
                 data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -415,9 +419,9 @@ class ScanGenApplet(GlasgowApplet):
                 out_fifo = iface.get_out_fifo(),
                 resolution_bits = args.res,
                 dwell_time = args.dwell,
-                mode = mode, 
-                # mode = args.mode,
-                loopback = args.loopback,
+                mode = args.mode,
+                loopback = loopback,
+                # loopback = args.loopback,
                 resolution = resolution,
                 dwell = dwell,
                 reset = reset,
@@ -436,6 +440,7 @@ class ScanGenApplet(GlasgowApplet):
             await device.write_register(self.enable, 0)
             await device.write_register(self.reset, 1) # force reset
             await device.write_register(self.resolution, args.res)
+            await device.write_register(self.loopback, 1)
         else:
             await device.write_register(self.dwell, args.dwell)
 
