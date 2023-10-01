@@ -25,6 +25,9 @@ FIFO_WAIT = 0x06
 A_RELEASE = 0x07
 OUT_FIFO = 0x08
 
+IMAGE = 0
+PATTERN = 1
+POINT = 2
 
 
 class ScanIOBus(Elaboratable):
@@ -128,11 +131,13 @@ class ScanIOBus(Elaboratable):
         
         with m.If(self.enable):
             with m.FSM() as fsm:
-                if self.mode == "pattern" or self.mode == "pattern_out":
-                    with m.State("Wait_For_First_USB_Data"):
+                with m.State("Wait_For_First_USB_Data"):
+                    with m.If(self.mode == PATTERN):
                         with m.If(self.out_fifo_ready):
                             m.d.comb += [self.bus_state.eq(OUT_FIFO)]
                             m.next = "WAIT"
+                    with m.Else():
+                        m.next = "WAIT"
 
                 with m.State("WAIT"):
                     with m.If(self.count_one):
@@ -141,7 +146,8 @@ class ScanIOBus(Elaboratable):
                                 dwell_ctr.rst.eq(1),
                                 scan_gen.en.eq(1)
                             ]
-                            if self.mode == "pattern" or self.mode == "pattern_out":
+                            with m.If(self.mode == PATTERN):
+                            # if self.mode == "pattern" or self.mode == "pattern_out":
                                 m.d.comb += self.bus_state.eq(OUT_FIFO)
 
 
@@ -202,26 +208,32 @@ class ScanIOBus(Elaboratable):
                 with m.State("A RELEASE"):
                     m.d.comb += self.a_enable.eq(0)
                     m.d.comb += self.bus_state.eq(A_RELEASE)
-                    if self.mode == "image" or self.mode == "both":
+                    with m.If(self.mode == IMAGE):
+                    # if self.mode == "image" or self.mode == "both":
                         with m.If(self.in_fifo_ready):
                             m.next = "FIFO_1"
-                    if self.mode == "pattern":
+                    # if self.mode == "pattern":
+                    with m.If(self.mode == PATTERN):
                         with m.If(self.in_fifo_ready & self.out_fifo_ready):
                             m.next = "FIFO_1"
-                    if self.mode == "pattern_out":
-                        m.next = "FIFO_1"
+                    # if self.mode == "pattern_out":
+                    #     m.next = "FIFO_1"
 
                             
                 with m.State("FIFO_1"):
-                    if self.mode == "pattern" or self.mode == "pattern_out":
+                    with m.If(self.mode == PATTERN):
+                    # if self.mode == "pattern" or self.mode == "pattern_out":
                         with m.If(self.out_fifo >= 2):
                             m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                    else:
+                    # else:
+                    with m.Else():
                         m.d.comb += self.bus_state.eq(BUS_FIFO_1)
-                    if self.mode == "image":
+                    # if self.mode == "image":
+                    with m.If(self.mode == IMAGE):
                         with m.If(self.in_fifo_ready):
                             m.next = "WAIT"
-                    if self.mode == "pattern":
+                    with m.If(self.mode == PATTERN):
+                    # if self.mode == "pattern":
                         m.next = "WAIT"
 
                         
