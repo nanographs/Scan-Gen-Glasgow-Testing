@@ -32,6 +32,9 @@ FIFO_WAIT = 0x06
 A_RELEASE = 0x07
 OUT_FIFO = 0x08
 
+IMAGE = 0
+PATTERN = 1
+POINT = 2
 
 ######################
 ###### DATA BUS ######
@@ -402,6 +405,8 @@ class ScanGenApplet(GlasgowApplet):
             print("reset:", self.reset)
             enable, self.enable = target.registers.add_rw(reset=0)
             print("enable:", self.enable)
+            mode, self.mode = target.registers.add_rw(reset=0)
+            print("mode:", self.mode)
 
             iface.add_subtarget(DataBusAndFIFOSubtarget(
                 data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -410,7 +415,8 @@ class ScanGenApplet(GlasgowApplet):
                 out_fifo = iface.get_out_fifo(),
                 resolution_bits = args.res,
                 dwell_time = args.dwell,
-                mode = args.mode,
+                mode = mode, 
+                # mode = args.mode,
                 loopback = args.loopback,
                 resolution = resolution,
                 dwell = dwell,
@@ -523,7 +529,7 @@ class ScanGenApplet(GlasgowApplet):
 
         while True:
                 try: 
-                    ## get 4
+                    ## get 4 bytes
                     cmd = await asyncio.shield(endpoint.recv(4))
                     cmd = cmd.decode(encoding='utf-8', errors='strict')
                     print("cmd:", cmd)
@@ -532,9 +538,8 @@ class ScanGenApplet(GlasgowApplet):
                             print("un-resetting")
                             await device.write_register(self.reset, 0)
                         scan = asyncio.ensure_future(scan_continously()) ## start async task
-                        
-                        #await scan_packet()
-                    else:
+
+                    else: ## if any other command is recieved, pause the scan
                         await device.write_register(self.enable, 0)
                         print("else state", state)
                         if cmd == "stop": ## sent when pause button is clicked
