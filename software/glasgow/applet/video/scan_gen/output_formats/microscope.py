@@ -13,8 +13,10 @@ class ScanController:
     async def connect(self):
         try:
             self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT)
+            return "Connected"
         except Exception as exc:
             print(exc)
+            return ("Error: {}".format(exc))
     
     async def close(self):
         if self.writer is not None:
@@ -50,10 +52,9 @@ class ScanController:
         lines_per_packet = int(16384/dimension)
         print(packets_per_frame, "packets per frame, ", lines_per_packet, "lines each")
         for n in range(0,packets_per_frame):
-            print(n,"/",packets_per_frame)
             raw_data = await self.reader.read(16384)
             data = list(raw_data)
-            print("recvd", (list(data))[0], ":", (list(data))[-1], "-", len(list(data)))
+            print(n,"/", packets_per_frame, " - recvd", (list(data))[0], ":", (list(data))[-1], "-", len(list(data)))
             d = np.array(data)
             d.shape = (lines_per_packet,dimension)
             buf[n*lines_per_packet:(n+1)*lines_per_packet] = d
