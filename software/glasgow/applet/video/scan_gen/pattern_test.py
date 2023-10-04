@@ -2,6 +2,8 @@
 import struct
 #import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
+import os
 
 file_name = "software/glasgow/applet/video/scan_gen/1-3ML.bmp"
 
@@ -89,5 +91,18 @@ pattern_array[0] = [1]*pattern_array.shape[0]
 pattern_array[0][0] = 0
 pattern_stream = np.ravel(pattern_array)
 print(pattern_stream)
+
+dimension = 512
+def pattern_loop():
+    while 1:
+        for n in range(int(dimension*dimension/16384)): #packets per frame
+            print(n)
+            yield pattern_stream[n*16384:(n+1)*16384]
+        print("pattern complete")
+pattern = pattern_loop()
+
+for n in range(32):
+    print(n)
+    print(next(pattern))
 
 
