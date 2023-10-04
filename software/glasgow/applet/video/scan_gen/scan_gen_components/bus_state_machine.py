@@ -244,7 +244,8 @@ class ScanIOBus(Elaboratable):
         return m
     def ports(self):
         return [self.x_data, self.y_data, self.x_latch, self.x_enable,
-        self.y_latch, self.y_enable, self.a_latch, self.a_enable, self.bus_state]
+        self.y_latch, self.y_enable, self.a_latch, self.a_enable, self.bus_state,
+        self.enable, self.reset, self.mode]
 
 
 class ScanIOBus_Point(Elaboratable):
@@ -417,14 +418,20 @@ class ScanIOBus_Point(Elaboratable):
 # --- TEST ---
 
 def run_sim():
-    dut = ScanIOBus(resolution = Signal(4), dwell_time_user = 3, mode = "image", reset = Signal(), enable = Signal()) # 16 x 16
+    dut = ScanIOBus(resolution = Signal(4), dwell_time_user = 3, mode = Signal(), reset = Signal(), enable = Signal()) # 16 x 16
     def bench():
         yield dut.in_fifo_ready.eq(1)
         yield dut.out_fifo_ready.eq(1)
+        yield dut.mode.eq(0)
         yield dut.enable.eq(1)
+        yield dut.reset.eq(0)
         yield dut.resolution_bits.eq(9)
         yield dut.out_fifo.eq(3)
-        for _ in range(4096):
+        for _ in range(200):
+            yield
+        yield dut.enable.eq(0)
+        # yield dut.reset.eq(1)
+        for _ in range(50):
             yield
         yield
 

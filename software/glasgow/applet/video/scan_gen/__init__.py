@@ -440,7 +440,10 @@ class ScanGenApplet(GlasgowApplet):
             await device.write_register(self.enable, 0)
             await device.write_register(self.reset, 1) # force reset
             await device.write_register(self.resolution, args.res)
-            await device.write_register(self.loopback, 1)
+            await device.write_register(self.loopback, 0)
+            self.looping = False
+            await device.write_register(self.mode, 0)
+            self.mode_is = IMAGE
         else:
             await device.write_register(self.dwell, args.dwell)
 
@@ -466,21 +469,23 @@ class ScanGenApplet(GlasgowApplet):
                 print(display)
 
         
-        if args.mode == "pattern" or args.mode == "pattern_out":
-            #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
-            pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
-            #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension)
-            #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
-            #pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
-            
-            print(len(pattern_stream))
+        # if args.mode == "pattern" or args.mode == "pattern_out":
+        #pattern_stream = bmp_to_bitstream("monalisa.bmp", dimension, invert_color=True)
+        pattern_stream = bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", dimension, invert_color=False)
+        #pattern_stream = bmp_to_bitstream("tanishq 02.bmp", dimension)
+        #pattern_stream = bmp_to_bitstream("green.bmp", invert_color=True)
+        #pattern_stream = bmp_to_bitstream("isabelle.bmp", dimension, invert_color=True)
+        
+        print(len(pattern_stream))
 
-            # https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
-            def pattern_loop():
-                while 1:
-                    for n in range(int(dimension*dimension/16384)): #packets per frame
-                        yield pattern_stream[n*16384:(n+1)*16384]
-            pattern = pattern_loop()
+        # https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
+        def pattern_loop():
+            while 1:
+                for n in range(int(dimension*dimension/16384)): #packets per frame
+                    print(n)
+                    yield pattern_stream[n*16384:(n+1)*16384]
+                print("pattern complete")
+        pattern = pattern_loop()
 
         buffer_size = 16384
         endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
@@ -578,6 +583,27 @@ class ScanGenApplet(GlasgowApplet):
                                 new_dwell = int(cmd.strip("d"))
                                 await device.write_register(self.dwell, new_dwell)
                                 print("dwell time", new_dwell)
+                            elif cmd.startswith("m"): ## Changing mode
+                                if self.mode_is == IMAGE:
+                                    await device.write_register(self.mode, 1)
+                                    print("switched to pattern mode")
+                                    self.mode_is = PATTERN
+                                    args.mode = "pattern"
+                                else:
+                                    await device.write_register(self.mode, 0)
+                                    print("switched to image mode")
+                                    self.mode_is = IMAGE
+                                    args.mode = "image"
+                            elif cmd.startswith("l"): ## Changing loopback state
+                                if self.looping:
+                                    await device.write_register(self.loopback, 0)
+                                    print("loopback off")
+                                    self.looping = False
+                                else:
+                                    await device.write_register(self.loopback, 1)
+                                    print("loopback on")
+                                    self.looping = True
+                                
 
                 except (ConnectionResetError, AttributeError, BrokenPipeError) as error:
                     # basically, if the other port closes, don't stop running
