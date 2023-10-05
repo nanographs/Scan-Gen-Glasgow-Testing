@@ -80,10 +80,32 @@ class ImportPatternFileWindow(QWidget):
     def show_and_get_file(self):
         self.show()
         if self.file_dialog.exec():
-            fileName = self.file_dialog.selectedFiles()[0]
-            print(fileName)
-            self.hide()
-            return fileName
+            file_path = self.file_dialog.selectedFiles()[0]
+            print(file_path)
+            self.show_pattern(file_path)
+            # self.hide()
+            # return fileName
+
+    def show_pattern(self, file_path):
+        bmp = bmp_import(file_path)
+        path_label = QLabel(file_path)
+        height, width = bmp.size
+        size_label = QLabel("Height: " + str(height) + "px  Width: " + str(width) + "px")
+        self.layout.addWidget(path_label, 0, 0)
+        self.layout.addWidget(size_label, 1, 0)
+        array = np.array(bmp).astype(np.uint8)
+        # graphicsview = pg.GraphicsView()
+
+        self.win = pg.GraphicsLayoutWidget()
+        self.image_view = self.win.addViewBox()
+        img = pg.ImageItem(border='w', levels = (0,255), axisOrder="row-major") 
+        img.setImage(array)
+        
+        ## lock the aspect ratio so pixels are always square
+        self.image_view.setAspectLocked(True)
+        self.image_view.setRange(QtCore.QRectF(0, 0,height, width))
+        self.image_view.addItem(img)
+        self.layout.addWidget(self.win)
 
 
 
@@ -163,7 +185,7 @@ class MainWindow(QWidget):
         self.file_dialog = ImportPatternFileWindow()
         file = self.file_dialog.show_and_get_file()
         #bmp_to_bitstream(file, scan_controller.dimension)
-        bmp = bmp_import(file)
+        
 
         
 
