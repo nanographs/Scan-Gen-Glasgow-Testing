@@ -4,6 +4,7 @@ import sys
 
 import tifffile
 from tifffile import imwrite
+from PIL import Image
 
 import os, datetime
 
@@ -22,6 +23,9 @@ import qasync
 from qasync import asyncSlot, asyncClose, QApplication
 
 from microscope import ScanController
+
+
+from bmp_to_bitstream import *
 
 
 app = pg.mkQApp("Scan Control")
@@ -72,6 +76,15 @@ class ImportPatternFileWindow(QWidget):
         self.file_dialog = QFileDialog()
         self.file_dialog.setNameFilter("tr(Images (*.bmp)")
         self.layout.addWidget(self.file_dialog)
+
+    def show_and_get_file(self):
+        self.show()
+        if self.file_dialog.exec():
+            fileName = self.file_dialog.selectedFiles()[0]
+            print(fileName)
+            self.hide()
+            return fileName
+
 
 
 
@@ -127,7 +140,7 @@ class MainWindow(QWidget):
         self.new_pattern_btn = QPushButton('Pattern file')
         self.new_pattern_btn.clicked.connect(self.file_select)
         self.layout.addWidget(self.new_pattern_btn, 1,1)
-        self.new_pattern_btn.setHidden(True)
+        # self.new_pattern_btn.setHidden(True)
 
         self.win = pg.GraphicsLayoutWidget()
         self.image_view = self.win.addViewBox()
@@ -148,7 +161,10 @@ class MainWindow(QWidget):
 
     def file_select(self):
         self.file_dialog = ImportPatternFileWindow()
-        self.file_dialog.show()
+        file = self.file_dialog.show_and_get_file()
+        #bmp_to_bitstream(file, scan_controller.dimension)
+        bmp = bmp_import(file)
+
         
 
 
@@ -240,7 +256,7 @@ class MainWindow(QWidget):
             self.loopback_btn.setEnabled(False)
             self.resolution_options.menu.setEnabled(False)
             self.dwell_options.spinbox.setEnabled(False)
-            self.mode_select_dropdown.setEnabled(False)
+            # self.mode_select_dropdown.setEnabled(False)
         if state == "scan_not_started":
             self.start_btn.setEnabled(True)
             self.loopback_btn.setEnabled(True)
