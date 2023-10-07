@@ -112,6 +112,13 @@ class ImportPatternFileWindow(QWidget):
     async def go(self):
         self.hide()
 
+def pattern_loop(dimension, pattern_stream):
+    while 1:
+        for n in range(int(dimension*dimension/16384)): #packets per frame
+            print(n)
+            yield pattern_stream[n*16384:(n+1)*16384]
+        print("pattern complete")
+
 
 
 
@@ -186,12 +193,15 @@ class MainWindow(QWidget):
         self.layout.addWidget(self.image_display)
 
         self.setState("disconnected")
+        self.mode = "Imaging"
 
 
     def file_select(self):
         self.file_dialog = ImportPatternFileWindow()
         self.file_path = self.file_dialog.show_and_get_file()
         print(self.file_path)
+        pattern_stream = bmp_to_bitstream(self.file_path, 512, 512)
+        self.pattern = pattern_loop(512, pattern_stream)
         #bmp_to_bitstream(file, scan_controller.dimension)
         
 
@@ -208,13 +218,13 @@ class MainWindow(QWidget):
     @asyncSlot()
     async def mode_select(self):
         await scan_controller.set_mode()
-        mode = self.mode_select_dropdown.currentText()
-        if mode == "Imaging":
+        self.mode = self.mode_select_dropdown.currentText()
+        if self.mode == "Imaging":
             print("Imaging")
             self.new_pattern_btn.setHidden(True)
             self.dwell_options.label.setHidden(False)
             self.dwell_options.spinbox.setHidden(False)
-        if mode == "Patterning":
+        if self.mode == "Patterning":
             print("Patterning")
             self.dwell_options.label.setHidden(True)
             self.dwell_options.spinbox.setHidden(True)
@@ -239,12 +249,11 @@ class MainWindow(QWidget):
     async def toggle_scan(self):
         if self.start_btn.isChecked():
             self.start_btn.setText('🔄')
-            mode = self.mode_select_dropdown.currentText()
-            if mode == "Imaging":
-                await scan_controller.start_scan()
-            if mode == "Patterning":
-                pattern_stream = bmp_to_bitstream(self.file_path, 512, 512)
-                await scan_controller.start_scan_pattern_stream(pattern_stream)
+            self.mode = self.mode_select_dropdown.currentText()
+            await scan_controller.start_scan()
+            # if mode == "Imaging":
+            #     await scan_controller.start_scan()
+            #     await scan_controller.start_scan_pattern_stream(pattern_stream)
             loop = asyncio.get_event_loop()
             print("GUI", loop)
             self.update_continously = asyncio.ensure_future(self.keepUpdating())
@@ -254,7 +263,10 @@ class MainWindow(QWidget):
         else:
             print("Stopped scanning now")
             self.start_btn.setText('🔄')
+            self.update_continously.cancel()
             await scan_controller.stop_scan()
+            # if self.mode == "Patterning":
+            #     scan_controller.writer.write_eof()
             self.start_btn.setText('▶️')
             self.setState("scan_paused")
     
@@ -275,12 +287,18 @@ class MainWindow(QWidget):
                 break
     
     async def updateData(self):
-        await scan_controller.get_single_packet()
+        print("mode=", self.mode)
+        if self.mode == "Imaging":
+            await scan_controller.get_single_packet()
+        if self.mode == "Patterning":
+            pattern_slice = (next(self.pattern)).tobytes(order='C')
+            print("sending single packet")
+            await scan_controller.send_single_packet(pattern_slice)
+            print("recieving single packet")
+            await scan_controller.get_single_packet()
         # scan_controller.stream_to_buffer(data)
         self.image_display.live_img.setImage(scan_controller.buf)
-
-
-
+    
 
     def setState(self, state):
         if state == "disconnected":
