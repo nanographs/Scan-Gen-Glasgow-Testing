@@ -495,9 +495,11 @@ class ScanGenApplet(GlasgowApplet):
         async def scan_continously():
             print("scan continous")
             while True: 
-                data = await single_bidirectional_transfer_remote()
-                await endpoint.send(data)
-                print("sent", (data.tolist())[0], ":", (data.tolist())[-1], "-", len(data.tolist()))
+                transfer = await single_bidirectional_transfer_remote()
+                if transfer == False:
+                    break
+
+                    
 
         async def single_bidirectional_transfer():
             if args.mode == "pattern":
@@ -514,26 +516,63 @@ class ScanGenApplet(GlasgowApplet):
 
         # await single_bidirectional_transfer()
 
-        async def single_bidirectional_transfer_remote():
-            print("SBDTR")
-            #if args.mode == "pattern":
-            if self.mode_is == PATTERN:
-                txt_file.write("\nSENT:\n")
-                print("awaiting endpt read")
-                pattern_slice = await endpoint.recv(16384)
-                txt_file.write(", ".join([str(x) for x in pattern_slice]))
-                print("rcvd", pattern_slice[0], ":", pattern_slice[-1], "-", len(pattern_slice))
-                print("writing")
+        async def recieve_pattern():
+            # txt_file.write("\nSENT:\n")
+            print("awaiting endpt read")
+            try:
+                pattern_slice = await asyncio.wait_for(endpoint.recv(16384), timeout=5)
+                # txt_file.write(", ".join([str(x) for x in pattern_slice]))
+                print("rcvd from endpt", pattern_slice[0], ":", pattern_slice[-1], "-", len(pattern_slice))
+                print("writing to iface")
                 await iface.write(pattern_slice)
-                print("wrote")
+                print("wrote to iface")
+                return True
+            except asyncio.TimeoutError:
+                print("timeout reading from endpt")
+                return False
+
+
+        async def send_video():
+            data = await read_video()
+            if data is not None:
+                print("sending to endpt")
+                try:
+                    await asyncio.wait_for(endpoint.send(data), timeout=5)
+                    print("sent to endpt", (data.tolist())[0], ":", (data.tolist())[-1], "-", len(data.tolist()))
+                except asyncio.TimeoutError:
+                    print("timeout sending to endpt")
+        
+        async def read_video():
             await device.write_register(self.enable, 1)
             print("awaiting iface read")
-            data = await iface.read(16384)
-            print("read")
-            await device.write_register(self.enable, 0)
-            txt_file.write("\nRCVD:\n")
-            txt_file.write(", ".join([str(x) for x in data.tolist()]))
-            return data
+            try:
+                data = await iface.read(16384)
+                print("read from iface", (data.tolist())[0], ":", (data.tolist())[-1])
+                await device.write_register(self.enable, 0)
+                # txt_file.write("\nRCVD:\n")
+                # txt_file.write(", ".join([str(x) for x in data.tolist()]))
+                return data
+            except Exception as exc:
+                print("error reading")
+                print(exc)
+                return None
+
+
+        async def single_bidirectional_transfer_remote():
+            #if args.mode == "pattern":
+            if self.mode_is == PATTERN:
+                pattern_sent = await recieve_pattern()
+                if pattern_sent:
+                    await send_video()
+                    return True
+                else:
+                    return False
+            if self.mode_is == IMAGE:
+                await send_video()
+                return True
+                
+                
+
 
         async def read_and_ignore():
             data = await iface.read()
@@ -554,89 +593,91 @@ class ScanGenApplet(GlasgowApplet):
 
 
 
-        await read_until_empty() 
-        ## sometimes on startup there's still packets in the buffer?
-        ## idk why, but this is to deal with that
+        # await read_until_empty() 
+        # ## sometimes on startup there's still packets in the buffer?
+        # ## idk why, but this is to deal with that
         state = "init"
 
         ispatterning = False
+        finally_finally = False
 
         while True:
                 try: 
                     ## get 4 bytes
-                    if not ispatterning:
-                        cmd = await asyncio.shield(endpoint.recv(4))
-                        cmd = cmd.decode(encoding='utf-8', errors='strict')
-                        print("cmd:", cmd)
-                        if cmd == "scan":
-                            if (state == "new_scan") or (state == "init"):
-                                print("un-resetting")
-                                await device.write_register(self.reset, 0)
-                            print("starting scan...")
-                            scan = asyncio.ensure_future(scan_continously()) ## start async task
-                            print(scan)
-                            if self.mode_is == PATTERN:
-                                ispatterning = True
-                                print("ispatterning")
+                    # if not ispatterning:
+                    cmd = await asyncio.shield(endpoint.recv(4))
+                    cmd = cmd.decode(encoding='utf-8', errors='strict')
+                    print("cmd:", cmd)
+                    if cmd == "scan":
+                        if (state == "new_scan") or (state == "init"):
+                            print("un-resetting")
+                            await device.write_register(self.reset, 0)
+                        print("starting scan...")
+                        scan = asyncio.ensure_future(scan_continously()) ## start async task
+                        print(scan)
+                        if self.mode_is == PATTERN:
+                            ispatterning = True
+                            print("ispatterning")
+                        try:
+                            await scan
+                        except asyncio.CancelledError:
+                            print("Scan cancelled") ## make sure its canceled?
+                            pass
+                    else: ## if any other command is recieved, pause the scan
+                        await device.write_register(self.enable, 0)
+                        print("else state", state)
+                        if cmd == "stop": ## sent when pause button is clicked
+                            state = "paused"
+                            if scan is None:
+                                print("No scan exists to be stopped")
+                                pass
+                            scan.cancel()
                             try:
                                 await scan
                             except asyncio.CancelledError:
                                 print("Scan cancelled") ## make sure its canceled?
                                 pass
-                        else: ## if any other command is recieved, pause the scan
-                            await device.write_register(self.enable, 0)
-                            print("else state", state)
-                            if cmd == "stop": ## sent when pause button is clicked
-                                state = "paused"
-                                if scan is None:
-                                    print("No scan exists to be stopped")
-                                    pass
-                                scan.cancel()
-                                try:
-                                    await scan
-                                except asyncio.CancelledError:
-                                    print("Scan cancelled") ## make sure its canceled?
-                                    pass
-                            ## this will leave some packets in the buffer
-                            ## which is fine if you want to resume the scan with the same resolution etc.
-                            ## but if you want a new scan, then:
-                            else:
-                                ## any command will trigger this behavior
-                                ## the new scan button sends "eeee"
-                                if (state == "paused") or (state == "init"): ## transitioning between pausing the scan, and recieving commands
-                                    await read_until_empty()
-                                    await device.write_register(self.reset, 1)
-                                    state = "new_scan"
-                                ## if a resolution or dwell time command was sent
-                                ## then write a new value to a register
-                                if cmd.startswith("re"): ## Changing resolution
-                                    new_bits = int(cmd.strip("re")) 
-                                    await device.write_register(self.resolution, new_bits)
-                                    print("resolution:",new_bits)
-                                elif cmd.startswith("d"): ## Changing dwell time
-                                    new_dwell = int(cmd.strip("d"))
-                                    await device.write_register(self.dwell, new_dwell)
-                                    print("dwell time", new_dwell)
-                                elif cmd.startswith("m"): ## Changing mode
-                                    if self.mode_is == IMAGE:
-                                        await device.write_register(self.mode, 1)
-                                        print("switched to pattern mode")
-                                        self.mode_is = PATTERN
-                                        args.mode = "pattern"
-                                    else:
-                                        await device.write_register(self.mode, 0)
-                                        print("switched to image mode")
-                                        self.mode_is = IMAGE
-                                        args.mode = "image"
-                                elif cmd.startswith("l"): ## Changing loopback state
-                                    if self.looping:
-                                        await device.write_register(self.loopback, 0)
-                                        print("loopback off")
-                                        self.looping = False
-                                    else:
-                                        await device.write_register(self.loopback, 1)
-                                        print("loopback on")
-                                        self.looping = True
+                        ## this will leave some packets in the buffer
+                        ## which is fine if you want to resume the scan with the same resolution etc.
+                        ## but if you want a new scan, then:
+                        else:
+                            finally_finally = False
+                            ## any command will trigger this behavior
+                            ## the new scan button sends "eeee"
+                            if (state == "paused") or (state == "init"): ## transitioning between pausing the scan, and recieving commands
+                                await read_until_empty()
+                                await device.write_register(self.reset, 1)
+                                state = "new_scan"
+                            ## if a resolution or dwell time command was sent
+                            ## then write a new value to a register
+                            if cmd.startswith("re"): ## Changing resolution
+                                new_bits = int(cmd.strip("re")) 
+                                await device.write_register(self.resolution, new_bits)
+                                print("resolution:",new_bits)
+                            elif cmd.startswith("d"): ## Changing dwell time
+                                new_dwell = int(cmd.strip("d"))
+                                await device.write_register(self.dwell, new_dwell)
+                                print("dwell time", new_dwell)
+                            elif cmd.startswith("m"): ## Changing mode
+                                if self.mode_is == IMAGE:
+                                    await device.write_register(self.mode, 1)
+                                    print("switched to pattern mode")
+                                    self.mode_is = PATTERN
+                                    args.mode = "pattern"
+                                else:
+                                    await device.write_register(self.mode, 0)
+                                    print("switched to image mode")
+                                    self.mode_is = IMAGE
+                                    args.mode = "image"
+                            elif cmd.startswith("l"): ## Changing loopback state
+                                if self.looping:
+                                    await device.write_register(self.loopback, 0)
+                                    print("loopback off")
+                                    self.looping = False
+                                else:
+                                    await device.write_register(self.loopback, 1)
+                                    print("loopback on")
+                                    self.looping = True
                                 
 
                 # except (ConnectionResetError, AttributeError, BrokenPipeError) as error:
@@ -645,6 +686,10 @@ class ScanGenApplet(GlasgowApplet):
                 #     pass
                 finally:
                     print("finally")
+                    # if finally_finally:
+                    #     break
+                    # finally_finally = True
+                    
 
 
 

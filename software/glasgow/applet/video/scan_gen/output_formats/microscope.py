@@ -22,6 +22,8 @@ class ScanController:
     async def connect(self):
         try:
             self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT)
+            print(self.writer.transport)
+            print(self.writer.can_write_eof())
             return "Connected"
         except Exception as exc:
             print(exc)
@@ -91,13 +93,11 @@ class ScanController:
                 yield pattern_stream[n*16384:(n+1)*16384]
             print("pattern complete")
         
-    async def stream_continously_pattern(self, pattern):
-            pattern_slice = (next(pattern)).tobytes(order='C')
+    async def send_single_packet(self, pattern_slice):
             print("writing")
             self.writer.write(pattern_slice)
-            print("wrote")
+            print("write", pattern_slice[0], ":", pattern_slice[-1], "-", len(pattern_slice))
             await self.writer.drain()
-            await self.get_single_packet()
 
     async def stream_continously(self):
         while True:
