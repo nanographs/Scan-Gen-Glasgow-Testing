@@ -25,7 +25,7 @@ from qasync import asyncSlot, asyncClose, QApplication
 from microscope import ScanController
 
 
-from bmp_to_bitstream import *
+from bmp_utils import *
 
 
 app = pg.mkQApp("Scan Control")
@@ -80,14 +80,15 @@ class ImportPatternFileWindow(QWidget):
     def show_and_get_file(self):
         self.show()
         if self.file_dialog.exec():
-            file_path = self.file_dialog.selectedFiles()[0]
-            print(file_path)
-            self.show_pattern(file_path)
+            self.file_path = self.file_dialog.selectedFiles()[0]
+            print(self.file_path)
+            self.show_pattern(self.file_path)
             # self.hide()
-            # return fileName
+            return self.file_path
 
     def show_pattern(self, file_path):
         bmp = bmp_import(file_path)
+        print(bmp)
         path_label = QLabel(file_path)
         height, width = bmp.size
         size_label = QLabel("Height: " + str(height) + "px  Width: " + str(width) + "px")
@@ -96,19 +97,36 @@ class ImportPatternFileWindow(QWidget):
         array = np.array(bmp).astype(np.uint8)
         # graphicsview = pg.GraphicsView()
 
-        self.win = pg.GraphicsLayoutWidget()
-        self.image_view = self.win.addViewBox()
-        img = pg.ImageItem(border='w', levels = (0,255), axisOrder="row-major") 
-        img.setImage(array)
+        self.image_display = ImageDisplay(height, width)
+        self.image_display.live_img.setImage(array)
         
+        self.layout.addWidget(self.image_display)
+
+        self.resolution_options = ResolutionDropdown()
+
+        self.go_button = QPushButton("Go")
+        self.layout.addWidget(self.go_button)
+        self.go_button.clicked.connect(self.go)
+
+    @asyncSlot()
+    async def go(self):
+        self.hide()
+
+
+
+
+class ImageDisplay(pg.GraphicsLayoutWidget):
+    def __init__(self, height, width):
+        super().__init__()
+        self.image_view = self.addViewBox()
         ## lock the aspect ratio so pixels are always square
         self.image_view.setAspectLocked(True)
-        self.image_view.setRange(QtCore.QRectF(0, 0,height, width))
-        self.image_view.addItem(img)
-        self.layout.addWidget(self.win)
-
-
-
+        self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
+        
+        self.live_img = pg.ImageItem(border='w', levels = (0,255), axisOrder="row-major")
+        self.image_view.addItem(self.live_img)
+    def setRange(self, height, width):
+        self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
 
 class MainWindow(QWidget):
 
@@ -162,28 +180,18 @@ class MainWindow(QWidget):
         self.new_pattern_btn = QPushButton('Pattern file')
         self.new_pattern_btn.clicked.connect(self.file_select)
         self.layout.addWidget(self.new_pattern_btn, 1,1)
-        # self.new_pattern_btn.setHidden(True)
+        self.new_pattern_btn.setHidden(True)
 
-        self.win = pg.GraphicsLayoutWidget()
-        self.image_view = self.win.addViewBox()
-        ## lock the aspect ratio so pixels are always square
-        self.image_view.setAspectLocked(True)
-        self.image_view.setRange(QtCore.QRectF(0, 0,self.dimension, self.dimension))
-        self.layout.addWidget(self.win)
-
-        self.live_img = pg.ImageItem(border='w', levels = (0,255), axisOrder="row-major")
-        self.image_view.addItem(self.live_img)
-        buf = np.ones((512,512))
-        self.live_img.setImage(buf)
+        self.image_display = ImageDisplay(512, 512)
+        self.layout.addWidget(self.image_display)
 
         self.setState("disconnected")
 
-        
-        # self.layout.addWidget(file_dialog)
 
     def file_select(self):
         self.file_dialog = ImportPatternFileWindow()
-        file = self.file_dialog.show_and_get_file()
+        self.file_path = self.file_dialog.show_and_get_file()
+        print(self.file_path)
         #bmp_to_bitstream(file, scan_controller.dimension)
         
 
@@ -231,7 +239,12 @@ class MainWindow(QWidget):
     async def toggle_scan(self):
         if self.start_btn.isChecked():
             self.start_btn.setText('🔄')
-            await scan_controller.start_scan()
+            mode = self.mode_select_dropdown.currentText()
+            if mode == "Imaging":
+                await scan_controller.start_scan()
+            if mode == "Patterning":
+                pattern_stream = bmp_to_bitstream(self.file_path, 512, 512)
+                await scan_controller.start_scan_pattern_stream(pattern_stream)
             loop = asyncio.get_event_loop()
             print("GUI", loop)
             self.update_continously = asyncio.ensure_future(self.keepUpdating())
@@ -250,9 +263,7 @@ class MainWindow(QWidget):
         res_bits = self.resolution_options.menu.currentIndex() + 9 #9 through 14
         dimension = pow(2,res_bits)
         await scan_controller.set_resolution(res_bits)
-        buf = np.ones(shape=(dimension,dimension))
-        self.image_view.setRange(QtCore.QRectF(0, 0, dimension, dimension))
-        self.live_img.setImage(buf)
+        self.image_display.setRange(dimension, dimension)
         print("setting resolution to", dimension)
 
     async def keepUpdating(self):
@@ -266,7 +277,7 @@ class MainWindow(QWidget):
     async def updateData(self):
         await scan_controller.get_single_packet()
         # scan_controller.stream_to_buffer(data)
-        self.live_img.setImage(scan_controller.buf)
+        self.image_display.live_img.setImage(scan_controller.buf)
 
 
 

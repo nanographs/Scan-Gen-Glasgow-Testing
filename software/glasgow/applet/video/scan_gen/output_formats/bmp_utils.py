@@ -13,13 +13,13 @@ def window(pixel):
 def bmp_import(filename):
     #img_path = os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename)
     im = Image.open(filename)
+    im = im.convert("L")
     return im
 
 
 
 def bmp_to_bitstream(filename, dimension, invert_color = False):
-    img_path = os.path.join(os.getcwd(), 'software/glasgow/applet/video/scan_gen/', filename)
-    im = Image.open(img_path)
+    im = Image.open(filename)
     height, width = im.size
     im = im.convert("L")
     if invert_color:

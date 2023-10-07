@@ -79,6 +79,26 @@ class ScanController:
         await self.start_scan()
         self.scanning = asyncio.ensure_future(self.stream_continously())
 
+    async def start_scan_pattern_stream(self, pattern_stream):
+        pattern = self.pattern_loop(512, pattern_stream)
+        await self.start_scan()
+        self.scanning = asyncio.ensure_future(self.stream_continously_pattern(pattern))
+
+    def pattern_loop(self, dimension, pattern_stream):
+        while 1:
+            for n in range(int(dimension*dimension/16384)): #packets per frame
+                print(n)
+                yield pattern_stream[n*16384:(n+1)*16384]
+            print("pattern complete")
+        
+    async def stream_continously_pattern(self, pattern):
+            pattern_slice = (next(pattern)).tobytes(order='C')
+            print("writing")
+            self.writer.write(pattern_slice)
+            print("wrote")
+            await self.writer.drain()
+            await self.get_single_packet()
+
     async def stream_continously(self):
         while True:
             try:
@@ -88,7 +108,9 @@ class ScanController:
                 break
 
     async def get_single_packet(self):
+        print("reading")
         data = await self.reader.read(16384)
+        print("read done")
         if data is not None:
             print("recvd", (list(data))[0], ":", (list(data))[-1], "-", len(list(data)))
             #return data
@@ -105,6 +127,8 @@ class ScanController:
             self.cur_line += self.packet_lines
             if self.cur_line == self.dimension:
                 self.cur_line = 0 ## new frame, back to the top
+
+
 
     async def acquire_image(self, dimension:int):
         await self.start_scan()
