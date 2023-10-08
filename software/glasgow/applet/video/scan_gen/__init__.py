@@ -493,7 +493,6 @@ class ScanGenApplet(GlasgowApplet):
         txt_file = open("frames.txt", "w")
 
         async def scan_continously():
-            print("scan continous")
             while True: 
                 transfer = await single_bidirectional_transfer_remote()
                 if transfer == False:
@@ -514,13 +513,12 @@ class ScanGenApplet(GlasgowApplet):
             txt_file.write(", ".join([str(x) for x in data.tolist()]))
             return data
 
-        # await single_bidirectional_transfer()
 
         async def recieve_pattern():
             # txt_file.write("\nSENT:\n")
             print("awaiting endpt read")
             try:
-                pattern_slice = await asyncio.wait_for(endpoint.recv(16384), timeout=5)
+                pattern_slice = await asyncio.wait_for(endpoint.recv(16384), timeout=1)
                 # txt_file.write(", ".join([str(x) for x in pattern_slice]))
                 print("rcvd from endpt", pattern_slice[0], ":", pattern_slice[-1], "-", len(pattern_slice))
                 print("writing to iface")
@@ -531,31 +529,33 @@ class ScanGenApplet(GlasgowApplet):
                 print("timeout reading from endpt")
                 return False
 
-
         async def send_video():
             data = await read_video()
             if data is not None:
                 print("sending to endpt")
                 try:
-                    await asyncio.wait_for(endpoint.send(data), timeout=5)
+                #await endpoint.send(data)
+                    await asyncio.wait_for(endpoint.send(data), timeout=1)
                     print("sent to endpt", (data.tolist())[0], ":", (data.tolist())[-1], "-", len(data.tolist()))
+                    return True
                 except asyncio.TimeoutError:
                     print("timeout sending to endpt")
+                    return False
         
         async def read_video():
             await device.write_register(self.enable, 1)
             print("awaiting iface read")
-            try:
-                data = await iface.read(16384)
-                print("read from iface", (data.tolist())[0], ":", (data.tolist())[-1])
-                await device.write_register(self.enable, 0)
-                # txt_file.write("\nRCVD:\n")
-                # txt_file.write(", ".join([str(x) for x in data.tolist()]))
-                return data
-            except Exception as exc:
-                print("error reading")
-                print(exc)
-                return None
+            # try:
+            data = await iface.read(16384)
+            print("read from iface", (data.tolist())[0], ":", (data.tolist())[-1])
+            await device.write_register(self.enable, 0)
+            # txt_file.write("\nRCVD:\n")
+            # txt_file.write(", ".join([str(x) for x in data.tolist()]))
+            return data
+            # except Exception as exc:
+            #     print("error reading")
+            #     print(exc)
+            #     return None
 
 
         async def single_bidirectional_transfer_remote():
@@ -568,10 +568,8 @@ class ScanGenApplet(GlasgowApplet):
                 else:
                     return False
             if self.mode_is == IMAGE:
-                await send_video()
-                return True
-                
-                
+                return await send_video()
+
 
 
         async def read_and_ignore():
@@ -598,13 +596,9 @@ class ScanGenApplet(GlasgowApplet):
         # ## idk why, but this is to deal with that
         state = "init"
 
-        ispatterning = False
-        finally_finally = False
-
         while True:
                 try: 
                     ## get 4 bytes
-                    # if not ispatterning:
                     cmd = await asyncio.shield(endpoint.recv(4))
                     cmd = cmd.decode(encoding='utf-8', errors='strict')
                     print("cmd:", cmd)
@@ -614,15 +608,17 @@ class ScanGenApplet(GlasgowApplet):
                             await device.write_register(self.reset, 0)
                         print("starting scan...")
                         scan = asyncio.ensure_future(scan_continously()) ## start async task
+                        #scan = asyncio.to_thread(scan_continously())
                         print(scan)
+                        loop = asyncio.get_running_loop()
+                        print("main", loop._thread_id)
                         if self.mode_is == PATTERN:
-                            ispatterning = True
-                            print("ispatterning")
-                        try:
-                            await scan
-                        except asyncio.CancelledError:
-                            print("Scan cancelled") ## make sure its canceled?
-                            pass
+                            try:
+                                print("trying  await scan")
+                                await scan
+                            except asyncio.CancelledError:
+                                print("Scan cancelled") ## make sure its canceled?
+                                pass
                     else: ## if any other command is recieved, pause the scan
                         await device.write_register(self.enable, 0)
                         print("else state", state)
@@ -641,7 +637,6 @@ class ScanGenApplet(GlasgowApplet):
                         ## which is fine if you want to resume the scan with the same resolution etc.
                         ## but if you want a new scan, then:
                         else:
-                            finally_finally = False
                             ## any command will trigger this behavior
                             ## the new scan button sends "eeee"
                             if (state == "paused") or (state == "init"): ## transitioning between pausing the scan, and recieving commands
@@ -680,15 +675,14 @@ class ScanGenApplet(GlasgowApplet):
                                     self.looping = True
                                 
 
-                # except (ConnectionResetError, AttributeError, BrokenPipeError) as error:
-                #     # basically, if the other port closes, don't stop running
-                #     print("Connection lost, trying again...")
-                #     pass
-                finally:
-                    print("finally")
-                    # if finally_finally:
-                    #     break
-                    # finally_finally = True
+                except Exception as exc:
+                    print("main loop error:", exc)
+                    # basically, if the other port closes, don't stop running
+                    print("Connection lost, trying again...")
+                    pass
+                # finally:
+                #     print("finally")
+
                     
 
 
