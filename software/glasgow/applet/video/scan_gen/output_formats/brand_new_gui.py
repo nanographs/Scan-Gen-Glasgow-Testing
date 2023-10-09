@@ -104,9 +104,13 @@ class ImportPatternFileWindow(QWidget):
 
         self.resolution_options = ResolutionDropdown()
 
-        self.go_button = QPushButton("Go")
-        self.layout.addWidget(self.go_button)
-        self.go_button.clicked.connect(self.go)
+        if any(height < self.dimension, width < self.dimension):
+            error_label = QLabel("Image dimensions exceed current scan resolution")
+            self.layout.addWidget(error_label)
+        else:
+            self.go_button = QPushButton("Go")
+            self.layout.addWidget(self.go_button)
+            self.go_button.clicked.connect(self.go)
 
     @asyncSlot()
     async def go(self):
@@ -130,7 +134,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.image_view.setAspectLocked(True)
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
         
-        self.live_img = pg.ImageItem(border='w', levels = (0,255), axisOrder="row-major")
+        self.live_img = pg.ImageItem(border='w', levels = (0,255), axisOrder="row-major", invertY=True, invertX=True)
         self.image_view.addItem(self.live_img)
     def setRange(self, height, width):
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
@@ -190,6 +194,7 @@ class MainWindow(QWidget):
         self.new_pattern_btn.setHidden(True)
 
         self.image_display = ImageDisplay(512, 512)
+        self.image_display.live_img.setImage(scan_controller.buf) #set blank 512x512 image
         self.layout.addWidget(self.image_display)
 
         self.setState("disconnected")
@@ -200,13 +205,12 @@ class MainWindow(QWidget):
         self.file_dialog = ImportPatternFileWindow()
         self.file_path = self.file_dialog.show_and_get_file()
         print(self.file_path)
-        pattern_stream = bmp_to_bitstream(self.file_path, 512, 512)
-        self.pattern = pattern_loop(512, pattern_stream)
-        #bmp_to_bitstream(file, scan_controller.dimension)
+        pattern_stream = bmp_to_bitstream(self.file_path, self.dimension, self.dimension)
+        self.pattern = pattern_loop(self.dimension, pattern_stream)
+        # self.image_display.image_view.addItem(self.file_dialog.image_display.live_img) #oof
+        # self.image_display.image_view.autoRange()
+        # print(self.image_display.image_view.allChildren())
         
-
-        
-
 
     @asyncSlot()
     async def connect(self):
@@ -217,6 +221,7 @@ class MainWindow(QWidget):
     
     @asyncSlot()
     async def mode_select(self):
+        await scan_controller.reset_scan()
         await scan_controller.set_mode()
         self.mode = self.mode_select_dropdown.currentText()
         if self.mode == "Imaging":
@@ -276,6 +281,7 @@ class MainWindow(QWidget):
         dimension = pow(2,res_bits)
         await scan_controller.set_resolution(res_bits)
         self.image_display.setRange(dimension, dimension)
+        self.dimension = dimension
         print("setting resolution to", dimension)
 
     async def keepUpdating(self):
@@ -307,7 +313,7 @@ class MainWindow(QWidget):
             self.loopback_btn.setEnabled(False)
             self.resolution_options.menu.setEnabled(False)
             self.dwell_options.spinbox.setEnabled(False)
-            # self.mode_select_dropdown.setEnabled(False)
+            self.mode_select_dropdown.setEnabled(False)
         if state == "scan_not_started":
             self.start_btn.setEnabled(True)
             self.loopback_btn.setEnabled(True)
