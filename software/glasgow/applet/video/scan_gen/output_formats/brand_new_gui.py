@@ -104,13 +104,13 @@ class ImportPatternFileWindow(QWidget):
 
         self.resolution_options = ResolutionDropdown()
 
-        if any(height < self.dimension, width < self.dimension):
-            error_label = QLabel("Image dimensions exceed current scan resolution")
-            self.layout.addWidget(error_label)
-        else:
-            self.go_button = QPushButton("Go")
-            self.layout.addWidget(self.go_button)
-            self.go_button.clicked.connect(self.go)
+        # if any(height < self.dimension, width < self.dimension):
+        #     error_label = QLabel("Image dimensions exceed current scan resolution")
+        #     self.layout.addWidget(error_label)
+        # else:
+        self.go_button = QPushButton("Go")
+        self.layout.addWidget(self.go_button)
+        self.go_button.clicked.connect(self.go)
 
     @asyncSlot()
     async def go(self):
@@ -136,6 +136,12 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         
         self.live_img = pg.ImageItem(border='w', levels = (0,255), axisOrder="row-major", invertY=True, invertX=True)
         self.image_view.addItem(self.live_img)
+
+        # Contrast/color control
+        hist = pg.HistogramLUTItem()
+        hist.setImageItem(self.live_img)
+        hist.disableAutoHistogramRange()
+        self.addItem(hist)
     def setRange(self, height, width):
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
 
