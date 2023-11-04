@@ -142,6 +142,8 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         hist.setImageItem(self.live_img)
         hist.disableAutoHistogramRange()
         self.addItem(hist)
+
+        self.exporter = pg.exporters.ImageExporter(self.live_img)
     def setRange(self, height, width):
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
 
@@ -175,6 +177,10 @@ class MainWindow(QWidget):
 
         self.new_scan_btn = QPushButton('↻')
         self.new_scan_btn.clicked.connect(self.reset_scan)
+
+        self.save_btn = QPushButton('save')
+        self.save_btn.clicked.connect(self.saveImage)
+        
         
 
         mode_options = QGridLayout()
@@ -183,6 +189,7 @@ class MainWindow(QWidget):
         mode_options.addWidget(self.loopback_btn,0,3)
         mode_options.addWidget(self.start_btn,0,4)
         mode_options.addWidget(self.new_scan_btn,0,5)
+        mode_options.addWidget(self.save_btn, 0, 6)
 
 
         self.layout.addLayout(mode_options,0,0)
@@ -319,6 +326,9 @@ class MainWindow(QWidget):
         self.image_display.live_img.setImage(scan_controller.buf)
     
 
+    def saveImage(self):
+        self.image_display.exporter.export("saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif")
+        
     def setState(self, state):
         if state == "disconnected":
             self.start_btn.setEnabled(False)
