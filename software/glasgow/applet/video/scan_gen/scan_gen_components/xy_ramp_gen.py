@@ -147,9 +147,13 @@ if __name__ == "__main__":
     test_width = 64
     dut = ScanGenerator(test_bits)
     def bench():
-        yield dut.en.eq(1)
+       
         for _ in range(2*test_width*test_width):
+            yield dut.en.eq(1)
             yield
+            yield dut.en.eq(0)
+            yield
+                
         yield
 
 
