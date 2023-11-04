@@ -193,6 +193,7 @@ class MainWindow(QWidget):
 
         self.dwell_options = DwellTimeSelector()
         self.layout.addLayout(self.dwell_options, 1,1)
+        self.resolution_options.spinbox.valueChanged.connect(self.changeDwellTime)
 
         self.new_pattern_btn = QPushButton('Pattern file')
         self.new_pattern_btn.clicked.connect(self.file_select)
@@ -289,6 +290,12 @@ class MainWindow(QWidget):
         self.image_display.setRange(dimension, dimension)
         self.dimension = dimension
         print("setting resolution to", dimension)
+
+    @asyncSlot()
+    async def changeResolution(self):
+        dwell_time = self.dwell_options.spinbox.currentValue()
+        await scan_controller.set_dwell(dwell_time)
+        print("setting dwell time to", dwell)
 
     async def keepUpdating(self):
         while True:   
