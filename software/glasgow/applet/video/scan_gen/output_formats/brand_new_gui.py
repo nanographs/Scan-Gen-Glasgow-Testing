@@ -327,7 +327,11 @@ class MainWindow(QWidget):
     
 
     def saveImage(self):
-        self.image_display.exporter.export("saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif")
+        self.image_display.exporter.parameters()['height'] = self.dimension
+        self.image_display.exporter.parameters()['width'] = self.dimension
+        img_name = "saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif"
+        self.image_display.exporter.export(img_name)
+        print(img_name)
         
     def setState(self, state):
         if state == "disconnected":
