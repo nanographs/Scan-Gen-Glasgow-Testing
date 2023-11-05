@@ -286,8 +286,9 @@ class MainWindow(QWidget):
             await scan_controller.stop_scan()
             # if self.mode == "Patterning":
             #     scan_controller.writer.write_eof()
-            self.start_btn.setText('▶️')
             self.setState("scan_paused")
+            self.start_btn.setText('▶️')
+            
     
     @asyncSlot()
     async def changeResolution(self):
@@ -356,8 +357,8 @@ class MainWindow(QWidget):
         if state == "scan_paused":
             self.new_scan_btn.setEnabled(True)
             self.loopback_btn.setEnabled(True)
-            self.resolution_options.setEnabled(True)
-            self.dwell_options.setEnabled(True)
+            self.resolution_options.menu.setEnabled(True)
+            self.dwell_options.spinbox.setEnabled(True)
 
 
 
