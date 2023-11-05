@@ -134,7 +134,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.image_view.setAspectLocked(True)
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
         
-        self.live_img = pg.ImageItem(border='w',axisOrder="row-major", invertY=True, invertX=True)
+        self.live_img = pg.ImageItem(border='w',axisOrder="row-major", invertY=False, invertX=False)
         self.image_view.addItem(self.live_img)
 
         # Contrast/color control
@@ -323,7 +323,8 @@ class MainWindow(QWidget):
             print("recieving single packet")
             await scan_controller.get_single_packet()
         # scan_controller.stream_to_buffer(data)
-        self.image_display.live_img.setImage(scan_controller.buf)
+        self.image_display.live_img.setImage(scan_controller.buf, autoLevels = False)
+        print(scan_controller.buf)
     
 
     def saveImage(self):
