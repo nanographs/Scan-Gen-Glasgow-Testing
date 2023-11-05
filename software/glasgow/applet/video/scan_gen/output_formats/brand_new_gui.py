@@ -351,7 +351,7 @@ class MainWindow(QWidget):
         if state == "scanning":
             self.new_scan_btn.setEnabled(False)
             self.loopback_btn.setEnabled(False)
-            self.resolution_options.dropdown.setEnabled(False)
+            self.resolution_options.menu.setEnabled(False)
             self.dwell_options.spinbox.setEnabled(False)
         if state == "scan_paused":
             self.new_scan_btn.setEnabled(True)
