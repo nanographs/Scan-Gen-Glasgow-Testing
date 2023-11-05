@@ -77,7 +77,7 @@ class ScanController:
         await self.writer.drain()
 
     async def set_dwell_time(self, dwell_time):
-        assert (1 <= resolution_bits <= 255)
+        assert (1 <= dwell_time <= 255)
         msg_dwell = ("d" + format(dwell_time, '03d')).encode("UTF-8") ## ex: res09, res10
         self.writer.write(msg_dwell)
         await self.writer.drain()

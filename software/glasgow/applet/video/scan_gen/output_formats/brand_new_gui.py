@@ -301,8 +301,8 @@ class MainWindow(QWidget):
     @asyncSlot()
     async def changeDwellTime(self):
         dwell_time = self.dwell_options.spinbox.cleanText()
-        await scan_controller.set_dwell(dwell_time)
-        print("setting dwell time to", dwell)
+        await scan_controller.set_dwell_time(int(dwell_time))
+        print("setting dwell time to", dwell_time)
 
     async def keepUpdating(self):
         while True:   
