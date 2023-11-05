@@ -76,7 +76,7 @@ class DataBusAndFIFOSubtarget(Elaboratable):
         #     m.submodules.scan_bus = scan_bus = ScanIOBus_Point(255, 100, 4)
         # with m.Else():
             #m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution_bits, self.dwell_time, self.mode)
-        m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, 3, 
+        m.submodules.scan_bus = scan_bus = ScanIOBus(self.resolution, self.dwell, 
                                                         self.mode, self.reset, self.enable)
 
         x_latch = platform.request("X_LATCH")
