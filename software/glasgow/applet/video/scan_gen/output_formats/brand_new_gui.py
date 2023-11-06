@@ -129,12 +129,12 @@ def pattern_loop(dimension, pattern_stream):
 class ImageDisplay(pg.GraphicsLayoutWidget):
     def __init__(self, height, width):
         super().__init__()
-        self.image_view = self.addViewBox()
+        self.image_view = self.addViewBox(invertY = True)
         ## lock the aspect ratio so pixels are always square
         self.image_view.setAspectLocked(True)
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
         
-        self.live_img = pg.ImageItem(border='w',axisOrder="row-major", invertY=False, invertX=False)
+        self.live_img = pg.ImageItem(border='w',axisOrder="row-major")
         self.image_view.addItem(self.live_img)
 
         # Contrast/color control
@@ -144,8 +144,17 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.addItem(hist)
 
         self.exporter = pg.exporters.ImageExporter(self.live_img)
+
+
+
     def setRange(self, height, width):
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
+    
+    def showTest(self):
+        test_file = '/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/software/glasgow/applet/video/scan_gen/Nanographs Pattern Test Logo and Gradients.bmp'
+        bmp = bmp_import(test_file)
+        array = np.array(bmp).astype(np.uint8)
+        self.live_img.setImage(array)
 
 class MainWindow(QWidget):
 
@@ -214,12 +223,13 @@ class MainWindow(QWidget):
         self.setState("disconnected")
         self.mode = "Imaging"
 
+        # self.image_display.showTest()
 
     def file_select(self):
         self.file_dialog = ImportPatternFileWindow()
         self.file_path = self.file_dialog.show_and_get_file()
         print(self.file_path)
-        pattern_stream = bmp_to_bitstream(self.file_path, self.dimension, self.dimension)
+        pattern_stream = bmp_to_bitstream(self.file_path, self.dimension)
         self.pattern = pattern_loop(self.dimension, pattern_stream)
         # self.image_display.image_view.addItem(self.file_dialog.image_display.live_img) #oof
         # self.image_display.image_view.autoRange()
@@ -326,6 +336,7 @@ class MainWindow(QWidget):
         # scan_controller.stream_to_buffer(data)
         self.image_display.live_img.setImage(scan_controller.buf, autoLevels = False)
         print(scan_controller.buf)
+        
     
 
     def saveImage(self):
