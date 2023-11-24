@@ -138,10 +138,12 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.image_view.addItem(self.live_img)
 
         # Contrast/color control
-        hist = pg.HistogramLUTItem()
-        hist.setImageItem(self.live_img)
-        hist.disableAutoHistogramRange()
-        self.addItem(hist)
+        self.hist = pg.HistogramLUTItem()
+        self.hist.setImageItem(self.live_img)
+        self.hist.disableAutoHistogramRange()
+        self.addItem(self.hist)
+
+        self.hist.setLevels(min=0,max=0)
 
         self.exporter = pg.exporters.ImageExporter(self.live_img)
 
@@ -149,7 +151,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
 
     def setRange(self, height, width):
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
-    
+
     def showTest(self):
         test_file = '/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/software/glasgow/applet/video/scan_gen/Nanographs Pattern Test Logo and Gradients.bmp'
         bmp = bmp_import(test_file)
@@ -223,7 +225,7 @@ class MainWindow(QWidget):
         self.setState("disconnected")
         self.mode = "Imaging"
 
-        # self.image_display.showTest()
+        self.image_display.showTest()
 
     def file_select(self):
         self.file_dialog = ImportPatternFileWindow()
