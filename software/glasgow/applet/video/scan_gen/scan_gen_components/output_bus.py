@@ -18,7 +18,7 @@ class OutputBus(Elaboratable):
     def __init__(self, out_fifo, is_simulation):
         self.video_sink = VideoSink()
         if is_simulation:
-            self.out_fifo = SyncFIFO(width = 8, depth = 16, fwft = True)
+            self.out_fifo = SyncFIFOBuffered(width = 8, depth = 16, fwft = True)
         else:
             self.out_fifo = out_fifo
         #self.pixel_in = Signal(16)
