@@ -2,7 +2,7 @@ import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
 from amaranth.lib import data, enum
-
+import os, sys
 
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.output_bus import OutputBus
@@ -14,21 +14,21 @@ else:
     from output_bus import OutputBus
     from data_latch_bus import BusMultiplexer
     from addresses import *
+    sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
+    from glasgow import *
+    from glasgow.access.simulation import SimulationMultiplexerInterface, SimulationDemultiplexerInterface
 
 
+# sim_iface = SimulationMultiplexerInterface()
 
 class IOBus(Elaboratable):
-    def __init__(self, is_simulation = True,
-    out_fifo = None, in_fifo = None):
+    def __init__(self, in_fifo, out_fifo, is_simulation):
         self.is_simulation = is_simulation
-        if self.is_simulation:
-            self.input_bus = InputBus()
-            self.output_bus = OutputBus()
-        else:
-            self.out_fifo = out_fifo
-            self.in_fifo = in_fifo
-            self.input_bus = InputBus(is_simulation = False, in_fifo = self.out_fifo)
-            self.output_bus = OutputBus(is_simulation = False, out_fifo = self.in_fifo)
+        
+        self.out_fifo = out_fifo
+        self.in_fifo = in_fifo
+        self.input_bus = InputBus(self.out_fifo)
+        self.output_bus = OutputBus(self.in_fifo)
 
         self.bus_multiplexer = BusMultiplexer()
         self.pins = Signal(14)
@@ -59,7 +59,8 @@ class IOBus(Elaboratable):
         m.d.comb += self.d_clock.eq(self.bus_multiplexer.sample_clock.clock)
         
 
-        m.d.comb += self.bus_multiplexer.sampling.eq(self.input_bus.mode_controller.beam_controller.dwelling)
+        m.d.sync += self.bus_multiplexer.sampling.eq(self.input_bus.mode_controller.beam_controller.dwelling)
+        #m.d.sync += self.bus_multiplexer.sampling.eq(0)
         with m.If(self.bus_multiplexer.is_x):
             m.d.comb += self.pins.eq(self.input_bus.mode_controller.beam_controller.x_position)
         with m.If(self.bus_multiplexer.is_y):
@@ -71,139 +72,63 @@ class IOBus(Elaboratable):
                 m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.pins)
             # Loopback
         m.d.comb += self.output_bus.video_sink.dwelling.eq(self.input_bus.mode_controller.beam_controller.dwelling)
-        #m.d.comb += self.output_bus.video_sink.dwell_time_averager.start_new_average.eq(self.input_bus.beam_controller.end_of_dwell)
-        m.d.comb += self.output_bus.strobe.eq(self.input_bus.mode_controller.beam_controller.end_of_dwell)
-        m.d.comb += self.input_bus.mode_controller.beam_controller.count_enable.eq(self.bus_multiplexer.sampling)
+        m.d.comb += self.output_bus.video_sink.dwell_time_averager.start_new_average.eq(self.input_bus.mode_controller.beam_controller.end_of_dwell)
+        #m.d.comb += self.output_bus.strobe.eq(self.bus_multiplexer.a_adc.released)
+        m.d.comb += self.output_bus.strobe.eq(1)
+        m.d.comb += self.input_bus.mode_controller.beam_controller.count_enable.eq(1)
+
+        m.d.comb += self.output_bus.in_fifo.w_data.eq(self.input_bus.input_data)
         return m
 
-stream = [
-    [Vector_Address.X, 1000], #X, 1000
-    [Vector_Address.Y, 2000], #Y, 2000
-    [Vector_Address.D, 10],  #D, 50
-    [Vector_Address.X, 1250], #X, 1000
-    [Vector_Address.Y, 1700], #Y, 2000
-    [Vector_Address.D, 11],  #D, 50
-    [Vector_Address.X, 1000], #X, 1000
-    [Vector_Address.Y, 2000], #Y, 2000
-    [Vector_Address.D, 13],  #D, 50
-    [Vector_Address.X, 1250], #X, 1000
-    [Vector_Address.Y, 1700], #Y, 2000
-    [Vector_Address.D, 14],  #D, 50
-    [Vector_Address.X, 1100], #X, 1000
-    [Vector_Address.Y, 2100], #Y, 2000
-    [Vector_Address.D, 10],  #D, 50
-    [Vector_Address.X, 1350], #X, 1000
-    [Vector_Address.Y, 1700], #Y, 2000
-    [Vector_Address.D, 11],  #D, 50
-    [Vector_Address.X, 1000], #X, 1000
-    [Vector_Address.Y, 2000], #Y, 2000
-    [Vector_Address.D, 10],  #D, 50
-    [Vector_Address.X, 1250], #X, 1000
-    [Vector_Address.Y, 1700], #Y, 2000
-    [Vector_Address.D, 11],  #D, 50
-    [Vector_Address.X, 1000], #X, 1000
-    [Vector_Address.Y, 2000], #Y, 2000
-    [Vector_Address.D, 13],  #D, 50
-    [Vector_Address.X, 1250], #X, 1000
-    [Vector_Address.Y, 1700], #Y, 2000
-    [Vector_Address.D, 14],  #D, 50
-    [Vector_Address.X, 1100], #X, 1000
-    [Vector_Address.Y, 2100], #Y, 2000
-    [Vector_Address.D, 10],  #D, 50
-    [Vector_Address.X, 1350], #X, 1000
-    [Vector_Address.Y, 1700], #Y, 2000
-    [Vector_Address.D, 11],  #D, 50
-    # [Constant_Raster_Address.X, 15], #X, 1250
-    # [Constant_Raster_Address.Y, 25], #Y, 2500
-    # [Constant_Raster_Address.D, 12],  #D, 75
-    
-]
 
 
-def sim_inputbus():
-    dut = InputBus()
-    def bench():
-        for n in stream:
-            address, data = n
-            bytes_data = Const(data, unsigned(16))
-            print("address:", address)
-            yield dut.in_fifo.w_en.eq(1)
-            yield dut.in_fifo.w_data.eq(address)
-            # yield dut.input_data.eq(address)
-            yield
-            print("data 1:", bytes_data[0:7])
-            # yield dut.input_data.eq(bytes_data[0:7])
-            yield dut.in_fifo.w_en.eq(1)
-            yield dut.in_fifo.w_data.eq(bytes_data[0:7])
-            yield
-            print("data 2:", bytes_data[7:15])
-            # yield dut.input_data.eq(bytes_data[7:15])
-            yield dut.in_fifo.w_en.eq(1)
-            yield dut.in_fifo.w_data.eq(bytes_data[7:15])
-            yield
-        for n in range(100):
-            yield
-    
-    
-    sim = Simulator(dut)
-    sim.add_clock(1e-6) # 1 MHz
-    sim.add_sync_process(bench)
-    with sim.write_vcd("vector_sim.vcd"):
-        sim.run()
+
+
 
 
     
+## see access.simulation.demultiplexer -> SimulationDemultiplexer
+def _fifo_write(fifo, data):
+    print(fifo)
+    assert (yield fifo.w_rdy)
+    yield fifo.w_data.eq(data)
+    yield fifo.w_en.eq(1)
+    yield
+    yield fifo.w_en.eq(0)
+    yield
 
-
-
-def sim_outputbus():
-    dut = OutputBus()
-    def bench():
-        yield dut.strobe.eq(1)
-        for n in range(len(test_pixel_stream)):
-            yield dut.video_sink.dwell_time_averager.start_new_average.eq(1)
-            next_pixel = test_pixel_stream[n]
-            # yield dut.video_sink.dwelling.eq(1)
-            # yield dut.video_sink.sinking.eq(1)
-            yield dut.video_sink.pixel_in.eq(next_pixel)
-            #if n >= 6:
-                #assert(yield(dut.video_sink.pipeline_full))
-            yield
-            # yield dut.video_sink.sinking.eq(0)
-            yield
-        yield dut.strobe.eq(0)
-        yield
-    
-    sim = Simulator(dut)
-    sim.add_clock(1e-6) # 1 MHz
-    sim.add_sync_process(bench)
-    with sim.write_vcd("outputbus_sim.vcd"):
-        sim.run()
-
+def _fifo_write_scan_data(fifo, address, data):
+        bytes_data = Const(data, unsigned(16))
+        print("address:", address)
+        yield from _fifo_write(fifo, address)
+        print("data 1:", bytes_data[0:7])
+        yield from _fifo_write(fifo, bytes_data[0:7])
+        print("data 2:", bytes_data[7:15])
+        yield from _fifo_write(fifo, bytes_data[7:15])
 
 def sim_iobus():
     dut = IOBus()
     def bench():
         for n in stream:
             address, data = n
-            bytes_data = Const(data, unsigned(16))
-            print("address:", address)
-            yield dut.input_bus.in_fifo.w_en.eq(1)
-            yield dut.input_bus.in_fifo.w_data.eq(address)
-            # yield dut.input_data.eq(address)
-            yield
-            print("data 1:", bytes_data[0:7])
-            # yield dut.input_data.eq(bytes_data[0:7])
-            yield dut.input_bus.in_fifo.w_en.eq(1)
-            yield dut.input_bus.in_fifo.w_data.eq(bytes_data[0:7])
-            yield
-            print("data 2:", bytes_data[7:15])
-            # yield dut.input_data.eq(bytes_data[7:15])
-            yield dut.input_bus.in_fifo.w_en.eq(1)
-            yield dut.input_bus.in_fifo.w_data.eq(bytes_data[7:15])
-            yield
-        for n in range(len(stream)*2):
-            yield
+            yield from _fifo_write_scan_data(dut.in_fifo, address, data)
+            
+            # yield dut.input_bus.in_fifo.w_en.eq(1)
+            # yield dut.input_bus.in_fifo.w_data.eq(address)
+
+        #     yield
+        #     
+
+        #     yield dut.input_bus.in_fifo.w_en.eq(1)
+        #     yield dut.input_bus.in_fifo.w_data.eq(bytes_data[0:7])
+        #     yield
+        #     
+
+        #     yield dut.input_bus.in_fifo.w_en.eq(1)
+        #     yield dut.input_bus.in_fifo.w_data.eq(bytes_data[7:15])
+        #     yield
+        # for n in range(len(stream)*2):
+        #     yield
     
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
@@ -213,8 +138,8 @@ def sim_iobus():
 
 #sim_inputbus()
 #sim_outputbus()
-if __name__ == "__main__":
-    sim_iobus()
+#if __name__ == "__main__":
+    #sim_iobus()
 #test_twobyteoutbox()
 #test_beamcontroller()
 
