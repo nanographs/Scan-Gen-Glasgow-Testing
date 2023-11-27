@@ -20,6 +20,8 @@ from ... import *
 ## dealing with relative imports
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen.scan_gen_components.main_iobus import IOBus
+    from ..scan_gen.scan_gen_components.addresses import *
+    from ..scan_gen.scan_gen_components.multimode_input import test_image_as_raster_pattern
 
 
 class IOBusSubtarget(Elaboratable):
@@ -29,8 +31,8 @@ class IOBusSubtarget(Elaboratable):
         self.in_fifo = in_fifo
         self.out_fifo = out_fifo
 
-        self.io_bus = IOBus(is_simulation = False,
-        out_fifo = self.out_fifo, in_fifo = self.in_fifo)
+        # self.io_bus = IOBus(is_simulation = False,
+        # out_fifo = self.out_fifo, in_fifo = self.in_fifo)
 
     def elaborate(self, platform):
         m = Module()
@@ -45,36 +47,36 @@ class IOBusSubtarget(Elaboratable):
         a_clock = platform.request("A_CLOCK")
         d_clock = platform.request("D_CLOCK")
 
-        m.d.comb += x_latch.o.eq(self.io_bus.bus_multiplexer.x_dac.latch.le)
-        m.d.comb += x_enable.o.eq(self.io_bus.bus_multiplexer.x_dac.latch.oe)
-        m.d.comb += y_latch.o.eq(self.io_bus.bus_multiplexer.y_dac.latch.le)
-        m.d.comb += y_enable.o.eq(self.io_bus.bus_multiplexer.y_dac.latch.oe)
-        m.d.comb += a_latch.o.eq(self.io_bus.bus_multiplexer.a_adc.latch.le)
-        m.d.comb += a_enable.o.eq(self.io_bus.bus_multiplexer.a_adc.latch.oe)
+        # m.d.comb += x_latch.o.eq(self.io_bus.bus_multiplexer.x_dac.latch.le)
+        # m.d.comb += x_enable.o.eq(self.io_bus.bus_multiplexer.x_dac.latch.oe)
+        # m.d.comb += y_latch.o.eq(self.io_bus.bus_multiplexer.y_dac.latch.le)
+        # m.d.comb += y_enable.o.eq(self.io_bus.bus_multiplexer.y_dac.latch.oe)
+        # m.d.comb += a_latch.o.eq(self.io_bus.bus_multiplexer.a_adc.latch.le)
+        # m.d.comb += a_enable.o.eq(self.io_bus.bus_multiplexer.a_adc.latch.oe)
 
-        m.d.comb += a_clock.o.eq(~self.io_bus.bus_multiplexer.sample_clock)
-        m.d.comb += d_clock.o.eq(self.io_bus.bus_multiplexer.sample_clock)
+        # m.d.comb += a_clock.o.eq(~self.io_bus.bus_multiplexer.sample_clock)
+        # m.d.comb += d_clock.o.eq(self.io_bus.bus_multiplexer.sample_clock)
         
-        with m.If(self.io_bus.bus_multiplexer.is_x):
-            for i, pad in enumerate(self.data):
-                m.d.comb += [
-                    pad.oe.eq(self.power_ok.i),
-                    pad.o.eq(self.pins[i]),
-                ]
-            m.d.comb += self.pins.eq(self.io_bus.pins)
-        with m.If(self.io_bus.bus_multiplexer.is_y):
-            for i, pad in enumerate(self.data):
-                m.d.comb += [
-                    pad.oe.eq(self.power_ok.i),
-                    pad.o.eq(self.pins[i]),
-                ]
-            m.d.comb += self.pins.eq(self.io_bus.pins)
-        with m.If(self.bus_multiplexer.is_a):
-            for i, pad in enumerate(self.data):
-                m.d.comb += [
-                    self.pins[i].eq(pad.i)
-                ]
-            m.d.comb += self.io_bus.pins.eq(self.pins)
+        # with m.If(self.io_bus.bus_multiplexer.is_x):
+        #     for i, pad in enumerate(self.data):
+        #         m.d.comb += [
+        #             pad.oe.eq(self.power_ok.i),
+        #             pad.o.eq(self.pins[i]),
+        #         ]
+        #     m.d.comb += self.pins.eq(self.io_bus.pins)
+        # with m.If(self.io_bus.bus_multiplexer.is_y):
+        #     for i, pad in enumerate(self.data):
+        #         m.d.comb += [
+        #             pad.oe.eq(self.power_ok.i),
+        #             pad.o.eq(self.pins[i]),
+        #         ]
+        #     m.d.comb += self.pins.eq(self.io_bus.pins)
+        # with m.If(self.bus_multiplexer.is_a):
+        #     for i, pad in enumerate(self.data):
+        #         m.d.comb += [
+        #             self.pins[i].eq(pad.i)
+        #         ]
+        #     m.d.comb += self.io_bus.pins.eq(self.pins)
 
         return m
 
@@ -126,7 +128,7 @@ class ScanGenApplet(GlasgowApplet):
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
 
-        iface.add_subtarget(IOBus(
+        iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
             in_fifo = iface.get_in_fifo(),
@@ -145,6 +147,17 @@ class ScanGenApplet(GlasgowApplet):
         pass
 
     async def interact(self, device, args, iface):
+        for n in range(500):
+            for n in test_image_as_raster_pattern:
+                address, data = n
+                bytes_data = Const(data, unsigned(16)).value
+                print("writing", address.value, bytes_data)
+                await iface.write(address.value)
+                await iface.write(bytes_data)
+        print("reading")
+        output = await iface.read()
+        print("got data")
+        print(output.tolist())
         pass
             
 

@@ -300,7 +300,7 @@ def sim_inputbus(stream):
         sim.run()
 
 #sim_inputbus(test_image_as_raster_pattern)
-sim_inputbus(stream)
+#sim_inputbus(stream)
 
 from amaranth.back import verilog
 

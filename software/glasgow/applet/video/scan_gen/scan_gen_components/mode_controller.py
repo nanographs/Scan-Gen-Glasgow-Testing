@@ -67,6 +67,9 @@ class ModeController(Elaboratable):
         self.dwell_pipeline_level = Signal(3)
         self.dwell_pipeline_full = Signal()
 
+        self.new_raster_frame_data = Signal()
+        self.new_vector_point_data = Signal()
+
 
     def elaborate(self, platform):
         m = Module()
@@ -86,7 +89,10 @@ class ModeController(Elaboratable):
 
         m.d.sync += self.frame_sync.eq(self.xy_scan_gen.frame_sync) ## one cycle delay
 
-        with m.If(self.v_x_mailbox.flag & self.v_y_mailbox.flag & self.v_d_mailbox.flag):
+        m.d.comb += self.new_vector_point_data.eq(self.v_x_mailbox.flag & self.v_y_mailbox.flag & self.v_d_mailbox.flag)
+        m.d.comb += self.new_raster_frame_data.eq(self.r_x_mailbox.flag & self.r_y_mailbox.flag & self.r_d_mailbox.flag)
+
+        with m.If(self.new_vector_frame_data):
             m.d.sync += self.v_x.eq(self.v_x_mailbox.value)
             m.d.sync += self.v_y.eq(self.v_y_mailbox.value)
             m.d.sync += self.v_dwell_time.eq(self.v_d_mailbox.value)
@@ -97,7 +103,7 @@ class ModeController(Elaboratable):
             m.d.sync += self.raster_next.eq(0)
             #m.d.sync += self.scan_mode.eq(ScanMode.Vector)
 
-        with m.If(self.r_x_mailbox.flag & self.r_y_mailbox.flag & self.r_d_mailbox.flag):
+        with m.If(self.new_raster_frame_data):
             m.d.sync += self.r_x.eq(self.r_x_mailbox.value)
             m.d.sync += self.r_y.eq(self.r_y_mailbox.value)
             with m.If(self.dwell_mode == DwellMode.Constant):
