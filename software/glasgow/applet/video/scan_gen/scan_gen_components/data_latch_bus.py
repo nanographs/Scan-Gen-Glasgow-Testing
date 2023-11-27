@@ -188,3 +188,4 @@ if __name__ == "__main__":
     sim.add_sync_process(bench)
     with sim.write_vcd("new_bus_sim.vcd"):
         sim.run()
+

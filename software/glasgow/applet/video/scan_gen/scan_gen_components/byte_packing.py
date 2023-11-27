@@ -1,8 +1,6 @@
 import amaranth
 from amaranth import *
 
-
-
 class TwoByteInbox(Elaboratable):
     '''
     Parameters:
@@ -25,6 +23,7 @@ class TwoByteInbox(Elaboratable):
         self.value = Signal(16) 
         self.parsing = Signal() ## External "enable" for the state machine
         self.flag = Signal()
+        self.last_byte = Signal()
     def elaborate(self, platform):
         m = Module()
         
@@ -33,12 +32,14 @@ class TwoByteInbox(Elaboratable):
             #m.d.sync += self.flag.eq(0)
             with m.FSM() as fsm:
                 with m.State("First Byte"):
+                    m.d.sync += self.flag.eq(0)
                     m.d.sync += self.value[0:7].eq(self.input)
                     m.next = "Second Byte"
                 with m.State("Second Byte"):
                     m.d.sync += self.value[7:15].eq(self.input)
                     m.d.sync += self.parsing.eq(0)
                     m.d.sync += self.flag.eq(1)
+                    m.d.comb += self.last_byte.eq(1)
                     m.next = "First Byte"
 
         return m
