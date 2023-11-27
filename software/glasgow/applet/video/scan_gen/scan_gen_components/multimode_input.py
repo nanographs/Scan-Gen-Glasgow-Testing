@@ -65,7 +65,7 @@ class InputBus(Elaboratable):
         )
 
         if is_simulation:
-            self.in_fifo = SyncFIFO(width = 8, depth = 90, fwft = True)
+            self.in_fifo = SyncFIFOBuffered(width = 8, depth = 10, fwft = True)
         else:
             self.in_fifo = in_fifo
 

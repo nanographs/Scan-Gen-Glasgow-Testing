@@ -172,7 +172,7 @@ def sim_iobus():
 
 #sim_inputbus()
 #sim_outputbus()
-#sim_iobus()
+sim_iobus()
 #test_twobyteoutbox()
 #test_beamcontroller()
 
