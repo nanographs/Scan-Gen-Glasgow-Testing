@@ -36,7 +36,8 @@ class OutputBus(Elaboratable):
 
         with m.FSM() as fsm:
             with m.State("Reading Data"):
-                m.d.comb += self.in_fifo.w_en.eq(0)
+                #m.d.comb += self.in_fifo.w_en.eq(0)
+                m.d.comb += self.in_fifo.w_en.eq(1)
                 with m.If(self.in_fifo.w_rdy):
                     with m.If(self.strobe):
                         m.d.comb += self.video_sink.sinking.eq(1)
