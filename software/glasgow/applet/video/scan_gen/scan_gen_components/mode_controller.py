@@ -92,7 +92,7 @@ class ModeController(Elaboratable):
         m.d.comb += self.new_vector_point_data.eq(self.v_x_mailbox.flag & self.v_y_mailbox.flag & self.v_d_mailbox.flag)
         m.d.comb += self.new_raster_frame_data.eq(self.r_x_mailbox.flag & self.r_y_mailbox.flag & self.r_d_mailbox.flag)
 
-        with m.If(self.new_vector_frame_data):
+        with m.If(self.new_vector_point_data):
             m.d.sync += self.v_x.eq(self.v_x_mailbox.value)
             m.d.sync += self.v_y.eq(self.v_y_mailbox.value)
             m.d.sync += self.v_dwell_time.eq(self.v_d_mailbox.value)

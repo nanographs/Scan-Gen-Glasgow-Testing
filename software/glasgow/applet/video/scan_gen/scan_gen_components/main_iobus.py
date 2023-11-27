@@ -2,7 +2,6 @@ import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
 from amaranth.lib import data, enum
-from amaranth.lib.fifo import SyncFIFO
 
 
 if "glasgow" in __name__: ## running as applet
@@ -21,7 +20,8 @@ else:
 class IOBus(Elaboratable):
     def __init__(self, is_simulation = True,
     out_fifo = None, in_fifo = None):
-        if is_simulation:
+        self.is_simulation = is_simulation
+        if self.is_simulation:
             self.input_bus = InputBus()
             self.output_bus = OutputBus()
         else:
@@ -32,11 +32,32 @@ class IOBus(Elaboratable):
 
         self.bus_multiplexer = BusMultiplexer()
         self.pins = Signal(14)
+
+        self.x_latch = Signal()
+        self.x_enable = Signal()
+        self.y_latch = Signal()
+        self.y_enable = Signal()
+        self.a_latch = Signal()
+        self.a_enable = Signal()
+
+        self.a_clock = Signal()
+        self.d_clock = Signal()
     def elaborate(self, platform):
         m = Module()
         m.submodules["InBus"] = self.input_bus
         m.submodules["OutBus"] = self.output_bus
         m.submodules["MuxBus"] = self.bus_multiplexer
+
+        m.d.comb += self.x_latch.eq(self.bus_multiplexer.x_dac.latch.le)
+        m.d.comb += self.x_enable.eq(self.bus_multiplexer.x_dac.latch.oe)
+        m.d.comb += self.y_latch.eq(self.bus_multiplexer.y_dac.latch.le)
+        m.d.comb += self.y_enable.eq(self.bus_multiplexer.y_dac.latch.oe)
+        m.d.comb += self.a_latch.eq(self.bus_multiplexer.a_adc.latch.le)
+        m.d.comb += self.a_enable.eq(self.bus_multiplexer.a_adc.latch.oe)
+
+        m.d.comb += self.a_clock.eq(self.bus_multiplexer.sample_clock.clock)
+        m.d.comb += self.d_clock.eq(self.bus_multiplexer.sample_clock.clock)
+        
 
         m.d.comb += self.bus_multiplexer.sampling.eq(self.input_bus.mode_controller.beam_controller.dwelling)
         with m.If(self.bus_multiplexer.is_x):
@@ -44,16 +65,36 @@ class IOBus(Elaboratable):
         with m.If(self.bus_multiplexer.is_y):
             m.d.comb += self.pins.eq(self.input_bus.mode_controller.beam_controller.y_position)
         with m.If(self.bus_multiplexer.is_a):
-            m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.pins)
+            if self.is_simulation:
+                m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.input_bus.mode_controller.beam_controller.dwell_time)
+            else:
+                m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.pins)
             # Loopback
-            #m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.input_bus.mode_controller.beam_controller.dwell_time)
         m.d.comb += self.output_bus.video_sink.dwelling.eq(self.input_bus.mode_controller.beam_controller.dwelling)
         #m.d.comb += self.output_bus.video_sink.dwell_time_averager.start_new_average.eq(self.input_bus.beam_controller.end_of_dwell)
         m.d.comb += self.output_bus.strobe.eq(self.input_bus.mode_controller.beam_controller.end_of_dwell)
-        m.d.comb += self.input_bus.mode_controller.beam_controller.count_enable.eq(self.bus_multiplexer.released)
+        m.d.comb += self.input_bus.mode_controller.beam_controller.count_enable.eq(self.bus_multiplexer.sampling)
         return m
 
 stream = [
+    [Vector_Address.X, 1000], #X, 1000
+    [Vector_Address.Y, 2000], #Y, 2000
+    [Vector_Address.D, 10],  #D, 50
+    [Vector_Address.X, 1250], #X, 1000
+    [Vector_Address.Y, 1700], #Y, 2000
+    [Vector_Address.D, 11],  #D, 50
+    [Vector_Address.X, 1000], #X, 1000
+    [Vector_Address.Y, 2000], #Y, 2000
+    [Vector_Address.D, 13],  #D, 50
+    [Vector_Address.X, 1250], #X, 1000
+    [Vector_Address.Y, 1700], #Y, 2000
+    [Vector_Address.D, 14],  #D, 50
+    [Vector_Address.X, 1100], #X, 1000
+    [Vector_Address.Y, 2100], #Y, 2000
+    [Vector_Address.D, 10],  #D, 50
+    [Vector_Address.X, 1350], #X, 1000
+    [Vector_Address.Y, 1700], #Y, 2000
+    [Vector_Address.D, 11],  #D, 50
     [Vector_Address.X, 1000], #X, 1000
     [Vector_Address.Y, 2000], #Y, 2000
     [Vector_Address.D, 10],  #D, 50
@@ -172,7 +213,8 @@ def sim_iobus():
 
 #sim_inputbus()
 #sim_outputbus()
-sim_iobus()
+if __name__ == "__main__":
+    sim_iobus()
 #test_twobyteoutbox()
 #test_beamcontroller()
 

@@ -31,8 +31,10 @@ class IOBusSubtarget(Elaboratable):
         self.in_fifo = in_fifo
         self.out_fifo = out_fifo
 
-        # self.io_bus = IOBus(is_simulation = False,
-        # out_fifo = self.out_fifo, in_fifo = self.in_fifo)
+        self.io_bus = IOBus(is_simulation = False,
+        out_fifo = self.out_fifo, in_fifo = self.in_fifo)
+
+        self.pins = Signal(14)
 
     def elaborate(self, platform):
         m = Module()
@@ -47,36 +49,36 @@ class IOBusSubtarget(Elaboratable):
         a_clock = platform.request("A_CLOCK")
         d_clock = platform.request("D_CLOCK")
 
-        # m.d.comb += x_latch.o.eq(self.io_bus.bus_multiplexer.x_dac.latch.le)
-        # m.d.comb += x_enable.o.eq(self.io_bus.bus_multiplexer.x_dac.latch.oe)
-        # m.d.comb += y_latch.o.eq(self.io_bus.bus_multiplexer.y_dac.latch.le)
-        # m.d.comb += y_enable.o.eq(self.io_bus.bus_multiplexer.y_dac.latch.oe)
-        # m.d.comb += a_latch.o.eq(self.io_bus.bus_multiplexer.a_adc.latch.le)
-        # m.d.comb += a_enable.o.eq(self.io_bus.bus_multiplexer.a_adc.latch.oe)
+        m.d.comb += x_latch.o.eq(self.io_bus.x_latch)
+        m.d.comb += x_enable.o.eq(self.io_bus.x_enable)
+        m.d.comb += y_latch.o.eq(self.io_bus.y_latch)
+        m.d.comb += y_enable.o.eq(self.io_bus.y_enable)
+        m.d.comb += a_latch.o.eq(self.io_bus.a_latch)
+        m.d.comb += a_enable.o.eq(self.io_bus.a_enable)
 
-        # m.d.comb += a_clock.o.eq(~self.io_bus.bus_multiplexer.sample_clock)
-        # m.d.comb += d_clock.o.eq(self.io_bus.bus_multiplexer.sample_clock)
+        m.d.comb += a_clock.o.eq(~self.io_bus.a_clock)
+        m.d.comb += d_clock.o.eq(self.io_bus.d_clock)
         
-        # with m.If(self.io_bus.bus_multiplexer.is_x):
-        #     for i, pad in enumerate(self.data):
-        #         m.d.comb += [
-        #             pad.oe.eq(self.power_ok.i),
-        #             pad.o.eq(self.pins[i]),
-        #         ]
-        #     m.d.comb += self.pins.eq(self.io_bus.pins)
-        # with m.If(self.io_bus.bus_multiplexer.is_y):
-        #     for i, pad in enumerate(self.data):
-        #         m.d.comb += [
-        #             pad.oe.eq(self.power_ok.i),
-        #             pad.o.eq(self.pins[i]),
-        #         ]
-        #     m.d.comb += self.pins.eq(self.io_bus.pins)
-        # with m.If(self.bus_multiplexer.is_a):
-        #     for i, pad in enumerate(self.data):
-        #         m.d.comb += [
-        #             self.pins[i].eq(pad.i)
-        #         ]
-        #     m.d.comb += self.io_bus.pins.eq(self.pins)
+        with m.If(self.io_bus.bus_multiplexer.is_x):
+            for i, pad in enumerate(self.data):
+                m.d.comb += [
+                    pad.oe.eq(self.power_ok.i),
+                    pad.o.eq(self.pins[i]),
+                ]
+            m.d.comb += self.pins.eq(self.io_bus.pins)
+        with m.If(self.io_bus.bus_multiplexer.is_y):
+            for i, pad in enumerate(self.data):
+                m.d.comb += [
+                    pad.oe.eq(self.power_ok.i),
+                    pad.o.eq(self.pins[i]),
+                ]
+            m.d.comb += self.pins.eq(self.io_bus.pins)
+        with m.If(self.io_bus.bus_multiplexer.is_a):
+            for i, pad in enumerate(self.data):
+                m.d.comb += [
+                    self.pins[i].eq(pad.i)
+                ]
+            m.d.comb += self.io_bus.pins.eq(self.pins)
 
         return m
 
@@ -147,7 +149,7 @@ class ScanGenApplet(GlasgowApplet):
         pass
 
     async def interact(self, device, args, iface):
-        for n in range(500):
+        for n in range(1):
             for n in test_image_as_raster_pattern:
                 address, data = n
                 bytes_data = Const(data, unsigned(16)).value
@@ -155,7 +157,7 @@ class ScanGenApplet(GlasgowApplet):
                 await iface.write(address.value)
                 await iface.write(bytes_data)
         print("reading")
-        output = await iface.read()
+        output = await iface.read(3)
         print("got data")
         print(output.tolist())
         pass

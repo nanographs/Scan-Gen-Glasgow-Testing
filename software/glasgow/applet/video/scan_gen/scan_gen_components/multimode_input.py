@@ -1,7 +1,7 @@
 import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
-from amaranth.lib.fifo import SyncFIFO
+from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 
 
 if "glasgow" in __name__: ## running as applet
@@ -65,7 +65,8 @@ class InputBus(Elaboratable):
         )
 
         if is_simulation:
-            self.in_fifo = SyncFIFOBuffered(width = 8, depth = 10, fwft = True)
+            #self.in_fifo = SyncFIFO(width = 8, depth = 10, fwft = True)
+            self.in_fifo = SyncFIFOBuffered(width = 8, depth = 10)
         else:
             self.in_fifo = in_fifo
 
