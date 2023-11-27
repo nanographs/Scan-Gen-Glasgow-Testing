@@ -3,7 +3,6 @@ from amaranth import *
 from amaranth.sim import Simulator
 from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 
-
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.addresses import *
     from ..scan_gen_components.byte_packing import TwoByteInbox
@@ -11,9 +10,7 @@ if "glasgow" in __name__: ## running as applet
 else:
     from addresses import *
     from byte_packing import TwoByteInbox
-
     from mode_controller import ModeController
-
 
 class InputBus(Elaboratable):
     '''
@@ -23,12 +20,9 @@ class InputBus(Elaboratable):
         Beam_controller: a module holding information about where the beam is supposed to be
 
         yellowpages: A dictionary that links an address to each mailbox
-
-        States:
-            There is only one state, but it starts over and over
     '''
 
-    def __init__(self, is_simulation = True, in_fifo = None):
+    def __init__(self, out_fifo = SyncFIFOBuffered(width = 8, depth = 10)):
         self.input_data = Signal(8)
         self.vx_mailbox = TwoByteInbox(self.input_data)
         self.vy_mailbox = TwoByteInbox(self.input_data)
@@ -64,11 +58,7 @@ class InputBus(Elaboratable):
             self.rly_mailbox, self.rlx_mailbox,
         )
 
-        if is_simulation:
-            #self.in_fifo = SyncFIFO(width = 8, depth = 10, fwft = True)
-            self.in_fifo = SyncFIFOBuffered(width = 8, depth = 10)
-        else:
-            self.in_fifo = in_fifo
+        self.out_fifo = out_fifo
 
         self.reset = Signal()
 
@@ -94,17 +84,20 @@ class InputBus(Elaboratable):
         m.submodules["rlx"] = self.rlx_mailbox
 
         # m.submodules["BeamController"] = self.beam_controller
-        m.submodules["IN_FIFO"] = self.in_fifo
+        m.submodules["out_fifo"] = self.out_fifo
         m.submodules["ModeCtrl"] = self.mode_controller
 
-
+        m.d.comb += self.input_data.eq(self.out_fifo.r_data)
 
         with m.FSM() as fsm:
             with m.State("Read_Address"):
+                m.d.comb += self.input_data.eq(self.out_fifo.r_level)
                 m.d.comb += self.reading_address.eq(1)
-                with m.If(self.in_fifo.r_rdy):
-                    m.d.comb += self.in_fifo.r_en.eq(1)
-                    m.d.comb += self.input_data.eq(self.in_fifo.r_data)
+                m.d.comb += self.out_fifo.r_en.eq(1)
+                with m.If(self.out_fifo.r_rdy):
+                    m.d.comb += self.input_data.eq(self.out_fifo.r_data)
+                    #m.d.comb += self.input_data.eq(Constant_Raster_Address.X)
+                    
 
                     m.d.sync += self.read_address_s.eq(self.input_data)
                     m.d.comb += self.read_address_c.eq(self.input_data)
@@ -163,9 +156,9 @@ class InputBus(Elaboratable):
                                         with m.Else():
                                             m.next = "Waiting_For_Mailbox"
             with m.State("Read_Data"):
-                with m.If(self.in_fifo.r_rdy):
-                    m.d.comb += self.in_fifo.r_en.eq(1)
-                    m.d.comb += self.input_data.eq(self.in_fifo.r_data)
+                m.d.comb += self.out_fifo.r_en.eq(1)
+                with m.If(self.out_fifo.r_rdy):
+                    m.d.comb += self.input_data.eq(self.out_fifo.r_data)
                     with m.If(self.read_address_s.ScanMode == ScanMode.Vector):
                         with m.Switch(self.read_address_s.DataType):
                             for address in self.yellowpages_vector:
@@ -276,19 +269,19 @@ def sim_inputbus(stream):
             address, data = n
             bytes_data = Const(data, unsigned(16))
             print("address:", address)
-            yield dut.in_fifo.w_en.eq(1)
-            yield dut.in_fifo.w_data.eq(address)
+            yield dut.out_fifo.w_en.eq(1)
+            yield dut.out_fifo.w_data.eq(address)
             # yield dut.input_data.eq(address)
             yield
             print("data 1:", bytes_data[0:7])
             # yield dut.input_data.eq(bytes_data[0:7])
-            yield dut.in_fifo.w_en.eq(1)
-            yield dut.in_fifo.w_data.eq(bytes_data[0:7])
+            yield dut.out_fifo.w_en.eq(1)
+            yield dut.out_fifo.w_data.eq(bytes_data[0:7])
             yield
             print("data 2:", bytes_data[7:15])
             # yield dut.input_data.eq(bytes_data[7:15])
-            yield dut.in_fifo.w_en.eq(1)
-            yield dut.in_fifo.w_data.eq(bytes_data[7:15])
+            yield dut.out_fifo.w_en.eq(1)
+            yield dut.out_fifo.w_data.eq(bytes_data[7:15])
             yield
         for n in range(300):
             yield

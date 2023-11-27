@@ -21,7 +21,7 @@ from ... import *
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen.scan_gen_components.main_iobus import IOBus
     from ..scan_gen.scan_gen_components.addresses import *
-    from ..scan_gen.scan_gen_components.multimode_input import test_image_as_raster_pattern
+    from ..scan_gen.scan_gen_components.test_streams import *
 
 
 class IOBusSubtarget(Elaboratable):
@@ -38,6 +38,8 @@ class IOBusSubtarget(Elaboratable):
 
     def elaborate(self, platform):
         m = Module()
+
+        m.submodules["IOBus"] = self.io_bus
 
         x_latch = platform.request("X_LATCH")
         x_enable = platform.request("X_ENABLE")
@@ -63,22 +65,22 @@ class IOBusSubtarget(Elaboratable):
             for i, pad in enumerate(self.data):
                 m.d.comb += [
                     pad.oe.eq(self.power_ok.i),
-                    pad.o.eq(self.pins[i]),
+                    pad.o.eq(self.io_bus.pins[i]),
                 ]
-            m.d.comb += self.pins.eq(self.io_bus.pins)
+            #m.d.comb += self.pins.eq(self.io_bus.pins)
         with m.If(self.io_bus.bus_multiplexer.is_y):
             for i, pad in enumerate(self.data):
                 m.d.comb += [
                     pad.oe.eq(self.power_ok.i),
-                    pad.o.eq(self.pins[i]),
+                    pad.o.eq(self.io_bus.pins[i]),
                 ]
-            m.d.comb += self.pins.eq(self.io_bus.pins)
+            #m.d.comb += self.pins.eq(self.io_bus.pins)
         with m.If(self.io_bus.bus_multiplexer.is_a):
             for i, pad in enumerate(self.data):
                 m.d.comb += [
-                    self.pins[i].eq(pad.i)
+                    self.io_bus.pins[i].eq(pad.i)
                 ]
-            m.d.comb += self.io_bus.pins.eq(self.pins)
+            #m.d.comb += self.io_bus.pins.eq(self.pins)
 
         return m
 
@@ -142,25 +144,49 @@ class ScanGenApplet(GlasgowApplet):
         super().add_run_arguments(parser, access)
 
     async def run(self, device, args):
-        return await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        for n in range(10):
+            for n in basic_vector_stream:
+                address, data = n
+                address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
+                data_bits = '{0:016b}'.format(address.value)
+                data_1 = bytes(data_bits[0:8],encoding="utf8")
+                data_2 = bytes(data_bits[8:16],encoding="utf8")
+                print("writing", address_b, data_1, data_2)
+                await iface.write(bytes(address_b))
+                await iface.write(bytes(data_1))
+                await iface.write(bytes(data_2))
+            for n in stream:
+                address, data = n
+                address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
+                data_bits = '{0:016b}'.format(address.value)
+                data_1 = bytes(data_bits[0:8],encoding="utf8")
+                data_2 = bytes(data_bits[8:16],encoding="utf8")
+                print("writing", address_b[::-1], data_1, data_2)
+                await iface.write(bytes(address_b[::-1]))
+                await iface.write(bytes(data_1))
+                await iface.write(bytes(data_2))
+                iface.flush()
+        print("reading")
+        try:
+            output = await asyncio.wait_for(iface.read(16384), timeout=5)
+            print("got data")
+            text_file = open("packets.txt","w")
+            data = output.tolist()
+            text_file.write(str(data))
+
+        except TimeoutError:
+            print('timeout')  
+
+        
 
     @classmethod
     def add_interact_arguments(cls, parser):
         pass
 
     async def interact(self, device, args, iface):
-        for n in range(1):
-            for n in test_image_as_raster_pattern:
-                address, data = n
-                bytes_data = Const(data, unsigned(16)).value
-                print("writing", address.value, bytes_data)
-                await iface.write(address.value)
-                await iface.write(bytes_data)
-        print("reading")
-        output = await iface.read(3)
-        print("got data")
-        print(output.tolist())
         pass
+
             
 
                 
