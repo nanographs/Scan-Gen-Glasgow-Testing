@@ -91,7 +91,7 @@ class InputBus(Elaboratable):
 
         with m.FSM() as fsm:
             with m.State("Read_Address"):
-                m.d.comb += self.input_data.eq(self.out_fifo.r_level)
+                #m.d.comb += self.input_data.eq(self.out_fifo.r_level)
                 m.d.comb += self.reading_address.eq(1)
                 m.d.comb += self.out_fifo.r_en.eq(1)
                 with m.If(self.out_fifo.r_rdy):

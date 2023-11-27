@@ -156,7 +156,7 @@ class ScanGenApplet(GlasgowApplet):
                 await iface.write(bytes(address_b))
                 await iface.write(bytes(data_1))
                 await iface.write(bytes(data_2))
-            for n in stream:
+            for n in basic_vector_stream:
                 address, data = n
                 address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
                 data_bits = '{0:016b}'.format(address.value)
