@@ -4,19 +4,18 @@ from amaranth.lib import data, enum
 
 # Addresses
 
-class Raster_Data(enum.Enum, shape = 3):
-    X = 1
-    Y = 2
-    DX = 3
-    DY = 4
-    D = 7
-
+class ResetMode(enum.Enum, shape = 1):
+    NoReset = 0
+    Immediate = 1
 class IOType(enum.Enum, shape = 1):
-    Scanalog = 0 ## commands for the actual scan generator
-    DigitalIO = 1 ## external relays/switches/etc
+    DigitalIO = 0 ## external relays/switches/etc
+    Scanalog = 1 ## commands for the actual scan generator
 class ScanMode(enum.Enum, shape = 1):
     Raster = 0
     Vector = 1
+class ScanRepeat(enum.Enum, shape = 1):
+    Continous = 0
+    Once = 1
 class DwellMode(enum.Enum, shape = 1):
     Constant = 0
     Variable = 1
@@ -25,13 +24,41 @@ class Vector_Data(enum.Enum, shape = 3):
     Y = 2
     D = 7
 
+class Raster_Data(enum.Enum, shape = 3):
+    X = 1
+    Y = 2
+    UX = 3
+    UY = 4
+    LX = 5
+    LY = 6
+    D = 7
+
 class Vector_Address(enum.Enum, shape = 8):
-    X = Value.cast(Cat(Const(0,shape=2),IOType.Scanalog, ScanMode.Vector, DwellMode.Variable, Vector_Data.X))
-    Y = Value.cast(Cat(Const(0,shape=2),IOType.Scanalog, ScanMode.Vector, DwellMode.Variable, Vector_Data.Y))
-    D = Value.cast(Cat(Const(0,shape=2),IOType.Scanalog, ScanMode.Vector, DwellMode.Variable, Vector_Data.D))
+    X = Value.cast(Cat(ResetMode.NoReset,IOType.Scanalog, ScanMode.Vector, ScanRepeat.Once, DwellMode.Variable, Vector_Data.X))
+    Y = Value.cast(Cat(ResetMode.NoReset,IOType.Scanalog, ScanMode.Vector, ScanRepeat.Once, DwellMode.Variable, Vector_Data.Y))
+    D = Value.cast(Cat(ResetMode.NoReset,IOType.Scanalog, ScanMode.Vector, ScanRepeat.Once, DwellMode.Variable, Vector_Data.D))
 
 
 class Constant_Raster_Address(enum.Enum, shape = 8):
-    X = Value.cast(Cat(Const(0,shape=2),IOType.Scanalog, ScanMode.Raster, DwellMode.Constant, Raster_Data.X))
-    Y = Value.cast(Cat(Const(0,shape=2),IOType.Scanalog, ScanMode.Raster, DwellMode.Constant, Raster_Data.Y))
-    D = Value.cast(Cat(Const(0,shape=2),IOType.Scanalog, ScanMode.Raster, DwellMode.Constant, Raster_Data.D))
+    X = Value.cast(Cat(ResetMode.NoReset, IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Constant, Raster_Data.X))
+    Y = Value.cast(Cat(ResetMode.NoReset, IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Constant, Raster_Data.Y))
+    D = Value.cast(Cat(ResetMode.NoReset,IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Constant, Raster_Data.D))
+    LX = Value.cast(Cat(ResetMode.NoReset, IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Constant, Raster_Data.LX))
+    LY = Value.cast(Cat(ResetMode.NoReset,IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Constant, Raster_Data.LY))
+    UX = Value.cast(Cat(ResetMode.NoReset, IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Constant, Raster_Data.UX))
+    UY = Value.cast(Cat(ResetMode.NoReset,IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Constant, Raster_Data.UY))
+
+class Variable_Raster_Address(enum.Enum, shape = 8):
+    X = Value.cast(Cat(ResetMode.NoReset, IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Variable, Raster_Data.X))
+    Y = Value.cast(Cat(ResetMode.NoReset, IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Variable, Raster_Data.Y))
+    D = Value.cast(Cat(ResetMode.NoReset,IOType.Scanalog, ScanMode.Raster, ScanRepeat.Once, DwellMode.Variable, Raster_Data.D))
+
+
+address_layout = data.StructLayout({
+    "ResetMode": 1,
+    "IOType": 1,
+    "ScanMode": 1,
+    "ScanRepeat": 1,
+    "DwellMode": 1,
+    "DataType": 3
+})

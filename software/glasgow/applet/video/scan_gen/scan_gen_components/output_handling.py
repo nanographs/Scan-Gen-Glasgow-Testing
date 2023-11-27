@@ -7,7 +7,6 @@ from amaranth.lib.fifo import SyncFIFO
 
 import unittest
 
-
 class VideoSink(Elaboratable):
     def __init__(self):
         self.pixel_in = Signal(14)
@@ -99,7 +98,7 @@ class PipelineOffsetter(Elaboratable):
         read_ovf: High when read_addr = offset, read_addr will be reset next cycle
         write_ovf: High when write_addr = offset, write_addr will be reset next cycle
     '''
-    def __init__(self, offset = 6):
+    def __init__(self, offset = 6, sync = False):
         self.pixel_in = Signal(14)
         self.pixel_out = Signal(14)
         self.offset = offset ## Number of pipelining cycles to offset
@@ -107,6 +106,8 @@ class PipelineOffsetter(Elaboratable):
         self.writing = Signal() ## Control input
         self.pipeline_full = Signal() ## High on the 6th cycle of reading data in
         self.start_delay = Signal(self.offset.bit_length())
+
+        self.sync = sync
 
 
     def elaborate(self, platform):
@@ -154,7 +155,10 @@ class PipelineOffsetter(Elaboratable):
 
         m.d.comb += self.pixel_out.eq(read_port.data)
         m.d.comb += read_port.en.eq(self.reading)
-            
+        
+        if self.sync:
+            with m.If((self.start_delay == self.offset - 1) & (self.writing)):
+                m.d.comb += read_port.en.eq(1)
         
         return m
     def ports(self):

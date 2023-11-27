@@ -2,7 +2,6 @@ import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
 
-
 class BeamController(Elaboratable):
     '''
     
@@ -28,31 +27,35 @@ class BeamController(Elaboratable):
 
         self.counter = Signal(14)
 
-        self.lock_new_data = Signal()
+        self.lock_new_point = Signal()
         self.reset_dwell_ctr = Signal()
+
+        self.count_enable = Signal() 
 
     def elaborate(self, platform):
         m = Module()
 
         m.d.comb += self.end_of_dwell.eq(self.counter == self.dwell_time)
+        m.d.comb += self.start_dwell.eq(self.counter == 1)
 
         with m.If(self.dwelling):
-            #m.d.comb += self.lock_new_data.eq(self.end_of_dwell)
-            with m.If(self.end_of_dwell):
-                m.d.sync += self.counter.eq(1)
-            with m.Else():
-                m.d.sync += self.counter.eq(self.counter + 1)
+            #m.d.comb += self.lock_new_point.eq(self.end_of_dwell)
+            with m.If(self.count_enable):
+                with m.If(self.end_of_dwell):
+                    m.d.sync += self.counter.eq(1)
+                with m.Else():
+                    m.d.sync += self.counter.eq(self.counter + 1)
         with m.Else():
             m.d.sync += self.counter.eq(1)
                 
-        with m.If(self.lock_new_data):
+        with m.If(self.lock_new_point):
             m.d.sync += self.x_position.eq(self.next_x_position)
             m.d.sync += self.y_position.eq(self.next_y_position)
             m.d.sync += self.dwell_time.eq(self.next_dwell)     
         return m
     def ports(self):
         return [self.x_position, self.y_position, self.dwell_time,
-        self.lock_new_data, self.dwelling]
+        self.lock_new_point, self.dwelling]
 
 
 def test_beamcontroller():
