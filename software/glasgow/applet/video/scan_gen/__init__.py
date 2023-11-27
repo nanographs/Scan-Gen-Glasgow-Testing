@@ -145,38 +145,41 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+        iface.flush()
+        text_file = open("packets.txt","w")
         for n in range(10):
-            for n in basic_vector_stream:
-                address, data = n
-                address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
-                data_bits = '{0:016b}'.format(address.value)
-                data_1 = bytes(data_bits[0:8],encoding="utf8")
-                data_2 = bytes(data_bits[8:16],encoding="utf8")
-                print("writing", address_b, data_1, data_2)
-                await iface.write(bytes(address_b))
-                await iface.write(bytes(data_1))
-                await iface.write(bytes(data_2))
-            for n in basic_vector_stream:
-                address, data = n
-                address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
-                data_bits = '{0:016b}'.format(address.value)
-                data_1 = bytes(data_bits[0:8],encoding="utf8")
-                data_2 = bytes(data_bits[8:16],encoding="utf8")
-                print("writing", address_b[::-1], data_1, data_2)
-                await iface.write(bytes(address_b[::-1]))
-                await iface.write(bytes(data_1))
-                await iface.write(bytes(data_2))
-                iface.flush()
-        print("reading")
-        try:
-            output = await asyncio.wait_for(iface.read(16384), timeout=5)
-            print("got data")
-            text_file = open("packets.txt","w")
-            data = output.tolist()
-            text_file.write(str(data))
-
-        except TimeoutError:
-            print('timeout')  
+            for n in range(10):
+                for n in basic_vector_stream:
+                    address, data = n
+                    address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
+                    data_bits = '{0:016b}'.format(address.value)
+                    data_1 = bytes(data_bits[0:8],encoding="utf8")
+                    data_2 = bytes(data_bits[8:16],encoding="utf8")
+                    print("writing", address_b, data_1, data_2)
+                    await iface.write(bytes(address_b))
+                    await iface.write(bytes(data_1))
+                    await iface.write(bytes(data_2))
+                for n in basic_vector_stream:
+                    address, data = n
+                    address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
+                    data_bits = '{0:016b}'.format(address.value)
+                    data_1 = bytes(data_bits[0:8],encoding="utf8")
+                    data_2 = bytes(data_bits[8:16],encoding="utf8")
+                    print("writing", address_b[::-1], data_1, data_2)
+                    await iface.write(bytes(address_b[::-1]))
+                    await iface.write(bytes(data_1))
+                    await iface.write(bytes(data_2))
+                    #`
+            iface.flush()
+            print("reading")
+            try:
+                output = await asyncio.wait_for(iface.read(16384), timeout=5)
+                print("got data")
+                
+                data = output.tolist()
+                text_file.write(str(data))
+            except TimeoutError:
+                print('timeout')  
 
         
 
