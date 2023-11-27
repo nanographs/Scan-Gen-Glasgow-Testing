@@ -7,12 +7,14 @@ from amaranth.lib.fifo import SyncFIFO
 
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.output_bus import OutputBus
-    from ..scan_gen_components.output_bus import InputBus
+    from ..scan_gen_components.multimode_input import InputBus
     from ..scan_gen_components.data_latch_bus import BusMultiplexer
+    from ..scan_gen_components.addresses import *
 else:
     from multimode_input import InputBus
     from output_bus import OutputBus
     from data_latch_bus import BusMultiplexer
+    from addresses import *
 
 
 
