@@ -11,6 +11,7 @@ else:
     from addresses import *
     from byte_packing import TwoByteInbox
     from mode_controller import ModeController
+    from test_streams import *
 
 class InputBus(Elaboratable):
     '''
@@ -87,7 +88,7 @@ class InputBus(Elaboratable):
         m.submodules["out_fifo"] = self.out_fifo
         m.submodules["ModeCtrl"] = self.mode_controller
 
-        m.d.comb += self.input_data.eq(self.out_fifo.r_data)
+        
 
         with m.FSM() as fsm:
             with m.State("Read_Address"):
@@ -183,109 +184,17 @@ class InputBus(Elaboratable):
     def ports(self):
         return self.reading_address
 
-#  ◼︎◻︎◼︎◻︎◼︎
-#  ◻︎◼︎◻︎◼︎◻︎
-#  ◼︎◻︎◼︎◻︎◼︎
-#  ◻︎◼︎◻︎◼︎◻︎
-#  ◼︎◻︎◼︎◻︎◼︎
 
-test_image_as_raster_pattern = [
-    [Variable_Raster_Address.X, 4], #X,5
-    [Variable_Raster_Address.Y, 4], #Y, 5
-
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-    [Variable_Raster_Address.D, 10],  #D, 75
-    [Variable_Raster_Address.D, 20],  #D, 75
-]
-
-
-
-
-stream = [
-    # [Vector_Address.X, 1000], #X, 1000
-    # [Vector_Address.Y, 2000], #Y, 2000
-    # [Vector_Address.D, 13],  #D, 50
-    # [Vector_Address.X, 1250], #X, 1000
-    # [Vector_Address.Y, 1700], #Y, 2000
-    # [Vector_Address.D, 14],  #D, 50
-    # [Variable_Raster_Address.X, 3], #X, 1250
-    # [Variable_Raster_Address.Y, 4], #Y, 2500
-    # [Variable_Raster_Address.D, 10],  #D, 75
-    # [Variable_Raster_Address.D, 12],  #D, 75
-    # [Variable_Raster_Address.D, 15],  #D, 75
-    # [Variable_Raster_Address.D, 17],  #D, 75
-    [Constant_Raster_Address.X, 10], #X, 1250
-    [Constant_Raster_Address.Y, 12], #Y, 2500
-    [Constant_Raster_Address.D, 4],  #D, 75
-    [Constant_Raster_Address.LX, 3], #Y, 2500
-    [Constant_Raster_Address.LY, 4],  #D, 75
-    [Constant_Raster_Address.UX, 8], #Y, 2500
-    [Constant_Raster_Address.UY, 9],  #D, 75
-    [Constant_Raster_Address.D, 5],  #D, 75
-    [Constant_Raster_Address.D, 6],  #D, 75
-    [Constant_Raster_Address.D, 7],  #D, 75
-    [Constant_Raster_Address.D, 8],  #D, 75
-    [Constant_Raster_Address.D, 9],  #D, 75
-    [Constant_Raster_Address.D, 10],  #D, 75
-    #[Constant_Raster_Address.D, 1],  #D, 75
-    [Constant_Raster_Address.D, 5],  #D, 75
-    # [Vector_Address.X, 1200], #X, 1000
-    # [Vector_Address.Y, 1300], #Y, 2000
-    # [Vector_Address.D, 15],  #D, 50
-    
-]
 
 def sim_inputbus(stream):
     dut = InputBus()
     def bench():
         yield dut.mode_controller.beam_controller.count_enable.eq(1)
-        for n in stream:
-            address, data = n
-            bytes_data = Const(data, unsigned(16))
-            print("address:", address)
-            yield dut.out_fifo.w_en.eq(1)
-            yield dut.out_fifo.w_data.eq(address)
-            # yield dut.input_data.eq(address)
-            yield
-            print("data 1:", bytes_data[0:7])
-            # yield dut.input_data.eq(bytes_data[0:7])
-            yield dut.out_fifo.w_en.eq(1)
-            yield dut.out_fifo.w_data.eq(bytes_data[0:7])
-            yield
-            print("data 2:", bytes_data[7:15])
-            # yield dut.input_data.eq(bytes_data[7:15])
-            yield dut.out_fifo.w_en.eq(1)
-            yield dut.out_fifo.w_data.eq(bytes_data[7:15])
-            yield
-        for n in range(300):
-            yield
-    
+        def bench():
+            for n in basic_vector_stream:
+                address, data = n
+                yield from _fifo_write_scan_data(dut.input_bus.out_fifo, address, data)
+        
     
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz

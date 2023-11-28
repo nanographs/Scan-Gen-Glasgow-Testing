@@ -77,70 +77,11 @@ class IOBus(Elaboratable):
         m.d.comb += self.output_bus.strobe.eq(1)
         m.d.comb += self.input_bus.mode_controller.beam_controller.count_enable.eq(1)
 
-        m.d.comb += self.output_bus.in_fifo.w_data.eq(self.input_bus.input_data)
+        loopback = Signal(8)
+        m.d.sync += loopback.eq(self.input_bus.out_fifo.r_data)
+        m.d.sync += self.output_bus.in_fifo.w_data.eq(loopback)
+        #m.d.comb += self.output_bus.in_fifo.w_data.eq(self.input_bus.input_data)
         return m
 
-
-
-
-
-
-
     
-## see access.simulation.demultiplexer -> SimulationDemultiplexer
-def _fifo_write(fifo, data):
-    print(fifo)
-    assert (yield fifo.w_rdy)
-    yield fifo.w_data.eq(data)
-    yield fifo.w_en.eq(1)
-    yield
-    yield fifo.w_en.eq(0)
-    yield
-
-def _fifo_write_scan_data(fifo, address, data):
-        bytes_data = Const(data, unsigned(16))
-        print("address:", address)
-        yield from _fifo_write(fifo, address)
-        print("data 1:", bytes_data[0:7])
-        yield from _fifo_write(fifo, bytes_data[0:7])
-        print("data 2:", bytes_data[7:15])
-        yield from _fifo_write(fifo, bytes_data[7:15])
-
-def sim_iobus():
-    dut = IOBus()
-    def bench():
-        for n in stream:
-            address, data = n
-            yield from _fifo_write_scan_data(dut.in_fifo, address, data)
-            
-            # yield dut.input_bus.in_fifo.w_en.eq(1)
-            # yield dut.input_bus.in_fifo.w_data.eq(address)
-
-        #     yield
-        #     
-
-        #     yield dut.input_bus.in_fifo.w_en.eq(1)
-        #     yield dut.input_bus.in_fifo.w_data.eq(bytes_data[0:7])
-        #     yield
-        #     
-
-        #     yield dut.input_bus.in_fifo.w_en.eq(1)
-        #     yield dut.input_bus.in_fifo.w_data.eq(bytes_data[7:15])
-        #     yield
-        # for n in range(len(stream)*2):
-        #     yield
-    
-    sim = Simulator(dut)
-    sim.add_clock(1e-6) # 1 MHz
-    sim.add_sync_process(bench)
-    with sim.write_vcd("iobus_sim.vcd"):
-        sim.run()
-
-#sim_inputbus()
-#sim_outputbus()
-#if __name__ == "__main__":
-    #sim_iobus()
-#test_twobyteoutbox()
-#test_beamcontroller()
-
-#GlasgowPlatformRevC123().build(IOBus())
+## see simulation.py for the full simulation
