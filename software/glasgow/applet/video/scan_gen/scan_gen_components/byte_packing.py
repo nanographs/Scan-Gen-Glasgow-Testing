@@ -57,13 +57,17 @@ class TwoByteOutbox(Elaboratable):
     '''
     Parameters:
         Input: A 16 bit value, provided by a data stream
+        Value: An 8 bit value, to be written into an in-fifo
+
+    Parsing: __--
+    Flag:    ___-
 
     '''
     def __init__(self):
         self.input = Signal(16)
         self.value = Signal(8) 
-        self.parsing = Signal() ## External "enable" for the state machine
-        self.flag = Signal()
+        self.parsing = Signal() ## asserted when input is valid
+        self.flag = Signal() ## asserted when both bytes of value have been parsed
     def elaborate(self, platform):
         m = Module()
 
@@ -84,6 +88,16 @@ class TwoByteOutbox(Elaboratable):
 
 
 class Box(Elaboratable):
+    '''
+    A place to put data while passing it from one module to the next
+    Inputs:
+        Flag_In: Asserted when value will be set to new data next cycle
+        Flag_Out: Asserted when value has been read, and can be overwritten next cycle
+
+    Flag_In:  _-_____
+    Flag:     __----_
+    Flag_Out: _____-_
+    '''
     def __init__(self):
         self.value = Signal(16)
         self.flag = Signal()

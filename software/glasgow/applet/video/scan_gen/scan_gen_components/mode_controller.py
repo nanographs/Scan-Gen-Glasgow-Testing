@@ -14,20 +14,74 @@ else:
     from addresses import *
 
 class ModeController(Elaboratable):
-    # def __init__(self, v_x_mailbox, v_y_mailbox, v_d_mailbox,
-    # r_x_mailbox, r_y_mailbox, r_d_mailbox, 
-    # r_uy_mailbox, r_ux_mailbox, r_ly_mailbox, r_lx_mailbox):
-        # self.v_x_mailbox = v_x_mailbox
-        # self.v_y_mailbox = v_y_mailbox
-        # self.v_d_mailbox = v_d_mailbox
-        # self.r_x_mailbox = r_x_mailbox
-        # self.r_y_mailbox = r_y_mailbox
-        # self.r_d_mailbox = r_d_mailbox
-        # self.r_uy_mailbox = r_uy_mailbox
-        # self.r_ux_mailbox = r_ux_mailbox
-        # self.r_ly_mailbox = r_ly_mailbox
-        # self.r_lx_mailbox = r_lx_mailbox
+    '''
+    Inputs:
+        Mailboxes: see Box()
+            - Flag_In
+            - Value
+        scan_mode: ScanMode.Raster or ScanMode.Vector
+        dwell_mode: DwellMode.Constant or DwellMode.Variable
+            - this isn't really a good distinction. It's more like,
+            dwell times that are synchronized with X and Y values and only
+            used once each (ie in a pattern stream) are Variable
+            while dwell times that should be used continually until a different
+            dwell time is recieved (ie while adjusting dwell time during
+            regular imaging) are Constant
+        
+    Internal signals:
+        Stored data:
+            r_x: Raster x resolution value
+            r_y: Raster y resolution value
+            r_dwell_time: Raster dwell time (does this need to be its own thing?)
+            r_ux: ROI upper x limit
+            r_uy: ROI upper y limit
+            r_lx: ROI lower x limit
+            r_ly: ROI lower y limit
 
+            v_x: Vector x position value
+            v_y: Vector y position value
+            v_dwell_time: Vector dwell time value
+
+        State logic ??
+            raster_next: True if raster data has been recieved
+            vector_next: True if vector data has been recieved
+            rastering: If true:
+                xy scan gen increment = beam controller end of dwell
+                beam controller next dwell <= r_dwell_time
+                beam controller next x <= xy scan gen current x
+                beam controller next y <= xy scan gen current y
+
+            do_mode_switch: If true, look at raster_next and vector_next to get the next mode
+                rastering <= raster_next
+                vectoring <= vector next
+                load_next_raster_frame_data = raster_next
+                load_next_vector_values = vector_next
+
+            load_next_raster_frame_values: If true, values are set in xy_scan_gen:
+                x_resolution <= r_x
+                y_resolution <= r_y
+                for full frame:
+                    x_upper_limit <= r_x
+                    x_lower_limit <= 0
+                    y_upper_limit <= r_y
+                    y_lower_limit <= 0
+                for ROI:
+                    x_upper_limit <= r_ux
+                    x_lower_limit <= r_lx
+                    y_upper_limit <= r_uy
+                    y_lower_limit <= r_ly
+            The frame will begin next cycle
+
+        Interpretation of mailbox.flag:
+            v_x & v_y & v_dwell_time = new_vector_point_data
+            r_x & r_y & r_dwell_time = new_raster_frame_data
+            r_ux & r_uy & r_lx & r_ly = new_roi_data
+            v_dwell_time | r_dwell_time = new_dwell_time
+
+
+            
+                
+    '''
     def __init__(self):
         self.v_x_mailbox = Box()
         self.v_y_mailbox = Box()
@@ -40,6 +94,9 @@ class ModeController(Elaboratable):
         self.r_ly_mailbox =  Box()
         self.r_lx_mailbox =  Box()
 
+        self.beam_controller = BeamController()
+        self.xy_scan_gen = XY_Scan_Gen()
+
         self.scan_mode = Signal()
         self.dwell_mode = Signal()
 
@@ -47,9 +104,7 @@ class ModeController(Elaboratable):
         self.vector_next = Signal()
         self.load_next_raster_frame_data = Signal()
         self.load_next_vector_values = Signal()
-        self.beam_controller = BeamController()
-        self.xy_scan_gen = XY_Scan_Gen()
-
+        
         self.v_x = Signal(14)
         self.v_y = Signal(14)
         self.v_dwell_time = Signal(16)
@@ -62,17 +117,10 @@ class ModeController(Elaboratable):
         self.r_ly = Signal(14)
         self.r_dwell_time = Signal(16)
 
-        self.start_frame = Signal()
-        self.scan_single_frame = Signal()
-
         self.rastering = Signal()
         self.vectoring = Signal()
 
-        self.frame_sync = Signal()
-
         self.reset = Signal()
-
-        self.first_frame = Signal()
 
         self.r_dwell_time_p1 = Signal(16)
         self.r_dwell_time_p2 = Signal(16)
@@ -85,6 +133,7 @@ class ModeController(Elaboratable):
         self.new_roi_data = Signal()
         self.new_dwell_time = Signal()
 
+        self.do_mode_switch = Signal()
 
     def elaborate(self, platform):
         m = Module()
@@ -151,10 +200,13 @@ class ModeController(Elaboratable):
             m.d.sync += self.r_ux.eq(self.r_ux_mailbox.value)
             m.d.comb += self.r_ux_mailbox.flag_out.eq(1)
             m.d.comb += self.load_next_raster_frame_data.eq(1)
+            m.d.sync += self.new_roi_data.eq(0)
 
         m.d.comb += self.dwell_pipeline_full.eq(self.dwell_pipeline_level == 4)
         
-        with m.If((self.new_dwell_time) & (self.dwell_mode == DwellMode.Variable)):
+        with m.If((self.new_dwell_time) & (self.dwell_mode == DwellMode.Variable)
+        & (self.scan_mode == ScanMode.Raster)):
+        #### for raster patterning, set up a pipeline for dwell time values
             with m.If(~self.dwell_pipeline_full):
                 m.d.sync += self.new_dwell_time.eq(0)
                 m.d.sync += self.dwell_pipeline_level.eq(self.dwell_pipeline_level + 1)
@@ -170,6 +222,13 @@ class ModeController(Elaboratable):
             m.d.sync += self.r_dwell_time.eq(self.r_d_mailbox.value)
             m.d.sync += self.new_dwell_time.eq(0)
 
+
+        with m.If(self.do_mode_switch):
+            m.d.sync += self.rastering.eq(self.raster_next)
+            m.d.comb += self.load_next_raster_frame_data.eq(self.raster_next)
+            m.d.sync += self.vectoring.eq(self.vector_next)
+            m.d.comb += self.load_next_vector_values.eq(self.vector_next)
+
         with m.FSM() as fsm:
             m.d.comb += self.first_frame.eq(fsm.ongoing("Lock Data"))
             with m.State("No Dwell Started"):
@@ -177,20 +236,14 @@ class ModeController(Elaboratable):
                 with m.If((self.raster_next)|(self.vector_next)):
                     with m.If((self.dwell_mode == DwellMode.Variable) & (self.raster_next)):
                         with m.If(self.dwell_pipeline_full):
-                            m.d.sync += self.rastering.eq((self.raster_next))
-                            m.d.comb += self.load_next_raster_frame_data.eq(self.raster_next)
+                            m.d.comb += self.do_mode_switch.eq(1)
                             m.d.comb += self.beam_controller.lock_new_point.eq(self.beam_controller.end_of_dwell)
                             m.d.sync += self.beam_controller.next_dwell.eq(self.r_dwell_time)
                             m.d.sync += self.dwell_pipeline_level.eq(self.dwell_pipeline_level - 1)
                             m.next = "Lock Data"
                     with m.Else():
-                        m.d.sync += self.rastering.eq(self.raster_next)
-                        m.d.comb += self.load_next_raster_frame_data.eq(self.raster_next)
-                        m.d.sync += self.vectoring.eq(self.vector_next)
-                        m.d.comb += self.load_next_vector_values.eq(self.vector_next)
+                        m.d.comb += self.do_mode_switch.eq(1)
                         m.d.comb += self.xy_scan_gen.increment.eq(1)
-                    # m.d.sync += self.raster_next.eq(0)
-                    # m.d.sync += self.vector_next.eq(0)
                     
                         m.next = "Lock Data"
             with m.State("Lock Data"):
@@ -198,9 +251,6 @@ class ModeController(Elaboratable):
                 m.d.comb += self.beam_controller.lock_new_point.eq(1)
                 m.next = "Dwell Ongoing"
             
-            # with m.State("Lock Data2"):
-            #     m.next = "Dwell Ongoing"
-
             with m.State("Dwell Ongoing"):
                 m.d.sync += self.beam_controller.dwelling.eq(1)
                 m.d.comb += self.beam_controller.lock_new_point.eq(self.beam_controller.end_of_dwell)
@@ -210,10 +260,7 @@ class ModeController(Elaboratable):
                         ((self.vectoring) & (self.beam_controller.end_of_dwell) & (~self.rastering)) |
                         (self.reset)):
                     
-                        m.d.sync += self.rastering.eq(self.raster_next)
-                        m.d.comb += self.load_next_raster_frame_data.eq(self.raster_next)
-                        m.d.sync += self.vectoring.eq(self.vector_next)
-                        m.d.comb += self.load_next_vector_values.eq(self.vector_next)
+                        m.d.comb += self.do_mode_switch.eq(1)
 
                         m.next = "Dwell Ongoing"
 
