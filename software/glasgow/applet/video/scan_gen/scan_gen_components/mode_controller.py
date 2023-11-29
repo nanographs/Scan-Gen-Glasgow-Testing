@@ -120,6 +120,8 @@ class ModeController(Elaboratable):
         self.rastering = Signal()
         self.vectoring = Signal()
 
+        self.first_frame = Signal()
+
         self.reset = Signal()
 
         self.r_dwell_time_p1 = Signal(16)
@@ -151,8 +153,6 @@ class ModeController(Elaboratable):
         m.submodules["rlx"] = self.r_lx_mailbox
         m.submodules["rly"] = self.r_ly_mailbox
 
-        m.d.sync += self.frame_sync.eq(self.xy_scan_gen.frame_sync) ## one cycle delay
-
         m.d.sync += self.new_vector_point_data.eq(self.v_x_mailbox.flag & 
                                                 self.v_y_mailbox.flag &
                                                 self.v_d_mailbox.flag)
@@ -167,9 +167,9 @@ class ModeController(Elaboratable):
                                             self.r_d_mailbox.flag)
 
         with m.If(self.new_vector_point_data):
-            m.d.sync += self.v_x.eq(self.v_x_mailbox.value)
-            m.d.sync += self.v_y.eq(self.v_y_mailbox.value)
-            m.d.sync += self.v_dwell_time.eq(self.v_d_mailbox.value)
+            m.d.comb += self.v_x.eq(self.v_x_mailbox.value)
+            m.d.comb += self.v_y.eq(self.v_y_mailbox.value)
+            m.d.comb += self.v_dwell_time.eq(self.v_d_mailbox.value)
             m.d.comb += self.v_x_mailbox.flag_out.eq(1)
             m.d.comb += self.v_y_mailbox.flag_out.eq(1)
             m.d.comb += self.v_d_mailbox.flag_out.eq(1)
@@ -214,7 +214,7 @@ class ModeController(Elaboratable):
                 m.d.sync += self.r_dwell_time_p2.eq(self.r_dwell_time_p3)
                 m.d.sync += self.r_dwell_time_p1.eq(self.r_dwell_time_p2)
                 m.d.sync += self.r_dwell_time.eq(self.r_dwell_time_p1)
-                m.d.sync += self.beam_controller.next_dwell.eq(self.r_dwell_time)
+                m.d.comb += self.beam_controller.next_dwell.eq(self.r_dwell_time)
                 m.d.comb += self.beam_controller.lock_new_point.eq(1)
 
         with m.If((self.new_dwell_time) & (self.dwell_mode == DwellMode.Constant)
@@ -238,7 +238,7 @@ class ModeController(Elaboratable):
                         with m.If(self.dwell_pipeline_full):
                             m.d.comb += self.do_mode_switch.eq(1)
                             m.d.comb += self.beam_controller.lock_new_point.eq(self.beam_controller.end_of_dwell)
-                            m.d.sync += self.beam_controller.next_dwell.eq(self.r_dwell_time)
+                            m.d.comb += self.beam_controller.next_dwell.eq(self.r_dwell_time)
                             m.d.sync += self.dwell_pipeline_level.eq(self.dwell_pipeline_level - 1)
                             m.next = "Lock Data"
                     with m.Else():
@@ -252,7 +252,7 @@ class ModeController(Elaboratable):
                 m.next = "Dwell Ongoing"
             
             with m.State("Dwell Ongoing"):
-                m.d.sync += self.beam_controller.dwelling.eq(1)
+                m.d.comb += self.beam_controller.dwelling.eq(1)
                 m.d.comb += self.beam_controller.lock_new_point.eq(self.beam_controller.end_of_dwell)
 
                 with m.If((self.raster_next)|(self.vector_next)):
@@ -269,9 +269,9 @@ class ModeController(Elaboratable):
             #m.d.sync += self.beam_controller.next_x_position.eq(self.xy_scan_gen.x_scan)
             #m.d.sync += self.beam_controller.next_y_position.eq(self.xy_scan_gen.y_scan)
             ### disabled interpolation for now bc it makes it easier to see what's going on
-            m.d.sync += self.beam_controller.next_x_position.eq(self.xy_scan_gen.current_x)
-            m.d.sync += self.beam_controller.next_y_position.eq(self.xy_scan_gen.current_y)
-            m.d.sync += self.beam_controller.next_dwell.eq(self.r_dwell_time)
+            m.d.comb += self.beam_controller.next_x_position.eq(self.xy_scan_gen.current_x)
+            m.d.comb += self.beam_controller.next_y_position.eq(self.xy_scan_gen.current_y)
+            m.d.comb += self.beam_controller.next_dwell.eq(self.r_dwell_time)
         with m.If((self.load_next_raster_frame_data)):
             m.d.sync += self.xy_scan_gen.x_full_frame_resolution.eq(self.r_x)
             m.d.sync += self.xy_scan_gen.x_full_frame_resolution.eq(self.r_y)
@@ -279,18 +279,18 @@ class ModeController(Elaboratable):
             m.d.sync += self.xy_scan_gen.y_lower_limit.eq(self.r_ly)
             m.d.sync += self.xy_scan_gen.x_upper_limit.eq(self.r_ux)
             m.d.sync += self.xy_scan_gen.y_upper_limit.eq(self.r_uy)
-            m.d.sync += self.beam_controller.next_dwell.eq(self.r_dwell_time)
+            m.d.comb += self.beam_controller.next_dwell.eq(self.r_dwell_time)
 
         with m.If((self.dwell_mode == DwellMode.Variable) & (self.raster_next)
         & (self.beam_controller.end_of_dwell)):
             with m.If(self.dwell_pipeline_full):
-                m.d.sync += self.beam_controller.next_dwell.eq(self.r_dwell_time)
+                m.d.comb += self.beam_controller.next_dwell.eq(self.r_dwell_time)
                 m.d.sync += self.dwell_pipeline_level.eq(self.dwell_pipeline_level - 1)
 
         with m.If((self.vector_next) & (~self.rastering)):
-            m.d.sync  += self.beam_controller.next_dwell.eq(self.v_dwell_time)
-            m.d.sync  += self.beam_controller.next_x_position.eq(self.v_x)
-            m.d.sync += self.beam_controller.next_y_position.eq(self.v_y)
+            m.d.comb  += self.beam_controller.next_dwell.eq(self.v_dwell_time)
+            m.d.comb  += self.beam_controller.next_x_position.eq(self.v_x)
+            m.d.comb += self.beam_controller.next_y_position.eq(self.v_y)
 
         return m
     def ports(self):
