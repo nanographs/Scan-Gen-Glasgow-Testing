@@ -96,18 +96,7 @@ class InputBus(Elaboratable):
 
     def elaborate(self, platform):
         m = Module()
-        # m.submodules["vx"] = self.vx_mailbox
-        # m.submodules["vy"] = self.vy_mailbox
-        # m.submodules["vd"] = self.vd_mailbox
-        # m.submodules["rx"] = self.rx_mailbox
-        # m.submodules["ry"] = self.ry_mailbox
-        # m.submodules["rd"] = self.rd_mailbox
-        # m.submodules["ruy"] = self.ruy_mailbox
-        # m.submodules["rux"] = self.rux_mailbox
-        # m.submodules["rly"] = self.rly_mailbox
-        # m.submodules["rlx"] = self.rlx_mailbox
 
-        # m.submodules["BeamController"] = self.beam_controller
         m.submodules["out_fifo"] = self.out_fifo
         m.submodules["2b_inbox"] = self.inbox
         m.submodules["ModeCtrl"] = self.mode_controller
@@ -122,6 +111,7 @@ class InputBus(Elaboratable):
                     m.d.comb += self.read_address_c.eq(self.out_fifo.r_data)
                     m.d.sync += self.read_address_s.eq(self.out_fifo.r_data)
                     m.d.sync += self.mode_controller.scan_mode.eq(self.read_address_c.ScanMode)
+                    m.d.sync += self.mode_controller.dwell_mode.eq(self.read_address_c.DwellMode)
                     m.next = "Read_Data"
             with m.State("Read_Data"):
                 m.d.comb += self.reading_address.eq(0)
@@ -136,7 +126,6 @@ class InputBus(Elaboratable):
                                     for address in self.yellowpages_raster:
                                         mailbox = self.yellowpages_raster.get(address)
                                         with m.Case(address):
-                                            
                                             with m.If(~mailbox.flag):
                                                 m.d.comb += mailbox.flag_in.eq(1)
                                                 m.d.sync += mailbox.value.eq(self.inbox.value)
@@ -152,100 +141,6 @@ class InputBus(Elaboratable):
                                                 
 
                         m.next = "Read_Address"
-
-        # with m.FSM() as fsm:
-        #     with m.State("Read_Address"):
-        #         #m.d.comb += self.input_data.eq(self.out_fifo.r_level)
-        #         m.d.comb += self.reading_address.eq(1)
-        #         m.d.comb += self.out_fifo.r_en.eq(1)
-        #         with m.If(self.out_fifo.r_rdy):
-        #             m.d.comb += self.input_data.eq(self.out_fifo.r_data)
-        #             #m.d.comb += self.input_data.eq(Constant_Raster_Address.X)
-                    
-
-        #             m.d.sync += self.read_address_s.eq(self.input_data)
-        #             m.d.comb += self.read_address_c.eq(self.input_data)
-                    
-        #             m.d.sync += self.mode_controller.reset.eq(self.read_address_c.ResetMode)
-                    
-
-        #             with m.If(self.read_address_c.IOType == IOType.Scanalog):
-        #                 m.d.sync += self.mode_controller.dwell_mode.eq(self.read_address_c.DwellMode)
-        #                 with m.If(self.read_address_c.ScanMode == ScanMode.Raster):
-        #                     with m.Switch(self.read_address_c.DataType):
-        #                         for address in self.yellowpages_raster:
-        #                             mailbox = self.yellowpages_raster.get(address)
-        #                             with m.Case(address):
-        #                                 m.d.comb += mailbox.parsing.eq(1)
-        #                                 m.d.comb += mailbox.input.eq(self.input_data)
-        #                                 with m.If(~mailbox.flag):
-        #                                     #m.d.sync += mailbox.parsing.eq(1)
-        #                                     m.next = "Read_Data"
-        #                                 with m.Else():
-        #                                     m.next = "Waiting_For_Mailbox"
-
-        #                 with m.If(self.read_address_c.ScanMode == ScanMode.Vector):
-        #                     with m.Switch(self.read_address_c.DataType):
-        #                         for address in self.yellowpages_vector:
-        #                             mailbox = self.yellowpages_vector.get(address)
-        #                             with m.Case(address):
-        #                                 m.d.comb += mailbox.parsing.eq(1)
-        #                                 m.d.comb += mailbox.input.eq(self.input_data)
-        #                                 with m.If(~mailbox.flag):
-        #                                     #m.d.sync += mailbox.parsing.eq(1)
-        #                                     m.next = "Read_Data"
-        #                                 with m.Else():
-        #                                     m.next = "Waiting_For_Mailbox"
-
-        #             with m.If(self.read_address_c.IOType == IOType.DigitalIO):
-        #                 pass
-        #     with m.State("Waiting_For_Mailbox"):
-        #         m.d.comb += self.waiting.eq(1)
-        #         with m.If(self.read_address_s.IOType == IOType.Scanalog):
-        #                 m.d.sync += self.mode_controller.dwell_mode.eq(self.read_address_s.DwellMode)
-        #                 with m.If(self.read_address_s.ScanMode == ScanMode.Raster):
-        #                     with m.Switch(self.read_address_s.DataType):
-        #                         for address in self.yellowpages_raster:
-        #                             mailbox = self.yellowpages_raster.get(address)
-        #                             with m.Case(address):
-        #                                 with m.If(~mailbox.flag):
-        #                                     #m.d.sync += mailbox.parsing.eq(1)
-        #                                     m.next = "Read_Data"
-        #                                 with m.Else():
-        #                                     m.next = "Waiting_For_Mailbox"
-        #                 with m.If(self.read_address_s.ScanMode == ScanMode.Vector):
-        #                     with m.Switch(self.read_address_s.DataType):
-        #                         for address in self.yellowpages_vector:
-        #                             mailbox = self.yellowpages_vector.get(address)
-        #                             with m.Case(address):
-        #                                 with m.If(~mailbox.flag):
-        #                                     #m.d.sync += mailbox.parsing.eq(1)
-        #                                     m.next = "Read_Data"
-        #                                 with m.Else():
-        #                                     m.next = "Waiting_For_Mailbox"
-        #     with m.State("Read_Data"):
-        #         m.d.comb += self.out_fifo.r_en.eq(1)
-        #         with m.If(self.out_fifo.r_rdy):
-        #             m.d.comb += self.input_data.eq(self.out_fifo.r_data)
-        #             with m.If(self.read_address_s.ScanMode == ScanMode.Vector):
-        #                 with m.Switch(self.read_address_s.DataType):
-        #                     for address in self.yellowpages_vector:
-        #                         mailbox = self.yellowpages_vector.get(address)
-        #                         with m.Case(address):
-        #                                 m.d.comb 
-        #                                 # m.d.sync += mailbox.parsing.eq(1)
-        #                                 with m.If(mailbox.last_byte):
-        #                                     m.d.comb += self.lb.eq(1)
-        #                                     m.next = "Read_Address"
-        #             with m.If(self.read_address_s.ScanMode == ScanMode.Raster):
-        #                 with m.Switch(self.read_address_s.DataType):
-        #                     for address in self.yellowpages_raster:
-        #                         mailbox = self.yellowpages_raster.get(address)
-        #                         with m.Case(address):
-        #                                 # m.d.sync += mailbox.parsing.eq(1)
-        #                                 with m.If(mailbox.last_byte):
-        #                                     m.next = "Read_Address"
-
 
                     
         return m

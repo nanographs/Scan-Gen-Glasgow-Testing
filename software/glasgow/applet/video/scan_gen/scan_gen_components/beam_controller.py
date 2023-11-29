@@ -32,6 +32,9 @@ class BeamController(Elaboratable):
 
         self.count_enable = Signal() 
 
+        self.fresh_data = Signal()
+        self.stale_data = Signal()
+
     def elaborate(self, platform):
         m = Module()
 
