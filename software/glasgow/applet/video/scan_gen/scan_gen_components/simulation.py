@@ -16,12 +16,7 @@ from glasgow.applet.video.scan_gen.scan_gen_components.test_streams import *
 from glasgow.device.hardware import GlasgowHardwareDevice
 
 
-sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
 
-in_fifo = sim_iface.get_in_fifo()
-out_fifo = sim_iface.get_out_fifo()
-
-dut = IOBus(out_fifo, in_fifo, is_simulation = True)
 
 
 # see access.simulation.demultiplexer -> SimulationDemultiplexer
@@ -37,19 +32,29 @@ def _fifo_write_scan_data(fifo, address, data):
     bytes_data = Const(data, unsigned(16))
     print("address:", address)
     yield from _fifo_write(fifo, address)
-    print("data 1:", bytes_data[0:7])
-    yield from _fifo_write(fifo, bytes_data[0:7])
-    print("data 2:", bytes_data[7:15])
-    yield from _fifo_write(fifo, bytes_data[7:15])
+    print("data 1:", bytes_data[0:8])
+    yield from _fifo_write(fifo, bytes_data[0:8])
+    print("data 2:", bytes_data[8:15])
+    yield from _fifo_write(fifo, bytes_data[8:15])
 
 
-def bench():
-    for n in basic_vector_stream:
-        address, data = n
-        yield from _fifo_write_scan_data(dut.input_bus.out_fifo, address, data)
+def sim_iobus():
+    sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
 
-sim = Simulator(dut)
-sim.add_clock(1e-6) # 1 MHz
-sim.add_sync_process(bench)
-with sim.write_vcd("applet_sim.vcd"):
-    sim.run()
+    in_fifo = sim_iface.get_in_fifo()
+    out_fifo = sim_iface.get_out_fifo()
+
+    dut = IOBus(out_fifo, in_fifo, is_simulation = True)
+    def bench():
+        for n in basic_vector_stream:
+            address, data = n
+            yield from _fifo_write_scan_data(dut.input_bus.out_fifo, address, data)
+
+    sim = Simulator(dut)
+    sim.add_clock(1e-6) # 1 MHz
+    sim.add_sync_process(bench)
+    with sim.write_vcd("applet_sim.vcd"):
+        sim.run()
+
+if __name__ == "__main__":
+    sim_iobus()

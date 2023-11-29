@@ -66,10 +66,11 @@ class IOBus(Elaboratable):
         with m.If(self.bus_multiplexer.is_y):
             m.d.comb += self.pins.eq(self.input_bus.mode_controller.beam_controller.y_position)
         with m.If(self.bus_multiplexer.is_a):
-            if self.is_simulation:
-                m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.input_bus.mode_controller.beam_controller.dwell_time)
-            else:
-                m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.pins)
+            m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.input_bus.mode_controller.beam_controller.dwell_time)
+            # if self.is_simulation:
+            #     m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.input_bus.mode_controller.beam_controller.dwell_time)
+            # else:
+            #     m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.pins)
             # Loopback
         m.d.comb += self.output_bus.video_sink.dwelling.eq(self.input_bus.mode_controller.beam_controller.dwelling)
         m.d.comb += self.output_bus.video_sink.dwell_time_averager.start_new_average.eq(self.input_bus.mode_controller.beam_controller.end_of_dwell)
@@ -78,8 +79,8 @@ class IOBus(Elaboratable):
         m.d.comb += self.input_bus.mode_controller.beam_controller.count_enable.eq(1)
 
         loopback = Signal(8)
-        m.d.sync += loopback.eq(self.input_bus.out_fifo.r_data)
-        m.d.sync += self.output_bus.in_fifo.w_data.eq(loopback)
+        # m.d.sync += loopback.eq(self.input_bus.out_fifo.r_data)
+        #m.d.sync += self.output_bus.in_fifo.w_data.eq(loopback)
         #m.d.comb += self.output_bus.in_fifo.w_data.eq(self.input_bus.input_data)
         return m
 

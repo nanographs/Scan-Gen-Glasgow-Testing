@@ -146,12 +146,34 @@ class ScanGenApplet(GlasgowApplet):
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
         text_file = open("packets.txt","w")
-        for n in range(5,10):
-            await iface.write([n]*16384)
-            await iface.flush()
-            output = await iface.read(16384)
-            await iface.flush()
-            text_file.write(str(output.tolist()))
+        n = 0
+        print(Constant_Raster_Address.X.value)
+        print(Constant_Raster_Address.Y.value)
+        print(Constant_Raster_Address.D.value)
+
+        while n < 16384:
+            n += 1
+            await iface.write([Constant_Raster_Address.X.value])
+            n += 1
+            await iface.write([200])
+            n += 1
+            await iface.write([55])
+            n += 1
+            await iface.write([Constant_Raster_Address.Y.value])
+            n += 1
+            await iface.write([55])
+            n += 1
+            await iface.write([200])
+            n += 1
+            await iface.write([Constant_Raster_Address.D.value])
+            n += 1
+            await iface.write([3])
+            n += 1
+            await iface.write([3])
+
+        output = await iface.read(16384)
+        text_file.write(str(output.tolist()))
+
         # for n in range(10):
         #     for n in range(10):
         #         for n in basic_vector_stream:
