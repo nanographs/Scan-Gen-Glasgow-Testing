@@ -106,8 +106,9 @@ class IOBus(Elaboratable):
         m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.beam_controller.x_position)
         with m.If(self.io_strobe):
             m.d.comb += self.out_fifo.r_en.eq(1)
-            with m.If(self.mode_ctrl.beam_controller.end_of_dwell):
-                m.d.comb += self.in_fifo.w_en.eq(1)
+        with m.If((self.in_fifo.w_rdy) & (self.mode_ctrl.beam_controller.end_of_dwell)
+                                        & ~(self.mode_ctrl.beam_controller.start_dwell)):
+            m.d.comb += self.in_fifo.w_en.eq(1)
 
         if self.test_mode == "loopback":
             m.d.comb += self.in_fifo.w_data.eq(self.out_fifo.r_data)

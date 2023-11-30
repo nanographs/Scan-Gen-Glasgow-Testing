@@ -39,7 +39,8 @@ def sim_iobus():
                     yield from _fifo_write_vector_point(n, dut.out_fifo)
                 except AssertionError:
                     yield
-                try:
+
+                try: 
                     yield from _fifo_read(dut.in_fifo)
                 except AssertionError:
                     yield
