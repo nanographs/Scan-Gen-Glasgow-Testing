@@ -12,6 +12,7 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.addresses import *
 else:
     #from multimode_input import InputBus
+    from byte_packing import TwoByteOutbox
     from mode_controller_registers import ModeController, VectorInput
     from output_bus import OutputBus
     from data_latch_bus import BusMultiplexer
@@ -61,6 +62,8 @@ class IOBus(Elaboratable):
         m.submodules["OUT_FIFO"] = self.out_fifo
         m.submodules["IN_FIFO"] = self.in_fifo
 
+       
+
         m.d.comb += self.x_latch.eq(self.bus_multiplexer.x_dac.latch.le)
         m.d.comb += self.x_enable.eq(self.bus_multiplexer.x_dac.latch.oe)
         m.d.comb += self.y_latch.eq(self.bus_multiplexer.y_dac.latch.le)
@@ -73,10 +76,12 @@ class IOBus(Elaboratable):
 
         m.d.comb += self.mode_ctrl.vector_input.out_fifo_r_data.eq(self.out_fifo.r_data)
         m.d.comb += self.mode_ctrl.vector_input.out_fifo_r_en.eq(self.out_fifo.r_en)
-        #m.d.comb += self.mode_ctrl.vector_input.out_fifo_r_rdy.eq(self.out_fifo.r_rdy)
+
         m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & (self.out_fifo.r_rdy) & (self.mode_ctrl.vector_fifo.w_rdy))
         m.d.comb += self.mode_ctrl.vector_input.enable.eq(self.io_strobe)
+        m.d.comb += self.mode_ctrl.vector_output.enable.eq(self.io_strobe)
 
+        ### x, y, d top level signals for simulation viewing purposes lol
         m.d.comb += self.x.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.X1, self.mode_ctrl.vector_input.vector_point_data_c.X2))
         m.d.comb += self.y.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.Y1, self.mode_ctrl.vector_input.vector_point_data_c.Y2))
         m.d.comb += self.d.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.D1, self.mode_ctrl.vector_input.vector_point_data_c.D2))
@@ -103,18 +108,19 @@ class IOBus(Elaboratable):
         #m.d.comb += self.output_bus.strobe.eq(self.mode_ctrl.beam_controller.end_of_dwell)
         #m.d.comb += self.output_bus.strobe.eq(1)
 
-        m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.beam_controller.x_position)
-        with m.If(self.io_strobe):
-            m.d.comb += self.out_fifo.r_en.eq(1)
-        with m.If((self.in_fifo.w_rdy) & (self.mode_ctrl.beam_controller.end_of_dwell)
-                                        & ~(self.mode_ctrl.beam_controller.start_dwell)):
-            m.d.comb += self.in_fifo.w_en.eq(1)
 
         if self.test_mode == "loopback":
             m.d.comb += self.in_fifo.w_data.eq(self.out_fifo.r_data)
             with m.If(self.in_fifo.w_rdy & self.out_fifo.r_rdy):
                 m.d.comb += self.in_fifo.w_en.eq(1)
                 m.d.comb += self.out_fifo.r_en.eq(1)
+
+        else:
+            m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.vector_output.in_fifo_w_data)
+            with m.If(self.io_strobe):
+                m.d.comb += self.out_fifo.r_en.eq(1)
+                with m.If(~(self.mode_ctrl.vector_output.strobe_out)):
+                    m.d.comb += self.in_fifo.w_en.eq(1)
 
 
         return m

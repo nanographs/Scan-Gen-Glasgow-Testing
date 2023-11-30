@@ -3,8 +3,9 @@ if "glasgow" in __name__: ## running as applet
 else:
     from addresses import *
 
+
 test_vector_points = [
-    [2000, 1000, 30],
+    [2000, 1000, 30], ## X, Y, D
     [1000, 2000, 40],
     [3000, 2500, 50],
 ]
@@ -12,7 +13,7 @@ test_vector_points = [
 basic_vector_stream = [
     [Vector_Address.X, 1000], #X, 1000
     [Vector_Address.Y, 2000], #Y, 2000
-    [Vector_Address.D, 10],  #D, 50
+    [Vector_Address.D, 10],  #D, 10
     [Vector_Address.X, 1250], #X, 1000
     [Vector_Address.Y, 1700], #Y, 2000
     [Vector_Address.D, 11],  #D, 50
@@ -166,4 +167,7 @@ def _fifo_write_vector_point(n, fifo):
     yield from _fifo_write(fifo, y[8:16])
     yield from _fifo_write(fifo, d[0:8])
     yield from _fifo_write(fifo, d[8:16])
+
+
+
 
