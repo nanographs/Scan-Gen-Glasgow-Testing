@@ -64,5 +64,23 @@ address_layout = data.StructLayout({
 })
 
 
+vector_point = data.StructLayout({
+    "X1": 8,
+    "X2": 8,
+    "Y1": 8,
+    "Y2": 8,
+    "D1": 8,
+    "D2": 8,
+})
+
+
+def get_two_bytes(n: int):
+    bits = "{0:016b}".format(n)
+    return bits[0:8], bits[8:16]
+
+
+#print(get_two_bytes(1000))
+
+
 
 
