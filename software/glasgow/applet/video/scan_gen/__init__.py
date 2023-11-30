@@ -178,6 +178,7 @@ class ScanGenApplet(GlasgowApplet):
             await write_vpoint([1000, 2000, 30])
             await try_read(1)
             print("n=",n)
+        #await try_read(16384)
 
             
         # n = 0
