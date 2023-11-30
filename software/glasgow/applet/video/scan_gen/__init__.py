@@ -160,7 +160,8 @@ class ScanGenApplet(GlasgowApplet):
 
         async def try_read(n):
             try:
-                output = await asyncio.wait_for(iface.read(n), timeout=1)
+                output = await asyncio.wait_for(iface.read(n), timeout = 1)
+                #output = await iface.read(n)
                 print("got data")
                 
                 data = output.tolist()
@@ -169,16 +170,22 @@ class ScanGenApplet(GlasgowApplet):
                 print('timeout')  
 
 
+        await write_vpoint([2000, 1000, 1])
+        await try_read(4)
         while n < 16384:
             n += 6
-            await write_vpoint([2000, 1000, 10])
-            await try_read(1)
-            await write_vpoint([1000, 2000, 20])
-            await try_read(1)
-            await write_vpoint([1000, 2000, 30])
-            await try_read(1)
+            await write_vpoint([2000, 1000, 1])
+            await try_read(6)
+            n += 6
+            await write_vpoint([1000, 2000, 2])
+            await try_read(6)
+            n += 6
+            await write_vpoint([1000, 2000, 3])
+            await try_read(6)
             print("n=",n)
+        #await iface.flush()
         #await try_read(16384)
+
 
             
         # n = 0
@@ -190,33 +197,6 @@ class ScanGenApplet(GlasgowApplet):
         #     #await iface.flush()
 
         # output = await iface.read(16384)
-        
-
-        # for n in range(10):
-        #     for n in range(10):
-        #         for n in basic_vector_stream:
-        #             address, data = n
-        #             address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
-        #             data_bits = '{0:016b}'.format(address.value)
-        #             data_1 = bytes(data_bits[0:8],encoding="utf8")
-        #             data_2 = bytes(data_bits[8:16],encoding="utf8")
-        #             print("writing", address_b, data_1, data_2)
-        #             await iface.write(bytes(address_b))
-        #             await iface.write(bytes(data_1))
-        #             await iface.write(bytes(data_2))
-        #         for n in basic_vector_stream:
-        #             address, data = n
-        #             address_b = bytes('{0:08b}'.format(address.value),encoding="utf8")
-        #             data_bits = '{0:016b}'.format(address.value)
-        #             data_1 = bytes(data_bits[0:8],encoding="utf8")
-        #             data_2 = bytes(data_bits[8:16],encoding="utf8")
-        #             print("writing", address_b[::-1], data_1, data_2)
-        #             await iface.write(bytes(address_b[::-1]))
-        #             await iface.write(bytes(data_1))
-        #             await iface.write(bytes(data_2))
-        #             #`
-        #     iface.flush()
-        #     print("reading")
 
         
 

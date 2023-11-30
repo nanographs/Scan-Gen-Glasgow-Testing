@@ -73,6 +73,18 @@ vector_point = data.StructLayout({
     "D2": 8,
 })
 
+vector_position = data.StructLayout({
+    "X1": 8,
+    "X2": 8,
+    "Y1": 8,
+    "Y2": 8,
+})
+
+vector_dwell = data.StructLayout({
+    "D1": 8,
+    "D2": 8,
+})
+
 
 def get_two_bytes(n: int):
     bits = "{0:016b}".format(n)
