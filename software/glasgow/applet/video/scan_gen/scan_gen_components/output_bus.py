@@ -29,22 +29,25 @@ class OutputBus(Elaboratable):
         m.submodules["VMailbox"] = self.video_outbox
         m.submodules["in_fifo"] = self.in_fifo
         
-        m.d.comb += self.video_outbox.input.eq(self.video_sink.pixel_out)
-        m.d.comb += self.in_fifo.w_data.eq(self.video_outbox.value)
+        #m.d.comb += self.video_outbox.input.eq(self.video_sink.pixel_out)
+        #m.d.comb += self.in_fifo.w_data.eq(self.video_outbox.value)
 
-        with m.FSM() as fsm:
-            with m.State("Reading Data"):
-                with m.If(self.in_fifo.w_rdy):
-                    with m.If(self.strobe):
-                        m.d.comb += self.video_sink.sinking.eq(1)
-                        with m.If(self.video_sink.pipeline_offsetter.pipeline_full):
-                            m.d.comb += self.video_outbox.parsing.eq(1)
-                            m.d.comb += self.in_fifo.w_en.eq(1)
-                            m.next = "Writing Second Byte"
-            with m.State("Writing Second Byte"):
-                with m.If(self.in_fifo.w_rdy):
-                    m.d.comb += self.in_fifo.w_en.eq(1)
-                    m.next = "Reading Data"
+        # with m.If(self.in_fifo.w_rdy):
+        #     m.d.comb += self.in_fifo.w_en.eq(1)
+
+        # with m.FSM() as fsm:
+        #     with m.State("Reading Data"):
+        #         with m.If(self.in_fifo.w_rdy):
+        #             with m.If(self.strobe):
+        #                 m.d.comb += self.video_sink.sinking.eq(1)
+        #                 with m.If(self.video_sink.pipeline_offsetter.pipeline_full):
+        #                     m.d.comb += self.video_outbox.parsing.eq(1)
+        #                     m.d.comb += self.in_fifo.w_en.eq(1)
+        #                     m.next = "Writing Second Byte"
+        #     with m.State("Writing Second Byte"):
+        #         with m.If(self.in_fifo.w_rdy):
+        #             m.d.comb += self.in_fifo.w_en.eq(1)
+        #             m.next = "Reading Data"
 
         return m
 

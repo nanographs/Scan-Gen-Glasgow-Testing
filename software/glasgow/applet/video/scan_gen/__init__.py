@@ -4,12 +4,9 @@ import asyncio
 from amaranth import *
 from amaranth.build import *
 from ....support.endpoint import *
+from ....support.bits import *
 from amaranth.sim import Simulator
-import numpy as np
-import time
-import threading
-# import itertools
-from rich import print
+
 from asyncio.exceptions import TimeoutError
 from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
@@ -147,32 +144,52 @@ class ScanGenApplet(GlasgowApplet):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
         text_file = open("packets.txt","w")
         n = 0
-        print(Constant_Raster_Address.X.value)
-        print(Constant_Raster_Address.Y.value)
-        print(Constant_Raster_Address.D.value)
+        #await iface.flush()
+
+        async def write_2bytes(val):
+            b1, b2 = get_two_bytes(val)
+            print("writing", b1, b2)
+            await iface.write(bits(b1))
+            await iface.write(bits(b2))
+
+        async def write_vpoint(n):
+            x, y, d = n
+            await write_2bytes(x)
+            await write_2bytes(y)
+            await write_2bytes(d)
+
+        async def try_read(n):
+            try:
+                output = await asyncio.wait_for(iface.read(n), timeout=1)
+                print("got data")
+                
+                data = output.tolist()
+                text_file.write(str(data))
+            except TimeoutError:
+                print('timeout')  
+
 
         while n < 16384:
-            n += 1
-            await iface.write([Constant_Raster_Address.X.value])
-            n += 1
-            await iface.write([200])
-            n += 1
-            await iface.write([55])
-            n += 1
-            await iface.write([Constant_Raster_Address.Y.value])
-            n += 1
-            await iface.write([55])
-            n += 1
-            await iface.write([200])
-            n += 1
-            await iface.write([Constant_Raster_Address.D.value])
-            n += 1
-            await iface.write([3])
-            n += 1
-            await iface.write([3])
+            n += 6
+            await write_vpoint([2000, 1000, 10])
+            await try_read(1)
+            await write_vpoint([1000, 2000, 20])
+            await try_read(1)
+            await write_vpoint([1000, 2000, 30])
+            await try_read(1)
+            print("n=",n)
 
-        output = await iface.read(16384)
-        text_file.write(str(output.tolist()))
+            
+        # n = 0
+        # while n < 16384:
+        #     n += 6
+        #     
+        #     output = await iface.read(1)
+        #     text_file.write(str(output.tolist()))
+        #     #await iface.flush()
+
+        # output = await iface.read(16384)
+        
 
         # for n in range(10):
         #     for n in range(10):
@@ -199,14 +216,6 @@ class ScanGenApplet(GlasgowApplet):
         #             #`
         #     iface.flush()
         #     print("reading")
-        #     try:
-        #         output = await asyncio.wait_for(iface.read(16384), timeout=5)
-        #         print("got data")
-                
-        #         data = output.tolist()
-        #         text_file.write(str(data))
-        #     except TimeoutError:
-        #         print('timeout')  
 
         
 

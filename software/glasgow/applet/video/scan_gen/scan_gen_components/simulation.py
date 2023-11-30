@@ -15,40 +15,35 @@ from glasgow.applet.video.scan_gen.scan_gen_components.main_iobus import IOBus
 from glasgow.applet.video.scan_gen.scan_gen_components.test_streams import *
 from glasgow.device.hardware import GlasgowHardwareDevice
 
+#from test_streams import _fifo_write_data_address, basic_vector_stream
+from test_streams import _fifo_write_vector_point, test_vector_points, _fifo_read
 
 
 
 
-# see access.simulation.demultiplexer -> SimulationDemultiplexer
-def _fifo_write(fifo, data):
-    assert (yield fifo.w_rdy)
-    yield fifo.w_data.eq(data)
-    yield fifo.w_en.eq(1)
-    yield
-    yield fifo.w_en.eq(0)
-    yield
+sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
 
-def _fifo_write_scan_data(fifo, address, data):
-    bytes_data = Const(data, unsigned(16))
-    print("address:", address)
-    yield from _fifo_write(fifo, address)
-    print("data 1:", bytes_data[0:8])
-    yield from _fifo_write(fifo, bytes_data[0:8])
-    print("data 2:", bytes_data[8:15])
-    yield from _fifo_write(fifo, bytes_data[8:15])
-
+in_fifo = sim_iface.get_in_fifo()
+out_fifo = sim_iface.get_out_fifo()
+    
 
 def sim_iobus():
-    sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
-
-    in_fifo = sim_iface.get_in_fifo()
-    out_fifo = sim_iface.get_out_fifo()
-
     dut = IOBus(out_fifo, in_fifo, is_simulation = True)
     def bench():
-        for n in basic_vector_stream:
-            address, data = n
-            yield from _fifo_write_scan_data(dut.input_bus.out_fifo, address, data)
+        # for n in basic_vector_stream:
+        #     address, data = n
+        #     yield from _fifo_write_data_address(dut.input_bus.out_fifo, address, data)
+        for i in range(255):
+            for n in test_vector_points:
+                try:
+                    yield from _fifo_write_vector_point(n, dut.out_fifo)
+                except AssertionError:
+                    yield
+                try:
+                    yield from _fifo_read(dut.in_fifo)
+                except AssertionError:
+                    yield
+
 
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
