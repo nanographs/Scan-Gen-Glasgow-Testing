@@ -20,9 +20,6 @@ else:
     from glasgow import *
     from glasgow.access.simulation import SimulationMultiplexerInterface, SimulationDemultiplexerInterface
 
-
-# sim_iface = SimulationMultiplexerInterface()
-
 class IOBus(Elaboratable):
     def __init__(self, in_fifo, out_fifo, is_simulation, test_mode = None, mode = "Raster"):
         self.is_simulation = is_simulation
@@ -51,6 +48,8 @@ class IOBus(Elaboratable):
         self.x = Signal(16)
         self.y = Signal(16)
         self.d = Signal(16)
+
+        self.scan_mode = Signal(2)
     def elaborate(self, platform):
         m = Module()
         m.submodules["ModeCtrl"] = self.mode_ctrl
@@ -70,22 +69,27 @@ class IOBus(Elaboratable):
         m.d.comb += self.a_clock.eq(self.bus_multiplexer.sample_clock.clock)
         m.d.comb += self.d_clock.eq(self.bus_multiplexer.sample_clock.clock)
 
-        if self.mode == "Vector":
-            m.d.comb += self.mode_ctrl.vector_input.out_fifo_r_data.eq(self.out_fifo.r_data)
-            m.d.comb += self.mode_ctrl.vector_input.out_fifo_r_en.eq(self.out_fifo.r_en)
 
-            m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & (self.out_fifo.r_rdy) & (self.mode_ctrl.vector_fifo.w_rdy))
-            m.d.comb += self.mode_ctrl.vector_input.enable.eq(self.io_strobe)
-            m.d.comb += self.mode_ctrl.vector_output.enable.eq(self.io_strobe)
+        m.d.comb += self.scan_mode.eq(ScanMode.Vector)
+        m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
 
-            ### x, y, d top level signals for simulation viewing purposes lol
-            m.d.comb += self.x.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.X1, self.mode_ctrl.vector_input.vector_point_data_c.X2))
-            m.d.comb += self.y.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.Y1, self.mode_ctrl.vector_input.vector_point_data_c.Y2))
-            m.d.comb += self.d.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.D1, self.mode_ctrl.vector_input.vector_point_data_c.D2))
-        else: 
+
+        with m.If(self.mode_ctrl.mode == ScanMode.Vector):
+            m.d.comb += self.x.eq(10)
+            m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & (self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready))
+            # m.d.comb += self.mode_ctrl.vector_input.enable.eq(self.io_strobe)
+            # m.d.comb += self.mode_ctrl.vector_output.enable.eq(self.io_strobe)
+
+            # ### x, y, d top level signals for simulation viewing purposes lol
+            # m.d.comb += self.x.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.X1, self.mode_ctrl.vector_input.vector_point_data_c.X2))
+            # m.d.comb += self.y.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.Y1, self.mode_ctrl.vector_input.vector_point_data_c.Y2))
+            # m.d.comb += self.d.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.D1, self.mode_ctrl.vector_input.vector_point_data_c.D2))
+        with m.If(self.mode_ctrl.mode == ScanMode.Raster):
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy))
             #m.d.comb += self.mode_ctrl.vector_output.enable.eq(self.io_strobe)
-            m.d.comb += self.mode_ctrl.output_enable.eq(self.io_strobe)
+            
+        m.d.comb += self.mode_ctrl.out_fifo_r_data.eq(self.out_fifo.r_data)
+        m.d.comb += self.mode_ctrl.output_enable.eq(self.io_strobe)
 
         m.d.sync += self.bus_multiplexer.sampling.eq(self.mode_ctrl.beam_controller.dwelling)
         #m.d.sync += self.bus_multiplexer.sampling.eq(0)
@@ -117,22 +121,21 @@ class IOBus(Elaboratable):
                 m.d.comb += self.out_fifo.r_en.eq(1)
 
         else:
-            if self.mode == "Vector":
-                m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.vector_output.in_fifo_w_data)
-                with m.If(self.io_strobe):
-                    m.d.comb += self.out_fifo.r_en.eq(1)
-                    with m.If(~(self.mode_ctrl.vector_output.strobe_out)):
-                        m.d.comb += self.in_fifo.w_en.eq(1)
+            m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
+            with m.If(self.io_strobe):
+                m.d.comb += self.out_fifo.r_en.eq(1)
+                with m.If(~(self.mode_ctrl.output_strobe_out)):
+                    m.d.comb += self.in_fifo.w_en.eq(1)
 
-            else:
-                # m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.vector_output.in_fifo_w_data)
-                # with m.If(self.io_strobe):
-                #     with m.If(~(self.mode_ctrl.vector_output.strobe_out)):
-                #         m.d.comb += self.in_fifo.w_en.eq(1)
-                m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
-                with m.If(self.io_strobe):
-                    with m.If(~(self.mode_ctrl.output_strobe_out)):
-                        m.d.comb += self.in_fifo.w_en.eq(1)
+            # else:
+            #     # m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.vector_output.in_fifo_w_data)
+            #     # with m.If(self.io_strobe):
+            #     #     with m.If(~(self.mode_ctrl.vector_output.strobe_out)):
+            #     #         m.d.comb += self.in_fifo.w_en.eq(1)
+            #     m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
+            #     with m.If(self.io_strobe):
+            #         with m.If(~(self.mode_ctrl.output_strobe_out)):
+            #             m.d.comb += self.in_fifo.w_en.eq(1)
                 
 
         return m
