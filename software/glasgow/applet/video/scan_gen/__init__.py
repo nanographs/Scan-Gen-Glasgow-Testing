@@ -1,4 +1,5 @@
 import os
+import types
 import logging
 import asyncio
 from amaranth import *
@@ -82,12 +83,13 @@ class IOBusSubtarget(Elaboratable):
         return m
 
 class ScanGenInterface:
-    def __init__(self, iface, logger, device):
+    def __init__(self, iface, logger, device, is_simulation = False):
         self.iface = iface
         self._logger = logger
         self._level  = logging.DEBUG if self._logger.name == __name__ else logging.TRACE
         self._device = device
         self.text_file = open("packets.txt","w")
+        self.is_simulation = is_simulation
     
     def fifostats(self):
         iface = self.iface
@@ -100,6 +102,14 @@ class ScanGenInterface:
         print(iface._out_buffer._wtotal)
         print(iface._in_pushback)
         #print(iface._out_pushback)
+
+    @types.coroutine
+    def sim_write_2bytes(self, val):
+        b1, b2 = get_two_bytes(val)
+        print("writing", b1, b2)
+        yield from self.iface.write(bits(b1))
+        yield from self.iface.write(bits(b2))
+        
     
     async def write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
@@ -107,25 +117,44 @@ class ScanGenInterface:
         await self.iface.write(bits(b1))
         await self.iface.write(bits(b2))
 
+    @types.coroutine
+    def sim_write_vpoint(self, point):
+        x, y, d = point
+        yield from self.sim_write_2bytes(x)
+        yield from self.sim_write_2bytes(y)
+        yield from self.sim_write_2bytes(d)
+
     async def write_vpoint(self, point):
         x, y, d = point
         await self.write_2bytes(x)
         await self.write_2bytes(y)
         await self.write_2bytes(d)
+
+    async def read_r_packet(self):
+        output = await self.iface.read(16384)
+        return read_rdwell_packet(output)
+
+    async def try_read_vpoint(self, n_points):
+        try:
+            output = await asyncio.wait_for(self.iface.read(6*n_points), timeout = 1)
+            print("got data")
+            return self.decode_vpoint_packet(output)
+        except TimeoutError:
+            return "timeout"
     
-    def read_vpoint(self, n):
+    def decode_vpoint(self, n):
         x1, x2, y1, y2, a1, a2 = n
         x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
         y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
         a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
         return [x, y, a]
 
-    def read_rdwell(self, n):
+    def decode_rdwell(self, n):
         a2, a1 = n
         a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
         return a
     
-    def read_rdwell_packet(self, raw_data):
+    def decode_rdwell_packet(self, raw_data):
         print(type(raw_data))
         if isinstance(raw_data, bytes):
             data = list(raw_data)
@@ -133,23 +162,23 @@ class ScanGenInterface:
             data = raw_data.tolist()
         packet = []
         for n in range(0,len(data),2):
-            dwell = self.read_rdwell(data[n:n+2])
+            dwell = self.decode_rdwell(data[n:n+2])
             packet.append(dwell)
         return packet
 
-    async def read_r_packet(self):
-        output = await self.iface.read(16384)
-        return read_rdwell_packet(output)
+    def decode_vpoint_packet(self, raw_data):
+        print(type(raw_data))
+        if isinstance(raw_data, bytes):
+            data = list(raw_data)
+        else:
+            data = raw_data.tolist()
+        packet = []
+        for n in range(0,len(data),6):
+            point = self.decode_vpoint(data[n:n+6])
+            packet.append(point)
+        return packet
 
-    async def try_read_vpoint(self):
-        try:
-            output = await asyncio.wait_for(self.iface.read(6), timeout = 1)
-            print("got data")
-            data = output.tolist()
-            return read_vpoint(data)
-        except TimeoutError:
-            print('timeout')  
-            return ["timeout"]
+
 
 class ScanGenApplet(GlasgowApplet):
     logger = logging.getLogger(__name__)
@@ -205,10 +234,24 @@ class ScanGenApplet(GlasgowApplet):
 
     @classmethod
     def add_interact_arguments(cls, parser):
+
+
         pass
 
-    async def interact(self, device, args, iface):
-        pass
+    async def interact(self, device, args, scan_iface):
+        test_vector_points = [
+            [2000, 1000, 30], ## X, Y, D
+            [1000, 2000, 40],
+            [3000, 2500, 50],
+            ]
+
+        for n in range(10):
+            for n in test_vector_points:
+                await scan_iface.write_vpoint(n)
+            
+            output = await scan_iface.try_read_vpoint(3)
+            print(output)
+        #pass
 
             
 

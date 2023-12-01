@@ -20,8 +20,6 @@ if __name__ == "__main__":
 class VectorInput(Elaboratable): 
     def __init__(self):
         self.out_fifo_r_data = Signal(8)
-        self.out_fifo_r_en = Signal()
-        self.out_fifo_r_rdy = Signal()
 
         self.vector_point_data = Signal(vector_point)
         self.vector_point_data_c = Signal(vector_point)
@@ -145,7 +143,7 @@ class VectorModeController(Elaboratable):
     '''
     '''
     def __init__(self):
-        self.beam_controller = BeamController()
+        #self.beam_controller = BeamController()
 
         self.vector_point_data = Signal(vector_point)
 
@@ -154,42 +152,43 @@ class VectorModeController(Elaboratable):
         self.vector_input = VectorInput()
         self.vector_output = VectorOutput()
 
+        self.vector_point_output = Signal(16)
+
+        self.beam_controller_end_of_dwell = Signal()
+        self.beam_controller_start_dwell = Signal()
+        self.beam_controller_next_x_position = Signal(16)
+        self.beam_controller_next_y_position = Signal(16)
+        self.beam_controller_next_dwell = Signal(16)
+
     def elaborate(self, platform):
         m = Module()
-        m.submodules["BeamController"] = self.beam_controller
+        #m.submodules["BeamController"] = self.beam_controller
         m.submodules["VectorInput"] = self.vector_input
         m.submodules["VectorOutput"] = self.vector_output
         m.submodules["VectorFIFO"] = self.vector_fifo
 
-        m.d.comb += self.beam_controller.dwelling.eq(1)
         m.d.comb += self.vector_input.strobe_out.eq(self.vector_fifo.w_rdy)
 
         with m.If((self.vector_input.data_complete) & (self.vector_fifo.w_rdy)):
             m.d.comb += self.vector_fifo.w_en.eq(1)
             m.d.comb += self.vector_fifo.w_data.eq(self.vector_input.vector_point_data_c)
 
-        with m.If(self.vector_fifo.r_rdy & self.beam_controller.end_of_dwell):
+        with m.If(self.vector_fifo.r_rdy & self.beam_controller_end_of_dwell):
             m.d.comb += self.vector_fifo.r_en.eq(1)
             m.d.comb += self.vector_point_data.eq(self.vector_fifo.r_data)
             m.d.comb += self.vector_output.strobe_in_xy.eq(1)
-            with m.If(~(self.beam_controller.start_dwell)):
+            with m.If(~(self.beam_controller_start_dwell)):
                 m.d.comb += self.vector_output.strobe_in_dwell.eq(1)
-                m.d.comb += self.vector_output.vector_dwell_data_c.eq(self.beam_controller.dwell_time)
+                m.d.comb += self.vector_output.vector_dwell_data_c.eq(self.vector_point_output)
             m.d.comb += self.vector_output.vector_position_data_c.eq(Cat(self.vector_point_data.X1,
                                                                         self.vector_point_data.X2,
                                                                         self.vector_point_data.Y1,
                                                                         self.vector_point_data.Y2))
-            m.d.comb += self.beam_controller.next_x_position.eq(Cat(self.vector_point_data.X1, 
+            m.d.comb += self.beam_controller_next_x_position.eq(Cat(self.vector_point_data.X1, 
                                                                     self.vector_point_data.X2))
-            m.d.comb += self.beam_controller.next_y_position.eq(Cat(self.vector_point_data.Y1, 
+            m.d.comb += self.beam_controller_next_y_position.eq(Cat(self.vector_point_data.Y1, 
                                                                     self.vector_point_data.Y2))
-            m.d.comb += self.beam_controller.next_dwell.eq(Cat(self.vector_point_data.D1, 
-                                                                    self.vector_point_data.D2))
-            m.d.comb += self.beam_controller.next_x_position.eq(Cat(self.vector_point_data.X1, 
-                                                                    self.vector_point_data.X2))
-            m.d.comb += self.beam_controller.next_y_position.eq(Cat(self.vector_point_data.Y1, 
-                                                                    self.vector_point_data.Y2))
-            m.d.comb += self.beam_controller.next_dwell.eq(Cat(self.vector_point_data.D1, 
+            m.d.comb += self.beam_controller_next_dwell.eq(Cat(self.vector_point_data.D1, 
                                                                     self.vector_point_data.D2))
 
         
