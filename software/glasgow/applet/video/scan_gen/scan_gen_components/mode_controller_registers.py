@@ -8,12 +8,10 @@ print("name:", __name__)
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.beam_controller import BeamController
     from ..scan_gen_components.xy_scan_gen import XY_Scan_Gen
-    from ..scan_gen_components.byte_packing import Box
     from ..scan_gen_components.addresses import *
 if __name__ == "__main__":
     from beam_controller import BeamController
     from xy_scan_gen import XY_Scan_Gen
-    from byte_packing import Box
     from addresses import *
     
     from test_streams import test_vector_points, _fifo_write_vector_point
@@ -123,7 +121,7 @@ class VectorOutput(Elaboratable):
 
         with m.FSM() as fsm:
             with m.State("Waiting"):
-                m.d.comb += self.strobe_out.eq(1)
+                m.d.comb += self.strobe_out.eq(~self.strobe_in_xy)
                 with m.If((self.strobe_in_xy) & ~(self.enable)):
                     m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
                     m.next = "X1"

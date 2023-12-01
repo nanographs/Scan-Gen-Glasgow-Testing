@@ -50,8 +50,11 @@ def sim_iobus():
             for n in test_vector_points:
                 x, y, d = n
                 yield from write_vector_point(n, sim_app_iface)
-            # output = yield from sim_app_iface.read(18)
-            # print(output)
+        for i in range(10):
+            yield
+        for i in range(9):
+            output = yield from sim_app_iface.read(18)
+            print(output)
 
 
     sim = Simulator(dut)
