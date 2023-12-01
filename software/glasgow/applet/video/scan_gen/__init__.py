@@ -81,6 +81,71 @@ class IOBusSubtarget(Elaboratable):
 
         return m
 
+class ScanGenInterface:
+    def __init__(self, iface, logger, device):
+        self.iface = iface
+        self._logger = logger
+        self._level  = logging.DEBUG if self._logger.name == __name__ else logging.TRACE
+        self._device = device
+        self.text_file = open("packets.txt","w")
+    
+    def fifostats(self):
+        iface = self.iface
+        iface.statistics()
+        print(len(iface._in_tasks._live))
+        print(len(iface._out_tasks._live))
+        print(iface._in_buffer._rtotal)
+        print(iface._in_buffer._wtotal)
+        print(iface._out_buffer._rtotal)
+        print(iface._out_buffer._wtotal)
+        print(iface._in_pushback)
+        #print(iface._out_pushback)
+    
+    async def write_2bytes(self, val):
+        b1, b2 = get_two_bytes(val)
+        print("writing", b1, b2)
+        await self.iface.write(bits(b1))
+        await self.iface.write(bits(b2))
+
+    async def write_vpoint(self, point):
+        x, y, d = point
+        await self.write_2bytes(x)
+        await self.write_2bytes(y)
+        await self.write_2bytes(d)
+    
+    def read_vpoint(self, n):
+        x1, x2, y1, y2, a1, a2 = n
+        x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
+        y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
+        a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+        return [x, y, a]
+
+    def read_rdwell(self, n):
+        a2, a1 = n
+        a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+        return a
+    
+    def read_rdwell_packet(self, raw_data):
+        data = raw_data.tolist()
+        packet = []
+        for n in range(0,len(data),2):
+            dwell = read_rdwell(data[n:n+2])
+            packet += dwell
+        return packet
+
+    async def read_r_packet(self):
+        output = await self.iface.read(16384)
+        return read_rdwell_packet(output)
+
+    async def try_read_vpoint(self):
+        try:
+            output = await asyncio.wait_for(self.iface.read(6), timeout = 1)
+            print("got data")
+            data = output.tolist()
+            return read_vpoint(data)
+        except TimeoutError:
+            print('timeout')  
+            return ["timeout"]
 
 class ScanGenApplet(GlasgowApplet):
     logger = logging.getLogger(__name__)
@@ -99,18 +164,6 @@ class ScanGenApplet(GlasgowApplet):
         super().add_build_arguments(parser, access)
         access.add_pin_set_argument(parser, "data", width=14, default=range(0,14))
         access.add_pin_argument(parser, "power_ok", default=15)
-        parser.add_argument(
-            "-r", "--res", type=int, default=9,
-            help="resolution bits (default: %(default)s)")
-        parser.add_argument(
-            "-d", "--dwell", type=int, default=1,
-            help="dwell time in clock cycles (default: %(default)s)")
-        parser.add_argument(
-            "-m", "--mode", type=str, default="image",
-            help="image or pattern  (default: %(default)s)")
-        parser.add_argument(
-            "-l", "--loopback", type=bool, default=False,
-            help="loopback  (default: %(default)s)")
 
 
     def build(self, target, args):
@@ -142,109 +195,10 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        text_file = open("packets.txt","w")
-        n = 0
-        #await iface.flush()
-
-        def fifostats():
-            iface.statistics()
-            print(len(iface._in_tasks._live))
-            print(len(iface._out_tasks._live))
-            print(iface._in_buffer._rtotal)
-            print(iface._in_buffer._wtotal)
-            print(iface._out_buffer._rtotal)
-            print(iface._out_buffer._wtotal)
-            print(iface._in_pushback)
-            #print(iface._out_pushback)
-
-        async def write_2bytes(val):
-            b1, b2 = get_two_bytes(val)
-            print("writing", b1, b2)
-            await iface.write(bits(b1))
-            await iface.write(bits(b2))
-
-        def read_vpoint(n):
-            x1, x2, y1, y2, a1, a2 = n
-            x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
-            y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
-            a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
-            return [x, y, a]
-
-        def read_rdwell(n):
-            a2, a1 = n
-            a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
-            return a
-
-        async def write_vpoint(n):
-            x, y, d = n
-            await write_2bytes(x)
-            await write_2bytes(y)
-            await write_2bytes(d)
-
-        async def try_read(n):
-            fifostats()
-            try:
-                output = await asyncio.wait_for(iface.read(n), timeout = 1)
-                #output = await iface.read(n)
-                print("got data")
-                
-                data = output.tolist()
-                text_file.write(str(data))
-            except TimeoutError:
-                print('timeout')  
-
-        async def try_read_vpoint():
-            fifostats()
-            try:
-                output = await asyncio.wait_for(iface.read(6), timeout = 1)
-                print("got data")
-                
-                data = output.tolist()
-                text_file.write(str(read_vpoint(data)))
-            except TimeoutError:
-                print('timeout')  
+        scan_iface = ScanGenInterface(iface, self.logger, device)
+        return scan_iface
 
 
-        async def test_vector():
-            while n < 16384:
-                n += 6
-                await write_vpoint([2000, 1000, 10])
-                fifostats()
-                #await try_read(6)
-                n += 6
-                await write_vpoint([1000, 2000, 20])
-                fifostats()
-                #await try_read(6)
-                n += 6
-                await write_vpoint([1000, 2000, 30])
-                fifostats()
-                #await try_read(6)
-                print("n=",n)
-            next_n = n
-            n = 0
-            while n < next_n:
-                n += 6
-                await try_read_vpoint()
-                #await try_read(6)
-        
-        output = await iface.read(16384)
-        data = output.tolist()
-        d = bytes(output)
-        print(d[0:10])
-        print(data[0:10])
-        print(d[512:522])
-        print(data[512:522])
-        for n in range(0,len(data),2):
-            print(data[n:n+2])
-            dwell = read_rdwell(data[n:n+2])
-            print(dwell)
-            text_file.write(str(dwell)+", ")
-
-
-
-
-
-            
         # n = 0
         # while n < 16384:
         #     n += 6

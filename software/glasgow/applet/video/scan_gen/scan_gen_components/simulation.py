@@ -10,7 +10,7 @@ from addresses import *
 sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
 from glasgow import *
 from glasgow.access.simulation import SimulationMultiplexerInterface, SimulationDemultiplexerInterface
-from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget
+from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGenInterface
 from glasgow.applet.video.scan_gen.scan_gen_components.main_iobus import IOBus
 from glasgow.applet.video.scan_gen.scan_gen_components.test_streams import *
 from glasgow.device.hardware import GlasgowHardwareDevice
@@ -21,13 +21,11 @@ from test_streams import _fifo_write_vector_point, test_vector_points, _fifo_rea
 
 
 
-
-
 sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
 sim_iface.in_fifo = sim_iface.get_in_fifo()
 sim_iface.out_fifo = sim_iface.get_out_fifo()
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
-
+sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device)
 
 def write_vector_point(n, iface):
     x, y, d = n
@@ -68,16 +66,7 @@ text_file = open("packets.txt","w")
 def sim_iobus():
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, is_simulation = True)
     def bench():
-        output = yield from sim_app_iface.read(16384)
-        print(output)
-        print(type(output))
-        data = list(output)
-        print(data)
-        print(type(data))
-        read_dwell_packet(data)
-        # for i in range(100):
-        #     print("-")
-        #     yield
+        yield from sim_scangen_iface.read_r_packet()
         
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
@@ -85,5 +74,5 @@ def sim_iobus():
     with sim.write_vcd("applet_sim.vcd"):
         sim.run()
 
-if __name__ == "__main__":
-    sim_iobus()
+# if __name__ == "__main__":
+#     sim_iobus()
