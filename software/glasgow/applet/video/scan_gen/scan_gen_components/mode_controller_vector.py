@@ -17,9 +17,8 @@ if __name__ == "__main__":
     from test_streams import test_vector_points, _fifo_write_vector_point
 
 
-class VectorInput(Elaboratable):
+class VectorInput(Elaboratable): 
     def __init__(self):
-        #self.out_fifo = out_fifo
         self.out_fifo_r_data = Signal(8)
         self.out_fifo_r_en = Signal()
         self.out_fifo_r_rdy = Signal()
@@ -34,41 +33,30 @@ class VectorInput(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        #m.submodules["OUT_FIFO"] = self.out_fifo
-
-        #m.d.comb += self.enable.eq(self.out_fifo_r_rdy)
-        #m.d.comb += self.enable.eq(1)
-
         with m.FSM() as fsm:
             with m.State("X1"):    
                 with m.If(self.enable):
-                    #m.d.comb += self.out_fifo_r_en.eq(1)
                     m.d.sync += self.vector_point_data.X1.eq(self.out_fifo_r_data)
                     m.next = "X2"
             with m.State("X2"):    
                 with m.If(self.enable):
-                    #m.d.comb += self.out_fifo_r_en.eq(1)
                     m.d.sync += self.vector_point_data.X2.eq(self.out_fifo_r_data)
                     m.next = "Y1"
             with m.State("Y1"):    
                 with m.If(self.enable):
-                    #m.d.comb += self.out_fifo_r_en.eq(1)
                     m.d.sync += self.vector_point_data.Y1.eq(self.out_fifo_r_data)
                     m.next = "Y2"
             with m.State("Y2"):    
                 with m.If(self.enable):
-                    #m.d.comb += self.out_fifo_r_en.eq(1)
                     m.d.sync += self.vector_point_data.Y2.eq(self.out_fifo_r_data)
                     m.next = "D1"
             with m.State("D1"):    
                 with m.If(self.enable):
-                    #m.d.comb += self.out_fifo_r_en.eq(1)
                     m.d.sync += self.vector_point_data.D1.eq(self.out_fifo_r_data)
                     m.next = "D2"
             with m.State("D2"):    
                 with m.If(self.enable):
                     m.d.comb += self.data_complete.eq(1)
-                    #m.d.comb += self.out_fifo_r_en.eq(1)
                     m.d.comb += self.vector_point_data_c.eq(Cat(self.vector_point_data.X1, self.vector_point_data.X2,
                                                                 self.vector_point_data.Y1, self.vector_point_data.Y2,
                                                                 self.vector_point_data.D1, self.out_fifo_r_data))
@@ -91,33 +79,20 @@ class VectorInput(Elaboratable):
 
 class VectorOutput(Elaboratable):
     def __init__(self):
-        #self.out_fifo = out_fifo
         self.in_fifo_w_data = Signal(8)
-        self.in_fifo_w_en = Signal()
-        self.in_fifo_w_rdy = Signal()
 
         self.vector_position_data = Signal(vector_position)
         self.vector_position_data_c = Signal(vector_position)
         self.vector_dwell_data = Signal(vector_dwell)
         self.vector_dwell_data_c = Signal(vector_dwell)
-        self.data_complete = Signal()
         
-
         self.enable = Signal()
         self.strobe_in_xy = Signal()
         self.strobe_in_dwell = Signal()
         self.strobe_out = Signal()
 
-
     def elaborate(self, platform):
         m = Module()
-
-        #m.submodules["OUT_FIFO"] = self.out_fifo
-
-        #m.d.comb += self.enable.eq(self.out_fifo_r_rdy)
-        #m.d.comb += self.enable.eq(1)
-
-        #m.d.sync += self.vector_point_data.eq(0)
 
         with m.FSM() as fsm:
             with m.State("Waiting"):
@@ -166,14 +141,11 @@ class VectorOutput(Elaboratable):
 
 
 
-class ModeController(Elaboratable):
+class VectorModeController(Elaboratable):
     '''
     '''
     def __init__(self):
-
         self.beam_controller = BeamController()
-
-        self.new_vector_point = Signal()
 
         self.vector_point_data = Signal(vector_point)
 
@@ -181,7 +153,6 @@ class ModeController(Elaboratable):
 
         self.vector_input = VectorInput()
         self.vector_output = VectorOutput()
-
 
     def elaborate(self, platform):
         m = Module()

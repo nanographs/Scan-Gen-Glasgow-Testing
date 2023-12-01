@@ -7,12 +7,12 @@ import os, sys
 if "glasgow" in __name__: ## running as applet
     #from ..scan_gen_components.output_bus import OutputBus
     #from ..scan_gen_components.multimode_input import InputBus
-    from ..scan_gen_components.mode_controller_raster import ModeController
+    from ..scan_gen_components.multi_mode_controller import ModeController
     from ..scan_gen_components.data_latch_bus import BusMultiplexer
     from ..scan_gen_components.addresses import *
 else:
     #from multimode_input import InputBus
-    from mode_controller_raster import ModeController
+    from multi_mode_controller import ModeController
     #from output_bus import OutputBus
     from data_latch_bus import BusMultiplexer
     from addresses import *
@@ -31,9 +31,7 @@ class IOBus(Elaboratable):
         
         self.out_fifo = out_fifo
         self.in_fifo = in_fifo
-        #self.input_bus = InputBus(self.out_fifo)
         self.mode_ctrl = ModeController()
-        #self.output_bus = OutputBus(self.in_fifo)
 
         self.bus_multiplexer = BusMultiplexer()
         self.pins = Signal(14)
@@ -55,14 +53,12 @@ class IOBus(Elaboratable):
         self.d = Signal(16)
     def elaborate(self, platform):
         m = Module()
-        #m.submodules["InBus"] = self.input_bus
         m.submodules["ModeCtrl"] = self.mode_ctrl
         #m.submodules["OutBus"] = self.output_bus
         m.submodules["MuxBus"] = self.bus_multiplexer
         m.submodules["OUT_FIFO"] = self.out_fifo
         m.submodules["IN_FIFO"] = self.in_fifo
 
-       
 
         m.d.comb += self.x_latch.eq(self.bus_multiplexer.x_dac.latch.le)
         m.d.comb += self.x_enable.eq(self.bus_multiplexer.x_dac.latch.oe)
@@ -88,7 +84,8 @@ class IOBus(Elaboratable):
             m.d.comb += self.d.eq(Cat(self.mode_ctrl.vector_input.vector_point_data_c.D1, self.mode_ctrl.vector_input.vector_point_data_c.D2))
         else: 
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy))
-            m.d.comb += self.mode_ctrl.vector_output.enable.eq(self.io_strobe)
+            #m.d.comb += self.mode_ctrl.vector_output.enable.eq(self.io_strobe)
+            m.d.comb += self.mode_ctrl.output_enable.eq(self.io_strobe)
 
         m.d.sync += self.bus_multiplexer.sampling.eq(self.mode_ctrl.beam_controller.dwelling)
         #m.d.sync += self.bus_multiplexer.sampling.eq(0)
@@ -128,11 +125,15 @@ class IOBus(Elaboratable):
                         m.d.comb += self.in_fifo.w_en.eq(1)
 
             else:
-                m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.vector_output.in_fifo_w_data)
+                # m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.vector_output.in_fifo_w_data)
+                # with m.If(self.io_strobe):
+                #     with m.If(~(self.mode_ctrl.vector_output.strobe_out)):
+                #         m.d.comb += self.in_fifo.w_en.eq(1)
+                m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
                 with m.If(self.io_strobe):
-                    with m.If(~(self.mode_ctrl.vector_output.strobe_out)):
+                    with m.If(~(self.mode_ctrl.output_strobe_out)):
                         m.d.comb += self.in_fifo.w_en.eq(1)
-
+                
 
         return m
 

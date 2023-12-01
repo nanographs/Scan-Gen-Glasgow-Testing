@@ -126,11 +126,15 @@ class ScanGenInterface:
         return a
     
     def read_rdwell_packet(self, raw_data):
-        data = raw_data.tolist()
+        print(type(raw_data))
+        if isinstance(raw_data, bytes):
+            data = list(raw_data)
+        else:
+            data = raw_data.tolist()
         packet = []
         for n in range(0,len(data),2):
-            dwell = read_rdwell(data[n:n+2])
-            packet += dwell
+            dwell = self.read_rdwell(data[n:n+2])
+            packet.append(dwell)
         return packet
 
     async def read_r_packet(self):
@@ -197,18 +201,6 @@ class ScanGenApplet(GlasgowApplet):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
         scan_iface = ScanGenInterface(iface, self.logger, device)
         return scan_iface
-
-
-        # n = 0
-        # while n < 16384:
-        #     n += 6
-        #     
-        #     output = await iface.read(1)
-        #     text_file.write(str(output.tolist()))
-        #     #await iface.flush()
-
-        # output = await iface.read(16384)
-
         
 
     @classmethod
