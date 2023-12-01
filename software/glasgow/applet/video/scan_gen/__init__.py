@@ -23,14 +23,14 @@ if "glasgow" in __name__: ## running as applet
 
 
 class IOBusSubtarget(Elaboratable):
-    def __init__(self, data, power_ok, in_fifo, out_fifo):
+    def __init__(self, data, power_ok, in_fifo, out_fifo, scan_mode):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
         self.out_fifo = out_fifo
+        self.scan_mode = scan_mode
 
-        self.io_bus = IOBus(is_simulation = False,
-        out_fifo = self.out_fifo, in_fifo = self.in_fifo)
+        self.io_bus = IOBus(self.out_fifo, self.in_fifo, scan_mode, is_simulation = False)
 
         self.pins = Signal(14)
 
@@ -83,14 +83,18 @@ class IOBusSubtarget(Elaboratable):
         return m
 
 class ScanGenInterface:
-    def __init__(self, iface, logger, device, is_simulation = False):
+    def __init__(self, iface, logger, device, __addr_scan_mode,
+                is_simulation = False):
         self.iface = iface
         self._logger = logger
         self._level  = logging.DEBUG if self._logger.name == __name__ else logging.TRACE
         self._device = device
+        self.__addr_scan_mode = __addr_scan_mode
+
+
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
-    
+
     def fifostats(self):
         iface = self.iface
         iface.statistics()
@@ -110,7 +114,6 @@ class ScanGenInterface:
         yield from self.iface.write(bits(b1))
         yield from self.iface.write(bits(b2))
         
-    
     async def write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
         print("writing", b1, b2)
@@ -214,12 +217,14 @@ class ScanGenApplet(GlasgowApplet):
         target.platform.add_resources(LVDS)
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
+        scan_mode,  self.__addr_scan_mode  = target.registers.add_rw(2)
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
             in_fifo = iface.get_in_fifo(),
             out_fifo = iface.get_out_fifo(),
+            scan_mode = scan_mode
         ))
 
     @classmethod
@@ -228,14 +233,12 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        scan_iface = ScanGenInterface(iface, self.logger, device)
+        scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode)
         return scan_iface
         
 
     @classmethod
     def add_interact_arguments(cls, parser):
-
-
         pass
 
     async def interact(self, device, args, scan_iface):
@@ -251,7 +254,6 @@ class ScanGenApplet(GlasgowApplet):
             
             output = await scan_iface.try_read_vpoint(3)
             print(output)
-        #pass
 
             
 

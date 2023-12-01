@@ -14,35 +14,28 @@ from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGen
 from glasgow.applet.video.scan_gen.scan_gen_components.main_iobus import IOBus
 from glasgow.applet.video.scan_gen.scan_gen_components.test_streams import *
 from glasgow.device.hardware import GlasgowHardwareDevice
+from glasgow.device.simulation import GlasgowSimulationDevice
+from glasgow.target.simulation import GlasgowSimulationTarget
 from glasgow.support.bits import bits
 
-#from test_streams import _fifo_write_data_address, basic_vector_stream
-from test_streams import _fifo_write_vector_point, test_vector_points, _fifo_read
+from test_streams import *
 
 
 
 sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
 sim_iface.in_fifo = sim_iface.get_in_fifo()
 sim_iface.out_fifo = sim_iface.get_out_fifo()
+# print(vars(ScanGenApplet))
+# print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
-sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, is_simulation = True)
-
-def write_vector_point(n, iface):
-    x, y, d = n
-    x1, x2 = get_two_bytes(x)
-    yield from iface.write(bits(x2))
-    yield from iface.write(bits(x1))
-    y1, y2 = get_two_bytes(y)
-    yield from iface.write(bits(y2))
-    yield from iface.write(bits(y1))
-    d1, d2 = get_two_bytes(d)
-    yield from iface.write(bits(d2))
-    yield from iface.write(bits(d1))
+sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
+                    2, is_simulation = True)
 
 
-def raster_sim():
-    output = yield from sim_app_iface.read(16384)
+def raster_sim(n=16384):
+    output = yield from sim_app_iface.read(n)
     print(sim_scangen_iface.decode_rdwell_packet(output))
+
 
 def vector_sim():
     for i in range(10):
@@ -58,9 +51,14 @@ def vector_sim():
 
 
 def sim_iobus():
-    dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, is_simulation = True)
+    scan_mode = Signal()
+    dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, is_simulation = True)
     def bench():
-        yield from vector_sim()
+        yield scan_mode.eq(ScanMode.Raster)
+        yield from raster_sim(500)
+        yield dut.scan_mode.eq(2)
+        for n in range(10):
+            yield
         
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
