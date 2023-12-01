@@ -170,6 +170,11 @@ class ScanGenApplet(GlasgowApplet):
             a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
             return [x, y, a]
 
+        def read_rdwell(n):
+            a2, a1 = n
+            a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+            return a
+
         async def write_vpoint(n):
             x, y, d = n
             await write_2bytes(x)
@@ -199,26 +204,41 @@ class ScanGenApplet(GlasgowApplet):
             except TimeoutError:
                 print('timeout')  
 
-        while n < 16384:
-            n += 6
-            await write_vpoint([2000, 1000, 10])
-            fifostats()
-            #await try_read(6)
-            n += 6
-            await write_vpoint([1000, 2000, 20])
-            fifostats()
-            #await try_read(6)
-            n += 6
-            await write_vpoint([1000, 2000, 30])
-            fifostats()
-            #await try_read(6)
-            print("n=",n)
-        next_n = n
-        n = 0
-        while n < next_n:
-            n += 6
-            await try_read_vpoint()
-            #await try_read(6)
+
+        async def test_vector():
+            while n < 16384:
+                n += 6
+                await write_vpoint([2000, 1000, 10])
+                fifostats()
+                #await try_read(6)
+                n += 6
+                await write_vpoint([1000, 2000, 20])
+                fifostats()
+                #await try_read(6)
+                n += 6
+                await write_vpoint([1000, 2000, 30])
+                fifostats()
+                #await try_read(6)
+                print("n=",n)
+            next_n = n
+            n = 0
+            while n < next_n:
+                n += 6
+                await try_read_vpoint()
+                #await try_read(6)
+        
+        output = await iface.read(16384)
+        data = output.tolist()
+        d = bytes(output)
+        print(d[0:10])
+        print(data[0:10])
+        print(d[512:522])
+        print(data[512:522])
+        for n in range(0,len(data),2):
+            print(data[n:n+2])
+            dwell = read_rdwell(data[n:n+2])
+            print(dwell)
+            text_file.write(str(dwell)+", ")
 
 
 

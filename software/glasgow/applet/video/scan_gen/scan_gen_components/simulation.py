@@ -42,21 +42,43 @@ def write_vector_point(n, iface):
     yield from iface.write(bits(d1))
 
     
+def vector_sim():
+    for i in range(10):
+        for n in test_vector_points:
+            x, y, d = n
+            yield from write_vector_point(n, sim_app_iface)
+    for i in range(10):
+        yield
+    for i in range(9):
+        output = yield from sim_app_iface.read(18)
+        print(output)
+
+def read_rdwell(n):
+    a2, a1 = n
+    a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+    return a
+
+def read_dwell_packet(packet):
+    for n in range(0,len(packet),2):
+        dwell = read_rdwell(packet[n:n+2])
+        text_file.write(str(dwell)+", ")
+
+text_file = open("packets.txt","w")
 
 def sim_iobus():
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, is_simulation = True)
     def bench():
-        for i in range(10):
-            for n in test_vector_points:
-                x, y, d = n
-                yield from write_vector_point(n, sim_app_iface)
-        for i in range(10):
-            yield
-        for i in range(9):
-            output = yield from sim_app_iface.read(18)
-            print(output)
-
-
+        output = yield from sim_app_iface.read(16384)
+        print(output)
+        print(type(output))
+        data = list(output)
+        print(data)
+        print(type(data))
+        read_dwell_packet(data)
+        # for i in range(100):
+        #     print("-")
+        #     yield
+        
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
     sim.add_sync_process(bench)
