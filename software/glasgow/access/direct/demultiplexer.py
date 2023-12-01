@@ -225,6 +225,7 @@ class DirectDemultiplexerInterface(AccessDemultiplexerInterface):
         self._in_tasks.submit(self._in_task())
 
     async def read(self, length=None, *, flush=True):
+        self.logger.trace("FIFO: read")
         if flush and len(self._out_buffer) > 0:
             # Flush the buffer, so that everything written before the read reaches the device.
             await self.flush(wait=False)

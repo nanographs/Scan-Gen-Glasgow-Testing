@@ -5,16 +5,15 @@ from amaranth.lib import data, enum
 import os, sys
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.output_bus import OutputBus
+    #from ..scan_gen_components.output_bus import OutputBus
     #from ..scan_gen_components.multimode_input import InputBus
     from ..scan_gen_components.mode_controller_registers import ModeController, VectorInput
     from ..scan_gen_components.data_latch_bus import BusMultiplexer
     from ..scan_gen_components.addresses import *
 else:
     #from multimode_input import InputBus
-    from byte_packing import TwoByteOutbox
     from mode_controller_registers import ModeController, VectorInput
-    from output_bus import OutputBus
+    #from output_bus import OutputBus
     from data_latch_bus import BusMultiplexer
     from addresses import *
     sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")

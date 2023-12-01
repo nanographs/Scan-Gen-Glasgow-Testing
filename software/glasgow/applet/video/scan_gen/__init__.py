@@ -146,11 +146,29 @@ class ScanGenApplet(GlasgowApplet):
         n = 0
         #await iface.flush()
 
+        def fifostats():
+            iface.statistics()
+            print(len(iface._in_tasks._live))
+            print(len(iface._out_tasks._live))
+            print(iface._in_buffer._rtotal)
+            print(iface._in_buffer._wtotal)
+            print(iface._out_buffer._rtotal)
+            print(iface._out_buffer._wtotal)
+            print(iface._in_pushback)
+            #print(iface._out_pushback)
+
         async def write_2bytes(val):
             b1, b2 = get_two_bytes(val)
             print("writing", b1, b2)
             await iface.write(bits(b1))
             await iface.write(bits(b2))
+
+        def read_vpoint(n):
+            x1, x2, y1, y2, a1, a2 = n
+            x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
+            y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
+            a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+            return [x, y, a]
 
         async def write_vpoint(n):
             x, y, d = n
@@ -159,6 +177,7 @@ class ScanGenApplet(GlasgowApplet):
             await write_2bytes(d)
 
         async def try_read(n):
+            fifostats()
             try:
                 output = await asyncio.wait_for(iface.read(n), timeout = 1)
                 #output = await iface.read(n)
@@ -169,22 +188,40 @@ class ScanGenApplet(GlasgowApplet):
             except TimeoutError:
                 print('timeout')  
 
+        async def try_read_vpoint():
+            fifostats()
+            try:
+                output = await asyncio.wait_for(iface.read(6), timeout = 1)
+                print("got data")
+                
+                data = output.tolist()
+                text_file.write(str(read_vpoint(data)))
+            except TimeoutError:
+                print('timeout')  
 
-        await write_vpoint([2000, 1000, 1])
-        await try_read(4)
         while n < 16384:
             n += 6
-            await write_vpoint([2000, 1000, 1])
-            await try_read(6)
+            await write_vpoint([2000, 1000, 10])
+            fifostats()
+            #await try_read(6)
             n += 6
-            await write_vpoint([1000, 2000, 2])
-            await try_read(6)
+            await write_vpoint([1000, 2000, 20])
+            fifostats()
+            #await try_read(6)
             n += 6
-            await write_vpoint([1000, 2000, 3])
-            await try_read(6)
+            await write_vpoint([1000, 2000, 30])
+            fifostats()
+            #await try_read(6)
             print("n=",n)
-        #await iface.flush()
-        #await try_read(16384)
+        next_n = n
+        n = 0
+        while n < next_n:
+            n += 6
+            await try_read_vpoint()
+            #await try_read(6)
+
+
+
 
 
             

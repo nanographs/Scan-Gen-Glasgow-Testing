@@ -10,7 +10,6 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.output_handling import VideoSink
 else:
     from addresses import *
-    from byte_packing import TwoByteOutbox
     from output_handling import VideoSink, test_pixel_stream
 
 
@@ -19,14 +18,14 @@ class OutputBus(Elaboratable):
         self.video_sink = VideoSink()
         self.in_fifo = in_fifo
         #self.pixel_in = Signal(16)
-        self.video_outbox = TwoByteOutbox()
+        #self.video_outbox = TwoByteOutbox()
         self.strobe = Signal()
         
     def elaborate(self,platform):
         m = Module()
 
         m.submodules["VSink"] = self.video_sink
-        m.submodules["VMailbox"] = self.video_outbox
+        #m.submodules["VMailbox"] = self.video_outbox
         m.submodules["in_fifo"] = self.in_fifo
         
         #m.d.comb += self.video_outbox.input.eq(self.video_sink.pixel_out)
