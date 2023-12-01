@@ -124,9 +124,13 @@ class VectorOutput(Elaboratable):
         with m.FSM() as fsm:
             with m.State("Waiting"):
                 m.d.comb += self.strobe_out.eq(1)
-                with m.If((self.strobe_in_xy)):
+                with m.If((self.strobe_in_xy) & ~(self.enable)):
                     m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
                     m.next = "X1"
+                with m.If((self.strobe_in_xy) & (self.enable)):
+                    m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
+                    m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data_c.X1)
+                    m.next = "X2"
             with m.State("X1"):    
                 with m.If(self.enable):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.X1)
@@ -145,9 +149,13 @@ class VectorOutput(Elaboratable):
                     m.next = "Dwell_Waiting"
             with m.State("Dwell_Waiting"):
                 m.d.comb += self.strobe_out.eq(1)
-                with m.If(self.strobe_in_dwell):
+                with m.If((self.strobe_in_dwell) & ~(self.enable)):
                     m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
                     m.next = "D1"
+                with m.If((self.strobe_in_dwell) & (self.enable)):
+                    m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
+                    m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data_c.D1)
+                    m.next = "D2"
             with m.State("D1"):    
                 with m.If(self.enable):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D1)
