@@ -66,7 +66,8 @@ text_file = open("packets.txt","w")
 def sim_iobus():
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, is_simulation = True)
     def bench():
-        yield from sim_scangen_iface.read_r_packet()
+        output = yield from sim_app_iface.read(16384)
+        print(sim_scangen_iface.read_rdwell_packet(output))
         
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
@@ -74,5 +75,5 @@ def sim_iobus():
     with sim.write_vcd("applet_sim.vcd"):
         sim.run()
 
-# if __name__ == "__main__":
-#     sim_iobus()
+if __name__ == "__main__":
+    sim_iobus()
