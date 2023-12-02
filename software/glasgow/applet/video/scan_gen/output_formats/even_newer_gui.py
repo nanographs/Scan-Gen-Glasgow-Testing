@@ -2,7 +2,8 @@ import sys
 import asyncio
 import numpy as np
 
-from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QPushButton
+from PyQt6.QtWidgets import (QWidget, QGridLayout, 
+                            QLabel, QPushButton, QSpinBox)
 
 import pyqtgraph as pg
 from pyqtgraph.exporters import Exporter
@@ -13,6 +14,32 @@ from qasync import QEventLoop, QApplication, asyncSlot, asyncClose
 
 # from bmp_utils import *
 from argparse import Namespace
+
+class RegisterUpdateBox(QGridLayout):
+    def __init__(self, label, lower_limit, upper_limit, fn=None):
+        super().__init__()
+        self.name = label
+        self.fn = fn
+        self.label = QLabel(label)
+        self.addWidget(self.label,0,1)
+
+        self.spinbox = QSpinBox()
+        self.spinbox.setRange(lower_limit, upper_limit)
+        self.spinbox.setSingleStep(1)
+        self.addWidget(self.spinbox,1,1)
+
+        self.btn = QPushButton("->")
+        self.addWidget(self.btn,1,2) 
+        self.btn.clicked.connect(self.do_fn)
+
+    @asyncSlot()
+    async def do_fn(self):
+        val = int(self.spinbox.cleanText())
+        print("set", self.name, ":", val)
+        if not self.fn == None: ## allow previewing the button without any function
+            await self.fn(val)
+
+
 
 class ImageDisplay(pg.GraphicsLayoutWidget):
     def __init__(self, height, width):
@@ -46,7 +73,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.live_img.setImage(array)
 class MainWindow(QWidget):
 
-    def __init__(self, scan_iface):
+    def __init__(self, scan_iface=None):
         super().__init__()
         self.scan_iface = scan_iface
         data = np.random.randint(low = 1, high = 255, size = (2048,2048))
@@ -62,6 +89,16 @@ class MainWindow(QWidget):
         self.scan_btn.clicked.connect(self.do_stuff)
 
         self.layout.addWidget(self.scan_btn)
+
+        if not self.scan_iface == None:
+            self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384, self.scan_iface.set_x_resolution)
+            self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384, self.scan_iface.set_y_resolution)
+        else:
+            self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384)
+            self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384)
+
+        self.layout.addLayout(self.x_resolution, 0 ,1)
+        self.layout.addLayout(self.y_resolution, 0 ,2)
 
     @asyncSlot()
     async def do_stuff(self):
@@ -91,7 +128,7 @@ class MainWindow(QWidget):
     #     self.scatter.addPoints([x], [y], brush = brush)
 
 
-def run_gui(scan_iface):
+def run_gui(scan_iface=None):
     app = QApplication(sys.argv)
 
     event_loop = QEventLoop(app)
@@ -107,4 +144,7 @@ def run_gui(scan_iface):
         event_loop.run_until_complete(app_close_event.wait())
 
     return main_window
+
+if __name__ == "__main__":
+    run_gui()
 
