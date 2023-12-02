@@ -29,7 +29,7 @@ sim_iface.out_fifo = sim_iface.get_out_fifo()
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
-                    2, is_simulation = True)
+                    2, 3, 4, 5, 6, is_simulation = True)
 
 
 def raster_sim(n=16384):
@@ -50,21 +50,35 @@ def vector_sim(r):
 
 def sim_iobus():
     scan_mode = Signal(2)
-    dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, is_simulation = True)
+    x_full_resolution_b1 = Signal(8)
+    x_full_resolution_b2 = Signal(8)
+    y_full_resolution_b1 = Signal(8)
+    y_full_resolution_b2 = Signal(8)
+    dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
+    x_full_resolution_b1, x_full_resolution_b2,
+    y_full_resolution_b1, x_full_resolution_b2, is_simulation = True)
     def bench():
-        # yield scan_mode.eq(ScanMode.Raster)
+        b1, b2 = get_two_bytes(2048)
+        b1 = int(bits(b1))
+        b2 = int(bits(b2))
+        yield scan_mode.eq(ScanMode.Raster)
+        yield x_full_resolution_b1.eq(b1)
+        yield x_full_resolution_b2.eq(b2)
+        yield y_full_resolution_b1.eq(b1)
+        yield y_full_resolution_b2.eq(b2)
+        yield from raster_sim()
         # yield from raster_sim(500)
         # # yield scan_mode.eq(2) ## not defined, so just do nothing/pause
         # # for n in range(10):
         # #     yield
         #yield scan_mode.eq(3)
         #yield
-        try:
-            yield from vector_sim(512)
-            output = yield from sim_app_iface.read(512)
-            print(sim_scangen_iface.decode_vpoint_packet(output))
-        except AssertionError:
-            yield
+        # try:
+        #     yield from vector_sim(512)
+        #     output = yield from sim_app_iface.read(512)
+        #     print(sim_scangen_iface.decode_vpoint_packet(output))
+        # except AssertionError:
+        #     yield
         
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz

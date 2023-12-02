@@ -2,6 +2,8 @@ import os
 import types
 import logging
 import asyncio
+import numpy as np
+
 from amaranth import *
 from amaranth.build import *
 from ....support.endpoint import *
@@ -106,6 +108,13 @@ class ScanGenInterface:
 
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
+
+        self.y_height = 2048
+        self.x_width = 2048
+        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
+                            dtype = np.uint16)
+        self.current_x = 0
+        self.current_y = 0
 
     def fifostats(self):
         iface = self.iface
@@ -225,19 +234,41 @@ class ScanGenInterface:
         await self._device.write_register(addr_b2, b2)
 
     async def set_x_resolution(self,val):
-        await self.set_2byte_register(val,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
+        self.x_width = val
+        ## subtract 1 to account for 0-indexing
+        await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
 
     async def set_y_resolution(self,val):
-        await self.set_2byte_register(val,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
+        self.y_height = val
+        ## subtract 1 to account for 0-indexing
+        await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
 
     async def set_frame_resolution(self,xval,yval):
         await self.set_x_resolution(xval)
         await self.set_y_resolution(yval)
+        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
+                            dtype = np.uint16)
 
     async def stream_video(self):
-        await self.set_frame_resolution(2048,2048)
-        await self._device.write_register(self.__addr_scan_mode, 1)
+        
         return await self.read_r_packet()
+
+    async def stream_to_buffer(self):
+        data = await self.stream_video()
+        print(len(data))
+        
+        partial_start_points = self.current_x
+        partial_end_points = ((len(data) - partial_start_points)%self.x_width)
+        full_lines = ((len(data) - partial_start_points)//self.x_width)
+        if partial_start_points > 0:
+            self.buffer[self.current_y][partial_start_points:self.x_width] = data[0:self.x_width-partial_start_points]
+            self.current_y += 1
+            
+        for i in range(0,full_lines):
+            self.buffer[self.current_y + i] = data[partial_start_points + i*self.x_width:partial_start_points + (i+1)*self.x_width]
+        self.buffer[full_lines+self.current_y][0:partial_end_points] = data[self.x_width*full_lines:self.x_width*full_lines + partial_end_points]
+        self.current_y += full_lines
+        self.current_x = partial_end_points
 
 
 class ScanGenApplet(GlasgowApplet):
@@ -284,7 +315,7 @@ class ScanGenApplet(GlasgowApplet):
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
-            in_fifo = iface.get_in_fifo(),
+            in_fifo = iface.get_in_fifo(auto_flush = False),
             out_fifo = iface.get_out_fifo(),
             scan_mode = scan_mode,
             x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
@@ -317,8 +348,12 @@ class ScanGenApplet(GlasgowApplet):
         if args.gui:
             run_gui(scan_iface)
         else:
-            data = await scan_iface.stream_video()
-            print(data)
+            #data = await scan_iface.stream_video()
+            await scan_iface.set_frame_resolution(2000,1000)
+            await device.write_register(self.__addr_scan_mode, 1)
+            for n in range(3):
+                await scan_iface.stream_to_buffer()
+            #print(data)
             #pass
 
 
