@@ -2,7 +2,7 @@ import sys
 import asyncio
 import numpy as np
 
-from PyQt6.QtWidgets import (QWidget, QGridLayout, 
+from PyQt6.QtWidgets import (QWidget, QGridLayout, QHBoxLayout, 
                             QLabel, QPushButton, QSpinBox)
 
 import pyqtgraph as pg
@@ -28,9 +28,6 @@ class RegisterUpdateBox(QGridLayout):
         self.spinbox.setSingleStep(1)
         self.addWidget(self.spinbox,1,1)
 
-        self.btn = QPushButton("->")
-        self.addWidget(self.btn,1,2) 
-        self.btn.clicked.connect(self.do_fn)
 
     @asyncSlot()
     async def do_fn(self):
@@ -38,6 +35,35 @@ class RegisterUpdateBox(QGridLayout):
         print("set", self.name, ":", val)
         if not self.fn == None: ## allow previewing the button without any function
             await self.fn(val)
+
+class FrameSettings(QHBoxLayout):
+    def __init__(self, img_display, scan_iface=None):
+        super().__init__()
+        self.scan_iface = scan_iface
+        self.img_display = img_display
+        if not self.scan_iface == None:
+            self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384, self.scan_iface.set_x_resolution)
+            self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384, self.scan_iface.set_y_resolution)
+        else:
+            self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384)
+            self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384)
+
+        self.registers = [self.x_resolution, self.y_resolution]
+
+        self.addLayout(self.x_resolution)
+        self.addLayout(self.y_resolution)
+
+        self.btn = QPushButton("->")
+        self.addWidget(self.btn) 
+        self.btn.clicked.connect(self.do_fns)
+
+    @asyncSlot()
+    async def do_fns(self):
+        height = int(self.y_resolution.spinbox.cleanText())
+        width = int(self.x_resolution.spinbox.cleanText())
+        self.img_display.setRange(height, width)
+        for register in self.registers:
+            register.do_fn()
 
 
 
@@ -65,7 +91,6 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
     def setRange(self, height, width):
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
     
-    
     def showTest(self):
         test_file = "software/glasgow/applet/video/scan_gen/output_formats/Nanographs Pattern Test Logo and Gradients.bmp"
         bmp = bmp_import(test_file)
@@ -83,22 +108,16 @@ class MainWindow(QWidget):
         self.setLayout(self.layout)
 
         self.image_display = ImageDisplay(2048, 2048)
-        #self.layout.addWidget(self.image_display)
+        self.layout.addWidget(self.image_display, 0, 0)
 
         self.scan_btn = QPushButton('!')
         self.scan_btn.clicked.connect(self.do_stuff)
 
-        self.layout.addWidget(self.scan_btn)
+        self.layout.addWidget(self.scan_btn, 1, 0)
 
-        if not self.scan_iface == None:
-            self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384, self.scan_iface.set_x_resolution)
-            self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384, self.scan_iface.set_y_resolution)
-        else:
-            self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384)
-            self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384)
+        self.frame_settings = FrameSettings(self.image_display, self.scan_iface)
+        self.layout.addLayout(self.frame_settings, 2, 0)
 
-        self.layout.addLayout(self.x_resolution, 0 ,1)
-        self.layout.addLayout(self.y_resolution, 0 ,2)
 
     @asyncSlot()
     async def do_stuff(self):
