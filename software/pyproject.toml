@@ -27,7 +27,9 @@ dependencies = [
   "numpy",
   "rich",
   "matplotlib",
-  "pyqtgraph"
+  "pyqtgraph",
+  "PyQt6",
+  "qasync"
 ]
 
 [project.optional-dependencies]

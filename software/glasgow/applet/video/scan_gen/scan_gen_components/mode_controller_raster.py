@@ -93,8 +93,8 @@ class RasterModeController(Elaboratable):
         m.submodules["RasterOutput"] = self.raster_output
         m.submodules["XYScanGen"] = self.xy_scan_gen
 
-        m.d.comb += self.xy_scan_gen.x_full_frame_resolution.eq(2048)
-        m.d.comb += self.xy_scan_gen.y_full_frame_resolution.eq(2048)
+        # m.d.comb += self.xy_scan_gen.x_full_frame_resolution.eq(2048)
+        # m.d.comb += self.xy_scan_gen.y_full_frame_resolution.eq(2048)
         m.d.comb += self.beam_controller_next_dwell.eq(5)
 
         with m.If(self.beam_controller_end_of_dwell):

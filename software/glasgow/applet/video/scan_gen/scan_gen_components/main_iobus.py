@@ -14,7 +14,9 @@ else:
     from addresses import *
 
 class IOBus(Elaboratable):
-    def __init__(self, in_fifo, out_fifo, scan_mode,
+    def __init__(self, in_fifo, out_fifo, scan_mode, 
+                x_full_resolution_b1, x_full_resolution_b2,
+                y_full_resolution_b1, y_full_resolution_b2,
                 is_simulation = True, test_mode = None):
         self.is_simulation = is_simulation
         self.test_mode = test_mode
@@ -22,6 +24,11 @@ class IOBus(Elaboratable):
         self.out_fifo = out_fifo
         self.in_fifo = in_fifo
         self.scan_mode = scan_mode
+        self.x_full_resolution_b1 = x_full_resolution_b1
+        self.x_full_resolution_b2 = x_full_resolution_b2
+        self.y_full_resolution_b1 = y_full_resolution_b1
+        self.y_full_resolution_b2 = y_full_resolution_b2
+
         self.mode_ctrl = ModeController()
 
         self.bus_multiplexer = BusMultiplexer()
@@ -64,7 +71,11 @@ class IOBus(Elaboratable):
 
 
         #m.d.comb += self.scan_mode.eq(ScanMode.Raster)
-        m.d.comb += self.mode_ctrl.mode.eq(ScanMode.Vector)
+        m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_full_frame_resolution.eq(Cat(self.x_full_resolution_b2,
+                                                                                            self.x_full_resolution_b1))
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_full_frame_resolution.eq(Cat(self.y_full_resolution_b2,
+                                                                                            self.y_full_resolution_b1))
 
         with m.If(self.bus_multiplexer.is_x):
             m.d.comb += self.pins.eq(self.mode_ctrl.beam_controller.x_position)
