@@ -124,6 +124,7 @@ class VectorOutput(Elaboratable):
                     m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
                     m.next = "D1"
                 with m.If((self.strobe_in_dwell) & (self.enable)):
+                    m.d.comb += self.strobe_out.eq(0)
                     m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data_c.D1)
                     m.next = "D2"

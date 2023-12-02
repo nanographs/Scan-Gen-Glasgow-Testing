@@ -53,6 +53,7 @@ class SimulationDemultiplexerInterface(AccessDemultiplexerInterface):
                 self.logger.trace("FIFO: need %d bytes", length - len(data))
                 print("FIFO: need %d bytes" %(length - len(data)))
                 while not (yield self._in_fifo.r_rdy):
+                    #print("not in fifo r rdy")
                     yield
                 data.append((yield from _fifo_read(self._in_fifo)))
 
@@ -69,7 +70,7 @@ class SimulationDemultiplexerInterface(AccessDemultiplexerInterface):
 
         for byte in data:
             while not (yield self._out_fifo.w_rdy):
-                print("not w_rdy")
+                #print("not out fifo w_rdy")
                 yield
             yield from _fifo_write(self._out_fifo, byte)
 
