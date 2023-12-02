@@ -217,14 +217,25 @@ class ScanGenInterface:
             self.future_packet(fut)
         )
 
-    async def stream_video(self):
-        b1, b2 = get_two_bytes(2048)
+    async def set_2byte_register(self,val,addr_b1, addr_b2):
+        b1, b2 = get_two_bytes(val)
         b1 = int(bits(b1))
         b2 = int(bits(b2))
-        await self._device.write_register(self.__addr_x_full_resolution_b1, b1)
-        await self._device.write_register(self.__addr_x_full_resolution_b2, b2)
-        await self._device.write_register(self.__addr_y_full_resolution_b1, b1)
-        await self._device.write_register(self.__addr_y_full_resolution_b2, b2)
+        await self._device.write_register(addr_b1, b1)
+        await self._device.write_register(addr_b2, b2)
+
+    async def set_x_resolution(self,val):
+        await self.set_2byte_register(val,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
+
+    async def set_y_resolution(self,val):
+        await self.set_2byte_register(val,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
+
+    async def set_frame_resolution(self,xval,yval):
+        await self.set_x_resolution(xval)
+        await self.set_y_resolution(yval)
+
+    async def stream_video(self):
+        await self.set_frame_resolution(2048,2048)
         await self._device.write_register(self.__addr_scan_mode, 1)
         return await self.read_r_packet()
 
