@@ -52,7 +52,6 @@ class IOBus(Elaboratable):
         m.submodules["OUT_FIFO"] = self.out_fifo
         m.submodules["IN_FIFO"] = self.in_fifo
 
-
         m.d.comb += self.x_latch.eq(self.bus_multiplexer.x_dac.latch.le)
         m.d.comb += self.x_enable.eq(self.bus_multiplexer.x_dac.latch.oe)
         m.d.comb += self.y_latch.eq(self.bus_multiplexer.y_dac.latch.le)
@@ -65,7 +64,7 @@ class IOBus(Elaboratable):
 
 
         #m.d.comb += self.scan_mode.eq(ScanMode.Raster)
-        m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
+        m.d.comb += self.mode_ctrl.mode.eq(ScanMode.Vector)
 
         with m.If(self.bus_multiplexer.is_x):
             m.d.comb += self.pins.eq(self.mode_ctrl.beam_controller.x_position)

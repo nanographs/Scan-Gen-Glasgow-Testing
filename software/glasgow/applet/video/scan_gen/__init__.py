@@ -30,7 +30,7 @@ class IOBusSubtarget(Elaboratable):
         self.out_fifo = out_fifo
         self.scan_mode = scan_mode
 
-        self.io_bus = IOBus(self.out_fifo, self.in_fifo, scan_mode, is_simulation = False)
+        self.io_bus = IOBus(self.in_fifo, self.out_fifo, scan_mode, is_simulation = False)
 
         self.pins = Signal(14)
 
@@ -111,14 +111,14 @@ class ScanGenInterface:
     def sim_write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
         print("writing", b1, b2)
-        yield from self.iface.write(bits(b1))
         yield from self.iface.write(bits(b2))
+        yield from self.iface.write(bits(b1))
         
     async def write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
         print("writing", b1, b2)
-        await self.iface.write(bits(b1))
         await self.iface.write(bits(b2))
+        await self.iface.write(bits(b1))
 
     @types.coroutine
     def sim_write_vpoint(self, point):
@@ -129,6 +129,7 @@ class ScanGenInterface:
 
     async def write_vpoint(self, point):
         x, y, d = point
+        print("x:", x, "y:", y, "d:", d)
         await self.write_2bytes(x)
         await self.write_2bytes(y)
         await self.write_2bytes(d)
@@ -146,11 +147,16 @@ class ScanGenInterface:
             return "timeout"
     
     def decode_vpoint(self, n):
-        x1, x2, y1, y2, a1, a2 = n
-        x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
-        y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
-        a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
-        return [x, y, a]
+        try:
+            x2, x1, y2, y1, a2, a1 = n
+            x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
+            y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
+            a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+            return [x, y, a]
+        except ValueError:
+            return ("not a full point")
+
+        
 
     def decode_rdwell(self, n):
         a2, a1 = n
@@ -178,6 +184,7 @@ class ScanGenInterface:
         packet = []
         for n in range(0,len(data),6):
             point = self.decode_vpoint(data[n:n+6])
+            print("point", point)
             packet.append(point)
         return packet
 
@@ -217,7 +224,7 @@ class ScanGenApplet(GlasgowApplet):
         target.platform.add_resources(LVDS)
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
-        scan_mode,  self.__addr_scan_mode  = target.registers.add_rw(2)
+        scan_mode,  self.__addr_scan_mode  = target.registers.add_rw(2, reset=3)
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -243,17 +250,42 @@ class ScanGenApplet(GlasgowApplet):
 
     async def interact(self, device, args, scan_iface):
         test_vector_points = [
-            [2000, 1000, 30], ## X, Y, D
-            [1000, 2000, 40],
-            [3000, 2500, 50],
+            [2000, 1000, 12], ## X, Y, D
+            [1000, 2000, 12],
+            [3000, 2500, 12],
             ]
+        await device.write_register(self.__addr_scan_mode, 3)
+        await scan_iface.iface.reset()
 
-        for n in range(10):
-            for n in test_vector_points:
-                await scan_iface.write_vpoint(n)
-            
-            output = await scan_iface.try_read_vpoint(3)
-            print(output)
+        async def future_data(future):
+            output = await scan_iface.iface.read(16384)
+            data = scan_iface.decode_vpoint_packet(output)
+            print(data)
+            future.set_result(data)
+
+
+        # for n in range(10):
+        #     for n in test_vector_points:
+        #         await scan_iface.write_vpoint(n)
+        #     output = await scan_iface.try_read_vpoint(3)
+        #     print(output)
+        for j in range(5):
+            i = 0
+            while i < 16384:
+                for n in test_vector_points:
+                    i+=6
+                    await scan_iface.write_vpoint(n)
+            loop = asyncio.get_running_loop()
+            fut = loop.create_future()
+            loop.create_task(
+                future_data(fut)
+            )
+            # try:
+            #     output = await asyncio.wait_for(scan_iface.iface.read(16384), timeout = 1)
+            #     print(scan_iface.decode_vpoint_packet(output))
+            # except TimeoutError:
+            #     print("timeout")
+
 
             
 

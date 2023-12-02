@@ -23,7 +23,7 @@ from test_streams import *
 
 
 sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
-sim_iface.in_fifo = sim_iface.get_in_fifo()
+sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=False)
 sim_iface.out_fifo = sim_iface.get_out_fifo()
 # print(vars(ScanGenApplet))
 # print(vars(GlasgowSimulationTarget))
@@ -37,27 +37,33 @@ def raster_sim(n=16384):
     print(sim_scangen_iface.decode_rdwell_packet(output))
 
 
-def vector_sim():
-    for i in range(10):
+def vector_sim(r):
+    i = 0
+    while i < r:
         for n in test_vector_points:
             x, y, d = n
+            i += 6
             #yield from write_vector_point(n, sim_app_iface)
             yield from sim_scangen_iface.sim_write_vpoint(n)
-    for i in range(10):
-        yield
-    for i in range(9):
-        output = yield from sim_app_iface.read(18)
-        print(sim_scangen_iface.decode_vpoint_packet(output))
+
 
 
 def sim_iobus():
-    scan_mode = Signal()
+    scan_mode = Signal(2)
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, is_simulation = True)
     def bench():
-        yield scan_mode.eq(ScanMode.Raster)
-        yield from raster_sim(500)
-        yield dut.scan_mode.eq(2)
-        for n in range(10):
+        # yield scan_mode.eq(ScanMode.Raster)
+        # yield from raster_sim(500)
+        # # yield scan_mode.eq(2) ## not defined, so just do nothing/pause
+        # # for n in range(10):
+        # #     yield
+        #yield scan_mode.eq(3)
+        #yield
+        try:
+            yield from vector_sim(512)
+            output = yield from sim_app_iface.read(512)
+            print(sim_scangen_iface.decode_vpoint_packet(output))
+        except AssertionError:
             yield
         
     sim = Simulator(dut)
