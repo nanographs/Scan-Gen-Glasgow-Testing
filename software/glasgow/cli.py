@@ -482,6 +482,7 @@ def create_logger(args):
 
 async def _main():
     args = get_argparser().parse_args()
+    print(args)
     create_logger(args)
 
     if sys.version_info < (3, 8) and os.name == "nt":

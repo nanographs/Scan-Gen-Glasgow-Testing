@@ -12,6 +12,8 @@ from asyncio.exceptions import TimeoutError
 from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
 
+from ..scan_gen.output_formats.even_newer_gui import run_gui
+
 
 from ... import *
 
@@ -23,14 +25,19 @@ if "glasgow" in __name__: ## running as applet
 
 
 class IOBusSubtarget(Elaboratable):
-    def __init__(self, data, power_ok, in_fifo, out_fifo, scan_mode):
+    def __init__(self, data, power_ok, in_fifo, out_fifo, scan_mode,
+                x_full_resolution_b1, x_full_resolution_b2, 
+                y_full_resolution_b1, y_full_resolution_b2 ):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
         self.out_fifo = out_fifo
         self.scan_mode = scan_mode
 
-        self.io_bus = IOBus(self.in_fifo, self.out_fifo, scan_mode, is_simulation = False)
+        self.io_bus = IOBus(self.in_fifo, self.out_fifo, scan_mode, 
+                            x_full_resolution_b1, x_full_resolution_b2,
+                            y_full_resolution_b1, y_full_resolution_b2,
+                            is_simulation = False)
 
         self.pins = Signal(14)
 
@@ -84,13 +91,18 @@ class IOBusSubtarget(Elaboratable):
 
 class ScanGenInterface:
     def __init__(self, iface, logger, device, __addr_scan_mode,
+                __addr_x_full_resolution_b1, __addr_x_full_resolution_b2,
+                __addr_y_full_resolution_b1,__addr_y_full_resolution_b2,
                 is_simulation = False):
         self.iface = iface
         self._logger = logger
         self._level  = logging.DEBUG if self._logger.name == __name__ else logging.TRACE
         self._device = device
         self.__addr_scan_mode = __addr_scan_mode
-
+        self.__addr_x_full_resolution_b1 = __addr_x_full_resolution_b1
+        self.__addr_x_full_resolution_b2 = __addr_x_full_resolution_b2
+        self.__addr_y_full_resolution_b1 = __addr_y_full_resolution_b1
+        self.__addr_y_full_resolution_b2 = __addr_y_full_resolution_b2
 
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
@@ -106,45 +118,6 @@ class ScanGenInterface:
         print(iface._out_buffer._wtotal)
         print(iface._in_pushback)
         #print(iface._out_pushback)
-
-    @types.coroutine
-    def sim_write_2bytes(self, val):
-        b1, b2 = get_two_bytes(val)
-        print("writing", b1, b2)
-        yield from self.iface.write(bits(b2))
-        yield from self.iface.write(bits(b1))
-        
-    async def write_2bytes(self, val):
-        b1, b2 = get_two_bytes(val)
-        print("writing", b1, b2)
-        await self.iface.write(bits(b2))
-        await self.iface.write(bits(b1))
-
-    @types.coroutine
-    def sim_write_vpoint(self, point):
-        x, y, d = point
-        yield from self.sim_write_2bytes(x)
-        yield from self.sim_write_2bytes(y)
-        yield from self.sim_write_2bytes(d)
-
-    async def write_vpoint(self, point):
-        x, y, d = point
-        print("x:", x, "y:", y, "d:", d)
-        await self.write_2bytes(x)
-        await self.write_2bytes(y)
-        await self.write_2bytes(d)
-
-    async def read_r_packet(self):
-        output = await self.iface.read(16384)
-        return read_rdwell_packet(output)
-
-    async def try_read_vpoint(self, n_points):
-        try:
-            output = await asyncio.wait_for(self.iface.read(6*n_points), timeout = 1)
-            print("got data")
-            return self.decode_vpoint_packet(output)
-        except TimeoutError:
-            return "timeout"
     
     def decode_vpoint(self, n):
         try:
@@ -154,9 +127,8 @@ class ScanGenInterface:
             a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
             return [x, y, a]
         except ValueError:
-            return ("not a full point")
-
-        
+            pass ## 16384 isn't divisible by 3...
+            #ignore those pesky extra values.... just for new
 
     def decode_rdwell(self, n):
         a2, a1 = n
@@ -187,7 +159,74 @@ class ScanGenInterface:
             print("point", point)
             packet.append(point)
         return packet
+    
+    @types.coroutine
+    def sim_write_2bytes(self, val):
+        b1, b2 = get_two_bytes(val)
+        print("writing", b1, b2)
+        yield from self.iface.write(bits(b2))
+        yield from self.iface.write(bits(b1))
+        
+    async def write_2bytes(self, val):
+        b1, b2 = get_two_bytes(val)
+        print("writing", b1, b2)
+        await self.iface.write(bits(b2))
+        await self.iface.write(bits(b1))
 
+    @types.coroutine
+    def sim_write_vpoint(self, point):
+        x, y, d = point
+        yield from self.sim_write_2bytes(x)
+        yield from self.sim_write_2bytes(y)
+        yield from self.sim_write_2bytes(d)
+
+    async def write_vpoint(self, point):
+        x, y, d = point
+        print("x:", x, "y:", y, "d:", d)
+        await self.write_2bytes(x)
+        await self.write_2bytes(y)
+        await self.write_2bytes(d)
+
+    async def read_r_packet(self):
+        output = await self.iface.read(16384)
+        return self.decode_rdwell_packet(output)
+
+    async def try_read_vpoint(self, n_points):
+        try:
+            output = await asyncio.wait_for(self.iface.read(6*n_points), timeout = 1)
+            print("got data")
+            return self.decode_vpoint_packet(output)
+        except TimeoutError:
+            return "timeout"
+
+    async def future_packet(self, future):
+        output = await self.iface.read(16384)
+        data = self.decode_vpoint_packet(output)
+        print(data)
+        future.set_result(data)
+
+    async def send_vec_stream_and_recieve_data(self):
+        i = 0
+        while i < 16384:
+            for n in test_vector_points:
+                i+=6
+                await self.write_vpoint(n)
+        loop = asyncio.get_running_loop()
+        fut = loop.create_future()
+        loop.create_task(
+            self.future_packet(fut)
+        )
+
+    async def stream_video(self):
+        b1, b2 = get_two_bytes(2048)
+        b1 = int(bits(b1))
+        b2 = int(bits(b2))
+        await self._device.write_register(self.__addr_x_full_resolution_b1, b1)
+        await self._device.write_register(self.__addr_x_full_resolution_b2, b2)
+        await self._device.write_register(self.__addr_y_full_resolution_b1, b1)
+        await self._device.write_register(self.__addr_y_full_resolution_b2, b2)
+        await self._device.write_register(self.__addr_scan_mode, 1)
+        return await self.read_r_packet()
 
 
 class ScanGenApplet(GlasgowApplet):
@@ -224,15 +263,24 @@ class ScanGenApplet(GlasgowApplet):
         target.platform.add_resources(LVDS)
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
-        scan_mode,  self.__addr_scan_mode  = target.registers.add_rw(2, reset=3)
+
+        scan_mode,             self.__addr_scan_mode  = target.registers.add_rw(2, reset=0)
+        x_full_resolution_b1,  self.__addr_x_full_resolution_b1  = target.registers.add_rw(8, reset=0)
+        x_full_resolution_b2,  self.__addr_x_full_resolution_b2  = target.registers.add_rw(8, reset=0)
+        y_full_resolution_b1,  self.__addr_y_full_resolution_b1  = target.registers.add_rw(8, reset=0)
+        y_full_resolution_b2,  self.__addr_y_full_resolution_b2  = target.registers.add_rw(8, reset=0)
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
             in_fifo = iface.get_in_fifo(),
             out_fifo = iface.get_out_fifo(),
-            scan_mode = scan_mode
+            scan_mode = scan_mode,
+            x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
+            y_full_resolution_b1 = y_full_resolution_b1, y_full_resolution_b2 = y_full_resolution_b2
         ))
+
+        
 
     @classmethod
     def add_run_arguments(cls, parser, access):
@@ -240,51 +288,28 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode)
+        scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
+        self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
+        self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2)
         return scan_iface
         
 
     @classmethod
     def add_interact_arguments(cls, parser):
-        pass
+        parser.add_argument("--gui", default=False, action="store_true")
 
     async def interact(self, device, args, scan_iface):
-        test_vector_points = [
-            [2000, 1000, 12], ## X, Y, D
-            [1000, 2000, 12],
-            [3000, 2500, 12],
-            ]
-        await device.write_register(self.__addr_scan_mode, 3)
-        await scan_iface.iface.reset()
+        # await device.write_register(self.__addr_scan_mode, 3)
+        # for j in range(5):
+        #     await scan_iface.send_vec_stream_and_recieve_data()
 
-        async def future_data(future):
-            output = await scan_iface.iface.read(16384)
-            data = scan_iface.decode_vpoint_packet(output)
+        if args.gui:
+            run_gui(scan_iface)
+        else:
+            data = await scan_iface.stream_video()
             print(data)
-            future.set_result(data)
+            #pass
 
-
-        # for n in range(10):
-        #     for n in test_vector_points:
-        #         await scan_iface.write_vpoint(n)
-        #     output = await scan_iface.try_read_vpoint(3)
-        #     print(output)
-        for j in range(5):
-            i = 0
-            while i < 16384:
-                for n in test_vector_points:
-                    i+=6
-                    await scan_iface.write_vpoint(n)
-            loop = asyncio.get_running_loop()
-            fut = loop.create_future()
-            loop.create_task(
-                future_data(fut)
-            )
-            # try:
-            #     output = await asyncio.wait_for(scan_iface.iface.read(16384), timeout = 1)
-            #     print(scan_iface.decode_vpoint_packet(output))
-            # except TimeoutError:
-            #     print("timeout")
 
 
             
