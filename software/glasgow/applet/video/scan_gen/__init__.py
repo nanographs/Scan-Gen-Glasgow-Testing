@@ -145,7 +145,6 @@ class ScanGenInterface:
         return a
     
     def decode_rdwell_packet(self, raw_data):
-        print(type(raw_data))
         if isinstance(raw_data, bytes):
             data = list(raw_data)
         else:
@@ -255,20 +254,56 @@ class ScanGenInterface:
 
     async def stream_to_buffer(self):
         data = await self.stream_video()
-        print(len(data))
+        print("curx,y", self.current_x, self.current_y)
         
-        partial_start_points = self.current_x
-        partial_end_points = ((len(data) - partial_start_points)%self.x_width)
-        full_lines = ((len(data) - partial_start_points)//self.x_width)
-        if partial_start_points > 0:
-            self.buffer[self.current_y][partial_start_points:self.x_width] = data[0:self.x_width-partial_start_points]
-            self.current_y += 1
+        if self.current_x > 0:
+            
+            partial_start_points = self.x_width - self.current_x
+            #print("psp", partial_start_points)
+            full_lines = ((len(data) - partial_start_points)//self.x_width)
+            partial_end_points = ((len(data) - partial_start_points)%self.x_width)
+
+            self.buffer[self.current_y][self.current_x:self.x_width] = data[0:partial_start_points]
+            # print("rollover index", 0, ":", partial_start_points)
+            # print("rollover data", data[0:partial_start_points])
+            # print("top rollover")
+            # print("top row", self.buffer[self.current_y])
+            #print(self.buffer[self.current_y][self.current_x:self.x_width] )
+            if self.current_y >= self.y_height - 1:
+                self.current_y = 0
+                #print("cy 0")
+            else:
+                self.current_y += 1
+                #print("cy+1")
+        else:
+            #print("no top rollover")
+            partial_start_points = 0
+            partial_end_points = ((len(data))%self.x_width)
+            full_lines = ((len(data))//self.x_width)
             
         for i in range(0,full_lines):
-            self.buffer[self.current_y + i] = data[partial_start_points + i*self.x_width:partial_start_points + (i+1)*self.x_width]
-        self.buffer[full_lines+self.current_y][0:partial_end_points] = data[self.x_width*full_lines:self.x_width*full_lines + partial_end_points]
-        self.current_y += full_lines
+            
+            #print("cy", self.current_y)
+            #print("mid index", partial_start_points + i*self.x_width, ":",partial_start_points + (i+1)*self.x_width)
+            self.buffer[self.current_y] = data[partial_start_points + i*self.x_width:partial_start_points + (i+1)*self.x_width]
+            #print("midline", data[partial_start_points + i*self.x_width:partial_start_points + (i+1)*self.x_width])
+            if self.current_y >= self.y_height - 1:
+                self.current_y = 0
+                print("cy 0")
+            else:
+                self.current_y += 1
+                print("cy+1")
+        
+        self.buffer[self.current_y][0:partial_end_points] = data[self.x_width*full_lines + partial_start_points:self.x_width*full_lines + partial_start_points + partial_end_points]
+        #print("bottom rollover", partial_end_points)
+        #print("rollover index", self.x_width*full_lines + partial_start_points,":",self.x_width*full_lines + partial_start_points + partial_end_points)
+        #print(self.buffer[self.current_y][0:partial_end_points])
+        #print("last row")
+        #print(self.buffer[self.current_y])
+        
         self.current_x = partial_end_points
+        #print(self.buffer)
+        #print("=====")
 
 
 class ScanGenApplet(GlasgowApplet):
@@ -349,11 +384,28 @@ class ScanGenApplet(GlasgowApplet):
             run_gui(scan_iface)
         else:
             #data = await scan_iface.stream_video()
-            await scan_iface.set_frame_resolution(2000,1000)
+            await scan_iface.set_frame_resolution(200,100)
             await device.write_register(self.__addr_scan_mode, 1)
-            for n in range(3):
+            for n in range(31):
+                print(n)
+                # try:
+                    
+                #     # print(scan_iface.current_y, scan_iface.current_x)
+                #     #print(scan_iface.buffer[scan_iface.current_y-1])
+                # except IndexError as err:
+                #     print(err)
                 await scan_iface.stream_to_buffer()
-            #print(data)
+                try:
+                    assert(scan_iface.buffer[scan_iface.current_y][0] == 0)
+                except AssertionError:
+                    print("failed on", "n=", n, "line", scan_iface.current_y)
+                    break
+                # print(scan_iface.y_height, scan_iface.x_width)
+                # print(scan_iface.current_y, scan_iface.current_x)
+            #         #print(scan_iface.buffer)
+            #         break
+            print(scan_iface.buffer)
+            # #print(data)
             #pass
 
 
