@@ -335,7 +335,7 @@ class ScanGenInterface:
         self.current_x = partial_end_points
         #assert (self.buffer[self.current_y][0] == 0)
 
-        print(self.buffer)
+        print(self.buffer.shape)
         #print("=====")
 
 

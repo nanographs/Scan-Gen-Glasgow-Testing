@@ -76,7 +76,9 @@ class FrameSettings(QHBoxLayout):
     async def do_fns(self):
         height = int(self.y_resolution.spinbox.cleanText())
         width = int(self.x_resolution.spinbox.cleanText())
+        print("setting display height, width:", height, width)
         self.img_display.setRange(height, width)
+        self.img_display.live_img.setImage(np.zeros((height, width)).astype(np.uint8), rect = (0,0,width, height))
         for register in self.registers:
             await register.do_fn()
 
@@ -86,19 +88,45 @@ class AppletSettings(QHBoxLayout):
         super().__init__()
         self.applet, self.device, self.args = scan_applet
         self.main_window = main_window
+        self.scan_iface = None
 
         self.load_btn = QPushButton('load applet')
+        self.load_btn.setCheckable(True)
         self.addWidget(self.load_btn)
         self.load_btn.clicked.connect(self.load_applet)
 
+        self.reset_btn = QPushButton('reset')
+        self.flush_btn = QPushButton('flush')
+
     @asyncSlot()
     async def load_applet(self):
-        self.scan_iface = await(self.applet.run(self.device,self.args))
+        if not self.applet == None:
+            self.scan_iface = await(self.applet.run(self.device,self.args))
+            await self.scan_iface.set_frame_resolution(2048,2048)
+        else:
+            self.scan_iface = None
         print(self.scan_iface)
+        self.addWidget(self.reset_btn)
+        self.addWidget(self.flush_btn)
+        self.reset_btn.clicked.connect(self.reset)
+        self.reset_btn.clicked.connect(self.flush)
         self.main_window.set_scan_iface(self.scan_iface)
-        
 
-    
+    @asyncSlot()
+    async def reset(self):
+        self.killScan()
+        await self.scan_iface.iface.reset()
+
+    @asyncSlot()
+    async def flush(self):
+        self.killScan()
+        await self.scan_iface.iface.flush()
+
+    def killScan(self):
+        if self.main_window.start_btn.isChecked():
+            self.main_window.start_btn.setChecked(False)
+        if self.main_window.update_continously is not None:
+            self.main_window.update_continously.cancel()
 
 class ImageDisplay(pg.GraphicsLayoutWidget):
     def __init__(self, height, width):
@@ -122,7 +150,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.exporter = pg.exporters.ImageExporter(self.live_img)
 
     def setRange(self, height, width):
-        self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
+        self.image_view.setRange(QtCore.QRectF(0, 0, width, height))
     
     def showTest(self):
         test_file = "software/glasgow/applet/video/scan_gen/output_formats/Nanographs Pattern Test Logo and Gradients.bmp"
@@ -142,22 +170,16 @@ class MainWindow(QWidget):
         self.applet_settings = AppletSettings(self, scan_applet)
         self.layout.addLayout(self.applet_settings,0,0)
 
-        self.image_display = ImageDisplay(2048, 2048)
-
         self.start_btn = QPushButton('▶️')
         self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
         self.start_btn.clicked.connect(self.toggle_scan)
 
+        self.update_continously = None
+
         
-        
-
-
-
-
-
-
     def set_scan_iface(self, scan_iface):
         self.scan_iface = scan_iface
+        self.image_display = ImageDisplay(2048, 2048)
         self.layout.addWidget(self.image_display, 1, 0)
         self.layout.addWidget(self.start_btn, 2, 0)
         self.frame_settings = FrameSettings(self.image_display, scan_iface)
@@ -196,7 +218,7 @@ class MainWindow(QWidget):
 
 
 
-def run_gui(scan_iface=None):
+def run_gui(scan_applet=[None,None,None]):
     app = QApplication(sys.argv)
 
     event_loop = QEventLoop(app)
@@ -205,7 +227,7 @@ def run_gui(scan_iface=None):
     app_close_event = asyncio.Event()
     app.aboutToQuit.connect(app_close_event.set)
 
-    main_window = MainWindow(scan_iface)
+    main_window = MainWindow(scan_applet)
     main_window.show()
 
     with event_loop:
