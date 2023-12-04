@@ -115,28 +115,34 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.live_img.setImage(array)
 class MainWindow(QWidget):
 
-    def __init__(self, scan_iface=None):
+    def __init__(self, scan_applet=[None,None,None]):
         super().__init__()
-        self.scan_iface = scan_iface
+        self.scan_iface = None
+        print(scan_applet)
+        self.applet, self.device, self.args = scan_applet
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
         self.setLayout(self.layout)
 
         self.image_display = ImageDisplay(2048, 2048)
-        self.layout.addWidget(self.image_display, 0, 0)
+        self.layout.addWidget(self.image_display, 1, 0)
 
         self.frame_settings = FrameSettings(self.image_display, self.scan_iface)
+
+        self.load_btn = QPushButton('load applet')
+        self.layout.addWidget(self.load_btn, 0, 0)
+        self.load_btn.clicked.connect(self.load_applet)
 
         self.start_btn = QPushButton('▶️')
         self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
         self.start_btn.clicked.connect(self.toggle_scan)
 
 
-        self.layout.addWidget(self.start_btn, 1, 0)
+        self.layout.addWidget(self.start_btn, 2, 0)
 
         self.frame_settings = FrameSettings(self.image_display, self.scan_iface)
-        self.layout.addLayout(self.frame_settings, 2, 0)
+        self.layout.addLayout(self.frame_settings, 3, 0)
 
 
 
@@ -144,16 +150,9 @@ class MainWindow(QWidget):
 
 
     @asyncSlot()
-    async def do_stuff(self):
-        #await self.scan_iface.send_vec_stream_and_recieve_data()
-        data = await self.scan_iface.stream_video()
-        print(data)
-        
-        #self.image_display.showTest()
-        self.scan_btn = QPushButton('!')
-        self.scan_btn.clicked.connect(self.do_stuff)
-
-        self.layout.addWidget(self.scan_btn, 1, 0)
+    async def load_applet(self):
+        self.scan_iface = await(self.applet.run(self.device,self.args))
+        print(self.scan_iface)
 
     @asyncSlot()
     async def toggle_scan(self):
