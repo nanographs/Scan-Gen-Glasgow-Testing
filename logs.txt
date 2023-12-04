@@ -1,232 +1,182 @@
-[2023-12-02 16:37:25,037] DEBUG: glasgow.device.hardware: found revC3 device with serial C3-20221212T224105Z
-[2023-12-02 16:37:25,041] DEBUG: glasgow.applet.video.scan_gen: claimed pipe P and port(s) A, B
-[2023-12-02 16:37:25,041] DEBUG: glasgow.applet.video.scan_gen: adding reset register at address 0x00
-[2023-12-02 16:37:25,077] DEBUG: glasgow.target.toolchain: using toolchain 'system' (yosys 0.33.g2584903a060, nextpnr-ice40 0.6.14.g5b958c4d, icepack 0)
-[2023-12-02 16:37:25,077] TRACE: glasgow.target.toolchain: tool 'yosys' is invoked as '/opt/homebrew/bin/yosys'
-[2023-12-02 16:37:25,077] TRACE: glasgow.target.toolchain: tool 'nextpnr-ice40' is invoked as '/opt/bin/nextpnr-ice40'
-[2023-12-02 16:37:25,077] TRACE: glasgow.target.toolchain: tool 'icepack' is invoked as '/opt/homebrew/bin/icepack'
-[2023-12-02 16:37:25,077] TRACE: glasgow.target.toolchain: toolchain ID is 401b3dabaef593b7c644355b8c3eac1d
-[2023-12-02 16:37:26,072] TRACE: glasgow.target.toolchain: tool ID of 'yosys' is e09eb6d24e46a4344c8f87459e32b458
-[2023-12-02 16:37:26,072] TRACE: glasgow.target.toolchain: tool ID of 'nextpnr-ice40' is 0539bd0fffc1ce3b8c284d6bbc6d6799
-[2023-12-02 16:37:26,072] TRACE: glasgow.target.toolchain: tool ID of 'icepack' is 648c77954d5dcb8ef240774861fdb170
-[2023-12-02 16:37:26,279] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x18 value=0x0000 index=0x0000 length=16 (submit)
-[2023-12-02 16:37:26,279] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<be76cc0967345b6a583ebe8fed35b5e6> (completed)
-[2023-12-02 16:37:26,281] INFO: g.device.hardware: device already has bitstream ID be76cc0967345b6a583ebe8fed35b5e6
-[2023-12-02 16:37:26,281] INFO: g.cli: running handler for applet 'scan-gen'
-[2023-12-02 16:37:26,281] WARNING: g.cli: applet 'scan-gen' is PREVIEW QUALITY and may CORRUPT DATA
-[2023-12-02 16:37:26,282] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x14 value=0x0000 index=0x0003 data=<e40c> (submit)
-[2023-12-02 16:37:26,282] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,282] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
-[2023-12-02 16:37:26,283] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
-[2023-12-02 16:37:26,283] INFO: g.applet.video.scan_gen: port(s) A, B voltage set to 3.3 V
-[2023-12-02 16:37:26,283] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x1b value=0x0000 index=0x0001 data=<0000> (submit)
-[2023-12-02 16:37:26,283] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,283] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
-[2023-12-02 16:37:26,283] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
-[2023-12-02 16:37:26,283] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x1b value=0x0000 index=0x0002 data=<0000> (submit)
-[2023-12-02 16:37:26,284] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,284] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
-[2023-12-02 16:37:26,284] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
-[2023-12-02 16:37:26,284] DEBUG: glasgow.applet.video.scan_gen: port(s) A, B pull resistors disabled
-[2023-12-02 16:37:26,284] TRACE: glasgow.applet.video.scan_gen: asserting reset
-[2023-12-02 16:37:26,284] TRACE: glasgow.device.hardware: register 0 write: 0x01
-[2023-12-02 16:37:26,284] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0000 index=0x0000 data=<01> (submit)
-[2023-12-02 16:37:26,285] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,285] TRACE: glasgow.applet.video.scan_gen: FIFO: synchronizing buffers
-[2023-12-02 16:37:26,286] TRACE: glasgow.applet.video.scan_gen: FIFO: pipelining reads
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,286] TRACE: glasgow.applet.video.scan_gen: deasserting reset
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: register 0 write: 0x00
-[2023-12-02 16:37:26,286] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0000 index=0x0000 data=<00> (submit)
-[2023-12-02 16:37:26,287] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: register 2 write: 0x00
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0002 index=0x0000 data=<00> (submit)
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400150016001700180019001a001b001c001d001e001f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: register 3 write: 0xc7
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0003 index=0x0000 data=<c7> (submit)
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: register 4 write: 0x00
-[2023-12-02 16:37:26,288] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0004 index=0x0000 data=<00> (submit)
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: register 5 write: 0x63
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0005 index=0x0000 data=<63> (submit)
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400150016001700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: register 1 write: 0x01
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0001 index=0x0000 data=<01> (submit)
-[2023-12-02 16:37:26,289] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
-[2023-12-02 16:37:26,290] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,290] TRACE: glasgow.applet.video.scan_gen: FIFO: read <00000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400150016001700180019001a001b001c001d001e001f00... (16384 bytes total)>
-[2023-12-02 16:37:26,296] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,296] TRACE: glasgow.applet.video.scan_gen: FIFO: read <c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400150016001700... (16384 bytes total)>
-[2023-12-02 16:37:26,302] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,302] TRACE: glasgow.applet.video.scan_gen: FIFO: need 16384 bytes
-[2023-12-02 16:37:26,302] TRACE: glasgow.applet.video.scan_gen: FIFO: need 16384 bytes
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<980099009a009b009c009d009e009f00a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<90009100920093009400950096009700980099009a009b009c009d009e009f00a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<880089008a008b008c008d008e008f0090009100920093009400950096009700980099009a009b009c009d009e009f00a000a100a200a300a400a500a600a700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<80008100820083008400850086008700880089008a008b008c008d008e008f0090009100920093009400950096009700980099009a009b009c009d009e009f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<780079007a007b007c007d007e007f0080008100820083008400850086008700880089008a008b008c008d008e008f0090009100920093009400950096009700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<70007100720073007400750076007700780079007a007b007c007d007e007f0080008100820083008400850086008700880089008a008b008c008d008e008f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<680069006a006b006c006d006e006f0070007100720073007400750076007700780079007a007b007c007d007e007f0080008100820083008400850086008700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<60006100620063006400650066006700680069006a006b006c006d006e006f0070007100720073007400750076007700780079007a007b007c007d007e007f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,302] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,303] TRACE: glasgow.applet.video.scan_gen: FIFO: read <b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f00... (16384 bytes total)>
-[2023-12-02 16:37:26,309] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,309] TRACE: glasgow.applet.video.scan_gen: FIFO: read <b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700... (16384 bytes total)>
-[2023-12-02 16:37:26,316] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,316] TRACE: glasgow.applet.video.scan_gen: FIFO: read <a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c700... (16384 bytes total)>
-[2023-12-02 16:37:26,322] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,323] TRACE: glasgow.applet.video.scan_gen: FIFO: read <a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00... (16384 bytes total)>
-[2023-12-02 16:37:26,329] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,329] TRACE: glasgow.applet.video.scan_gen: FIFO: read <980099009a009b009c009d009e009f00a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700... (16384 bytes total)>
-[2023-12-02 16:37:26,344] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,344] TRACE: glasgow.applet.video.scan_gen: FIFO: read <90009100920093009400950096009700980099009a009b009c009d009e009f00a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00... (16384 bytes total)>
-[2023-12-02 16:37:26,368] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,368] TRACE: glasgow.applet.video.scan_gen: FIFO: read <880089008a008b008c008d008e008f0090009100920093009400950096009700980099009a009b009c009d009e009f00a000a100a200a300a400a500a600a700... (16384 bytes total)>
-[2023-12-02 16:37:26,373] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,374] TRACE: glasgow.applet.video.scan_gen: FIFO: read <80008100820083008400850086008700880089008a008b008c008d008e008f0090009100920093009400950096009700980099009a009b009c009d009e009f00... (16384 bytes total)>
-[2023-12-02 16:37:26,387] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,387] TRACE: glasgow.applet.video.scan_gen: FIFO: read <780079007a007b007c007d007e007f0080008100820083008400850086008700880089008a008b008c008d008e008f0090009100920093009400950096009700... (16384 bytes total)>
-[2023-12-02 16:37:26,393] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,393] TRACE: glasgow.applet.video.scan_gen: FIFO: read <70007100720073007400750076007700780079007a007b007c007d007e007f0080008100820083008400850086008700880089008a008b008c008d008e008f00... (16384 bytes total)>
-[2023-12-02 16:37:26,400] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,400] TRACE: glasgow.applet.video.scan_gen: FIFO: read <680069006a006b006c006d006e006f0070007100720073007400750076007700780079007a007b007c007d007e007f0080008100820083008400850086008700... (16384 bytes total)>
-[2023-12-02 16:37:26,407] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,407] TRACE: glasgow.applet.video.scan_gen: FIFO: read <60006100620063006400650066006700680069006a006b006c006d006e006f0070007100720073007400750076007700780079007a007b007c007d007e007f00... (16384 bytes total)>
-[2023-12-02 16:37:26,414] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,414] TRACE: glasgow.applet.video.scan_gen: FIFO: need 16384 bytes
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<580059005a005b005c005d005e005f0060006100620063006400650066006700680069006a006b006c006d006e006f0070007100720073007400750076007700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<50005100520053005400550056005700580059005a005b005c005d005e005f0060006100620063006400650066006700680069006a006b006c006d006e006f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<480049004a004b004c004d004e004f0050005100520053005400550056005700580059005a005b005c005d005e005f0060006100620063006400650066006700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<40004100420043004400450046004700480049004a004b004c004d004e004f0050005100520053005400550056005700580059005a005b005c005d005e005f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<380039003a003b003c003d003e003f0040004100420043004400450046004700480049004a004b004c004d004e004f0050005100520053005400550056005700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<30003100320033003400350036003700380039003a003b003c003d003e003f0040004100420043004400450046004700480049004a004b004c004d004e004f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<280029002a002b002c002d002e002f0030003100320033003400350036003700380039003a003b003c003d003e003f0040004100420043004400450046004700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<20002100220023002400250026002700280029002a002b002c002d002e002f0030003100320033003400350036003700380039003a003b003c003d003e003f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<180019001a001b001c001d001e001f0020002100220023002400250026002700280029002a002b002c002d002e002f0030003100320033003400350036003700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<10001100120013001400150016001700180019001a001b001c001d001e001f0020002100220023002400250026002700280029002a002b002c002d002e002f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<080009000a000b000c000d000e000f0010001100120013001400150016001700180019001a001b001c001d001e001f0020002100220023002400250026002700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400150016001700180019001a001b001c001d001e001f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400150016001700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c700... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,414] TRACE: glasgow.applet.video.scan_gen: FIFO: read <580059005a005b005c005d005e005f0060006100620063006400650066006700680069006a006b006c006d006e006f0070007100720073007400750076007700... (16384 bytes total)>
-[2023-12-02 16:37:26,421] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,421] TRACE: glasgow.applet.video.scan_gen: FIFO: read <50005100520053005400550056005700580059005a005b005c005d005e005f0060006100620063006400650066006700680069006a006b006c006d006e006f00... (16384 bytes total)>
-[2023-12-02 16:37:26,432] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,432] TRACE: glasgow.applet.video.scan_gen: FIFO: read <480049004a004b004c004d004e004f0050005100520053005400550056005700580059005a005b005c005d005e005f0060006100620063006400650066006700... (16384 bytes total)>
-[2023-12-02 16:37:26,439] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,439] TRACE: glasgow.applet.video.scan_gen: FIFO: read <40004100420043004400450046004700480049004a004b004c004d004e004f0050005100520053005400550056005700580059005a005b005c005d005e005f00... (16384 bytes total)>
-[2023-12-02 16:37:26,448] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,448] TRACE: glasgow.applet.video.scan_gen: FIFO: read <380039003a003b003c003d003e003f0040004100420043004400450046004700480049004a004b004c004d004e004f0050005100520053005400550056005700... (16384 bytes total)>
-[2023-12-02 16:37:26,457] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,457] TRACE: glasgow.applet.video.scan_gen: FIFO: read <30003100320033003400350036003700380039003a003b003c003d003e003f0040004100420043004400450046004700480049004a004b004c004d004e004f00... (16384 bytes total)>
-[2023-12-02 16:37:26,463] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,463] TRACE: glasgow.applet.video.scan_gen: FIFO: read <280029002a002b002c002d002e002f0030003100320033003400350036003700380039003a003b003c003d003e003f0040004100420043004400450046004700... (16384 bytes total)>
-[2023-12-02 16:37:26,470] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,470] TRACE: glasgow.applet.video.scan_gen: FIFO: read <20002100220023002400250026002700280029002a002b002c002d002e002f0030003100320033003400350036003700380039003a003b003c003d003e003f00... (16384 bytes total)>
-[2023-12-02 16:37:26,477] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,477] TRACE: glasgow.applet.video.scan_gen: FIFO: read <180019001a001b001c001d001e001f0020002100220023002400250026002700280029002a002b002c002d002e002f0030003100320033003400350036003700... (16384 bytes total)>
-[2023-12-02 16:37:26,483] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,483] TRACE: glasgow.applet.video.scan_gen: FIFO: read <10001100120013001400150016001700180019001a001b001c001d001e001f0020002100220023002400250026002700280029002a002b002c002d002e002f00... (16384 bytes total)>
-[2023-12-02 16:37:26,490] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,490] TRACE: glasgow.applet.video.scan_gen: FIFO: read <080009000a000b000c000d000e000f0010001100120013001400150016001700180019001a001b001c001d001e001f0020002100220023002400250026002700... (16384 bytes total)>
-[2023-12-02 16:37:26,497] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,497] TRACE: glasgow.applet.video.scan_gen: FIFO: read <00000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400150016001700180019001a001b001c001d001e001f00... (16384 bytes total)>
-[2023-12-02 16:37:26,504] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,504] TRACE: glasgow.applet.video.scan_gen: FIFO: read <c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400150016001700... (16384 bytes total)>
-[2023-12-02 16:37:26,510] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,510] TRACE: glasgow.applet.video.scan_gen: FIFO: read <b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f00... (16384 bytes total)>
-[2023-12-02 16:37:26,517] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,517] TRACE: glasgow.applet.video.scan_gen: FIFO: read <b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700... (16384 bytes total)>
-[2023-12-02 16:37:26,523] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,524] TRACE: glasgow.applet.video.scan_gen: FIFO: read <a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c700... (16384 bytes total)>
-[2023-12-02 16:37:26,530] TRACE: glasgow.applet.video.scan_gen: FIFO: read
-[2023-12-02 16:37:26,530] TRACE: glasgow.applet.video.scan_gen: FIFO: need 16384 bytes
-[2023-12-02 16:37:26,530] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,530] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,530] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,530] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,530] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,530] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,530] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,531] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,531] TRACE: glasgow.applet.video.scan_gen: FIFO: read <a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00... (16384 bytes total)>
-[2023-12-02 16:37:26,537] TRACE: glasgow.applet.video.scan_gen: FIFO: flush
-[2023-12-02 16:37:26,537] TRACE: glasgow.applet.video.scan_gen: FIFO: wait for flush
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b000c000d000e000f001000110012001300... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c70000000100020003000400050006000700080009000a000b00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300c400c500c600c7000000010002000300... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00bc00bd00be00bf00c000c100c200c300... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<9c009d009e009f00a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300b400b500b600b700b800b900ba00bb00... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<9400950096009700980099009a009b009c009d009e009f00a000a100a200a300a400a500a600a700a800a900aa00ab00ac00ad00ae00af00b000b100b200b300... (16384 bytes total)> (completed)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,538] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
-[2023-12-02 16:37:26,538] TRACE: glasgow.applet.video.scan_gen: FIFO: cancelling operations
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,539] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
-[2023-12-02 16:37:26,540] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:23:59,622] DEBUG: glasgow.device.hardware: found revC3 device with serial C3-20221212T224105Z
+[2023-12-03 20:23:59,625] DEBUG: glasgow.applet.video.scan_gen: claimed pipe P and port(s) A, B
+[2023-12-03 20:23:59,625] DEBUG: glasgow.applet.video.scan_gen: adding reset register at address 0x00
+[2023-12-03 20:23:59,659] DEBUG: glasgow.target.toolchain: using toolchain 'system' (yosys 0.33.g2584903a060, nextpnr-ice40 0.6.14.g5b958c4d, icepack 0)
+[2023-12-03 20:23:59,659] TRACE: glasgow.target.toolchain: tool 'yosys' is invoked as '/opt/homebrew/bin/yosys'
+[2023-12-03 20:23:59,659] TRACE: glasgow.target.toolchain: tool 'nextpnr-ice40' is invoked as '/opt/bin/nextpnr-ice40'
+[2023-12-03 20:23:59,659] TRACE: glasgow.target.toolchain: tool 'icepack' is invoked as '/opt/homebrew/bin/icepack'
+[2023-12-03 20:23:59,659] TRACE: glasgow.target.toolchain: toolchain ID is 401b3dabaef593b7c644355b8c3eac1d
+[2023-12-03 20:24:00,688] TRACE: glasgow.target.toolchain: tool ID of 'yosys' is e09eb6d24e46a4344c8f87459e32b458
+[2023-12-03 20:24:00,688] TRACE: glasgow.target.toolchain: tool ID of 'nextpnr-ice40' is 0539bd0fffc1ce3b8c284d6bbc6d6799
+[2023-12-03 20:24:00,688] TRACE: glasgow.target.toolchain: tool ID of 'icepack' is 648c77954d5dcb8ef240774861fdb170
+[2023-12-03 20:24:00,899] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x18 value=0x0000 index=0x0000 length=16 (submit)
+[2023-12-03 20:24:00,901] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<de0554dd5191a326e262f32ade40bf55> (completed)
+[2023-12-03 20:24:00,902] INFO: g.device.hardware: device already has bitstream ID de0554dd5191a326e262f32ade40bf55
+[2023-12-03 20:24:00,903] INFO: g.cli: running handler for applet 'scan-gen'
+[2023-12-03 20:24:00,903] WARNING: g.cli: applet 'scan-gen' is PREVIEW QUALITY and may CORRUPT DATA
+[2023-12-03 20:24:00,903] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x14 value=0x0000 index=0x0003 data=<e40c> (submit)
+[2023-12-03 20:24:00,904] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-12-03 20:24:00,904] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
+[2023-12-03 20:24:00,904] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
+[2023-12-03 20:24:00,904] INFO: g.applet.video.scan_gen: port(s) A, B voltage set to 3.3 V
+[2023-12-03 20:24:00,904] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x1b value=0x0000 index=0x0001 data=<0000> (submit)
+[2023-12-03 20:24:00,905] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-12-03 20:24:00,905] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
+[2023-12-03 20:24:00,905] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
+[2023-12-03 20:24:00,905] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x1b value=0x0000 index=0x0002 data=<0000> (submit)
+[2023-12-03 20:24:00,906] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-12-03 20:24:00,906] TRACE: glasgow.device.hardware: USB: CONTROL IN type=0x40 request=0x12 value=0x0000 index=0x0000 length=1 (submit)
+[2023-12-03 20:24:00,906] TRACE: glasgow.device.hardware: USB: CONTROL IN data=<02> (completed)
+[2023-12-03 20:24:00,906] DEBUG: glasgow.applet.video.scan_gen: port(s) A, B pull resistors disabled
+[2023-12-03 20:24:00,906] TRACE: glasgow.device.hardware: register 0 write: 0x01
+[2023-12-03 20:24:00,906] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0000 index=0x0000 data=<01> (submit)
+[2023-12-03 20:24:00,907] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-12-03 20:24:00,907] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: register 0 write: 0x00
+[2023-12-03 20:24:00,908] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0000 index=0x0000 data=<00> (submit)
+[2023-12-03 20:24:00,909] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,910] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,911] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,911] TRACE: glasgow.device.hardware: register 0 write: 0x01
+[2023-12-03 20:24:00,911] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0000 index=0x0000 data=<01> (submit)
+[2023-12-03 20:24:00,911] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: register 0 write: 0x00
+[2023-12-03 20:24:00,912] TRACE: glasgow.device.hardware: USB: CONTROL OUT type=0x40 request=0x13 value=0x0000 index=0x0000 data=<00> (submit)
+[2023-12-03 20:24:00,913] TRACE: glasgow.device.hardware: USB: CONTROL OUT (completed)
+[2023-12-03 20:24:00,913] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<00> (submit)
+[2023-12-03 20:24:00,913] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,913] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,913] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,914] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<01> (submit)
+[2023-12-03 20:24:00,914] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,914] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,914] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,914] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,916] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,916] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,916] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<02> (submit)
+[2023-12-03 20:24:00,916] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<03> (submit)
+[2023-12-03 20:24:00,916] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,916] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<04> (submit)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<05> (submit)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,918] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,919] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,919] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<06> (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<07> (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<08> (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT data=<09> (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,923] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP2 OUT (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<09090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<09090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,924] TRACE: glasgow.device.hardware: USB: BULK EP6 IN data=<09090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909... (16384 bytes total)> (completed)
+[2023-12-03 20:24:00,925] TRACE: glasgow.device.hardware: USB: BULK EP6 IN length=16384 (submit)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)
+[2023-12-03 20:24:00,926] TRACE: glasgow.device.hardware: USB: BULK EP6 IN (cancelled)

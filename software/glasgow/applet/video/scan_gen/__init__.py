@@ -1,6 +1,9 @@
 import os
 import types
+import time
 import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 import asyncio
 import numpy as np
 
@@ -14,7 +17,7 @@ from asyncio.exceptions import TimeoutError
 from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
 
-from ..scan_gen.output_formats.even_newer_gui import run_gui
+from ..scan_gen.output_formats.control_gui import run_gui
 
 
 from ... import *
@@ -113,14 +116,24 @@ class ScanGenInterface:
         self.x_width = 2048
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                             dtype = np.uint16)
+
         self.current_x = 0
         self.current_y = 0
+
+        self.endpoint = None
 
     def fifostats(self):
         iface = self.iface
         iface.statistics()
+        self._logger.debug("in tasks:", len(iface._in_tasks._live))
+        self._logger.debug("out tasks:", len(iface._out_tasks._live))
         print(len(iface._in_tasks._live))
         print(len(iface._out_tasks._live))
+        self._logger.debug("in rtotal:", iface._in_buffer._rtotal)
+        self._logger.debug("in wtotal:", iface._in_buffer._wtotal)
+        self._logger.debug("out rtotal:", iface._out_buffer._rtotal)
+        self._logger.debug("out wtotal:", iface._out_buffer._wtotal)
+        self._logger.debug("in pushback:", iface._in_pushback)
         print(iface._in_buffer._rtotal)
         print(iface._in_buffer._wtotal)
         print(iface._out_buffer._rtotal)
@@ -128,6 +141,9 @@ class ScanGenInterface:
         print(iface._in_pushback)
         #print(iface._out_pushback)
     
+    def set_endpoint(self, endpoint):
+        self.endpoint = endpoint
+
     def decode_vpoint(self, n):
         try:
             x2, x1, y2, y1, a2, a1 = n
@@ -196,6 +212,8 @@ class ScanGenInterface:
         await self.write_2bytes(d)
 
     async def read_r_packet(self):
+        loop = asyncio.get_running_loop()
+        logger.debug("Loop:"+ repr(loop))
         output = await self.iface.read(16384)
         return self.decode_rdwell_packet(output)
 
@@ -207,12 +225,6 @@ class ScanGenInterface:
         except TimeoutError:
             return "timeout"
 
-    async def future_packet(self, future):
-        output = await self.iface.read(16384)
-        data = self.decode_vpoint_packet(output)
-        print(data)
-        future.set_result(data)
-
     async def send_vec_stream_and_recieve_data(self):
         i = 0
         while i < 16384:
@@ -222,7 +234,7 @@ class ScanGenInterface:
         loop = asyncio.get_running_loop()
         fut = loop.create_future()
         loop.create_task(
-            self.future_packet(fut)
+            self.future_vpacket(fut)
         )
 
     async def set_2byte_register(self,val,addr_b1, addr_b2):
@@ -236,25 +248,62 @@ class ScanGenInterface:
         self.x_width = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
+        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
+                            dtype = np.uint16)
 
     async def set_y_resolution(self,val):
         self.y_height = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
+        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
+                            dtype = np.uint16)
 
     async def set_frame_resolution(self,xval,yval):
         await self.set_x_resolution(xval)
         await self.set_y_resolution(yval)
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                             dtype = np.uint16)
+        print("set frame resolution x:", xval, "y:", yval)
+
+    async def set_raster_mode(self):
+        await self._device.write_register(self.__addr_scan_mode, 1)
+        print("set raster mode")
 
     async def stream_video(self):
-        
-        return await self.read_r_packet()
+        print("reading :3")
+        #self.fifostats()
+        data = await self.iface.read(16384)
+        #print(data)
+        self.stream_to_buffer(data)
+        # print("sending")
+        # await self.endpoint.send(data)
 
-    async def stream_to_buffer(self):
-        data = await self.stream_video()
-        print("curx,y", self.current_x, self.current_y)
+    async def future_packet(self, fut):
+        print("getting data")
+        data = await self.iface.read(16384)
+        print("got data")
+        print(data)
+        fut.set_result(data)
+
+    def decode_rdwell(self, n):
+        a2, a1 = n
+        a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+        return a
+    
+    def decode_rdwell_packet(self, raw_data):
+        if isinstance(raw_data, bytes):
+            data = list(raw_data)
+        else:
+            data = raw_data.tolist()
+        packet = []
+        for n in range(0,len(data),2):
+            dwell = self.decode_rdwell(data[n:n+2])
+            packet.append(dwell)
+        return packet
+
+    def stream_to_buffer(self, raw_data):
+        data = self.decode_rdwell_packet(raw_data)
+        #print("cur x,y", self.current_x, self.current_y)
         
         if self.current_x > 0:
             
@@ -289,10 +338,10 @@ class ScanGenInterface:
             #print("midline", data[partial_start_points + i*self.x_width:partial_start_points + (i+1)*self.x_width])
             if self.current_y >= self.y_height - 1:
                 self.current_y = 0
-                print("cy 0")
+                #print("cy 0")
             else:
                 self.current_y += 1
-                print("cy+1")
+                #print("cy+1")
         
         self.buffer[self.current_y][0:partial_end_points] = data[self.x_width*full_lines + partial_start_points:self.x_width*full_lines + partial_start_points + partial_end_points]
         #print("bottom rollover", partial_end_points)
@@ -302,9 +351,22 @@ class ScanGenInterface:
         #print(self.buffer[self.current_y])
         
         self.current_x = partial_end_points
+        #assert (self.buffer[self.current_y][0] == 0)
+
         #print(self.buffer)
         #print("=====")
 
+
+
+    async def benchmark(self):
+        await self.set_frame_resolution(2048,2048)
+        await self.set_raster_mode()
+        await self.iface.reset()
+        start_time = time.time()
+        length = 8388608
+        await self.iface.read(length)
+        end_time = time.time()
+        print(((length/(1000000))/(end_time-start_time)), "MB/s")
 
 class ScanGenApplet(GlasgowApplet):
     logger = logging.getLogger(__name__)
@@ -325,6 +387,7 @@ class ScanGenApplet(GlasgowApplet):
         access.add_pin_argument(parser, "power_ok", default=15)
 
 
+
     def build(self, target, args):
         ### LVDS Header (Not used as LVDS)
         LVDS = [
@@ -339,7 +402,7 @@ class ScanGenApplet(GlasgowApplet):
 
         target.platform.add_resources(LVDS)
 
-        self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
+        self.mux_interface = iface = target.multiplexer.claim_interface(self, args, throttle = "none")
 
         scan_mode,             self.__addr_scan_mode  = target.registers.add_rw(2, reset=0)
         x_full_resolution_b1,  self.__addr_x_full_resolution_b1  = target.registers.add_rw(8, reset=0)
@@ -356,7 +419,6 @@ class ScanGenApplet(GlasgowApplet):
             x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
             y_full_resolution_b1 = y_full_resolution_b1, y_full_resolution_b2 = y_full_resolution_b2
         ))
-
         
 
     @classmethod
@@ -365,53 +427,37 @@ class ScanGenApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+
         scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
         self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
         self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2)
+
         return scan_iface
         
 
     @classmethod
     def add_interact_arguments(cls, parser):
         parser.add_argument("--gui", default=False, action="store_true")
+        #ServerEndpoint.add_argument(parser, "endpoint")
+        #pass
 
     async def interact(self, device, args, scan_iface):
-        # await device.write_register(self.__addr_scan_mode, 3)
-        # for j in range(5):
-        #     await scan_iface.send_vec_stream_and_recieve_data()
+        pass
+        # endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
+        # scan_iface.set_endpoint(endpoint)
+        # if args.gui:
+        #     #run_gui(scan_iface)
+        #     await run_gui(scan_iface)
 
-        if args.gui:
-            run_gui(scan_iface)
-        else:
-            #data = await scan_iface.stream_video()
-            await scan_iface.set_frame_resolution(200,100)
-            await device.write_register(self.__addr_scan_mode, 1)
-            for n in range(31):
-                print(n)
-                # try:
-                    
-                #     # print(scan_iface.current_y, scan_iface.current_x)
-                #     #print(scan_iface.buffer[scan_iface.current_y-1])
-                # except IndexError as err:
-                #     print(err)
-                await scan_iface.stream_to_buffer()
-                try:
-                    assert(scan_iface.buffer[scan_iface.current_y][0] == 0)
-                except AssertionError:
-                    print("failed on", "n=", n, "line", scan_iface.current_y)
-                    break
-                # print(scan_iface.y_height, scan_iface.x_width)
-                # print(scan_iface.current_y, scan_iface.current_x)
-            #         #print(scan_iface.buffer)
-            #         break
-            print(scan_iface.buffer)
-            # #print(data)
-            #pass
+        #     await scan_iface.set_frame_resolution(2048,2048)
+        #     await scan_iface.set_raster_mode()
+        #     while True:
+        #         data = await iface.read(16384)
+        #         await endpoint.send(data)
 
 
 
-            
-
+        
                 
 
 

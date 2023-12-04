@@ -51,6 +51,7 @@ class IOBus(Elaboratable):
         self.d = Signal(16)
 
         #self.scan_mode = Signal(2)
+        self.alt_fifo = Signal()
     def elaborate(self, platform):
         m = Module()
         m.submodules["ModeCtrl"] = self.mode_ctrl
@@ -106,12 +107,38 @@ class IOBus(Elaboratable):
                 m.d.comb += self.in_fifo.w_en.eq(1)
                 m.d.comb += self.out_fifo.r_en.eq(1)
 
+        if self.test_mode == "sync loopback":
+            loopback = Signal(8, reset = 3)
+            m.d.sync += loopback.eq(self.out_fifo.r_data)
+            m.d.sync += self.in_fifo.w_data.eq(loopback)
+            with m.If(self.in_fifo.w_rdy):
+                m.d.comb += self.in_fifo.w_en.eq(1)
+            with m.If(self.out_fifo.r_rdy):
+                m.d.comb += self.out_fifo.r_en.eq(1)
+                
+
         else:
-            m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
+            
             with m.If(self.io_strobe):
+                # with m.If(self.mode_ctrl.ras_mode_ctrl.raster_fifo.r_rdy):
+                #     m.d.comb += self.mode_ctrl.ras_mode_ctrl.raster_fifo.r_en.eq(1)
+                #     m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.ras_mode_ctrl.raster_fifo.r_data)
+                #     with m.If(~(self.mode_ctrl.output_strobe_out)):
+                #         m.d.comb += self.in_fifo.w_en.eq(1)
+                # with m.Else():
+                m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
                 m.d.comb += self.out_fifo.r_en.eq(1)
                 with m.If(~(self.mode_ctrl.output_strobe_out)):
                     m.d.comb += self.in_fifo.w_en.eq(1)
+            # with m.If(~self.in_fifo.w_rdy):
+            #     m.d.sync += self.alt_fifo.eq(1)
+            # with m.If(self.in_fifo.level == 0):
+            #     m.d.sync += self.alt_fifo.eq(0)
+            #     m.d.comb += self.io_strobe.eq((self.mode_ctrl.ras_mode_ctrl.raster_fifo.w_rdy))
+            #     m.d.comb += self.mode_ctrl.ras_mode_ctrl.raster_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
+            #     with m.If(~(self.mode_ctrl.output_strobe_out)):
+            #         m.d.comb += self.mode_ctrl.ras_mode_ctrl.raster_fifo.w_en.eq(1)
+
 
         return m
 
