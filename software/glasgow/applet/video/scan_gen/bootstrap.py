@@ -34,11 +34,13 @@ async def get_applet():
     target, applet = _applet("C3", args)
     plan = target.build_plan()
     await device.download_target(plan, reload=args.reload)
-    print(target)
-    print(applet)
-    print(vars(applet))
+    # print(target)
+    # print(applet)
+    # print(vars(applet))
     device.demultiplexer = DirectDemultiplexer(device, target.multiplexer.pipe_count)
-    
+    return applet, device, args
+
+async def get_iface():
     iface = await applet.run(device, args)
     return iface
 
@@ -52,10 +54,11 @@ if __name__ == "__main__":
         event_loop = QEventLoop(app)
         asyncio.set_event_loop(event_loop)
 
-        scan_iface = event_loop.run_until_complete(get_applet())
+        applet, device, args = event_loop.run_until_complete(get_applet())
 
-        main_window = MainWindow(scan_iface)
+        main_window = MainWindow([applet, device, args])
         main_window.show()
+
 
         app_close_event = asyncio.Event()
         app.aboutToQuit.connect(app_close_event.set)
