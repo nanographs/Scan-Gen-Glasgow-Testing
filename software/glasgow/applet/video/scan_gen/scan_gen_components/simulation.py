@@ -13,6 +13,7 @@ from glasgow.access.simulation import SimulationMultiplexerInterface, Simulation
 from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGenInterface
 from glasgow.applet.video.scan_gen.scan_gen_components.main_iobus import IOBus
 from glasgow.applet.video.scan_gen.scan_gen_components.test_streams import *
+from glasgow.applet.video.scan_gen.output_formats.even_newer_gui import run_gui
 from glasgow.device.hardware import GlasgowHardwareDevice
 from glasgow.device.simulation import GlasgowSimulationDevice
 from glasgow.target.simulation import GlasgowSimulationTarget
@@ -88,3 +89,4 @@ def sim_iobus():
 
 if __name__ == "__main__":
     sim_iobus()
+    #run_gui(sim_scangen_iface)
