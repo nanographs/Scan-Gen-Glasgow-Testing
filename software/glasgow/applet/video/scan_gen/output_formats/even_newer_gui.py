@@ -181,8 +181,8 @@ class MainWindow(QWidget):
     async def updateData(self):
         await self.scan_iface.stream_video()
         await asyncio.sleep(0)
-        data = np.array(self.scan_iface.buffer).astype(np.uint8)
-        self.image_display.live_img.setImage(data, autoLevels = False)
+        data = np.array(self.scan_iface.buffer).byteswap().astype(np.uint8)
+        self.image_display.live_img.setImage(data) # add autolevels = False
 
 
 
