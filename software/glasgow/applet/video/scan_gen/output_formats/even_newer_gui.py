@@ -1,13 +1,24 @@
 import sys
 import asyncio
-import numpy as np
-
-from PyQt6.QtWidgets import (QWidget, QGridLayout, QHBoxLayout, 
-                            QLabel, QPushButton, QSpinBox)
-
 import pyqtgraph as pg
 from pyqtgraph.exporters import Exporter
 from pyqtgraph.Qt import QtCore
+
+import logging
+import types
+import functools
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
+import numpy as np
+
+
+
+from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
+                             QMessageBox, QPlainTextEdit, QPushButton,
+                             QVBoxLayout, QWidget, QLabel, QGridLayout,
+                             QSpinBox)
+
+
 
 
 from qasync import QEventLoop, QApplication, asyncSlot, asyncClose
@@ -23,10 +34,13 @@ class RegisterUpdateBox(QGridLayout):
         self.label = QLabel(label)
         self.addWidget(self.label,0,1)
 
+
         self.spinbox = QSpinBox()
         self.spinbox.setRange(lower_limit, upper_limit)
         self.spinbox.setSingleStep(1)
         self.addWidget(self.spinbox,1,1)
+
+
 
 
     @asyncSlot()
@@ -48,6 +62,9 @@ class FrameSettings(QHBoxLayout):
             self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384)
             self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384)
 
+        self.x_resolution.spinbox.setValue(2048)
+        self.y_resolution.spinbox.setValue(2048)
+
         self.registers = [self.x_resolution, self.y_resolution]
 
         self.addLayout(self.x_resolution)
@@ -63,7 +80,7 @@ class FrameSettings(QHBoxLayout):
         width = int(self.x_resolution.spinbox.cleanText())
         self.img_display.setRange(height, width)
         for register in self.registers:
-            register.do_fn()
+            await register.do_fn()
 
 
 
@@ -101,7 +118,6 @@ class MainWindow(QWidget):
     def __init__(self, scan_iface=None):
         super().__init__()
         self.scan_iface = scan_iface
-        data = np.random.randint(low = 1, high = 255, size = (2048,2048))
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
@@ -110,13 +126,21 @@ class MainWindow(QWidget):
         self.image_display = ImageDisplay(2048, 2048)
         self.layout.addWidget(self.image_display, 0, 0)
 
-        self.scan_btn = QPushButton('!')
-        self.scan_btn.clicked.connect(self.do_stuff)
+        self.frame_settings = FrameSettings(self.image_display, self.scan_iface)
 
-        self.layout.addWidget(self.scan_btn, 1, 0)
+        self.start_btn = QPushButton('▶️')
+        self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
+        self.start_btn.clicked.connect(self.toggle_scan)
+
+
+        self.layout.addWidget(self.start_btn, 1, 0)
 
         self.frame_settings = FrameSettings(self.image_display, self.scan_iface)
         self.layout.addLayout(self.frame_settings, 2, 0)
+
+
+
+
 
 
     @asyncSlot()
@@ -126,25 +150,40 @@ class MainWindow(QWidget):
         print(data)
         
         #self.image_display.showTest()
+        self.scan_btn = QPushButton('!')
+        self.scan_btn.clicked.connect(self.do_stuff)
 
-        # self.image_display = pg.plot(title="image")
-        # test_vector_points = [
-        #     [2000, 1000, 30], ## X, Y, D
-        #     [1000, 2000, 40],
-        #     [3000, 2500, 50],
-        # ]
+        self.layout.addWidget(self.scan_btn, 1, 0)
 
-    #     self.scatter = pg.ScatterPlotItem()
-    #     for n in test_vector_points:
-    #         self.add_point(n)
-            
-    #     
-    #     self.image_display.addItem(self.scatter)
+    @asyncSlot()
+    async def toggle_scan(self):
+        if self.start_btn.isChecked():
+            self.start_btn.setText('🔄')
+            await self.scan_iface.set_raster_mode()
+            self.update_continously = asyncio.ensure_future(self.keepUpdating())
+            self.start_btn.setText('⏸️')
 
-    # def add_point(self,n):
-    #     x, y, d, = n
-    #     brush=pg.mkBrush(d)
-    #     self.scatter.addPoints([x], [y], brush = brush)
+        else:
+            print("Stopped scanning now")
+            self.start_btn.setText('🔄')
+            self.update_continously.cancel()
+            self.start_btn.setText('▶️')
+
+
+    async def keepUpdating(self):
+        while True:
+            try:
+                await self.updateData()
+            except Exception as error:
+                print("error:",error)
+                break
+
+    async def updateData(self):
+        await self.scan_iface.stream_video()
+        await asyncio.sleep(0)
+        data = np.array(self.scan_iface.buffer).astype(np.uint8)
+        self.image_display.live_img.setImage(data, autoLevels = False)
+
 
 
 def run_gui(scan_iface=None):

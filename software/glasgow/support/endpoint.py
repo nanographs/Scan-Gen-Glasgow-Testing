@@ -71,7 +71,8 @@ class ServerEndpoint(aobject, asyncio.Protocol):
         self._read_paused = False
 
     def _log(self, level, message, *args):
-        self._logger.log(level, self.name + ": " + message, *args)
+        if not self._logger == None:
+            self._logger.log(level, self.name + ": " + message, *args)
 
     def connection_made(self, transport):
         self._send_epoch += 1

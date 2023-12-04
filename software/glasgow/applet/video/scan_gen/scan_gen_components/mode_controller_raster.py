@@ -3,8 +3,7 @@ from amaranth import *
 from amaranth.sim import Simulator
 from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 
-print("hello")
-print("name:", __name__)
+
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.beam_controller import BeamController
     from ..scan_gen_components.xy_scan_gen import XY_Scan_Gen
@@ -86,11 +85,14 @@ class RasterModeController(Elaboratable):
 
         self.xy_scan_gen = XY_Scan_Gen()
 
+       # self.raster_fifo = SyncFIFOBuffered(width = 8, depth = 12)
+
 
     def elaborate(self, platform):
         m = Module()
         #m.submodules["BeamController"] = self.beam_controller
         m.submodules["RasterOutput"] = self.raster_output
+       # m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
 
         # m.d.comb += self.xy_scan_gen.x_full_frame_resolution.eq(2048)
