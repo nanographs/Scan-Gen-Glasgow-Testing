@@ -41,8 +41,6 @@ class RegisterUpdateBox(QGridLayout):
         self.addWidget(self.spinbox,1,1)
 
 
-
-
     @asyncSlot()
     async def do_fn(self):
         val = int(self.spinbox.cleanText())
@@ -83,6 +81,24 @@ class FrameSettings(QHBoxLayout):
             await register.do_fn()
 
 
+class AppletSettings(QHBoxLayout):
+    def __init__(self, main_window, scan_applet=[None,None,None]):
+        super().__init__()
+        self.applet, self.device, self.args = scan_applet
+        self.main_window = main_window
+
+        self.load_btn = QPushButton('load applet')
+        self.addWidget(self.load_btn)
+        self.load_btn.clicked.connect(self.load_applet)
+
+    @asyncSlot()
+    async def load_applet(self):
+        self.scan_iface = await(self.applet.run(self.device,self.args))
+        print(self.scan_iface)
+        self.main_window.set_scan_iface(self.scan_iface)
+        
+
+    
 
 class ImageDisplay(pg.GraphicsLayoutWidget):
     def __init__(self, height, width):
@@ -118,41 +134,36 @@ class MainWindow(QWidget):
     def __init__(self, scan_applet=[None,None,None]):
         super().__init__()
         self.scan_iface = None
-        print(scan_applet)
-        self.applet, self.device, self.args = scan_applet
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
         self.setLayout(self.layout)
 
+        self.applet_settings = AppletSettings(self, scan_applet)
+        self.layout.addLayout(self.applet_settings,0,0)
+
         self.image_display = ImageDisplay(2048, 2048)
-        self.layout.addWidget(self.image_display, 1, 0)
-
-        self.frame_settings = FrameSettings(self.image_display, self.scan_iface)
-
-        self.load_btn = QPushButton('load applet')
-        self.layout.addWidget(self.load_btn, 0, 0)
-        self.load_btn.clicked.connect(self.load_applet)
 
         self.start_btn = QPushButton('▶️')
         self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
         self.start_btn.clicked.connect(self.toggle_scan)
 
+        
+        
 
+
+
+
+
+
+    def set_scan_iface(self, scan_iface):
+        self.scan_iface = scan_iface
+        self.layout.addWidget(self.image_display, 1, 0)
         self.layout.addWidget(self.start_btn, 2, 0)
-
-        self.frame_settings = FrameSettings(self.image_display, self.scan_iface)
+        self.frame_settings = FrameSettings(self.image_display, scan_iface)
         self.layout.addLayout(self.frame_settings, 3, 0)
 
 
-
-
-
-
-    @asyncSlot()
-    async def load_applet(self):
-        self.scan_iface = await(self.applet.run(self.device,self.args))
-        print(self.scan_iface)
 
     @asyncSlot()
     async def toggle_scan(self):

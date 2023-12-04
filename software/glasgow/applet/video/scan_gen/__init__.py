@@ -155,22 +155,6 @@ class ScanGenInterface:
             pass ## 16384 isn't divisible by 3...
             #ignore those pesky extra values.... just for new
 
-    def decode_rdwell(self, n):
-        a2, a1 = n
-        a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
-        return a
-    
-    def decode_rdwell_packet(self, raw_data):
-        if isinstance(raw_data, bytes):
-            data = list(raw_data)
-        else:
-            data = raw_data.tolist()
-        packet = []
-        for n in range(0,len(data),2):
-            dwell = self.decode_rdwell(data[n:n+2])
-            packet.append(dwell)
-        return packet
-
     def decode_vpoint_packet(self, raw_data):
         print(type(raw_data))
         if isinstance(raw_data, bytes):
@@ -270,10 +254,8 @@ class ScanGenInterface:
         print("set raster mode")
 
     async def stream_video(self):
-        print("reading :3")
-        #self.fifostats()
+        print("getting data :3")
         data = await self.iface.read(16384)
-        #print(data)
         self.stream_to_buffer(data)
         # print("sending")
         # await self.endpoint.send(data)
@@ -353,7 +335,7 @@ class ScanGenInterface:
         self.current_x = partial_end_points
         #assert (self.buffer[self.current_y][0] == 0)
 
-        #print(self.buffer)
+        print(self.buffer)
         #print("=====")
 
 
