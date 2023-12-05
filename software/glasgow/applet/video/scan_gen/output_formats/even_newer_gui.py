@@ -56,17 +56,33 @@ class FrameSettings(QHBoxLayout):
         if not self.scan_iface == None:
             self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384, self.scan_iface.set_x_resolution)
             self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384, self.scan_iface.set_y_resolution)
+
+            self.x_lower = RegisterUpdateBox("X Lower", 1, 16384, self.scan_iface.set_x_lower_limit)
+            self.x_upper = RegisterUpdateBox("X Upper", 1, 16384, self.scan_iface.set_x_upper_limit)
+
+            self.y_lower = RegisterUpdateBox("Y Lower", 1, 16384, self.scan_iface.set_y_lower_limit)
+            self.y_upper = RegisterUpdateBox("Y Upper", 1, 16384, self.scan_iface.set_y_upper_limit)
+
         else:
             self.x_resolution = RegisterUpdateBox("X Resolution", 1, 16384)
             self.y_resolution = RegisterUpdateBox("Y Resolution", 1, 16384)
 
+            self.x_lower = RegisterUpdateBox("X Lower", 1, 16384)
+            self.x_upper = RegisterUpdateBox("X Upper", 1, 16384)
+
+            self.y_lower = RegisterUpdateBox("Y Lower", 1, 16384)
+            self.y_upper = RegisterUpdateBox("Y Upper", 1, 16384)
+
         self.x_resolution.spinbox.setValue(2048)
         self.y_resolution.spinbox.setValue(2048)
 
-        self.registers = [self.x_resolution, self.y_resolution]
+        self.registers = [self.x_resolution, self.y_resolution,
+                        self.x_lower, self.x_upper,
+                        self.y_lower, self.y_upper,
+                        ]
 
-        self.addLayout(self.x_resolution)
-        self.addLayout(self.y_resolution)
+        for register in self.registers:
+            self.addLayout(register)
 
         self.btn = QPushButton("->")
         self.addWidget(self.btn) 

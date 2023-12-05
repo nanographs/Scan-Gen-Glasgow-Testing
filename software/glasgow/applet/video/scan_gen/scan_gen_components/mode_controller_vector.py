@@ -2,13 +2,14 @@ import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
 from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
-
+print(__name__)
 
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.beam_controller import BeamController
     from ..scan_gen_components.xy_scan_gen import XY_Scan_Gen
     from ..scan_gen_components.addresses import *
-if __name__ == "__main__":
+#if __name__ == "__main__":
+else:
     from beam_controller import BeamController
     from xy_scan_gen import XY_Scan_Gen
     from addresses import *
@@ -173,13 +174,14 @@ class VectorModeController(Elaboratable):
             m.d.comb += self.vector_fifo.w_en.eq(1)
             m.d.comb += self.vector_fifo.w_data.eq(self.vector_input.vector_point_data_c)
 
+        m.d.comb += self.vector_output.vector_dwell_data_c.eq(self.vector_point_output)
         with m.If(self.vector_fifo.r_rdy & self.beam_controller_end_of_dwell):
             m.d.comb += self.vector_fifo.r_en.eq(1)
             m.d.comb += self.vector_point_data.eq(self.vector_fifo.r_data)
             m.d.comb += self.vector_output.strobe_in_xy.eq(1)
-            with m.If(~(self.beam_controller_start_dwell)):
-                m.d.comb += self.vector_output.strobe_in_dwell.eq(1)
-                m.d.comb += self.vector_output.vector_dwell_data_c.eq(self.vector_point_output)
+            # with m.If(~(self.beam_controller_start_dwell)):
+            #     m.d.comb += self.vector_output.strobe_in_dwell.eq(1)
+
             m.d.comb += self.vector_output.vector_position_data_c.eq(Cat(self.vector_point_data.X1,
                                                                         self.vector_point_data.X2,
                                                                         self.vector_point_data.Y1,

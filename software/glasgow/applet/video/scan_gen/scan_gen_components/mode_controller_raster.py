@@ -8,7 +8,8 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.beam_controller import BeamController
     from ..scan_gen_components.xy_scan_gen import XY_Scan_Gen
     from ..scan_gen_components.addresses import *
-if __name__ == "__main__":
+else:
+#if __name__ == "__main__":
     from beam_controller import BeamController
     from xy_scan_gen import XY_Scan_Gen
     from addresses import *
@@ -95,19 +96,19 @@ class RasterModeController(Elaboratable):
        # m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
 
-        # m.d.comb += self.xy_scan_gen.x_full_frame_resolution.eq(2048)
-        # m.d.comb += self.xy_scan_gen.y_full_frame_resolution.eq(2048)
-        m.d.comb += self.beam_controller_next_dwell.eq(5)
 
+        m.d.comb += self.beam_controller_next_dwell.eq(1)
+
+        m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
         with m.If(self.beam_controller_end_of_dwell):
             m.d.comb += self.xy_scan_gen.increment.eq(1)
-            m.d.comb += self.raster_point_data.eq(Cat(self.xy_scan_gen.current_x,
-                                                    self.xy_scan_gen.current_y))
+            m.d.comb += Cat(self.raster_point_data.X1,self.raster_point_data.X2).eq(self.xy_scan_gen.current_x)
+            m.d.comb += Cat(self.raster_point_data.Y1,self.raster_point_data.Y2).eq(self.xy_scan_gen.current_y)
             m.d.comb += self.raster_output.strobe_in_xy.eq(1)
-            with m.If(~(self.beam_controller_start_dwell)):
-                m.d.comb += self.raster_output.strobe_in_dwell.eq(1)
-                #m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.beam_controller.dwell_time)
-                m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
+            # with m.If(~(self.beam_controller_start_dwell)):
+            #     m.d.comb += self.raster_output.strobe_in_dwell.eq(1)
+            #     #m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.beam_controller.dwell_time)
+            #     m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
             m.d.comb += self.raster_output.raster_position_data_c.eq(Cat(self.raster_point_data.X1,
                                                                         self.raster_point_data.X2,
                                                                         self.raster_point_data.Y1,
@@ -118,7 +119,7 @@ class RasterModeController(Elaboratable):
                                                                     self.raster_point_data.Y2))
             # m.d.comb += self.beam_controller_next_dwell.eq(Cat(self.raster_point_data.D1, 
             #                                                         self.raster_point_data.D2))
-            m.d.comb += self.beam_controller_next_dwell.eq(5)
+
 
         
         
@@ -126,36 +127,24 @@ class RasterModeController(Elaboratable):
         return m
 
 
-def test_vectorinput():
-    dut = VectorInput()
-    def bench():
-        for n in test_vector_points:
-            yield from write_point_in(n, dut.out_fifo)
-    
-    sim = Simulator(dut)
-    sim.add_clock(1e-6) # 1 MHz
-    sim.add_sync_process(bench)
-    with sim.write_vcd("vectorin_sim.vcd"):
-        sim.run()
+def test_rasmodecontroller():
 
-
-def test_modecontroller():
-
-    dut = ModeController()
+    dut = RasterModeController()
 
     def bench():
-        for n in test_vector_points:
-            yield from _fifo_write_vector_point(n, dut.vector_input.out_fifo)
+        yield dut.xy_scan_gen.x_full_frame_resolution.eq(8)
+        yield dut.xy_scan_gen.y_full_frame_resolution.eq(8)
         yield
+        for n in range(64):
+            yield dut.beam_controller_end_of_dwell.eq(1)
+            yield
 
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
     sim.add_sync_process(bench)
-    with sim.write_vcd("vecmode_sim.vcd"):
+    with sim.write_vcd("rasmode_sim.vcd"):
         sim.run()
 
-#test_vectorinput()
 
 if __name__ == "__main__":
-    print(test_vector_points)
-    test_modecontroller()
+    test_rasmodecontroller()

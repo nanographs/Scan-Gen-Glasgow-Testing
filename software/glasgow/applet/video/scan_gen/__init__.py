@@ -32,7 +32,11 @@ if "glasgow" in __name__: ## running as applet
 class IOBusSubtarget(Elaboratable):
     def __init__(self, data, power_ok, in_fifo, out_fifo, scan_mode,
                 x_full_resolution_b1, x_full_resolution_b2, 
-                y_full_resolution_b1, y_full_resolution_b2 ):
+                y_full_resolution_b1, y_full_resolution_b2,
+                x_upper_limit_b1, x_upper_limit_b2,
+                x_lower_limit_b1, x_lower_limit_b2,
+                y_upper_limit_b1, y_upper_limit_b2,
+                y_lower_limit_b1, y_lower_limit_b2 ):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
@@ -42,6 +46,10 @@ class IOBusSubtarget(Elaboratable):
         self.io_bus = IOBus(self.in_fifo, self.out_fifo, scan_mode, 
                             x_full_resolution_b1, x_full_resolution_b2,
                             y_full_resolution_b1, y_full_resolution_b2,
+                            x_upper_limit_b1, x_upper_limit_b2,
+                            x_lower_limit_b1, x_lower_limit_b2,
+                            y_upper_limit_b1, y_upper_limit_b2,
+                            y_lower_limit_b1, y_lower_limit_b2,
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -75,22 +83,19 @@ class IOBusSubtarget(Elaboratable):
             for i, pad in enumerate(self.data):
                 m.d.comb += [
                     pad.oe.eq(self.power_ok.i),
-                    pad.o.eq(self.io_bus.pins[i]),
+                    pad.o.eq(self.io_bus.pins_o[i]),
                 ]
-            #m.d.comb += self.pins.eq(self.io_bus.pins)
         with m.If(self.io_bus.bus_multiplexer.is_y):
             for i, pad in enumerate(self.data):
                 m.d.comb += [
                     pad.oe.eq(self.power_ok.i),
-                    pad.o.eq(self.io_bus.pins[i]),
+                    pad.o.eq(self.io_bus.pins_o[i]),
                 ]
-            #m.d.comb += self.pins.eq(self.io_bus.pins)
         with m.If(self.io_bus.bus_multiplexer.is_a):
             for i, pad in enumerate(self.data):
                 m.d.comb += [
-                    self.io_bus.pins[i].eq(pad.i)
+                    self.io_bus.pins_i[i].eq(pad.i)
                 ]
-            #m.d.comb += self.io_bus.pins.eq(self.pins)
 
         return m
 
@@ -98,6 +103,10 @@ class ScanGenInterface:
     def __init__(self, iface, logger, device, __addr_scan_mode,
                 __addr_x_full_resolution_b1, __addr_x_full_resolution_b2,
                 __addr_y_full_resolution_b1,__addr_y_full_resolution_b2,
+                __addr_x_upper_limit_b1, __addr_x_upper_limit_b2,
+                __addr_x_lower_limit_b1, __addr_x_lower_limit_b2,
+                __addr_y_upper_limit_b1, __addr_y_upper_limit_b2,
+                __addr_y_lower_limit_b1, __addr_y_lower_limit_b2,
                 is_simulation = False):
         self.iface = iface
         self._logger = logger
@@ -108,6 +117,17 @@ class ScanGenInterface:
         self.__addr_x_full_resolution_b2 = __addr_x_full_resolution_b2
         self.__addr_y_full_resolution_b1 = __addr_y_full_resolution_b1
         self.__addr_y_full_resolution_b2 = __addr_y_full_resolution_b2
+
+        self.__addr_x_upper_limit_b1 = __addr_x_upper_limit_b1
+        self.__addr_x_upper_limit_b2 = __addr_x_upper_limit_b2
+        self.__addr_x_lower_limit_b1 = __addr_x_lower_limit_b1
+        self.__addr_x_lower_limit_b2 = __addr_x_lower_limit_b2
+
+        self.__addr_y_upper_limit_b1 = __addr_y_upper_limit_b1
+        self.__addr_y_upper_limit_b2 = __addr_y_upper_limit_b2
+        self.__addr_y_lower_limit_b1 = __addr_y_lower_limit_b1
+        self.__addr_y_lower_limit_b2 = __addr_y_lower_limit_b2
+
 
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
@@ -215,10 +235,11 @@ class ScanGenInterface:
             for n in test_vector_points:
                 i+=6
                 await self.write_vpoint(n)
+                asyncio.sleep(0)
         loop = asyncio.get_running_loop()
         fut = loop.create_future()
         loop.create_task(
-            self.future_vpacket(fut)
+            self.future_packet(fut)
         )
 
     async def set_2byte_register(self,val,addr_b1, addr_b2):
@@ -242,6 +263,18 @@ class ScanGenInterface:
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                             dtype = np.uint16)
 
+    async def set_x_upper_limit(self, val):
+        await self.set_2byte_register(val,self.__addr_x_upper_limit_b1,self.__addr_x_upper_limit_b2)
+
+    async def set_x_lower_limit(self, val):
+        await self.set_2byte_register(val,self.__addr_x_lower_limit_b1,self.__addr_x_lowerer_limit_b2)
+
+    async def set_y_upper_limit(self, val):
+        await self.set_2byte_register(val,self.__addr_y_upper_limit_b1,self.__addr_y_upper_limit_b2)
+
+    async def set_y_lower_limit(self, val):
+        await self.set_2byte_register(val,self.__addr_y_lower_limit_b1,self.__addr_y_lowerer_limit_b2)
+
     async def set_frame_resolution(self,xval,yval):
         await self.set_x_resolution(xval)
         await self.set_y_resolution(yval)
@@ -252,6 +285,10 @@ class ScanGenInterface:
     async def set_raster_mode(self):
         await self._device.write_register(self.__addr_scan_mode, 1)
         print("set raster mode")
+
+    async def set_vector_mode(self):
+        await self._device.write_register(self.__addr_scan_mode, 3)
+        print("set vector mode")
 
     async def stream_video(self):
         print("getting data :3")
@@ -392,6 +429,17 @@ class ScanGenApplet(GlasgowApplet):
         y_full_resolution_b1,  self.__addr_y_full_resolution_b1  = target.registers.add_rw(8, reset=0)
         y_full_resolution_b2,  self.__addr_y_full_resolution_b2  = target.registers.add_rw(8, reset=0)
 
+        x_upper_limit_b1,      self.__addr_x_upper_limit_b1  = target.registers.add_rw(8, reset=0)
+        x_upper_limit_b2,      self.__addr_x_upper_limit_b2  = target.registers.add_rw(8, reset=0)
+        x_lower_limit_b1,      self.__addr_x_lower_limit_b1  = target.registers.add_rw(8, reset=0)
+        x_lower_limit_b2,      self.__addr_x_lower_limit_b2  = target.registers.add_rw(8, reset=0)
+
+        y_upper_limit_b1,      self.__addr_y_upper_limit_b1  = target.registers.add_rw(8, reset=0)
+        y_upper_limit_b2,      self.__addr_y_upper_limit_b2  = target.registers.add_rw(8, reset=0)
+        y_lower_limit_b1,      self.__addr_y_lower_limit_b1  = target.registers.add_rw(8, reset=0)
+        y_lower_limit_b2,      self.__addr_y_lower_limit_b2  = target.registers.add_rw(8, reset=0)
+
+
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
@@ -399,7 +447,11 @@ class ScanGenApplet(GlasgowApplet):
             out_fifo = iface.get_out_fifo(),
             scan_mode = scan_mode,
             x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
-            y_full_resolution_b1 = y_full_resolution_b1, y_full_resolution_b2 = y_full_resolution_b2
+            y_full_resolution_b1 = y_full_resolution_b1, y_full_resolution_b2 = y_full_resolution_b2,
+            x_upper_limit_b1 = x_upper_limit_b1, x_upper_limit_b2 = x_upper_limit_b2,
+            x_lower_limit_b1 = x_upper_limit_b1, x_lower_limit_b2 = x_lower_limit_b2,
+            y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
+            y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2
         ))
         
 
@@ -412,7 +464,12 @@ class ScanGenApplet(GlasgowApplet):
 
         scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
         self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
-        self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2)
+        self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
+        self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
+        self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
+        self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
+        self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
+        )
 
         return scan_iface
         
@@ -424,7 +481,25 @@ class ScanGenApplet(GlasgowApplet):
         #pass
 
     async def interact(self, device, args, scan_iface):
-        pass
+        await scan_iface.set_frame_resolution(16384,16384)
+        await scan_iface.set_vector_mode()
+        stream = open("hilbert.txt")
+        while True:
+            for n in stream:
+                data = n.strip(",\n")
+                await asyncio.sleep(0)
+                try:
+                    await scan_iface.write_vpoint(eval(data))
+                except:
+                    await asyncio.sleep(10)
+        # for i in range(16384):
+        #     await scan_iface.send_vec_stream_and_recieve_data()
+        #     await asyncio.sleep(0)
+        # while True:
+        #     await scan_iface.send_vec_stream_and_recieve_data()
+        # while True:
+        #     data = await scan_iface.read_r_packet()
+        #     print(data)
         # endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
         # scan_iface.set_endpoint(endpoint)
         # if args.gui:

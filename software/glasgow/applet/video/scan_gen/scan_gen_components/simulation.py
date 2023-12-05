@@ -41,7 +41,7 @@ def raster_sim(n=16384):
 def vector_sim(r):
     i = 0
     while i < r:
-        for n in test_vector_points:
+        for n in short_test_vector_points:
             x, y, d = n
             i += 6
             #yield from write_vector_point(n, sim_app_iface)
@@ -57,17 +57,22 @@ def sim_iobus():
     y_full_resolution_b2 = Signal(8)
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
-    y_full_resolution_b1, x_full_resolution_b2, is_simulation = True)
+    y_full_resolution_b1, x_full_resolution_b2, is_simulation = True,
+    test_mode = "data loopback")
     def bench():
-        b1, b2 = get_two_bytes(2048)
-        b1 = int(bits(b1))
-        b2 = int(bits(b2))
-        yield scan_mode.eq(ScanMode.Raster)
-        yield x_full_resolution_b1.eq(b1)
-        yield x_full_resolution_b2.eq(b2)
-        yield y_full_resolution_b1.eq(b1)
-        yield y_full_resolution_b2.eq(b2)
-        yield from raster_sim()
+        yield scan_mode.eq(ScanMode.Vector)
+        yield from vector_sim(16384)
+        for n in range(1000):
+            yield
+        # b1, b2 = get_two_bytes(8)
+        # b1 = int(bits(b1))
+        # b2 = int(bits(b2))
+        # yield scan_mode.eq(ScanMode.Raster)
+        # yield x_full_resolution_b1.eq(b1)
+        # yield x_full_resolution_b2.eq(b2)
+        # yield y_full_resolution_b1.eq(b1)
+        # yield y_full_resolution_b2.eq(b2)
+        # yield from raster_sim(1024)
         # yield from raster_sim(500)
         # # yield scan_mode.eq(2) ## not defined, so just do nothing/pause
         # # for n in range(10):

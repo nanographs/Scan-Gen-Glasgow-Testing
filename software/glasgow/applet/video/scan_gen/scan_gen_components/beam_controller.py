@@ -30,6 +30,8 @@ class BeamController(Elaboratable):
         self.lock_new_point = Signal()
         self.reset_dwell_ctr = Signal()
 
+        self.count_enable = Signal()
+
 
 
         self.fresh_data = Signal()
@@ -37,15 +39,17 @@ class BeamController(Elaboratable):
 
     def elaborate(self, platform):
         m = Module()
-        m.d.comb += self.end_of_dwell.eq(self.counter == self.dwell_time)
-        m.d.comb += self.start_dwell.eq(self.counter == 0)
+        with m.If(self.count_enable):
+            m.d.comb += self.end_of_dwell.eq(self.counter == self.dwell_time)
+            m.d.comb += self.start_dwell.eq(self.counter == 0)
 
         with m.If(self.dwelling):
             m.d.comb += self.lock_new_point.eq(self.end_of_dwell)
-            with m.If(self.end_of_dwell):
-                m.d.sync += self.counter.eq(0)
-            with m.Else():
-                m.d.sync += self.counter.eq(self.counter + 1)
+            with m.If(self.count_enable):
+                with m.If(self.end_of_dwell):
+                    m.d.sync += self.counter.eq(0)
+                with m.Else():
+                    m.d.sync += self.counter.eq(self.counter + 1)
         with m.Else():
             m.d.sync += self.counter.eq(0)
                 
