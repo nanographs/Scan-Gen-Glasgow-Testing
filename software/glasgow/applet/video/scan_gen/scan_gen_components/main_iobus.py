@@ -17,6 +17,10 @@ class IOBus(Elaboratable):
     def __init__(self, in_fifo, out_fifo, scan_mode, 
                 x_full_resolution_b1, x_full_resolution_b2,
                 y_full_resolution_b1, y_full_resolution_b2,
+                x_upper_limit_b1, x_upper_limit_b2,
+                x_lower_limit_b1, x_lower_limit_b2,
+                y_upper_limit_b1, y_upper_limit_b2,
+                y_lower_limit_b1, y_lower_limit_b2,
                 is_simulation = True, test_mode = None):
         self.is_simulation = is_simulation
         self.test_mode = test_mode
@@ -24,15 +28,27 @@ class IOBus(Elaboratable):
         self.out_fifo = out_fifo
         self.in_fifo = in_fifo
         self.scan_mode = scan_mode
+
         self.x_full_resolution_b1 = x_full_resolution_b1
         self.x_full_resolution_b2 = x_full_resolution_b2
         self.y_full_resolution_b1 = y_full_resolution_b1
         self.y_full_resolution_b2 = y_full_resolution_b2
 
+        self.x_upper_limit_b1 = x_upper_limit_b1
+        self.x_upper_limit_b2 = x_upper_limit_b2
+        self.x_lower_limit_b1 = x_lower_limit_b1
+        self.x_lower_limit_b2 = x_lower_limit_b2
+
+        self.y_upper_limit_b1 = y_upper_limit_b1
+        self.y_upper_limit_b2 = y_upper_limit_b2
+        self.y_lower_limit_b1 = y_lower_limit_b1
+        self.y_lower_limit_b2 = y_lower_limit_b2
+
         self.mode_ctrl = ModeController()
 
         self.bus_multiplexer = BusMultiplexer()
-        self.pins = Signal(14)
+        self.pins_i = Signal(14)
+        self.pins_o = Signal(14)
 
         self.x_latch = Signal()
         self.x_enable = Signal()
@@ -68,7 +84,7 @@ class IOBus(Elaboratable):
         m.d.comb += self.a_enable.eq(self.bus_multiplexer.a_adc.latch.oe)
 
         m.d.comb += self.a_clock.eq(self.bus_multiplexer.sample_clock.clock)
-        m.d.comb += self.d_clock.eq(self.bus_multiplexer.sample_clock.clock)
+        m.d.comb += self.d_clock.eq(~self.bus_multiplexer.sample_clock.clock)
 
 
         #m.d.comb += self.scan_mode.eq(ScanMode.Raster)
@@ -78,11 +94,30 @@ class IOBus(Elaboratable):
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_full_frame_resolution.eq(Cat(self.y_full_resolution_b2,
                                                                                             self.y_full_resolution_b1))
 
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(Cat(self.x_upper_limit_b2,
+                                                                                self.x_upper_limit_b1))
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(Cat(self.x_lower_limit_b2,
+                                                                                self.x_lower_limit_b1))
+
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(Cat(self.y_upper_limit_b2,
+                                                                                self.y_upper_limit_b1))                                                                        
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(Cat(self.y_lower_limit_b2,
+                                                                                self.y_lower_limit_b1))
+
+        m.d.comb += self.mode_ctrl.beam_controller.count_enable.eq(self.bus_multiplexer.is_done)
         with m.If(self.bus_multiplexer.is_x):
-            m.d.comb += self.pins.eq(self.mode_ctrl.beam_controller.x_position)
+            m.d.comb += self.pins_o.eq(self.mode_ctrl.beam_controller.x_position)
         with m.If(self.bus_multiplexer.is_y):
-            m.d.comb += self.pins.eq(self.mode_ctrl.beam_controller.x_position)
-        #with m.If(self.bus_multiplexer.is_a):
+            m.d.comb += self.pins_o.eq(self.mode_ctrl.beam_controller.y_position)
+        with m.If(self.bus_multiplexer.is_a):
+            m.d.comb += self.mode_ctrl.adc_data_strobe.eq(self.bus_multiplexer.a_adc.released)
+            if self.test_mode == "data loopback":
+                with m.If(self.scan_mode == ScanMode.Raster):
+                    m.d.comb += self.mode_ctrl.adc_data.eq(self.mode_ctrl.beam_controller.y_position)
+                with m.If(self.scan_mode == ScanMode.Vector):
+                    m.d.comb += self.mode_ctrl.adc_data.eq(self.mode_ctrl.beam_controller.dwell_time)
+            else:
+                m.d.comb += self.mode_ctrl.adc_data.eq(self.pins_i)
             #m.d.comb += self.output_bus.in_fifo.w_data.eq(self.mode_ctrl.beam_controller.dwell_time)
             # if self.is_simulation:
             #     m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.input_bus.mode_controller.beam_controller.dwell_time)
@@ -91,7 +126,7 @@ class IOBus(Elaboratable):
             # Loopback
 
         with m.If(self.mode_ctrl.mode == ScanMode.Vector):
-            m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & (self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready))
+            m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready)))
 
         with m.If(self.mode_ctrl.mode == ScanMode.Raster):
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy))
@@ -129,7 +164,10 @@ class IOBus(Elaboratable):
                 m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
                 m.d.comb += self.out_fifo.r_en.eq(1)
                 with m.If(~(self.mode_ctrl.output_strobe_out)):
-                    m.d.comb += self.in_fifo.w_en.eq(1)
+                    if self.test_mode == "disable output":
+                        pass
+                    else:
+                        m.d.comb += self.in_fifo.w_en.eq(1)
             # with m.If(~self.in_fifo.w_rdy):
             #     m.d.sync += self.alt_fifo.eq(1)
             # with m.If(self.in_fifo.level == 0):

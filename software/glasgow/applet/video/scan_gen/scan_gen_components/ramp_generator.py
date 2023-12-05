@@ -122,4 +122,43 @@ def test_rampgenerator():
     with sim.write_vcd("ramp_sim.vcd"):
         sim.run()
 
-#test_rampgenerator()
+
+
+def test_ramp(dut, test_lower_limit, test_upper_limit):
+    def increment():
+        yield dut.increment.eq(1) ## Tell the counter to increment
+        yield
+        print("-")
+        yield dut.increment.eq(0)
+        yield
+        print("-")
+
+    for n in range(test_lower_limit, test_upper_limit+1):
+        yield from increment()
+        #print("checking count", n)
+        #assert(yield dut.current_count == n) ## Assert that counter equals the next value
+        #print("count", n, "passed")
+    #assert(yield dut.ovf)
+
+
+def test_ramp_basic(
+    test_lower_limit, test_upper_limit
+):
+    dut = RampGenerator() # Ramp Generator module
+    def bench():
+        yield dut.lower_limit.eq(test_lower_limit)
+        yield dut.upper_limit.eq(test_upper_limit)
+        yield
+
+        yield from test_ramp(dut, test_lower_limit, test_upper_limit)
+    
+    sim = Simulator(dut)
+    sim.add_clock(1e-6) # 1 MHz
+    sim.add_sync_process(bench)
+    with sim.write_vcd("ramp_sim.vcd"):
+        sim.run()
+
+
+if __name__ == "__main__":
+    test_rampgenerator()
+    #test_ramp_basic(1,6)

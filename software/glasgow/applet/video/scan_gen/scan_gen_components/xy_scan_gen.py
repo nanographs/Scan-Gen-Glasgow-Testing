@@ -6,7 +6,7 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.ramp_generator import RampGenerator
     from ..scan_gen_components.pixel_ratio_interpolator import PixelRatioInterpolator
 else:
-    from ramp_generator import RampGenerator
+    from ramp_generator import RampGenerator, test_ramp
     from pixel_ratio_interpolator import PixelRatioInterpolator
 
 class XY_Scan_Gen(Elaboratable):
@@ -122,38 +122,47 @@ def test_scangenerator():
         #yield dut.full_frame_size.eq(frame_size)
         #yield
 
+        yield dut.increment.eq(1)
+        yield
+        yield dut.increment.eq(0)
+        yield
+        print("-")
+
         for i in range(test_y_lower, test_y_upper):
             for j in range(test_x_lower, test_x_upper):
                 assert not (yield dut.x_counter.ovf.eq(0))
-                yield dut.increment.eq(1)
-                yield
-                print("-")
+
                 print("x", (j*16383)//frame_size)
                 assert(yield dut.x_interpolator.input == j)
                 assert(yield dut.x_scan == (j*16383)//frame_size)
                 print("x passed")
+
+                yield dut.increment.eq(1)
+                yield
                 yield dut.increment.eq(0)
                 yield
                 print("-")
+                
+                yield
+                print("-")
 
-            yield dut.increment.eq(1)
-            yield
-            print("-")
             
             print("x line sync")
             assert(yield dut.x_counter.ovf) #line sync
             assert(yield dut.x_scan == (test_x_upper*16383)//frame_size)
             print("x line sync passed")
 
+            yield dut.increment.eq(1)
+            yield
+            yield dut.increment.eq(0)
+            yield
+            print("-")
+
             print("y", i)
             assert(yield dut.y_interpolator.input == i)
             assert(yield dut.y_scan == (i*16383)//frame_size)
             print("y passed")
 
-            yield dut.increment.eq(0)
-            yield
-            print("-")
-            
 
         yield
         print("-")
@@ -186,6 +195,26 @@ def test_scangenerator():
         print("frame sync passed")
 
 
+
+    sim = Simulator(dut)
+    sim.add_clock(1e-6) # 1 MHz
+    sim.add_sync_process(bench)
+    with sim.write_vcd("xy_scan_gen_sim.vcd"):
+        sim.run()
+
+def test_scangenerator_new():
+    dut = XY_Scan_Gen()
+    
+    def bench():
+        test_x_pixels = 10
+        test_y_pixels= 10
+        yield dut.x_full_frame_resolution.eq(test_x_pixels)
+        yield dut.y_full_frame_resolution.eq(test_y_pixels)
+        yield
+
+        for i in range(0,10):
+            for j in range(0,10):
+                yield from test_ramp(dut, 0,10)
 
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
@@ -241,5 +270,6 @@ def sim_scangenerator():
     with sim.write_vcd("xy_scan_gen_sim.vcd"):
         sim.run()
 
-#test_scangenerator()
-#sim_scangenerator()
+if __name__ == "__main__":
+    test_scangenerator_new()
+    #sim_scangenerator()

@@ -3,11 +3,31 @@ if "glasgow" in __name__: ## running as applet
 else:
     from addresses import *
 
+short_test_vector_points = [
+    [2000,1000,1],
+    [1000,1000,2],
+    [2500,1500,1],
+]
 
 test_vector_points = [
-    [2000, 1000, 13], ## X, Y, D
-    [1000, 2000, 13],
-    [3000, 2500, 13],
+    [2000, 1000, 30], ## X, Y, D
+    [1000, 2000, 40],
+    [3000, 2500, 50],
+    [4000, 1000, 3], ## X, Y, D
+    [10000, 2000, 4],
+    [10300, 2500, 5],
+    [2000, 10300, 30], ## X, Y, D
+    [10010, 2000, 10],
+    [12000, 2500, 5],
+    [10300, 2500, 5],
+    [2000, 10300, 30], ## X, Y, D
+    [8010, 2000, 10],
+    [12000, 2500, 50],
+    [2000, 1000, 30], ## X, Y, D
+    [1000, 2000, 40],
+    [300, 2500, 50],
+    [12000, 1000, 15], ## X, Y, D
+    [10000, 2000, 20],
 ]
 
 #  ◼︎◻︎◼︎◻︎◼︎
@@ -56,6 +76,20 @@ def _fifo_write_vector_point(n, fifo):
     yield from _fifo_write(fifo, d[0:8])
     yield from _fifo_write(fifo, d[8:16])
 
+
+def hilbert():
+    stream = open("hilbert.txt")
+    nstream = []
+    for n in stream:
+        data = eval(n.strip(",\n"))
+        #print(data)
+        nstream.append(data)
+
+    print(nstream)
+
+
+if __name__ == "__main__":
+    hilbert()
 
 
 

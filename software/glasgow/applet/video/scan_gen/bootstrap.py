@@ -34,9 +34,9 @@ async def get_applet():
     target, applet = _applet("C3", args)
     plan = target.build_plan()
     await device.download_target(plan, reload=args.reload)
-    # print(target)
-    # print(applet)
-    # print(vars(applet))
+    print(target)
+    print(applet)
+    print(vars(applet))
     device.demultiplexer = DirectDemultiplexer(device, target.multiplexer.pipe_count)
     return applet, device, args
 
