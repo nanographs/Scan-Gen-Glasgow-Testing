@@ -24,6 +24,44 @@ else:
 
 class ModeController(Elaboratable):
     '''
+    beam_controller: see beam_controller.py
+    vec_mode_ctrl: see mode_controller_vector.py
+    ras_mode_ctrl: see mode_controller_raster.py
+
+    x_interpolator:
+    y_interpolator:
+
+    x_full_frame_resolution: Signal, in, 16
+        Number of discrete steps to cover DAC full range
+    y_full_frame_resolution: Signal, in, 16
+        Number of discrete steps to cover DAC full range 
+        The actual full frame size is the maximum of either
+        x_full_frame_resolution or y_full_frame_resolution 
+
+    mode: Signal, in, 2
+        ScanMode.Raster = 1
+        ScanMode.Vector = 3
+
+    in_fifo_w_data: Signal, out, 8
+        Combinatorially drives the top level in_fifo.w_data
+    out_fifo_r_data: Signal, in, 8
+        Combinatorially driven by the top level out_fifo.r_data
+
+    output_enable: Signal, in, 1
+        Asserted when fifos can be read to and written from
+        Driven by top level io_strobe
+    output_strobe_out: Signal, out, 1
+        Asserted when in_fifo_w_data is *not* valid
+        Driven by either vec_mode_ctrl.vector_output.strobe_out 
+        or  ras_mode_ctrl.raster_output.strobe_out
+    internal_fifo_ready: Signal, out, 1
+        Vector mode: Asserted when vector_fifo.w_rdy is true
+        Raster mode: Always true
+    
+    adc_data: Signal, in, 16:
+        Data to be recorded as the brightness value for this point
+    adc_data_strobe: Signal, in, 1
+        Asserted when adc_data is valid
     '''
     def __init__(self):
         self.beam_controller = BeamController()
@@ -37,6 +75,7 @@ class ModeController(Elaboratable):
         self.y_full_frame_resolution = Signal(16)
 
         self.mode = Signal(2)
+
         self.in_fifo_w_data = Signal(8)
         self.out_fifo_r_data = Signal(8)
         self.output_enable = Signal()
