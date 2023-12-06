@@ -44,6 +44,11 @@ class IOBus(Elaboratable):
         self.y_lower_limit_b1 = y_lower_limit_b1
         self.y_lower_limit_b2 = y_lower_limit_b2
 
+        self.x_upper_limit = Signal(16)
+        self.x_lower_limit = Signal(16)
+        self.y_upper_limit = Signal(16)
+        self.y_lower_limit = Signal(16)
+
         self.mode_ctrl = ModeController()
 
         self.bus_multiplexer = BusMultiplexer()
@@ -94,15 +99,15 @@ class IOBus(Elaboratable):
         m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(Cat(self.y_full_resolution_b2,
                                                                 self.y_full_resolution_b1))
 
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(Cat(self.x_upper_limit_b2,
-                                                                                self.x_upper_limit_b1))
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(Cat(self.x_lower_limit_b2,
-                                                                                self.x_lower_limit_b1))
+        m.d.comb += self.x_upper_limit.eq(Cat(self.x_upper_limit_b2,self.x_upper_limit_b1))
+        m.d.comb += self.x_lower_limit.eq(Cat(self.x_lower_limit_b2,self.x_lower_limit_b1))
+        m.d.comb += self.y_upper_limit.eq(Cat(self.y_upper_limit_b2,self.y_upper_limit_b1))                                                                        
+        m.d.comb += self.y_lower_limit.eq(Cat(self.y_lower_limit_b2,self.y_lower_limit_b1))
 
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(Cat(self.y_upper_limit_b2,
-                                                                                self.y_upper_limit_b1))                                                                        
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(Cat(self.y_lower_limit_b2,
-                                                                                self.y_lower_limit_b1))
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(self.x_upper_limit)
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.x_lower_limit)
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.y_upper_limit)
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.y_lower_limit)
 
         m.d.comb += self.mode_ctrl.beam_controller.count_enable.eq(self.bus_multiplexer.is_done)
         with m.If(self.bus_multiplexer.is_x):

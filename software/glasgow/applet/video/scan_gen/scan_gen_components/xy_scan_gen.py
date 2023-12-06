@@ -11,14 +11,14 @@ else:
 
 class XY_Scan_Gen(Elaboratable):
     def __init__(self):
-        self.x_full_frame_resolution = Signal(14)
-        self.y_full_frame_resolution = Signal(14)
+        self.x_full_frame_resolution = Signal(16)
+        self.y_full_frame_resolution = Signal(16)
 
-        self.x_lower_limit = Signal(14)
-        self.x_upper_limit = Signal(14)
+        self.x_lower_limit = Signal(16)
+        self.x_upper_limit = Signal(16)
 
-        self.y_lower_limit = Signal(14)
-        self.y_upper_limit = Signal(14)
+        self.y_lower_limit = Signal(16)
+        self.y_upper_limit = Signal(16)
 
         #self.full_frame_size = Signal(14)
 
@@ -27,7 +27,7 @@ class XY_Scan_Gen(Elaboratable):
         self.x_counter = RampGenerator()
         self.y_counter = RampGenerator()
 
-        self.full_frame_size = Signal(14)
+        self.full_frame_size = Signal(16)
 
         # self.x_interpolator = PixelRatioInterpolator(self.full_frame_size)
         # self.y_interpolator = PixelRatioInterpolator(self.full_frame_size)
@@ -35,10 +35,10 @@ class XY_Scan_Gen(Elaboratable):
         self.x_bigger = Signal()
         self.y_bigger = Signal()
 
-        self.x_scan = Signal(14)
-        self.y_scan = Signal(14)
-        self.current_x = Signal(14)
-        self.current_y = Signal(14)
+        # self.x_scan = Signal(14)
+        # self.y_scan = Signal(14)
+        self.current_x = Signal(16)
+        self.current_y = Signal(16)
 
         self.reset = Signal()
         self.frame_sync = Signal()

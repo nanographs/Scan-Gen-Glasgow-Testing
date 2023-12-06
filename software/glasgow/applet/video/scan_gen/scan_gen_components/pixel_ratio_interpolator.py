@@ -33,7 +33,10 @@ class PixelRatioInterpolator(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += self.output.eq((self.input * self.output_width) // self.frame_size)
+        #m.d.comb += self.output.eq((self.input * self.output_width) // self.frame_size)
+        #m.d.comb += self.product.eq(self.input * self.output_width)
+        #m.d.comb += self.output.eq(self.product // self.frame_size)
+        m.d.comb += self.output.eq(self.input * 16)
 
 
         return m
