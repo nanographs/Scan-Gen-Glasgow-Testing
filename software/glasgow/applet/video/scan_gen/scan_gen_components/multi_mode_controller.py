@@ -10,6 +10,7 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.mode_controller_raster import RasterModeController
     from ..scan_gen_components.mode_controller_vector import VectorModeController
     from ..scan_gen_components.addresses import *
+    from ..scan_gen_components.pixel_ratio_interpolator import PixelRatioInterpolator
 # if __name__ == "__main__":
 else:
     from beam_controller import BeamController
@@ -17,6 +18,7 @@ else:
     from addresses import *
     from mode_controller_raster import RasterModeController
     from mode_controller_vector import VectorModeController
+    from pixel_ratio_interpolator import PixelRatioInterpolator
 
 
 
@@ -27,6 +29,13 @@ class ModeController(Elaboratable):
         self.beam_controller = BeamController()
         self.vec_mode_ctrl = VectorModeController()
         self.ras_mode_ctrl = RasterModeController()
+
+        self.x_interpolator = PixelRatioInterpolator()
+        self.y_interpolator = PixelRatioInterpolator()
+
+        self.x_full_frame_resolution = Signal(16)
+        self.y_full_frame_resolution = Signal(16)
+
         self.mode = Signal(2)
         self.in_fifo_w_data = Signal(8)
         self.out_fifo_r_data = Signal(8)
@@ -35,15 +44,27 @@ class ModeController(Elaboratable):
         self.internal_fifo_ready = Signal()
         self.adc_data = Signal(16)
         self.adc_data_strobe = Signal()
+        
     def elaborate(self, platform):
         m = Module()
         m.submodules["BeamController"] = self.beam_controller
         m.submodules["RasterModeCtrl"] = self.ras_mode_ctrl
         m.submodules["VectorModeCtrl"] = self.vec_mode_ctrl
 
-        
+        m.submodules["XInt"] = self.x_interpolator
+        m.submodules["YInt"] = self.y_interpolator
+
+        m.d.comb += self.x_interpolator.frame_size.eq(self.x_full_frame_resolution)
+        m.d.comb += self.y_interpolator.frame_size.eq(self.y_full_frame_resolution)
 
         with m.If(self.mode == ScanMode.Raster):
+            # m.d.comb += self.beam_controller.next_x_position.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
+            # m.d.comb += self.beam_controller.next_y_position.eq(self.ras_mode_ctrl.beam_controller_next_y_position)
+            m.d.comb += self.x_interpolator.input.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
+            m.d.comb += self.y_interpolator.input.eq(self.ras_mode_ctrl.beam_controller_next_y_position)
+            m.d.comb += self.beam_controller.next_x_position.eq(self.x_interpolator.output)
+            m.d.comb += self.beam_controller.next_y_position.eq(self.y_interpolator.output)
+
             m.d.comb += self.beam_controller.dwelling.eq(1)
             m.d.comb += self.ras_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.ras_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
@@ -51,8 +72,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.adc_data)
             with m.If(~self.beam_controller.start_dwell):
                 m.d.comb += self.ras_mode_ctrl.raster_output.strobe_in_dwell.eq(self.adc_data_strobe)
-            m.d.comb += self.beam_controller.next_x_position.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
-            m.d.comb += self.beam_controller.next_y_position.eq(self.ras_mode_ctrl.beam_controller_next_y_position)
+
             m.d.comb += self.beam_controller.next_dwell.eq(self.ras_mode_ctrl.beam_controller_next_dwell)
             m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.raster_output.in_fifo_w_data)
             m.d.comb += self.ras_mode_ctrl.raster_output.enable.eq(self.output_enable)

@@ -29,8 +29,8 @@ class XY_Scan_Gen(Elaboratable):
 
         self.full_frame_size = Signal(14)
 
-        self.x_interpolator = PixelRatioInterpolator(self.full_frame_size)
-        self.y_interpolator = PixelRatioInterpolator(self.full_frame_size)
+        # self.x_interpolator = PixelRatioInterpolator(self.full_frame_size)
+        # self.y_interpolator = PixelRatioInterpolator(self.full_frame_size)
 
         self.x_bigger = Signal()
         self.y_bigger = Signal()
@@ -48,8 +48,8 @@ class XY_Scan_Gen(Elaboratable):
         m = Module()
         m.submodules["x_counter"] = self.x_counter
         m.submodules["y_counter"] = self.y_counter
-        m.submodules["x_interpolator"] = self.x_interpolator
-        m.submodules["y_interpolator"] = self.y_interpolator
+        # m.submodules["x_interpolator"] = self.x_interpolator
+        # m.submodules["y_interpolator"] = self.y_interpolator
 
         with m.If(self.increment):
             m.d.comb += self.x_counter.increment.eq(self.increment)
@@ -85,11 +85,11 @@ class XY_Scan_Gen(Elaboratable):
         m.d.comb += self.current_x.eq(self.x_counter.current_count)
         m.d.comb += self.current_y.eq(self.y_counter.current_count)
 
-        m.d.comb += self.x_interpolator.input.eq(self.current_x)
-        m.d.comb += self.y_interpolator.input.eq(self.current_y)
+        # m.d.comb += self.x_interpolator.input.eq(self.current_x)
+        # m.d.comb += self.y_interpolator.input.eq(self.current_y)
 
-        m.d.comb += self.x_scan.eq(self.x_interpolator.output)
-        m.d.comb += self.y_scan.eq(self.y_interpolator.output)
+        # m.d.comb += self.x_scan.eq(self.x_interpolator.output)
+        # m.d.comb += self.y_scan.eq(self.y_interpolator.output)
 
 
         return m

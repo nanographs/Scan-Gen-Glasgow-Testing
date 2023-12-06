@@ -20,20 +20,21 @@ class PixelRatioInterpolator(Elaboratable):
     '''
 
     
-    def __init__(self, frame_size, output_width = 16383):
+    def __init__(self, output_width = 16383):
         self.output_width = output_width ## Full scale DAC value
-        self.frame_size = frame_size ## Width of the frame to scan
+        self.frame_size = Signal(16) ## Width of the frame to scan
 
-        self.input = Signal(14) ## Current pixel number
-        self.output = Signal(14) ## Current pixel number converted to DAC value
+        self.input = Signal(16) ## Current pixel number
+        self.output = Signal(16) ## Current pixel number converted to DAC value
+
+        self.product = Signal(32)
 
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [
-            self.output.eq((self.input * self.output_width) // self.frame_size)
-            ]
+        m.d.comb += self.output.eq((self.input * self.output_width) // self.frame_size)
+
 
         return m
 

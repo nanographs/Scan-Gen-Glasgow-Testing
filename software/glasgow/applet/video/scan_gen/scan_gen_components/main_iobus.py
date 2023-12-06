@@ -89,10 +89,10 @@ class IOBus(Elaboratable):
 
         #m.d.comb += self.scan_mode.eq(ScanMode.Raster)
         m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_full_frame_resolution.eq(Cat(self.x_full_resolution_b2,
-                                                                                            self.x_full_resolution_b1))
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_full_frame_resolution.eq(Cat(self.y_full_resolution_b2,
-                                                                                            self.y_full_resolution_b1))
+        m.d.comb += self.mode_ctrl.x_full_frame_resolution.eq(Cat(self.x_full_resolution_b2,
+                                                                self.x_full_resolution_b1))
+        m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(Cat(self.y_full_resolution_b2,
+                                                                self.y_full_resolution_b1))
 
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(Cat(self.x_upper_limit_b2,
                                                                                 self.x_upper_limit_b1))
