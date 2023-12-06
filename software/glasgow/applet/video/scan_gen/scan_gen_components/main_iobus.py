@@ -131,7 +131,7 @@ class IOBus(Elaboratable):
             m.d.comb += self.mode_ctrl.adc_data_strobe.eq(self.bus_multiplexer.a_adc.released)
             if self.test_mode == "data loopback":
                 with m.If(self.scan_mode == ScanMode.Raster):
-                    m.d.comb += self.mode_ctrl.adc_data.eq(self.mode_ctrl.beam_controller.y_position)
+                    m.d.comb += self.mode_ctrl.adc_data.eq(self.mode_ctrl.beam_controller.x_position)
                 with m.If(self.scan_mode == ScanMode.Vector):
                     m.d.comb += self.mode_ctrl.adc_data.eq(self.mode_ctrl.beam_controller.dwell_time)
             else:

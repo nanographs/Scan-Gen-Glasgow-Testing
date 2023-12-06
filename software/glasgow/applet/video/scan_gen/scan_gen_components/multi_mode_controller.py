@@ -97,6 +97,8 @@ class ModeController(Elaboratable):
         m.d.comb += self.y_interpolator.frame_size.eq(self.y_full_frame_resolution)
 
         with m.If(self.mode == ScanMode.Raster):
+            m.d.comb += self.ras_mode_ctrl.xy_scan_gen.x_full_frame_resolution.eq(self.x_full_frame_resolution)
+            m.d.comb += self.ras_mode_ctrl.xy_scan_gen.y_full_frame_resolution.eq(self.y_full_frame_resolution)
             # m.d.comb += self.beam_controller.next_x_position.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
             # m.d.comb += self.beam_controller.next_y_position.eq(self.ras_mode_ctrl.beam_controller_next_y_position)
             m.d.comb += self.x_interpolator.input.eq(self.ras_mode_ctrl.beam_controller_next_x_position)

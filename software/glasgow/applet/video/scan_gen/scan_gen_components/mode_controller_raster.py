@@ -162,7 +162,7 @@ class RasterModeController(Elaboratable):
         m.submodules["XYScanGen"] = self.xy_scan_gen
 
 
-        m.d.comb += self.beam_controller_next_dwell.eq(1)
+        m.d.comb += self.beam_controller_next_dwell.eq(0)
 
         m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
         with m.If(self.beam_controller_end_of_dwell):
@@ -170,10 +170,6 @@ class RasterModeController(Elaboratable):
             m.d.comb += Cat(self.raster_point_data.X1,self.raster_point_data.X2).eq(self.xy_scan_gen.current_x)
             m.d.comb += Cat(self.raster_point_data.Y1,self.raster_point_data.Y2).eq(self.xy_scan_gen.current_y)
             m.d.comb += self.raster_output.strobe_in_xy.eq(1)
-            # with m.If(~(self.beam_controller_start_dwell)):
-            #     m.d.comb += self.raster_output.strobe_in_dwell.eq(1)
-            #     #m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.beam_controller.dwell_time)
-            #     m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
             m.d.comb += self.raster_output.raster_position_data_c.eq(Cat(self.raster_point_data.X1,
                                                                         self.raster_point_data.X2,
                                                                         self.raster_point_data.Y1,

@@ -36,7 +36,7 @@ class PixelRatioInterpolator(Elaboratable):
         #m.d.comb += self.output.eq((self.input * self.output_width) // self.frame_size)
         #m.d.comb += self.product.eq(self.input * self.output_width)
         #m.d.comb += self.output.eq(self.product // self.frame_size)
-        m.d.comb += self.output.eq(self.input * 16)
+        m.d.comb += self.output.eq(self.input)
 
 
         return m
