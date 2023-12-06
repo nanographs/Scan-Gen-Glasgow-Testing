@@ -80,29 +80,32 @@ def sim_iobus():
         b1, b2 = get_two_bytes(8)
         b1 = int(bits(b1))
         b2 = int(bits(b2))
-        yield scan_mode.eq(ScanMode.Raster)
+        
         yield x_full_resolution_b1.eq(b1)
         yield x_full_resolution_b2.eq(b2)
         yield y_full_resolution_b1.eq(b1)
         yield y_full_resolution_b2.eq(b2)
 
-        yield x_lower_limit_b1.eq(0)
-        yield x_lower_limit_b2.eq(1)
-        yield y_lower_limit_b1.eq(0)
-        yield y_lower_limit_b2.eq(1)
+        # yield x_lower_limit_b1.eq(0)
+        # yield x_lower_limit_b2.eq(1)
+        # yield y_lower_limit_b1.eq(0)
+        # yield y_lower_limit_b2.eq(1)
 
-        b1, b2 = get_two_bytes(6)
-        b1 = int(bits(b1))
-        b2 = int(bits(b2))
+        # b1, b2 = get_two_bytes(6)
+        # b1 = int(bits(b1))
+        # b2 = int(bits(b2))
 
-        yield x_upper_limit_b1.eq(b1)
-        yield x_upper_limit_b2.eq(b2)
-        yield y_upper_limit_b1.eq(b1)
-        yield y_upper_limit_b2.eq(b2)
+        # yield x_upper_limit_b1.eq(b1)
+        # yield x_upper_limit_b2.eq(b2)
+        # yield y_upper_limit_b1.eq(b1)
+        # yield y_upper_limit_b2.eq(b2)
 
         yield
+        yield scan_mode.eq(ScanMode.Raster)
+        for n in range(1000):
+            yield
+        #yield from raster_sim(500)
 
-        yield from raster_sim(500)
         # yield from raster_sim(500)
         # # yield scan_mode.eq(2) ## not defined, so just do nothing/pause
         # # for n in range(10):

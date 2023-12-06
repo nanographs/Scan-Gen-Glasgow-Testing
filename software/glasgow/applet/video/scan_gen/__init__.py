@@ -50,7 +50,7 @@ class IOBusSubtarget(Elaboratable):
                             x_lower_limit_b1, x_lower_limit_b2,
                             y_upper_limit_b1, y_upper_limit_b2,
                             y_lower_limit_b1, y_lower_limit_b2,
-                            is_simulation = False)
+                            is_simulation = False, test_mode = "data loopback")
 
         self.pins = Signal(14)
 
@@ -136,6 +136,12 @@ class ScanGenInterface:
         self.x_width = 2048
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                             dtype = np.uint16)
+
+        self.x_lower_limit = 0
+        self.x_upper_limit = self.x_width
+
+        self.y_lower_limit = 0
+        self.y_upper_limit = self.y_height
 
         self.current_x = 0
         self.current_y = 0
@@ -264,15 +270,19 @@ class ScanGenInterface:
                             dtype = np.uint16)
 
     async def set_x_upper_limit(self, val):
+        self.x_upper_limit = val
         await self.set_2byte_register(val,self.__addr_x_upper_limit_b1,self.__addr_x_upper_limit_b2)
 
     async def set_x_lower_limit(self, val):
+        self.x_lower_limit = val
         await self.set_2byte_register(val,self.__addr_x_lower_limit_b1,self.__addr_x_lower_limit_b2)
 
     async def set_y_upper_limit(self, val):
+        self.y_upper_limit = val
         await self.set_2byte_register(val,self.__addr_y_upper_limit_b1,self.__addr_y_upper_limit_b2)
 
     async def set_y_lower_limit(self, val):
+        self.y_lower_limit = val
         await self.set_2byte_register(val,self.__addr_y_lower_limit_b1,self.__addr_y_lower_limit_b2)
 
     async def set_frame_resolution(self,xval,yval):
@@ -376,7 +386,6 @@ class ScanGenInterface:
         #print("=====")
 
 
-
     async def benchmark(self):
         await self.set_frame_resolution(2048,2048)
         await self.set_raster_mode()
@@ -386,6 +395,26 @@ class ScanGenInterface:
         await self.iface.read(length)
         end_time = time.time()
         print(((length/(1000000))/(end_time-start_time)), "MB/s")
+
+    async def scan_frame(self):
+        await self.set_frame_resolution(2048,2048)
+        await self.set_raster_mode()
+        data = await self.read_r_packet()
+        print(data)
+
+
+    async def hilbert(self):
+        await self.set_frame_resolution(16384,16384)
+        await self.set_vector_mode()
+        stream = open("hilbert.txt")
+        while True:
+            for n in stream:
+                data = n.strip(",\n")
+                await asyncio.sleep(0)
+                try:
+                    await self.write_vpoint(eval(data))
+                except:
+                    await asyncio.sleep(10)
 
 class ScanGenApplet(GlasgowApplet):
     logger = logging.getLogger(__name__)
@@ -481,17 +510,17 @@ class ScanGenApplet(GlasgowApplet):
         #pass
 
     async def interact(self, device, args, scan_iface):
-        await scan_iface.set_frame_resolution(16384,16384)
-        await scan_iface.set_vector_mode()
-        stream = open("hilbert.txt")
-        while True:
-            for n in stream:
-                data = n.strip(",\n")
-                await asyncio.sleep(0)
-                try:
-                    await scan_iface.write_vpoint(eval(data))
-                except:
-                    await asyncio.sleep(10)
+        text_file = open("packets.txt","w")
+        await scan_iface.set_frame_resolution(100,100)
+        await scan_iface.set_raster_mode()
+        data = await scan_iface.read_r_packet()
+        text_file.write(str(data))
+        print(data)
+        await scan_iface.set_x_upper_limit(90)
+        data = await scan_iface.read_r_packet()
+        text_file.write(str(data))
+        print(data)
+        #await scan_iface.scan_frame()
         # for i in range(16384):
         #     await scan_iface.send_vec_stream_and_recieve_data()
         #     await asyncio.sleep(0)
