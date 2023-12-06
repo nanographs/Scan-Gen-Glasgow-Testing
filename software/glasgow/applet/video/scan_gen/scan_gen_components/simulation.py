@@ -30,7 +30,7 @@ sim_iface.out_fifo = sim_iface.get_out_fifo()
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
-                    2, 3, 4, 5, 6, is_simulation = True)
+                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, is_simulation = True)
 
 
 def raster_sim(n=16384):
@@ -55,24 +55,54 @@ def sim_iobus():
     x_full_resolution_b2 = Signal(8)
     y_full_resolution_b1 = Signal(8)
     y_full_resolution_b2 = Signal(8)
+    x_upper_limit_b1 = Signal(8)
+    x_upper_limit_b2 = Signal(8)
+    x_lower_limit_b1 = Signal(8)
+    x_lower_limit_b2 = Signal(8)
+    y_upper_limit_b1 = Signal(8)
+    y_upper_limit_b2 = Signal(8)
+    y_lower_limit_b1 = Signal(8)
+    y_lower_limit_b2 = Signal(8)
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
-    y_full_resolution_b1, x_full_resolution_b2, is_simulation = True,
+    y_full_resolution_b1, x_full_resolution_b2, 
+    x_upper_limit_b1, x_upper_limit_b2,
+    x_lower_limit_b1, x_lower_limit_b2,
+    y_upper_limit_b1, y_upper_limit_b2,
+    y_lower_limit_b1, y_lower_limit_b2,
+    is_simulation = True,
     test_mode = "data loopback")
     def bench():
-        yield scan_mode.eq(ScanMode.Vector)
-        yield from vector_sim(16384)
-        for n in range(1000):
-            yield
-        # b1, b2 = get_two_bytes(8)
-        # b1 = int(bits(b1))
-        # b2 = int(bits(b2))
-        # yield scan_mode.eq(ScanMode.Raster)
-        # yield x_full_resolution_b1.eq(b1)
-        # yield x_full_resolution_b2.eq(b2)
-        # yield y_full_resolution_b1.eq(b1)
-        # yield y_full_resolution_b2.eq(b2)
-        # yield from raster_sim(1024)
+        # yield scan_mode.eq(ScanMode.Vector)
+        # yield from vector_sim(16384)
+        # for n in range(1000):
+        #     yield
+        b1, b2 = get_two_bytes(8)
+        b1 = int(bits(b1))
+        b2 = int(bits(b2))
+        yield scan_mode.eq(ScanMode.Raster)
+        yield x_full_resolution_b1.eq(b1)
+        yield x_full_resolution_b2.eq(b2)
+        yield y_full_resolution_b1.eq(b1)
+        yield y_full_resolution_b2.eq(b2)
+
+        yield x_lower_limit_b1.eq(0)
+        yield x_lower_limit_b2.eq(1)
+        yield y_lower_limit_b1.eq(0)
+        yield y_lower_limit_b2.eq(1)
+
+        b1, b2 = get_two_bytes(6)
+        b1 = int(bits(b1))
+        b2 = int(bits(b2))
+
+        yield x_upper_limit_b1.eq(b1)
+        yield x_upper_limit_b2.eq(b2)
+        yield y_upper_limit_b1.eq(b1)
+        yield y_upper_limit_b2.eq(b2)
+
+        yield
+
+        yield from raster_sim(500)
         # yield from raster_sim(500)
         # # yield scan_mode.eq(2) ## not defined, so just do nothing/pause
         # # for n in range(10):

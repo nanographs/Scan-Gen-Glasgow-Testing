@@ -267,13 +267,13 @@ class ScanGenInterface:
         await self.set_2byte_register(val,self.__addr_x_upper_limit_b1,self.__addr_x_upper_limit_b2)
 
     async def set_x_lower_limit(self, val):
-        await self.set_2byte_register(val,self.__addr_x_lower_limit_b1,self.__addr_x_lowerer_limit_b2)
+        await self.set_2byte_register(val,self.__addr_x_lower_limit_b1,self.__addr_x_lower_limit_b2)
 
     async def set_y_upper_limit(self, val):
         await self.set_2byte_register(val,self.__addr_y_upper_limit_b1,self.__addr_y_upper_limit_b2)
 
     async def set_y_lower_limit(self, val):
-        await self.set_2byte_register(val,self.__addr_y_lower_limit_b1,self.__addr_y_lowerer_limit_b2)
+        await self.set_2byte_register(val,self.__addr_y_lower_limit_b1,self.__addr_y_lower_limit_b2)
 
     async def set_frame_resolution(self,xval,yval):
         await self.set_x_resolution(xval)

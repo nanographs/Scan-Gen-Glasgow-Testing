@@ -65,11 +65,7 @@ class LineDrawer(Elaboratable):
                     with m.If(self.down):
                         m.d.sync += self.y.eq(self.y + 1)
                     with m.Else():
-                        m.d.sync += self.y.eq(self.y - 1)
-                    
-
-
-
+                        m.d.sync += self.y.eq(self.y - 1)    
         return m
 
 

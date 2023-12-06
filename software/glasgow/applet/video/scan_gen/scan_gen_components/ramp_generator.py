@@ -29,16 +29,16 @@ class RampGenerator(Elaboratable):
     """
     def __init__(self):
         ## Number of unique steps to count up to
-        self.lower_limit = Signal(14)
-        self.upper_limit = Signal(14, reset = 1)
+        self.lower_limit = Signal(16)
+        self.upper_limit = Signal(16, reset = 1)
 
         # Ports
         self.increment  = Signal()
         self.ovf = Signal()
         self.unf = Signal()
 
-        self.current_count = Signal(14)
-        self.next_count = Signal(14)
+        self.current_count = Signal(16)
+        self.next_count = Signal(16)
 
         self.reset = Signal()
         # # State
