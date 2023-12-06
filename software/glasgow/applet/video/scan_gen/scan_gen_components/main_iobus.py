@@ -22,11 +22,20 @@ class IOBus(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 is_simulation = True, test_mode = None):
+        ### Build arguments
         self.is_simulation = is_simulation
         self.test_mode = test_mode
         
+        ### Modules
+        self.mode_ctrl = ModeController()
+        self.bus_multiplexer = BusMultiplexer()
+        #### FIFOs
         self.out_fifo = out_fifo
         self.in_fifo = in_fifo
+
+        self.io_strobe = Signal() ## Top level control of fifo data flow
+
+        #### Registers
         self.scan_mode = scan_mode
 
         self.x_full_resolution_b1 = x_full_resolution_b1
@@ -48,13 +57,13 @@ class IOBus(Elaboratable):
         self.x_lower_limit = Signal(16)
         self.y_upper_limit = Signal(16)
         self.y_lower_limit = Signal(16)
+        #### =============================================================================
 
-        self.mode_ctrl = ModeController()
+        #### Ports A and B signals
+        self.pins_i = Signal(14) ## Driven by pad.i value
+        self.pins_o = Signal(14) ## Drives pad.o value
 
-        self.bus_multiplexer = BusMultiplexer()
-        self.pins_i = Signal(14)
-        self.pins_o = Signal(14)
-
+        #### Control signals
         self.x_latch = Signal()
         self.x_enable = Signal()
         self.y_latch = Signal()
@@ -65,14 +74,14 @@ class IOBus(Elaboratable):
         self.a_clock = Signal()
         self.d_clock = Signal()
 
-        self.io_strobe = Signal()
 
+        ## For simulation purposes only
         self.x = Signal(16)
         self.y = Signal(16)
         self.d = Signal(16)
 
         #self.scan_mode = Signal(2)
-        self.alt_fifo = Signal()
+        #self.alt_fifo = Signal()
     def elaborate(self, platform):
         m = Module()
         m.submodules["ModeCtrl"] = self.mode_ctrl
@@ -81,6 +90,7 @@ class IOBus(Elaboratable):
         m.submodules["OUT_FIFO"] = self.out_fifo
         m.submodules["IN_FIFO"] = self.in_fifo
 
+        #### =========================== CONTROL SIGNALS ====================================
         m.d.comb += self.x_latch.eq(self.bus_multiplexer.x_dac.latch.le)
         m.d.comb += self.x_enable.eq(self.bus_multiplexer.x_dac.latch.oe)
         m.d.comb += self.y_latch.eq(self.bus_multiplexer.y_dac.latch.le)
@@ -90,9 +100,9 @@ class IOBus(Elaboratable):
 
         m.d.comb += self.a_clock.eq(self.bus_multiplexer.sample_clock.clock)
         m.d.comb += self.d_clock.eq(~self.bus_multiplexer.sample_clock.clock)
+        #### =============================================================================
 
-
-        #m.d.comb += self.scan_mode.eq(ScanMode.Raster)
+        #### =========================== REGISTERS ====================================
         m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
         m.d.comb += self.mode_ctrl.x_full_frame_resolution.eq(Cat(self.x_full_resolution_b2,
                                                                 self.x_full_resolution_b1))
@@ -108,7 +118,10 @@ class IOBus(Elaboratable):
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.x_lower_limit)
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.y_upper_limit)
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.y_lower_limit)
+        #### =============================================================================
 
+
+        #### =========================="BUS STATE MACHINE"==================================
         m.d.comb += self.mode_ctrl.beam_controller.count_enable.eq(self.bus_multiplexer.is_done)
         with m.If(self.bus_multiplexer.is_x):
             m.d.comb += self.pins_o.eq(self.mode_ctrl.beam_controller.x_position)
@@ -129,7 +142,9 @@ class IOBus(Elaboratable):
             # else:
             #     m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.pins)
             # Loopback
+        #### =============================================================================
 
+        #### ===========================FIFO CONTROL=================================================
         with m.If(self.mode_ctrl.mode == ScanMode.Vector):
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready)))
 
@@ -181,7 +196,8 @@ class IOBus(Elaboratable):
             #     m.d.comb += self.mode_ctrl.ras_mode_ctrl.raster_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
             #     with m.If(~(self.mode_ctrl.output_strobe_out)):
             #         m.d.comb += self.mode_ctrl.ras_mode_ctrl.raster_fifo.w_en.eq(1)
-
+        
+        #### =============================================================================
 
         return m
 
