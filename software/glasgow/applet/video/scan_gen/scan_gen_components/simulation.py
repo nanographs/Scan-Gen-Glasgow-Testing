@@ -30,7 +30,7 @@ sim_iface.out_fifo = sim_iface.get_out_fifo()
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
-                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, is_simulation = True)
+                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, is_simulation = True)
 
 
 def raster_sim(n=16384, eight_bit_output=False):
@@ -68,6 +68,9 @@ def sim_iobus():
     y_lower_limit_b1 = Signal(8)
     y_lower_limit_b2 = Signal(8)
     eight_bit_output = Signal()
+    do_frame_sync = Signal()
+    do_line_sync = Signal()
+
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
     y_full_resolution_b1, x_full_resolution_b2, 
@@ -75,7 +78,7 @@ def sim_iobus():
     x_lower_limit_b1, x_lower_limit_b2,
     y_upper_limit_b1, y_upper_limit_b2,
     y_lower_limit_b1, y_lower_limit_b2,
-    eight_bit_output,
+    eight_bit_output, do_frame_sync, do_line_sync,
     is_simulation = True,
     test_mode = "data loopback"
     )
@@ -87,6 +90,8 @@ def sim_iobus():
         b1, b2 = get_two_bytes(8)
         b1 = int(bits(b1))
         b2 = int(bits(b2))
+
+        
         
         yield x_full_resolution_b1.eq(b1)
         yield x_full_resolution_b2.eq(b2)
@@ -108,9 +113,14 @@ def sim_iobus():
         yield y_upper_limit_b2.eq(b2)
 
         yield 
+        yield do_frame_sync.eq(1)
+        yield do_line_sync.eq(1)
+        yield eight_bit_output.eq(1)
+        yield
         yield
         yield scan_mode.eq(ScanMode.Raster)
-        yield eight_bit_output.eq(1)
+        # for n in range(2000):
+        #     yield
         yield from raster_sim(1024, True)
         # for n in range(1000):
         #     yield

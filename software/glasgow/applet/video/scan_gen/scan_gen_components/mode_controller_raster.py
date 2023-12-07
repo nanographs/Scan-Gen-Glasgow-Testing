@@ -69,6 +69,8 @@ class RasterOutput(Elaboratable):
         self.enable = Signal()
         self.strobe_in_xy = Signal()
         self.strobe_in_dwell = Signal()
+        self.strobe_in_frame_sync = Signal()
+        self.strobe_in_line_sync = Signal()
         self.strobe_out = Signal()
 
         self.eight_bit_output = Signal()
@@ -93,16 +95,42 @@ class RasterOutput(Elaboratable):
                     m.d.sync += self.raster_dwell_data.eq(self.raster_dwell_data_c)
                     m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data_c.D1)
                     with m.If(self.eight_bit_output):
-                        m.next = "Dwell_Waiting"
+                        with m.If(self.strobe_in_frame_sync):
+                            m.next = "Frame_Sync"
+                        with m.Elif(self.strobe_in_line_sync):
+                            m.next = "Line_Sync"
+                        with m.Else():
+                            m.next = "Dwell_Waiting"
                     with m.Else():
                         m.next = "D2"
             with m.State("D1"):    
                 with m.If(self.enable):
                     m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data.D1)
-                    m.next = "D2"
+                    with m.If(self.eight_bit_output):
+                        with m.If(self.strobe_in_frame_sync):
+                            m.next = "Frame_Sync"
+                        with m.Elif(self.strobe_in_line_sync):
+                            m.next = "Line_Sync"
+                        with m.Else():
+                            m.next = "Dwell_Waiting"
+                    with m.Else():
+                        m.next = "D2"
             with m.State("D2"):  
                 with m.If(self.enable):
                     m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data.D2)
+                    with m.If(self.strobe_in_frame_sync):
+                            m.next = "Frame_Sync"
+                    with m.Elif(self.strobe_in_line_sync):
+                            m.next = "Line_Sync"
+                    with m.Else():
+                            m.next = "Dwell_Waiting"
+            with m.State("Frame_Sync"):
+                m.d.comb += self.in_fifo_w_data.eq(0)
+                with m.If(self.enable):
+                    m.next = "Dwell_Waiting"
+            with m.State("Line_Sync"):
+                m.d.comb += self.in_fifo_w_data.eq(1)
+                with m.If(self.enable):
                     m.next = "Dwell_Waiting"
         return m
 
@@ -157,6 +185,9 @@ class RasterModeController(Elaboratable):
         self.beam_controller_next_x_position = Signal(16)
         self.beam_controller_next_y_position = Signal(16)
         self.beam_controller_next_dwell = Signal(16)
+
+        self.do_frame_sync = Signal()
+        self.do_line_sync = Signal()
         # self.raster_fifo = SyncFIFOBuffered(width = 8, depth = 12)
 
     def elaborate(self, platform):
@@ -165,11 +196,26 @@ class RasterModeController(Elaboratable):
         # m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
 
-
         m.d.comb += self.beam_controller_next_dwell.eq(0)
 
-        m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
+        with m.If(self.do_frame_sync):
+            with m.If(self.raster_point_output == 0):
+                m.d.comb += self.raster_output.raster_dwell_data_c.eq(1)
+            with m.Else():
+                m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
+        with m.If(self.do_line_sync):
+            with m.If(self.raster_point_output == 1):
+                m.d.comb += self.raster_output.raster_dwell_data_c.eq(2)
+            with m.Else():
+                m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
+        with m.Else():
+            m.d.comb += self.raster_output.raster_dwell_data_c.eq(self.raster_point_output)
+
         with m.If(self.beam_controller_end_of_dwell):
+            with m.If(self.do_frame_sync):
+                m.d.sync += self.raster_output.strobe_in_frame_sync.eq(self.xy_scan_gen.frame_sync) ### one cycle delay
+            with m.If(self.do_line_sync):
+                m.d.sync += self.raster_output.strobe_in_line_sync.eq(self.xy_scan_gen.line_sync) ### one cycle delay
             m.d.comb += self.xy_scan_gen.increment.eq(1)
             m.d.comb += Cat(self.raster_point_data.X1,self.raster_point_data.X2).eq(self.xy_scan_gen.current_x)
             m.d.comb += Cat(self.raster_point_data.Y1,self.raster_point_data.Y2).eq(self.xy_scan_gen.current_y)

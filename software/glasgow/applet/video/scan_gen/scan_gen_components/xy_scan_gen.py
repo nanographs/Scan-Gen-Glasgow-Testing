@@ -42,6 +42,7 @@ class XY_Scan_Gen(Elaboratable):
 
         self.reset = Signal()
         self.frame_sync = Signal()
+        self.line_sync = Signal()
 
         self.aa = Signal()
 
@@ -90,6 +91,7 @@ class XY_Scan_Gen(Elaboratable):
         m.d.comb += self.y_counter.lower_limit.eq(self.y_lower_limit)
 
         m.d.comb += self.frame_sync.eq((self.x_counter.ovf) & (self.y_counter.ovf))
+        m.d.comb += self.line_sync.eq((self.x_counter.ovf) & ~(self.y_counter.ovf))
         
         m.d.comb += self.current_x.eq(self.x_counter.current_count)
         m.d.comb += self.current_y.eq(self.y_counter.current_count)

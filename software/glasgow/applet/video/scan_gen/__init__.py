@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 import asyncio
 import numpy as np
+import threading
 
 from amaranth import *
 from amaranth.build import *
@@ -37,7 +38,7 @@ class IOBusSubtarget(Elaboratable):
                 x_lower_limit_b1, x_lower_limit_b2,
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
-                eight_bit_output):
+                eight_bit_output, do_frame_sync, do_line_sync):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
@@ -51,7 +52,7 @@ class IOBusSubtarget(Elaboratable):
                             x_lower_limit_b1, x_lower_limit_b2,
                             y_upper_limit_b1, y_upper_limit_b2,
                             y_lower_limit_b1, y_lower_limit_b2,
-                            eight_bit_output,
+                            eight_bit_output, do_frame_sync, do_line_sync,
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -447,6 +448,71 @@ class ScanGenInterface:
                 #except:
                     #await asyncio.sleep(10)
 
+
+class SG_EndpointInterface:
+    def __init__(self, scan_iface):
+        self.scan_iface = scan_iface
+
+
+    async def get_stream_endpoint(self):
+        endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
+        return endpoint
+
+    async def get_ctrl_endpoint(self):
+        endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1235"), queue_size=32)
+        return endpoint
+
+
+class SG_LocalBufferInterface:
+    def __init__(self,scan_iface):
+        self.scan_iface = scan_iface
+        self.dimension = self.save_dimension(512)
+        self.buf = self.create_buf_file()
+        self.last_pixel = 0
+    def save_dimension(self, dimension):
+        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
+        return dimension
+    def create_buf_file(self):
+        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (self.dimension*self.dimension), mode = "w+")
+        return buf
+    def stream_to_buf(self, raw_data):
+        # print("-----------")
+        data = raw_data.tolist()
+        d = np.array(data)
+        #print(d)
+        # print(buf)
+        zero_index = np.nonzero(d < 1)[0]
+        # print("buffer length:", len(buf))
+        # print("last pixel:",current.last_pixel)
+        #print("d length:", len(d))
+        # print("d:",d)
+        
+        if len(zero_index) > 0: #if a zero was found
+            # current.n += 1
+            # print("zero index:",zero_index)
+            zero_index = int(zero_index)
+
+            self.buf[:d[zero_index+1:].size] = d[zero_index+1:]
+            # print(buf[:d[zero_index+1:].size])
+            # print(d[:zero_index+1].size)
+            self.buf[dimension * dimension - zero_index:] = d[:zero_index]
+            # print(buf[dimension * dimension - zero_index:])
+            self.last_pixel = d[zero_index+1:].size
+            
+        else: 
+            if len(buf[self.last_pixel:self.last_pixel+len(d)]) < len(d):
+                pass
+            #     print("data too long to fit in end of frame, but no zero")
+            #     print(d[:dimension])
+            self.buf[self.last_pixel:self.last_pixel + d.size] = d
+            # print(buf[current.last_pixel:current.last_pixel + d.size])
+            self.last_pixel = self.last_pixel + d.size
+    async def stream_video(self):
+        raw_data = await self.scan_iface.iface.read(16384)
+        threading.Thread(target=self.stream_to_buf(raw_data)).start()
+
+
+
 class ScanGenApplet(GlasgowApplet):
     logger = logging.getLogger(__name__)
     help = "boilerplate applet"
@@ -499,7 +565,9 @@ class ScanGenApplet(GlasgowApplet):
         y_lower_limit_b1,      self.__addr_y_lower_limit_b1  = target.registers.add_rw(8, reset=0)
         y_lower_limit_b2,      self.__addr_y_lower_limit_b2  = target.registers.add_rw(8, reset=0)
 
-        eight_bit_output,          self.__addr_8_bit_output  = target.registers.add_rw(1, reset=0)
+        eight_bit_output,      self.__addr_8_bit_output  = target.registers.add_rw(1, reset=0)
+        do_frame_sync,         self.__addr_do_frame_sync  = target.registers.add_rw(1, reset=0)
+        do_line_sync,          self.__addr_do_line_sync  = target.registers.add_rw(1, reset=0)
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -513,7 +581,7 @@ class ScanGenApplet(GlasgowApplet):
             x_lower_limit_b1 = x_upper_limit_b1, x_lower_limit_b2 = x_lower_limit_b2,
             y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
             y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
-            eight_bit_output = eight_bit_output
+            eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync
         ))
         
 
@@ -584,7 +652,7 @@ class ScanGenApplet(GlasgowApplet):
         # while True:
         #     data = await scan_iface.read_r_packet()
         #     print(data)
-        # endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
+        # 
         # scan_iface.set_endpoint(endpoint)
         # if args.gui:
         #     #run_gui(scan_iface)
