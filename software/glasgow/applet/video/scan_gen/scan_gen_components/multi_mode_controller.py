@@ -83,6 +83,8 @@ class ModeController(Elaboratable):
         self.internal_fifo_ready = Signal()
         self.adc_data = Signal(16)
         self.adc_data_strobe = Signal()
+
+        self.eight_bit_output = Signal()
         
     def elaborate(self, platform):
         m = Module()
@@ -118,7 +120,9 @@ class ModeController(Elaboratable):
             m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.raster_output.in_fifo_w_data)
             m.d.comb += self.ras_mode_ctrl.raster_output.enable.eq(self.output_enable)
             m.d.comb += self.output_strobe_out.eq(self.ras_mode_ctrl.raster_output.strobe_out)
-            m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal fifo
+            m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal 
+            
+            m.d.comb += self.ras_mode_ctrl.raster_output.eight_bit_output.eq(self.eight_bit_output)
 
         with m.If(self.mode == ScanMode.Vector):
             m.d.comb += self.beam_controller.dwelling.eq(1)
@@ -140,6 +144,8 @@ class ModeController(Elaboratable):
             m.d.comb += self.output_strobe_out.eq(self.vec_mode_ctrl.vector_output.strobe_out)
             m.d.comb += self.vec_mode_ctrl.vector_input.out_fifo_r_data.eq(self.out_fifo_r_data)
             m.d.comb += self.internal_fifo_ready.eq((self.vec_mode_ctrl.vector_fifo.w_rdy))
+
+            m.d.comb += self.vec_mode_ctrl.vector_output.eight_bit_output.eq(self.eight_bit_output)
 
         return m
 

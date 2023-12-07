@@ -33,9 +33,13 @@ sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app
                     2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, is_simulation = True)
 
 
-def raster_sim(n=16384):
+def raster_sim(n=16384, eight_bit_output=False):
     output = yield from sim_app_iface.read(n)
-    print(sim_scangen_iface.decode_rdwell_packet(output))
+    if eight_bit_output:
+        print(list(output))
+    else:
+        print(sim_scangen_iface.decode_rdwell_packet(output))
+    
 
 
 def vector_sim(r):
@@ -63,6 +67,7 @@ def sim_iobus():
     y_upper_limit_b2 = Signal(8)
     y_lower_limit_b1 = Signal(8)
     y_lower_limit_b2 = Signal(8)
+    eight_bit_output = Signal()
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
     y_full_resolution_b1, x_full_resolution_b2, 
@@ -70,42 +75,45 @@ def sim_iobus():
     x_lower_limit_b1, x_lower_limit_b2,
     y_upper_limit_b1, y_upper_limit_b2,
     y_lower_limit_b1, y_lower_limit_b2,
-    Signal(1), Signal(1),
+    eight_bit_output,
     is_simulation = True,
-    #test_mode = "fast clock"
+    test_mode = "data loopback"
     )
     def bench():
-        yield scan_mode.eq(ScanMode.Vector)
-        yield from vector_sim(1024)
+        # yield scan_mode.eq(ScanMode.Vector)
+        # yield from vector_sim(1024)
         # for n in range(1000):
         #     yield
-        # b1, b2 = get_two_bytes(8)
-        # b1 = int(bits(b1))
-        # b2 = int(bits(b2))
+        b1, b2 = get_two_bytes(8)
+        b1 = int(bits(b1))
+        b2 = int(bits(b2))
         
-        # yield x_full_resolution_b1.eq(b1)
-        # yield x_full_resolution_b2.eq(b2)
-        # yield y_full_resolution_b1.eq(b1)
-        # yield y_full_resolution_b2.eq(b2)
+        yield x_full_resolution_b1.eq(b1)
+        yield x_full_resolution_b2.eq(b2)
+        yield y_full_resolution_b1.eq(b1)
+        yield y_full_resolution_b2.eq(b2)
 
-        # yield x_lower_limit_b1.eq(0)
-        # yield x_lower_limit_b2.eq(1)
-        # yield y_lower_limit_b1.eq(0)
-        # yield y_lower_limit_b2.eq(1)
+        yield x_lower_limit_b1.eq(0)
+        yield x_lower_limit_b2.eq(1)
+        yield y_lower_limit_b1.eq(0)
+        yield y_lower_limit_b2.eq(1)
 
-        # b1, b2 = get_two_bytes(6)
-        # b1 = int(bits(b1))
-        # b2 = int(bits(b2))
+        b1, b2 = get_two_bytes(6)
+        b1 = int(bits(b1))
+        b2 = int(bits(b2))
 
-        # yield x_upper_limit_b1.eq(b1)
-        # yield x_upper_limit_b2.eq(b2)
-        # yield y_upper_limit_b1.eq(b1)
-        # yield y_upper_limit_b2.eq(b2)
+        yield x_upper_limit_b1.eq(b1)
+        yield x_upper_limit_b2.eq(b2)
+        yield y_upper_limit_b1.eq(b1)
+        yield y_upper_limit_b2.eq(b2)
 
+        yield 
         yield
         yield scan_mode.eq(ScanMode.Raster)
-        for n in range(1000):
-            yield
+        yield eight_bit_output.eq(1)
+        yield from raster_sim(1024, True)
+        # for n in range(1000):
+        #     yield
         #yield from raster_sim(500)
 
         # yield from raster_sim(500)
