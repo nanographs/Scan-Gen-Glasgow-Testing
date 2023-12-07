@@ -41,7 +41,7 @@ def raster_sim(n=16384):
 def vector_sim(r):
     i = 0
     while i < r:
-        for n in short_test_vector_points:
+        for n in test_vector_points:
             x, y, d = n
             i += 6
             #yield from write_vector_point(n, sim_app_iface)
@@ -70,21 +70,23 @@ def sim_iobus():
     x_lower_limit_b1, x_lower_limit_b2,
     y_upper_limit_b1, y_upper_limit_b2,
     y_lower_limit_b1, y_lower_limit_b2,
+    Signal(1), Signal(1),
     is_simulation = True,
-    test_mode = "data loopback")
+    #test_mode = "fast clock"
+    )
     def bench():
-        # yield scan_mode.eq(ScanMode.Vector)
-        # yield from vector_sim(16384)
+        yield scan_mode.eq(ScanMode.Vector)
+        yield from vector_sim(1024)
         # for n in range(1000):
         #     yield
-        b1, b2 = get_two_bytes(8)
-        b1 = int(bits(b1))
-        b2 = int(bits(b2))
+        # b1, b2 = get_two_bytes(8)
+        # b1 = int(bits(b1))
+        # b2 = int(bits(b2))
         
-        yield x_full_resolution_b1.eq(b1)
-        yield x_full_resolution_b2.eq(b2)
-        yield y_full_resolution_b1.eq(b1)
-        yield y_full_resolution_b2.eq(b2)
+        # yield x_full_resolution_b1.eq(b1)
+        # yield x_full_resolution_b2.eq(b2)
+        # yield y_full_resolution_b1.eq(b1)
+        # yield y_full_resolution_b2.eq(b2)
 
         # yield x_lower_limit_b1.eq(0)
         # yield x_lower_limit_b2.eq(1)

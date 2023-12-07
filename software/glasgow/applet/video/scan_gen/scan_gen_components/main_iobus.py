@@ -21,6 +21,7 @@ class IOBus(Elaboratable):
                 x_lower_limit_b1, x_lower_limit_b2,
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
+                line_sync, frame_sync,
                 is_simulation = True, test_mode = None):
         ### Build arguments
         self.is_simulation = is_simulation
@@ -52,6 +53,9 @@ class IOBus(Elaboratable):
         self.y_upper_limit_b2 = y_upper_limit_b2
         self.y_lower_limit_b1 = y_lower_limit_b1
         self.y_lower_limit_b2 = y_lower_limit_b2
+
+        self.line_sync = line_sync
+        self.frame_sync = frame_sync
 
         self.x_upper_limit = Signal(16)
         self.x_lower_limit = Signal(16)
@@ -118,11 +122,17 @@ class IOBus(Elaboratable):
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.x_lower_limit)
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.y_upper_limit)
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.y_lower_limit)
+
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_counter.ovf.eq(self.line_sync)
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_counter.ovf.eq(self.frame_sync)
         #### =============================================================================
 
 
         #### =========================="BUS STATE MACHINE"==================================
-        m.d.comb += self.mode_ctrl.beam_controller.count_enable.eq(self.bus_multiplexer.is_done)
+        if self.test_mode == "fast clock":
+            m.d.comb += self.mode_ctrl.beam_controller.count_enable.eq(1)
+        else:
+            m.d.comb += self.mode_ctrl.beam_controller.count_enable.eq(self.bus_multiplexer.is_done)
         with m.If(self.bus_multiplexer.is_x):
             m.d.comb += self.pins_o.eq(self.mode_ctrl.beam_controller.x_position)
         with m.If(self.bus_multiplexer.is_y):
