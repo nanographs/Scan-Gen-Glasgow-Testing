@@ -37,7 +37,7 @@ class IOBusSubtarget(Elaboratable):
                 x_lower_limit_b1, x_lower_limit_b2,
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
-                line_sync, frame_sync ):
+                eight_bit_output):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
@@ -51,7 +51,7 @@ class IOBusSubtarget(Elaboratable):
                             x_lower_limit_b1, x_lower_limit_b2,
                             y_upper_limit_b1, y_upper_limit_b2,
                             y_lower_limit_b1, y_lower_limit_b2,
-                            line_sync, frame_sync,
+                            eight_bit_output,
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -109,6 +109,7 @@ class ScanGenInterface:
                 __addr_x_lower_limit_b1, __addr_x_lower_limit_b2,
                 __addr_y_upper_limit_b1, __addr_y_upper_limit_b2,
                 __addr_y_lower_limit_b1, __addr_y_lower_limit_b2,
+                __addr_8_bit_output,
                 is_simulation = False):
         self.iface = iface
         self._logger = logger
@@ -130,14 +131,16 @@ class ScanGenInterface:
         self.__addr_y_lower_limit_b1 = __addr_y_lower_limit_b1
         self.__addr_y_lower_limit_b2 = __addr_y_lower_limit_b2
 
+        self.__addr_8_bit_output = __addr_8_bit_output
+
 
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
 
+        self.eight_bit_output = False
+
         self.y_height = 2048
         self.x_width = 2048
-        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
-                            dtype = np.uint16)
 
         self.x_lower_limit = 0
         self.x_upper_limit = self.x_width
@@ -148,7 +151,18 @@ class ScanGenInterface:
         self.current_x = 0
         self.current_y = 0
 
+        self.buffer = self.init_buffer()
+
         self.endpoint = None
+
+    def init_buffer(self):
+        if self.eight_bit_output:
+            return np.zeros(shape=(self.y_height, self.x_width),
+                    dtype = np.uint8)
+
+        else:
+            return np.zeros(shape=(self.y_height, self.x_width),
+                                dtype = np.uint16)
 
     def fifostats(self):
         iface = self.iface
@@ -205,11 +219,14 @@ class ScanGenInterface:
             data = list(raw_data)
         else:
             data = raw_data.tolist()
-        packet = []
-        for n in range(0,len(data),2):
-            dwell = self.decode_rdwell(data[n:n+2])
-            packet.append(dwell)
-        return packet
+        if self.eight_bit_output:
+            return data
+        else:
+            packet = []
+            for n in range(0,len(data),2):
+                dwell = self.decode_rdwell(data[n:n+2])
+                packet.append(dwell)
+            return packet
 
     @types.coroutine
     def sim_write_2bytes(self, val):
@@ -238,6 +255,11 @@ class ScanGenInterface:
         await self.write_2bytes(y)
         await self.write_2bytes(d)
 
+    async def set_8bit_output(self):
+        await self._device.write_register(self.__addr_8_bit_output, 1)
+        self.eight_bit_output = True
+        self.buffer = self.init_buffer()
+
     async def set_2byte_register(self,val,addr_b1, addr_b2):
         b1, b2 = get_two_bytes(val)
         b1 = int(bits(b1))
@@ -249,15 +271,13 @@ class ScanGenInterface:
         self.x_width = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
-        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
-                            dtype = np.uint16)
+        self.buffer = self.init_buffer()
 
     async def set_y_resolution(self,val):
         self.y_height = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
-        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
-                            dtype = np.uint16)
+        self.buffer = self.init_buffer()
 
     async def set_x_upper_limit(self, val):
         self.x_upper_limit = val
@@ -278,8 +298,6 @@ class ScanGenInterface:
     async def set_frame_resolution(self,xval,yval):
         await self.set_x_resolution(xval)
         await self.set_y_resolution(yval)
-        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
-                            dtype = np.uint16)
         print("set frame resolution x:", xval, "y:", yval)
 
     async def set_raster_mode(self):
@@ -481,8 +499,7 @@ class ScanGenApplet(GlasgowApplet):
         y_lower_limit_b1,      self.__addr_y_lower_limit_b1  = target.registers.add_rw(8, reset=0)
         y_lower_limit_b2,      self.__addr_y_lower_limit_b2  = target.registers.add_rw(8, reset=0)
 
-        line_sync,             self.__addr_line_sync  = target.registers.add_rw(1)
-        frame_sync,            self.__addr_frame_sync  = target.registers.add_rw(1)
+        eight_bit_output,          self.__addr_8_bit_output  = target.registers.add_rw(1, reset=0)
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -496,7 +513,7 @@ class ScanGenApplet(GlasgowApplet):
             x_lower_limit_b1 = x_upper_limit_b1, x_lower_limit_b2 = x_lower_limit_b2,
             y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
             y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
-            line_sync = line_sync, frame_sync = frame_sync
+            eight_bit_output = eight_bit_output
         ))
         
 
@@ -514,6 +531,7 @@ class ScanGenApplet(GlasgowApplet):
         self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
         self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
         self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
+        self.__addr_8_bit_output
         )
 
         return scan_iface

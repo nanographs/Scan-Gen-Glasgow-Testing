@@ -155,6 +155,8 @@ class VectorOutput(Elaboratable):
         self.strobe_in_dwell = Signal()
         self.strobe_out = Signal()
 
+        self.eight_bit_output = Signal()
+
     def elaborate(self, platform):
         m = Module()
 
@@ -193,7 +195,10 @@ class VectorOutput(Elaboratable):
                     m.d.comb += self.strobe_out.eq(0)
                     m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data_c.D1)
-                    m.next = "D2"
+                    with m.If(self.eight_bit_output):
+                        m.next = "Waiting"
+                    with m.Else():
+                        m.next = "D2"
             with m.State("D1"):    
                 with m.If(self.enable):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D1)
