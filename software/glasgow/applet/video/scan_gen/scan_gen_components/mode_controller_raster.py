@@ -42,8 +42,8 @@ class RasterInput(Elaboratable):
         asserted, the module will return to state X1 and be ready to read a new point in
 
     State Machine:
-        X1 -> X2 -> Y1 -> Y2 -> D1 -> D2 -> Hold
-                                    X1 ↲    X1 ↲
+        D1 -> D2 -> Hold
+        ↑-----↲----- ↲
 
     Inspiration taken from https://github.com/maia-sdr/maia-sdr/blob/main/maia-hdl/maia_hdl/packer.py
     
@@ -51,8 +51,11 @@ class RasterInput(Elaboratable):
     def __init__(self):
         self.out_fifo_r_data = Signal(8)
 
-        self.raster_point_data = Signal(vector_point)
-        self.raster_point_data_c = Signal(vector_point)
+        # self.raster_point_data = Signal(vector_point)
+        # self.raster_point_data_c = Signal(vector_point)
+
+        self.raster_dwell_data = Signal(vector_dwell)
+        self.raster_dwell_data_c = Signal(vector_dwell)
         
         self.data_complete = Signal()
         self.enable = Signal()
@@ -66,7 +69,7 @@ class RasterInput(Elaboratable):
         with m.FSM() as fsm:
             with m.State("D1"):    
                 with m.If(self.enable):
-                    m.d.sync += self.raster_point_data.D1.eq(self.out_fifo_r_data)
+                    m.d.sync += self.raster_dwell_data.D1.eq(self.out_fifo_r_data)
                     with m.If(self.eight_bit_output):
                         m.next = "Hold"
                     with m.Else():
@@ -74,18 +77,17 @@ class RasterInput(Elaboratable):
             with m.State("D2"):    
                 with m.If(self.enable):
                     m.d.comb += self.data_complete.eq(1)
-                    m.d.comb += self.raster_point_data_c.eq(Cat(self.raster_point_data.X1, self.raster_point_data.X2,
-                                                                self.raster_point_data.Y1, self.raster_point_data.Y2,
-                                                                self.raster_point_data.D1, self.out_fifo_r_data))
+                    m.d.comb += self.raster_dwell_data_c.eq(Cat(self.raster_dwell_data.D1, 
+                                                                self.out_fifo_r_data))
                     with m.If(self.strobe_out):
                         m.next = "D1"
-                        m.d.sync += self.raster_point_data.eq(0)
+                        m.d.sync += self.raster_dwell_data.eq(0)
                     with m.Else():
-                        m.d.sync += self.raster_point_data.D2.eq(self.out_fifo_r_data)
+                        m.d.sync += self.raster_dwell_data.D2.eq(self.out_fifo_r_data)
                         m.next = "Hold"
             with m.State("Hold"):
                     m.d.comb += self.data_complete.eq(1)
-                    m.d.comb += self.raster_point_data_c.eq(self.raster_point_data)
+                    m.d.comb += self.raster_dwell_data_c.eq(self.raster_dwell_data)
                     with m.If(self.strobe_out):
                         m.next = "D1"
 
@@ -250,6 +252,7 @@ class RasterModeController(Elaboratable):
     '''
     def __init__(self):
         self.raster_output = RasterOutput()
+        self.raster_input = RasterInput()
         self.xy_scan_gen = XY_Scan_Gen()
 
         self.raster_point_data = Signal(vector_point)
@@ -264,13 +267,19 @@ class RasterModeController(Elaboratable):
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
         self.is_patterning = Signal()
-        self.raster_fifo = SyncFIFOBuffered(width = 8, depth = 12)
+        self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
 
     def elaborate(self, platform):
         m = Module()
         m.submodules["RasterOutput"] = self.raster_output
+        m.submodules["RasterInput"] = self.raster_input
         m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
+
+        m.d.comb += self.raster_input.strobe_out.eq(self.raster_fifo.w_rdy)
+        with m.If((self.raster_input.data_complete) & (self.raster_fifo.w_rdy)):
+            m.d.comb += self.raster_fifo.w_en.eq(1)
+            m.d.comb += self.raster_fifo.w_data.eq(self.raster_input.raster_dwell_data_c)
 
         with m.If(self.do_frame_sync):
             with m.If(self.raster_point_output == 0):
@@ -302,8 +311,9 @@ class RasterModeController(Elaboratable):
                                                                     self.raster_point_data.X2))
             m.d.comb += self.beam_controller_next_y_position.eq(Cat(self.raster_point_data.Y1, 
                                                                     self.raster_point_data.Y2))
-            # m.d.comb += self.beam_controller_next_dwell.eq(Cat(self.raster_point_data.D1, 
-            #                                                         self.raster_point_data.D2))
+            with m.If(self.raster_fifo.r_rdy):
+                m.d.comb += self.beam_controller_next_dwell.eq(self.raster_fifo.r_data)
+                m.d.comb += self.raster_fifo.r_en.eq(1)
 
 
         

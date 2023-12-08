@@ -30,7 +30,7 @@ sim_iface.out_fifo = sim_iface.get_out_fifo()
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
-                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, is_simulation = True)
+                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, is_simulation = True)
 
 
 def raster_sim(n=16384, eight_bit_output=False):
@@ -52,7 +52,6 @@ def vector_sim(r):
             yield from sim_scangen_iface.sim_write_vpoint(n)
 
 
-
 def sim_iobus():
     scan_mode = Signal(2)
     x_full_resolution_b1 = Signal(8)
@@ -70,6 +69,7 @@ def sim_iobus():
     eight_bit_output = Signal()
     do_frame_sync = Signal()
     do_line_sync = Signal()
+    const_dwell_time = Signal()
 
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
@@ -79,6 +79,7 @@ def sim_iobus():
     y_upper_limit_b1, y_upper_limit_b2,
     y_lower_limit_b1, y_lower_limit_b2,
     eight_bit_output, do_frame_sync, do_line_sync,
+    const_dwell_time,
     is_simulation = True,
     test_mode = "data loopback"
     )
@@ -87,7 +88,7 @@ def sim_iobus():
         # yield from vector_sim(1024)
         # for n in range(1000):
         #     yield
-        b1, b2 = get_two_bytes(8)
+        b1, b2 = get_two_bytes(4)
         b1 = int(bits(b1))
         b2 = int(bits(b2))
 
@@ -98,30 +99,32 @@ def sim_iobus():
         yield y_full_resolution_b1.eq(b1)
         yield y_full_resolution_b2.eq(b2)
 
-        yield x_lower_limit_b1.eq(0)
-        yield x_lower_limit_b2.eq(1)
-        yield y_lower_limit_b1.eq(0)
-        yield y_lower_limit_b2.eq(1)
+        # yield x_lower_limit_b1.eq(0)
+        # yield x_lower_limit_b2.eq(1)
+        # yield y_lower_limit_b1.eq(0)
+        # yield y_lower_limit_b2.eq(1)
 
-        b1, b2 = get_two_bytes(6)
-        b1 = int(bits(b1))
-        b2 = int(bits(b2))
+        # b1, b2 = get_two_bytes(6)
+        # b1 = int(bits(b1))
+        # b2 = int(bits(b2))
 
-        yield x_upper_limit_b1.eq(b1)
-        yield x_upper_limit_b2.eq(b2)
-        yield y_upper_limit_b1.eq(b1)
-        yield y_upper_limit_b2.eq(b2)
+        # yield x_upper_limit_b1.eq(b1)
+        # yield x_upper_limit_b2.eq(b2)
+        # yield y_upper_limit_b1.eq(b1)
+        # yield y_upper_limit_b2.eq(b2)
 
-        yield 
-        yield do_frame_sync.eq(1)
-        yield do_line_sync.eq(1)
         yield eight_bit_output.eq(1)
         yield
-        yield
-        yield scan_mode.eq(ScanMode.Raster)
+        pattern = test_raster_pattern_checkerboard(5,5)
+        print(pattern)
+        for n in pattern:
+            yield from sim_scangen_iface.sim_write_2bytes(n)
+        yield scan_mode.eq(ScanMode.RasterPattern)
+        for n in range(1500):
+            yield
         # for n in range(2000):
         #     yield
-        yield from raster_sim(1024, True)
+        # yield from raster_sim(1024, True)
         # for n in range(1000):
         #     yield
         #yield from raster_sim(500)

@@ -36,6 +36,24 @@ test_vector_points = [
 #  ◻︎◼︎◻︎◼︎◻︎
 #  ◼︎◻︎◼︎◻︎◼︎
 
+def test_raster_pattern_checkerboard(x_width, y_height):
+    points = []
+    for y in range(y_height):
+        for x in range(x_width):
+            if y%2 == 0:
+                if x%2 == 0:
+                    points.append(5)
+                else:
+                    points.append(0)
+            else:
+                if x%2 == 0:
+                    points.append(0)
+                else:
+                    points.append(5)
+    return points
+
+
+
 
 # see access.simulation.demultiplexer -> SimulationDemultiplexer
 def _fifo_write(fifo, data):
@@ -89,7 +107,7 @@ def hilbert():
 
 
 if __name__ == "__main__":
-    hilbert()
+    test_raster_pattern_checkerboard(6, 7)
 
 
 
