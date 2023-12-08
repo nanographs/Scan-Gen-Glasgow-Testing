@@ -17,7 +17,7 @@ else:
     from test_streams import test_vector_points, _fifo_write_vector_point
 
 
-class VectorInput(Elaboratable): 
+class VectorReader(Elaboratable): 
     '''
     out_fifo_r_data: Signal, in, 8
         This signal is combinatorially driven by the top level out_fifo.r_data
@@ -107,7 +107,7 @@ class VectorInput(Elaboratable):
 
 
 
-class VectorOutput(Elaboratable):
+class VectorWriter(Elaboratable):
     '''
     in_fifo_w_data: Signal, out, 8
         This signal combinatorially drives the top level in_fifo.w_data
@@ -251,8 +251,8 @@ class VectorModeController(Elaboratable):
     def __init__(self):
         self.vector_fifo = SyncFIFOBuffered(width = 48, depth = 86)
 
-        self.vector_input = VectorInput()
-        self.vector_output = VectorOutput()
+        self.vector_reader = VectorReader()
+        self.vector_writer = VectorWriter()
 
         self.vector_point_data = Signal(vector_point)
         self.vector_point_output = Signal(16)
@@ -266,25 +266,25 @@ class VectorModeController(Elaboratable):
     def elaborate(self, platform):
         m = Module()
         #m.submodules["BeamController"] = self.beam_controller
-        m.submodules["VectorInput"] = self.vector_input
-        m.submodules["VectorOutput"] = self.vector_output
+        m.submodules["VectorReader"] = self.vector_reader
+        m.submodules["VectorWriter"] = self.vector_writer
         m.submodules["VectorFIFO"] = self.vector_fifo
 
-        m.d.comb += self.vector_input.strobe_out.eq(self.vector_fifo.w_rdy)
+        m.d.comb += self.vector_reader.strobe_out.eq(self.vector_fifo.w_rdy)
 
-        with m.If((self.vector_input.data_complete) & (self.vector_fifo.w_rdy)):
+        with m.If((self.vector_reader.data_complete) & (self.vector_fifo.w_rdy)):
             m.d.comb += self.vector_fifo.w_en.eq(1)
-            m.d.comb += self.vector_fifo.w_data.eq(self.vector_input.vector_point_data_c)
+            m.d.comb += self.vector_fifo.w_data.eq(self.vector_reader.vector_point_data_c)
 
-        m.d.comb += self.vector_output.vector_dwell_data_c.eq(self.vector_point_output)
+        m.d.comb += self.vector_writer.vector_dwell_data_c.eq(self.vector_point_output)
         with m.If(self.vector_fifo.r_rdy & self.beam_controller_end_of_dwell):
             m.d.comb += self.vector_fifo.r_en.eq(1)
             m.d.comb += self.vector_point_data.eq(self.vector_fifo.r_data)
-            m.d.comb += self.vector_output.strobe_in_xy.eq(1)
+            m.d.comb += self.vector_writer.strobe_in_xy.eq(1)
             # with m.If(~(self.beam_controller_start_dwell)):
             #     m.d.comb += self.vector_output.strobe_in_dwell.eq(1)
 
-            m.d.comb += self.vector_output.vector_position_data_c.eq(Cat(self.vector_point_data.X1,
+            m.d.comb += self.vector_writer.vector_position_data_c.eq(Cat(self.vector_point_data.X1,
                                                                         self.vector_point_data.X2,
                                                                         self.vector_point_data.Y1,
                                                                         self.vector_point_data.Y2))

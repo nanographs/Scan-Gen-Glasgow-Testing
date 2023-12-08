@@ -11,6 +11,7 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.mode_controller_vector import VectorModeController
     from ..scan_gen_components.addresses import *
     from ..scan_gen_components.pixel_ratio_interpolator import PixelRatioInterpolator
+    from ..scan_gen_components.output_handling import DwellTimeAverager
 # if __name__ == "__main__":
 else:
     from beam_controller import BeamController
@@ -19,6 +20,7 @@ else:
     from mode_controller_raster import RasterModeController
     from mode_controller_vector import VectorModeController
     from pixel_ratio_interpolator import PixelRatioInterpolator
+    from output_handling import DwellTimeAverager
 
 
 
@@ -71,6 +73,8 @@ class ModeController(Elaboratable):
         self.x_interpolator = PixelRatioInterpolator()
         self.y_interpolator = PixelRatioInterpolator()
 
+        self.dwell_avgr = DwellTimeAverager()
+
         self.x_full_frame_resolution = Signal(16)
         self.y_full_frame_resolution = Signal(16)
 
@@ -78,8 +82,12 @@ class ModeController(Elaboratable):
 
         self.in_fifo_w_data = Signal(8)
         self.out_fifo_r_data = Signal(8)
-        self.output_enable = Signal()
-        self.output_strobe_out = Signal()
+
+        self.read_enable = Signal()
+        self.write_enable = Signal()
+        self.write_strobe = Signal()
+        self.write_strobe_out = Signal()
+
         self.internal_fifo_ready = Signal()
         self.adc_data = Signal(16)
         self.adc_data_strobe = Signal()
@@ -96,10 +104,17 @@ class ModeController(Elaboratable):
         m.submodules["XInt"] = self.x_interpolator
         m.submodules["YInt"] = self.y_interpolator
 
+        m.submodules["DwellAvgr"] = self.dwell_avgr
+
         m.d.comb += self.x_interpolator.frame_size.eq(self.x_full_frame_resolution)
         m.d.comb += self.y_interpolator.frame_size.eq(self.y_full_frame_resolution)
 
+        m.d.comb += self.dwell_avgr.pixel_in.eq(self.adc_data)
+        m.d.comb += self.dwell_avgr.strobe.eq(self.adc_data_strobe)
+        m.d.comb += self.dwell_avgr.start_new_average.eq(self.beam_controller.end_of_dwell)
+
         with m.If((self.mode == ScanMode.Raster)|(self.mode == ScanMode.RasterPattern)):
+            #### Interpolation 
             m.d.comb += self.ras_mode_ctrl.xy_scan_gen.x_full_frame_resolution.eq(self.x_full_frame_resolution)
             m.d.comb += self.ras_mode_ctrl.xy_scan_gen.y_full_frame_resolution.eq(self.y_full_frame_resolution)
             # m.d.comb += self.beam_controller.next_x_position.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
@@ -113,19 +128,18 @@ class ModeController(Elaboratable):
             m.d.comb += self.ras_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.ras_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
             #m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.beam_controller.x_position) ## loopback
-            m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.adc_data)
+            m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.dwell_avgr.running_average)
             with m.If(~self.beam_controller.start_dwell):
-                m.d.comb += self.ras_mode_ctrl.raster_output.strobe_in_dwell.eq(self.adc_data_strobe)
+                m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_dwell.eq(self.beam_controller.end_of_dwell)
 
             
-            m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.raster_output.in_fifo_w_data)
-            m.d.comb += self.ras_mode_ctrl.raster_output.enable.eq(self.output_enable)
-            m.d.comb += self.output_strobe_out.eq(self.ras_mode_ctrl.raster_output.strobe_out)
+            m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.raster_writer.in_fifo_w_data)
+            m.d.comb += self.ras_mode_ctrl.raster_writer.enable.eq(self.write_enable)
+            m.d.comb += self.write_strobe.eq(self.ras_mode_ctrl.raster_writer.strobe_out)
             
-            m.d.comb += self.ras_mode_ctrl.raster_output.eight_bit_output.eq(self.eight_bit_output)
+            m.d.comb += self.ras_mode_ctrl.raster_writer.eight_bit_output.eq(self.eight_bit_output)
 
             
-
             with m.If(self.mode == ScanMode.Raster):
                 m.d.comb += self.beam_controller.dwelling.eq(1)
                 m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
@@ -133,9 +147,10 @@ class ModeController(Elaboratable):
                 
 
             with m.If(self.mode == ScanMode.RasterPattern):
-                m.d.comb += self.beam_controller.dwelling.eq(self.ras_mode_ctrl.raster_fifo.r_rdy)
-                m.d.comb += self.ras_mode_ctrl.raster_input.out_fifo_r_data.eq(self.out_fifo_r_data)
-                m.d.comb += self.ras_mode_ctrl.raster_input.enable.eq(self.output_enable)
+                ## pattern pixels must be in sync with frame pixels, or else pattern gets garbled
+                m.d.comb += self.beam_controller.dwelling.eq(self.ras_mode_ctrl.raster_fifo.r_rdy) 
+                m.d.comb += self.ras_mode_ctrl.raster_reader.out_fifo_r_data.eq(self.out_fifo_r_data)
+                m.d.comb += self.ras_mode_ctrl.raster_reader.enable.eq(self.read_enable)
                 m.d.comb += self.internal_fifo_ready.eq(self.ras_mode_ctrl.raster_fifo.w_rdy)
                 m.d.comb += self.beam_controller.next_dwell.eq(self.ras_mode_ctrl.beam_controller_next_dwell)
 
@@ -146,22 +161,26 @@ class ModeController(Elaboratable):
             m.d.comb += self.vec_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
             #m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.beam_controller.dwell_time) ## loopback
             
-            m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.adc_data)
+            # m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.adc_data)
+            # with m.If(~self.beam_controller.start_dwell):
+            #     m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq(self.adc_data_strobe)
+
+            m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.dwell_avgr.running_average)
             with m.If(~self.beam_controller.start_dwell):
-                m.d.comb += self.vec_mode_ctrl.vector_output.strobe_in_dwell.eq(self.adc_data_strobe)
+                m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq(self.adc_data_strobe)
 
             m.d.comb += self.beam_controller.next_x_position.eq(self.vec_mode_ctrl.beam_controller_next_x_position)
             m.d.comb += self.beam_controller.next_y_position.eq(self.vec_mode_ctrl.beam_controller_next_y_position)
             m.d.comb += self.beam_controller.next_dwell.eq(self.vec_mode_ctrl.beam_controller_next_dwell)
 
-            m.d.comb += self.in_fifo_w_data.eq(self.vec_mode_ctrl.vector_output.in_fifo_w_data)
-            m.d.comb += self.vec_mode_ctrl.vector_output.enable.eq(self.output_enable)
-            m.d.comb += self.vec_mode_ctrl.vector_input.enable.eq(self.output_enable)
-            m.d.comb += self.output_strobe_out.eq(self.vec_mode_ctrl.vector_output.strobe_out)
-            m.d.comb += self.vec_mode_ctrl.vector_input.out_fifo_r_data.eq(self.out_fifo_r_data)
+            m.d.comb += self.in_fifo_w_data.eq(self.vec_mode_ctrl.vector_writer.in_fifo_w_data)
+            m.d.comb += self.vec_mode_ctrl.vector_writer.enable.eq(self.write_enable)
+            m.d.comb += self.vec_mode_ctrl.vector_reader.enable.eq(self.read_enable)
+            m.d.comb += self.write_strobe.eq(self.vec_mode_ctrl.vector_writer.strobe_out)
+            m.d.comb += self.vec_mode_ctrl.vector_reader.out_fifo_r_data.eq(self.out_fifo_r_data)
             m.d.comb += self.internal_fifo_ready.eq((self.vec_mode_ctrl.vector_fifo.w_rdy))
 
-            m.d.comb += self.vec_mode_ctrl.vector_output.eight_bit_output.eq(self.eight_bit_output)
+            m.d.comb += self.vec_mode_ctrl.vector_writer.eight_bit_output.eq(self.eight_bit_output)
 
         return m
 
