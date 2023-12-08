@@ -196,8 +196,6 @@ class RasterModeController(Elaboratable):
         # m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
 
-        m.d.comb += self.beam_controller_next_dwell.eq(0)
-
         with m.If(self.do_frame_sync):
             with m.If(self.raster_point_output == 0):
                 m.d.comb += self.raster_output.raster_dwell_data_c.eq(1)
