@@ -15,6 +15,81 @@ else:
     from addresses import *
     from test_streams import test_vector_points, _fifo_write_vector_point
 
+class RasterInput(Elaboratable): 
+    '''
+    out_fifo_r_data: Signal, in, 8
+        This signal is combinatorially driven by the top level out_fifo.r_data
+    
+    raster_point_data: Signal, internal, 48
+        Each cycle that the out_fifo is read from, a byte is synchronously written 
+        to vector_point_data. 
+    raster_point_data_c: Signal, out, 48
+        This is the signal that the next values for the beam controller are read from.
+        This signal is combinatorially assigned to the value of vector_point_data
+        and the latest byte from the out_fifo. This is so that the full vector point
+        data can be used immediately. If the data can't be used immediately, the last
+        byte is synchronously added to raster_point_data and the state machine moves to 
+        the HOLD state.
+
+    data_complete: Signal, out, 1:
+        Asserted when all 2 bytes of a dwell time have been assembled. When this is true,
+        the value of raster_point_c is valid to assign as the next beam controller dwell
+    enable: Signal, in, 1:
+        Asserted when the out_fifo is ready to be read from. This signal is driven by 
+        mode_ctrl.output_enable, which is driven by the top level io_strobe
+    strobe_out: Signal, in, 1:
+        Asserted when the data held in raster_point_data is used. On the cycle after this is
+        asserted, the module will return to state X1 and be ready to read a new point in
+
+    State Machine:
+        X1 -> X2 -> Y1 -> Y2 -> D1 -> D2 -> Hold
+                                    X1 ↲    X1 ↲
+
+    Inspiration taken from https://github.com/maia-sdr/maia-sdr/blob/main/maia-hdl/maia_hdl/packer.py
+    
+    '''
+    def __init__(self):
+        self.out_fifo_r_data = Signal(8)
+
+        self.raster_point_data = Signal(vector_point)
+        self.raster_point_data_c = Signal(vector_point)
+        
+        self.data_complete = Signal()
+        self.enable = Signal()
+        self.strobe_out = Signal()
+
+        self.eight_bit_output = Signal()
+
+    def elaborate(self, platform):
+        m = Module()
+
+        with m.FSM() as fsm:
+            with m.State("D1"):    
+                with m.If(self.enable):
+                    m.d.sync += self.raster_point_data.D1.eq(self.out_fifo_r_data)
+                    with m.If(self.eight_bit_output):
+                        m.next = "Hold"
+                    with m.Else():
+                        m.next = "D2"
+            with m.State("D2"):    
+                with m.If(self.enable):
+                    m.d.comb += self.data_complete.eq(1)
+                    m.d.comb += self.raster_point_data_c.eq(Cat(self.raster_point_data.X1, self.raster_point_data.X2,
+                                                                self.raster_point_data.Y1, self.raster_point_data.Y2,
+                                                                self.raster_point_data.D1, self.out_fifo_r_data))
+                    with m.If(self.strobe_out):
+                        m.next = "D1"
+                        m.d.sync += self.raster_point_data.eq(0)
+                    with m.Else():
+                        m.d.sync += self.raster_point_data.D2.eq(self.out_fifo_r_data)
+                        m.next = "Hold"
+            with m.State("Hold"):
+                    m.d.comb += self.data_complete.eq(1)
+                    m.d.comb += self.raster_point_data_c.eq(self.raster_point_data)
+                    with m.If(self.strobe_out):
+                        m.next = "D1"
+
+        return m
 
 class RasterOutput(Elaboratable):
     '''
@@ -188,12 +263,13 @@ class RasterModeController(Elaboratable):
 
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
-        # self.raster_fifo = SyncFIFOBuffered(width = 8, depth = 12)
+        self.is_patterning = Signal()
+        self.raster_fifo = SyncFIFOBuffered(width = 8, depth = 12)
 
     def elaborate(self, platform):
         m = Module()
         m.submodules["RasterOutput"] = self.raster_output
-        # m.submodules["RasterFIFO"] = self.raster_fifo
+        m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
 
         with m.If(self.do_frame_sync):
