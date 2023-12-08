@@ -185,18 +185,33 @@ class DwellTimeAverager(Elaboratable):
         self.strobe = Signal()
     def elaborate(self, platform):
         m = Module()
+        
 
-        with m.If(self.start_new_average):
-            m.d.comb += self.running_average.eq(self.pixel_in)
-            m.d.sync += self.prev_pixel.eq(self.pixel_in)
-        with m.Else():
-            m.d.sync += self.prev_pixel.eq(self.running_average)
-            #with m.If(self.strobe):
-            with m.If(self.averaging):
-                m.d.comb += self.running_average.eq((self.pixel_in+self.prev_pixel)//2)
-            
-            with m.Else():
-                m.d.comb += self.running_average.eq((self.prev_pixel))
+
+        with m.FSM() as fsm:
+            with m.State("Waiting"):
+                with m.If(self.start_new_average):
+                    m.next = "Start New Average"
+
+            with m.State("Start New Average"):
+                with m.If(self.strobe):
+                    m.d.sync += self.prev_pixel.eq(self.pixel_in)
+                    m.next = "Averaging"
+                
+            with m.State("Averaging"):
+                m.d.sync += self.prev_pixel.eq(self.running_average)
+                with m.If(self.strobe):
+                    m.d.comb += self.running_average.eq((self.pixel_in+self.prev_pixel)//2)
+                with m.Else():
+                    m.d.comb += self.running_average.eq((self.prev_pixel))
+                with m.If((self.start_new_average) & (~self.strobe)):
+                    m.next = "Start New Average"
+                with m.If((self.start_new_average) & (self.strobe)):
+                    m.d.sync += self.prev_pixel.eq(self.pixel_in)
+                    m.next = "Averaging"
+
+
+
 
         return m
     def ports(self):

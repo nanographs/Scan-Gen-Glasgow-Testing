@@ -117,9 +117,10 @@ def sim_iobus():
         yield
         pattern = test_raster_pattern_checkerboard(5,5)
         print(pattern)
+        yield scan_mode.eq(ScanMode.RasterPattern)
         for n in pattern:
             yield from sim_scangen_iface.sim_write_2bytes(n)
-        yield scan_mode.eq(ScanMode.RasterPattern)
+        
         for n in range(1500):
             yield
         # for n in range(2000):
