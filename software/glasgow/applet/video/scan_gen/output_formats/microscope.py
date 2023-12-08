@@ -139,9 +139,6 @@ class ScanController:
 
 
 
-
-
-
 async def _main():
     scan_controller = ScanController()
     await scan_controller.connect()

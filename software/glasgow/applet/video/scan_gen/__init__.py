@@ -110,7 +110,7 @@ class ScanGenInterface:
                 __addr_x_lower_limit_b1, __addr_x_lower_limit_b2,
                 __addr_y_upper_limit_b1, __addr_y_upper_limit_b2,
                 __addr_y_lower_limit_b1, __addr_y_lower_limit_b2,
-                __addr_8_bit_output,
+                __addr_8_bit_output, __addr_do_frame_sync, __addr_do_line_sync,
                 is_simulation = False):
         self.iface = iface
         self._logger = logger
@@ -133,37 +133,14 @@ class ScanGenInterface:
         self.__addr_y_lower_limit_b2 = __addr_y_lower_limit_b2
 
         self.__addr_8_bit_output = __addr_8_bit_output
-
+        self.__addr_do_frame_sync = __addr_do_frame_sync
+        self.__addr_do_line_sync = __addr_do_line_sync
 
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
 
         self.eight_bit_output = False
 
-        self.y_height = 2048
-        self.x_width = 2048
-
-        self.x_lower_limit = 0
-        self.x_upper_limit = self.x_width
-
-        self.y_lower_limit = 0
-        self.y_upper_limit = self.y_height
-
-        self.current_x = 0
-        self.current_y = 0
-
-        self.buffer = self.init_buffer()
-
-        self.endpoint = None
-
-    def init_buffer(self):
-        if self.eight_bit_output:
-            return np.zeros(shape=(self.y_height, self.x_width),
-                    dtype = np.uint8)
-
-        else:
-            return np.zeros(shape=(self.y_height, self.x_width),
-                                dtype = np.uint16)
 
     def fifostats(self):
         iface = self.iface
@@ -363,7 +340,89 @@ class ScanGenInterface:
         data = await fut
         print(data)
 
+    async def benchmark(self):
+        await self.set_frame_resolution(2048,2048)
+        await self.set_raster_mode()
+        await self.iface.reset()
+        start_time = time.time()
+        length = 8388608
+        await self.iface.read(length)
+        end_time = time.time()
+        print(((length/(1000000))/(end_time-start_time)), "MB/s")
 
+    async def scan_frame(self):
+        await self.set_frame_resolution(2048,2048)
+        await self.set_raster_mode()
+        data = await self.read_r_packet()
+        print(data)
+
+    async def hilbert(self):
+        await self.set_frame_resolution(16384,16384)
+        await self.set_vector_mode()
+        stream = open("hilbert.txt")
+        while True:
+            for n in stream:
+                data = n.strip(",\n")
+                #await asyncio.sleep(0)
+                #try:
+                await self.write_vpoint(eval(data))
+                #except:
+                    #await asyncio.sleep(10)
+
+
+class SG_EndpointInterface(ScanGenInterface):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def get_stream_endpoint(self):
+        endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
+        return endpoint
+
+    async def get_ctrl_endpoint(self):
+        endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1235"), queue_size=32)
+        return endpoint
+    def launch_gui(self):
+        from output_formats import streaming_gui
+    async def listen_at_endpoint(self):
+        while True:
+            try:
+                cmd = await endpoint.recv(4)
+                cmd = cmd.decode(encoding='utf-8', errors='strict')
+                if cmd == "scan":
+                    pass
+                if cmd.startswith("re"): ## Changing resolution
+                    new_bits = int(cmd.strip("re")) 
+                    print("resolution:",new_bits)
+                elif cmd.startswith("d"): ## Changing dwell time
+                    new_dwell = int(cmd.strip("d"))
+                    print("dwell time", new_dwell)
+class SG_2DBufferInterface(ScanGenInterface):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.y_height = 2048
+        self.x_width = 2048
+
+        self.x_lower_limit = 0
+        self.x_upper_limit = self.x_width
+
+        self.y_lower_limit = 0
+        self.y_upper_limit = self.y_height
+
+        self.current_x = 0
+        self.current_y = 0
+
+        self.buffer = self.init_buffer()
+
+    def init_buffer(self):
+        if self.eight_bit_output:
+            return np.zeros(shape=(self.y_height, self.x_width),
+                    dtype = np.uint8)
+
+        else:
+            return np.zeros(shape=(self.y_height, self.x_width),
+                                dtype = np.uint16)
+    
     def stream_to_buffer(self, raw_data):
         data = self.decode_rdwell_packet(raw_data)
         #print("cur x,y", self.current_x, self.current_y)
@@ -419,62 +478,22 @@ class ScanGenInterface:
         print(self.buffer.shape)
         #print("=====")
 
-    async def benchmark(self):
-        await self.set_frame_resolution(2048,2048)
-        await self.set_raster_mode()
-        await self.iface.reset()
-        start_time = time.time()
-        length = 8388608
-        await self.iface.read(length)
-        end_time = time.time()
-        print(((length/(1000000))/(end_time-start_time)), "MB/s")
 
-    async def scan_frame(self):
-        await self.set_frame_resolution(2048,2048)
-        await self.set_raster_mode()
-        data = await self.read_r_packet()
-        print(data)
-
-    async def hilbert(self):
-        await self.set_frame_resolution(16384,16384)
-        await self.set_vector_mode()
-        stream = open("hilbert.txt")
-        while True:
-            for n in stream:
-                data = n.strip(",\n")
-                #await asyncio.sleep(0)
-                #try:
-                await self.write_vpoint(eval(data))
-                #except:
-                    #await asyncio.sleep(10)
-
-
-class SG_EndpointInterface:
-    def __init__(self, scan_iface):
-        self.scan_iface = scan_iface
-
-
-    async def get_stream_endpoint(self):
-        endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
-        return endpoint
-
-    async def get_ctrl_endpoint(self):
-        endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1235"), queue_size=32)
-        return endpoint
-
-
-class SG_LocalBufferInterface:
-    def __init__(self,scan_iface):
-        self.scan_iface = scan_iface
-        self.dimension = self.save_dimension(512)
-        self.buf = self.create_buf_file()
+class SG_LocalBufferInterface(ScanGenInterface):
+    cwd = os.getcwd()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dimension, self.dimension_path = self.save_dimension(512)
+        self.buf, self.buf_path = self.create_buf_file()
         self.last_pixel = 0
     def save_dimension(self, dimension):
-        np.savetxt(f'Scan Capture/current_display_setting', [dimension])
-        return dimension
+        path = f'{cwd}/current_display_setting'
+        np.savetxt(path, [dimension])
+        return dimension, path
     def create_buf_file(self):
-        buf = np.memmap(f'Scan Capture/current_frame', np.uint8, shape = (self.dimension*self.dimension), mode = "w+")
-        return buf
+        path = f'{cwd}/current_frame'
+        buf = np.memmap(path, np.uint8, shape = (self.dimension*self.dimension), mode = "w+")
+        return buf, path
     def stream_to_buf(self, raw_data):
         # print("-----------")
         data = raw_data.tolist()
@@ -508,9 +527,10 @@ class SG_LocalBufferInterface:
             # print(buf[current.last_pixel:current.last_pixel + d.size])
             self.last_pixel = self.last_pixel + d.size
     async def stream_video(self):
-        raw_data = await self.scan_iface.iface.read(16384)
+        raw_data = await self.iface.read(16384)
         threading.Thread(target=self.stream_to_buf(raw_data)).start()
-
+    def launch_gui(self):
+        from output_formats import pg_gui
 
 
 class ScanGenApplet(GlasgowApplet):
@@ -530,6 +550,9 @@ class ScanGenApplet(GlasgowApplet):
         super().add_build_arguments(parser, access)
         access.add_pin_set_argument(parser, "data", width=14, default=range(0,14))
         access.add_pin_argument(parser, "power_ok", default=15)
+        parser.add_argument(
+        "-B", "--buf", type=str,
+        help="local, streaming, 2D", default = "2D")
 
 
 
@@ -592,15 +615,26 @@ class ScanGenApplet(GlasgowApplet):
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
 
-        scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
-        self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
-        self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
-        self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
-        self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
-        self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
-        self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
-        self.__addr_8_bit_output
-        )
+        if args.buf == "2D":
+            scan_iface = SG_2DBufferInterface(iface, self.logger, device, self.__addr_scan_mode,
+            self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
+            self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
+            self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
+            self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
+            self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
+            self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
+            )
+        else:
+            scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
+            self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
+            self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
+            self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
+            self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
+            self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
+            self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
+            )
 
         return scan_iface
         
@@ -612,6 +646,7 @@ class ScanGenApplet(GlasgowApplet):
         #pass
 
     async def interact(self, device, args, scan_iface):
+        print(scan_iface)
         await scan_iface.hilbert()
         # futures = []
         # for n in range(100):

@@ -20,7 +20,7 @@ from pyqtgraph.exporters import Exporter
 from pyqtgraph.Qt import QtCore
 
 import qasync
-from qasync import asyncSlot, asyncClose, QApplication
+from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 
 from microscope import ScanController
 
@@ -38,9 +38,6 @@ cwd = os.getcwd()
 #     # Set the stylesheet of the application
 #     app.setStyleSheet(style)
 
-
-
-scan_controller = ScanController()
 
 class ResolutionDropdown(QGridLayout):
     def __init__(self):
@@ -148,7 +145,6 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.exporter = pg.exporters.ImageExporter(self.live_img)
 
 
-
     def setRange(self, height, width):
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
 
@@ -158,11 +154,19 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         array = np.array(bmp).astype(np.uint8)
         self.live_img.setImage(array)
 
+    def saveImage(self, height, width):
+        self.exporter.parameters()['height'] = self.height
+        self.exporter.parameters()['width'] = self.width
+        img_name = "saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif"
+        self.exporter.export(img_name)
+
 class MainWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.dimension = scan_controller.dimension
+        scan_controller = ScanController()
+        self.x_width = scan_controller.x_width
+        self.y_height = scan_controller.y_height
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
@@ -335,18 +339,10 @@ class MainWindow(QWidget):
             await scan_controller.send_single_packet(pattern_slice)
             print("recieving single packet")
             await scan_controller.get_single_packet()
-        # scan_controller.stream_to_buffer(data)
         self.image_display.live_img.setImage(scan_controller.buf, autoLevels = False)
         print(scan_controller.buf)
         
     
-
-    def saveImage(self):
-        self.image_display.exporter.parameters()['height'] = self.dimension
-        self.image_display.exporter.parameters()['width'] = self.dimension
-        img_name = "saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif"
-        self.image_display.exporter.export(img_name)
-        print(img_name)
         
     def setState(self, state):
         if state == "disconnected":
@@ -375,39 +371,22 @@ class MainWindow(QWidget):
 
 
 
+def run_gui():
+    app = QApplication(sys.argv)
 
+    event_loop = QEventLoop(app)
+    asyncio.set_event_loop(event_loop)
 
+    app_close_event = asyncio.Event()
+    app.aboutToQuit.connect(app_close_event.set)
 
-w = MainWindow()
+    main_window = MainWindow()
+    main_window.show()
 
+    with event_loop:
+        event_loop.run_until_complete(app_close_event.wait())
 
-
-
-
-## https://github.com/CabbageDevelopment/qasync/blob/master/examples/aiohttp_fetch.py
-async def main():
-    def close_future(future, loop):
-        loop.call_later(10, future.cancel)
-        future.cancel()
-
-    loop = asyncio.get_event_loop()
-    future = asyncio.Future()
-
-    app = QApplication.instance()
-    if hasattr(app, "aboutToQuit"):
-        getattr(app, "aboutToQuit").connect(
-            functools.partial(close_future, future, loop)
-        )
-
-    w.show()
-
-    await future
-    return True
-
+    return main_window
 
 if __name__ == "__main__":
-    try:
-        qasync.run(main())
-    except asyncio.exceptions.CancelledError:
-        sys.exit(0)
-
+    run_gui()
