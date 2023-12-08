@@ -85,6 +85,7 @@ class ModeController(Elaboratable):
         self.adc_data_strobe = Signal()
 
         self.eight_bit_output = Signal()
+        self.const_dwell_time = Signal(8)
         
     def elaborate(self, platform):
         m = Module()
@@ -116,7 +117,7 @@ class ModeController(Elaboratable):
             with m.If(~self.beam_controller.start_dwell):
                 m.d.comb += self.ras_mode_ctrl.raster_output.strobe_in_dwell.eq(self.adc_data_strobe)
 
-            m.d.comb += self.beam_controller.next_dwell.eq(self.ras_mode_ctrl.beam_controller_next_dwell)
+            m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
             m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.raster_output.in_fifo_w_data)
             m.d.comb += self.ras_mode_ctrl.raster_output.enable.eq(self.output_enable)
             m.d.comb += self.output_strobe_out.eq(self.ras_mode_ctrl.raster_output.strobe_out)

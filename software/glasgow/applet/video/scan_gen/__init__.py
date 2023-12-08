@@ -38,7 +38,8 @@ class IOBusSubtarget(Elaboratable):
                 x_lower_limit_b1, x_lower_limit_b2,
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
-                eight_bit_output, do_frame_sync, do_line_sync):
+                eight_bit_output, do_frame_sync, do_line_sync,
+                const_dwell_time):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
@@ -53,6 +54,7 @@ class IOBusSubtarget(Elaboratable):
                             y_upper_limit_b1, y_upper_limit_b2,
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
+                            const_dwell_time,
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -388,14 +390,19 @@ class SG_EndpointInterface(ScanGenInterface):
             try:
                 cmd = await endpoint.recv(4)
                 cmd = cmd.decode(encoding='utf-8', errors='strict')
-                if cmd == "scan":
-                    pass
-                if cmd.startswith("re"): ## Changing resolution
-                    new_bits = int(cmd.strip("re")) 
-                    print("resolution:",new_bits)
-                elif cmd.startswith("d"): ## Changing dwell time
-                    new_dwell = int(cmd.strip("d"))
-                    print("dwell time", new_dwell)
+                await self.process_cmd(cmd)
+            except:
+                break
+
+    async def process_cmd(self, cmd):
+        if cmd == "scan":
+            pass
+        if cmd.startswith("re"): ## Changing resolution
+            new_bits = int(cmd.strip("re")) 
+            print("resolution:",new_bits)
+        elif cmd.startswith("d"): ## Changing dwell time
+            new_dwell = int(cmd.strip("d"))
+            print("dwell time", new_dwell)
 class SG_2DBufferInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -477,7 +484,6 @@ class SG_2DBufferInterface(ScanGenInterface):
 
         print(self.buffer.shape)
         #print("=====")
-
 
 class SG_LocalBufferInterface(ScanGenInterface):
     cwd = os.getcwd()
@@ -592,6 +598,8 @@ class ScanGenApplet(GlasgowApplet):
         do_frame_sync,         self.__addr_do_frame_sync  = target.registers.add_rw(1, reset=0)
         do_line_sync,          self.__addr_do_line_sync  = target.registers.add_rw(1, reset=0)
 
+        const_dwell_time,      self.__addr_const_dwell_time = target.registers.add_rw(8, reset=0)
+
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
@@ -604,7 +612,8 @@ class ScanGenApplet(GlasgowApplet):
             x_lower_limit_b1 = x_upper_limit_b1, x_lower_limit_b2 = x_lower_limit_b2,
             y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
             y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
-            eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync
+            eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync,
+            const_dwell_time = const_dwell_time
         ))
         
 

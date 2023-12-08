@@ -22,6 +22,7 @@ class IOBus(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
+                const_dwell_time,
                 is_simulation = True, test_mode = None):
         ### Build arguments
         self.is_simulation = is_simulation
@@ -41,6 +42,7 @@ class IOBus(Elaboratable):
         self.eight_bit_output = eight_bit_output
         self.do_frame_sync = do_frame_sync
         self.do_line_sync = do_line_sync
+        self.const_dwell_time = const_dwell_time
 
         self.x_full_resolution_b1 = x_full_resolution_b1
         self.x_full_resolution_b2 = x_full_resolution_b2
@@ -107,6 +109,7 @@ class IOBus(Elaboratable):
         #### =============================================================================
 
         #### =========================== REGISTERS ====================================
+        m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
         m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
         m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
         m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(self.do_frame_sync)
