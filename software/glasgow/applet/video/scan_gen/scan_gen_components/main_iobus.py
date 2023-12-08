@@ -162,6 +162,9 @@ class IOBus(Elaboratable):
         with m.If(self.mode_ctrl.mode == ScanMode.Vector):
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready)))
 
+        with m.If(self.mode_ctrl.mode == ScanMode.RasterPattern):
+            m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy)))
+
         with m.If(self.mode_ctrl.mode == ScanMode.Raster):
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy))
             
@@ -189,12 +192,6 @@ class IOBus(Elaboratable):
         else:
             
             with m.If(self.io_strobe):
-                # with m.If(self.mode_ctrl.ras_mode_ctrl.raster_fifo.r_rdy):
-                #     m.d.comb += self.mode_ctrl.ras_mode_ctrl.raster_fifo.r_en.eq(1)
-                #     m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.ras_mode_ctrl.raster_fifo.r_data)
-                #     with m.If(~(self.mode_ctrl.output_strobe_out)):
-                #         m.d.comb += self.in_fifo.w_en.eq(1)
-                # with m.Else():
                 m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
                 m.d.comb += self.out_fifo.r_en.eq(1)
                 with m.If(~(self.mode_ctrl.output_strobe_out)):
@@ -202,15 +199,7 @@ class IOBus(Elaboratable):
                         pass
                     else:
                         m.d.comb += self.in_fifo.w_en.eq(1)
-            # with m.If(~self.in_fifo.w_rdy):
-            #     m.d.sync += self.alt_fifo.eq(1)
-            # with m.If(self.in_fifo.level == 0):
-            #     m.d.sync += self.alt_fifo.eq(0)
-            #     m.d.comb += self.io_strobe.eq((self.mode_ctrl.ras_mode_ctrl.raster_fifo.w_rdy))
-            #     m.d.comb += self.mode_ctrl.ras_mode_ctrl.raster_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
-            #     with m.If(~(self.mode_ctrl.output_strobe_out)):
-            #         m.d.comb += self.mode_ctrl.ras_mode_ctrl.raster_fifo.w_en.eq(1)
-        
+\
         #### =============================================================================
 
         return m

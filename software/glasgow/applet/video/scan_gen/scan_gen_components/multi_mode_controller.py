@@ -99,7 +99,7 @@ class ModeController(Elaboratable):
         m.d.comb += self.x_interpolator.frame_size.eq(self.x_full_frame_resolution)
         m.d.comb += self.y_interpolator.frame_size.eq(self.y_full_frame_resolution)
 
-        with m.If(self.mode == ScanMode.Raster):
+        with m.If((self.mode == ScanMode.Raster)|(self.mode == ScanMode.RasterPattern)):
             m.d.comb += self.ras_mode_ctrl.xy_scan_gen.x_full_frame_resolution.eq(self.x_full_frame_resolution)
             m.d.comb += self.ras_mode_ctrl.xy_scan_gen.y_full_frame_resolution.eq(self.y_full_frame_resolution)
             # m.d.comb += self.beam_controller.next_x_position.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
@@ -109,7 +109,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.beam_controller.next_x_position.eq(self.x_interpolator.output)
             m.d.comb += self.beam_controller.next_y_position.eq(self.y_interpolator.output)
 
-            m.d.comb += self.beam_controller.dwelling.eq(1)
+            
             m.d.comb += self.ras_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.ras_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
             #m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.beam_controller.x_position) ## loopback
@@ -117,14 +117,29 @@ class ModeController(Elaboratable):
             with m.If(~self.beam_controller.start_dwell):
                 m.d.comb += self.ras_mode_ctrl.raster_output.strobe_in_dwell.eq(self.adc_data_strobe)
 
-            m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
+            
             m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.raster_output.in_fifo_w_data)
             m.d.comb += self.ras_mode_ctrl.raster_output.enable.eq(self.output_enable)
             m.d.comb += self.output_strobe_out.eq(self.ras_mode_ctrl.raster_output.strobe_out)
-            m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal 
             
             m.d.comb += self.ras_mode_ctrl.raster_output.eight_bit_output.eq(self.eight_bit_output)
 
+            
+
+            with m.If(self.mode == ScanMode.Raster):
+                m.d.comb += self.beam_controller.dwelling.eq(1)
+                m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
+                m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal 
+                
+
+            with m.If(self.mode == ScanMode.RasterPattern):
+                m.d.comb += self.beam_controller.dwelling.eq(self.ras_mode_ctrl.raster_fifo.r_rdy)
+                m.d.comb += self.ras_mode_ctrl.raster_input.out_fifo_r_data.eq(self.out_fifo_r_data)
+                m.d.comb += self.ras_mode_ctrl.raster_input.enable.eq(self.output_enable)
+                m.d.comb += self.internal_fifo_ready.eq(self.ras_mode_ctrl.raster_fifo.w_rdy)
+                m.d.comb += self.beam_controller.next_dwell.eq(self.ras_mode_ctrl.beam_controller_next_dwell)
+
+            
         with m.If(self.mode == ScanMode.Vector):
             m.d.comb += self.beam_controller.dwelling.eq(1)
             m.d.comb += self.vec_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)

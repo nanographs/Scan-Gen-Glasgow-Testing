@@ -6,6 +6,7 @@ from amaranth.lib import data, enum
 
 class ScanMode(enum.Enum, shape = 2):
     Raster = 1
+    RasterPattern = 2
     Vector = 3
 
 vector_point = data.StructLayout({
