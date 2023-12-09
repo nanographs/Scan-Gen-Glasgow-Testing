@@ -52,21 +52,68 @@ def vector_sim(r):
             yield from sim_scangen_iface.sim_write_vpoint(n)
 
 
-def vector_pattern_sim():
-    yield scan_mode.eq(ScanMode.Vector)
+def vector_pattern_sim(dut):
+    yield dut.scan_mode.eq(ScanMode.Vector)
     yield from vector_sim(10)
-    for n in range(100):
+    for n in range(200):
         yield
 
-def raster_pattern_sim():
+def raster_pattern_sim(dut):
     pattern = test_raster_pattern_checkerboard(5,5)
     print(pattern)
-    yield scan_mode.eq(ScanMode.RasterPattern)
+    yield dut.scan_mode.eq(ScanMode.RasterPattern)
     for n in pattern:
         yield from sim_scangen_iface.sim_write_2bytes(n)
     
     for n in range(1500):
         yield
+
+def set_raster_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 8, y_upper = 8):
+    b1, b2 = get_two_bytes(x_res)
+    b1 = int(bits(b1))
+    b2 = int(bits(b2))
+
+    yield dut.x_full_resolution_b1.eq(b1)
+    yield dut.x_full_resolution_b2.eq(b2)
+
+    b1, b2 = get_two_bytes(y_res)
+    b1 = int(bits(b1))
+    b2 = int(bits(b2))
+
+    yield dut.y_full_resolution_b1.eq(b1)
+    yield dut.y_full_resolution_b2.eq(b2)
+
+    b1, b2 = get_two_bytes(x_lower)
+    b1 = int(bits(b1))
+    b2 = int(bits(b2))
+
+    yield dut.x_lower_limit_b1.eq(b1)
+    yield dut.x_lower_limit_b2.eq(b2)
+
+    b1, b2 = get_two_bytes(y_lower)
+    b1 = int(bits(b1))
+    b2 = int(bits(b2))
+
+    yield dut.y_lower_limit_b1.eq(b1)
+    yield dut.y_lower_limit_b2.eq(b2)
+
+    b1, b2 = get_two_bytes(x_upper)
+    b1 = int(bits(b1))
+    b2 = int(bits(b2))
+
+    yield dut.x_upper_limit_b1.eq(b1)
+    yield dut.x_upper_limit_b2.eq(b2)
+
+    b1, b2 = get_two_bytes(y_upper)
+    b1 = int(bits(b1))
+    b2 = int(bits(b2))
+
+    yield dut.y_upper_limit_b1.eq(b1)
+    yield dut.y_upper_limit_b2.eq(b2)
+
+
+    yield dut.scan_mode.eq(ScanMode.Raster)
+
 
 
 def sim_iobus():
@@ -101,63 +148,14 @@ def sim_iobus():
     test_mode = "data loopback"
     )
     def bench():
-        
-        # for n in range(1000):
-        #     yield
-        b1, b2 = get_two_bytes(4)
-        b1 = int(bits(b1))
-        b2 = int(bits(b2))
+        # yield from raster_image_sim(dut)
+        yield from set_raster_params(dut)
+        for n in range(150):
+            yield
+        yield scan_mode.eq(ScanMode.Vector)
+        yield
+        yield from vector_pattern_sim(dut)
 
-        
-        
-        yield x_full_resolution_b1.eq(b1)
-        yield x_full_resolution_b2.eq(b2)
-        yield y_full_resolution_b1.eq(b1)
-        yield y_full_resolution_b2.eq(b2)
-
-        yield scan_mode.eq(ScanMode.Raster)
-        # for n in range(100):
-        #     yield
-        yield from raster_sim(500)
-
-
-
-        # # yield x_lower_limit_b1.eq(0)
-        # # yield x_lower_limit_b2.eq(1)
-        # # yield y_lower_limit_b1.eq(0)
-        # # yield y_lower_limit_b2.eq(1)
-
-        # # b1, b2 = get_two_bytes(6)
-        # # b1 = int(bits(b1))
-        # # b2 = int(bits(b2))
-
-        # # yield x_upper_limit_b1.eq(b1)
-        # # yield x_upper_limit_b2.eq(b2)
-        # # yield y_upper_limit_b1.eq(b1)
-        # # yield y_upper_limit_b2.eq(b2)
-
-        # yield eight_bit_output.eq(0)
-        # yield
-
-        # for n in range(2000):
-        #     yield
-        # yield from raster_sim(1024, True)
-        # for n in range(1000):
-        #     yield
-        #yield from raster_sim(500)
-
-        # # yield scan_mode.eq(2) ## not defined, so just do nothing/pause
-        # # for n in range(10):
-        # #     yield
-        #yield scan_mode.eq(3)
-        #yield
-        # try:
-        #     yield from vector_sim(512)
-        #     output = yield from sim_app_iface.read(512)
-        #     print(sim_scangen_iface.decode_vpoint_packet(output))
-        # except AssertionError:
-        #     yield
-        
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
     sim.add_sync_process(bench)
