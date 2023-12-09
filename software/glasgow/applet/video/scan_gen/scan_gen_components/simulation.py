@@ -113,7 +113,7 @@ def sim_iobus():
         # yield y_upper_limit_b1.eq(b1)
         # yield y_upper_limit_b2.eq(b2)
 
-        yield eight_bit_output.eq(1)
+        yield eight_bit_output.eq(0)
         yield
         pattern = test_raster_pattern_checkerboard(5,5)
         print(pattern)
