@@ -51,6 +51,13 @@ def vector_sim(r):
             #yield from write_vector_point(n, sim_app_iface)
             yield from sim_scangen_iface.sim_write_vpoint(n)
 
+
+def vector_pattern_sim():
+    yield scan_mode.eq(ScanMode.Vector)
+    yield from vector_sim(10)
+    for n in range(100):
+        yield
+
 def raster_pattern_sim():
     pattern = test_raster_pattern_checkerboard(5,5)
     print(pattern)
@@ -94,7 +101,7 @@ def sim_iobus():
     test_mode = "data loopback"
     )
     def bench():
-
+        
         # for n in range(1000):
         #     yield
         b1, b2 = get_two_bytes(4)
@@ -108,10 +115,12 @@ def sim_iobus():
         yield y_full_resolution_b1.eq(b1)
         yield y_full_resolution_b2.eq(b2)
 
-        yield scan_mode.eq(ScanMode.Vector)
-        yield from vector_sim(10)
-        for n in range(100):
-            yield
+        yield scan_mode.eq(ScanMode.Raster)
+        # for n in range(100):
+        #     yield
+        yield from raster_sim(500)
+
+
 
         # # yield x_lower_limit_b1.eq(0)
         # # yield x_lower_limit_b2.eq(1)
@@ -137,7 +146,6 @@ def sim_iobus():
         #     yield
         #yield from raster_sim(500)
 
-        # yield from raster_sim(500)
         # # yield scan_mode.eq(2) ## not defined, so just do nothing/pause
         # # for n in range(10):
         # #     yield

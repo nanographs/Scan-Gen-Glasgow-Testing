@@ -174,6 +174,8 @@ class IOBus(Elaboratable):
 
         with m.If(self.mode_ctrl.mode == ScanMode.Raster):
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy))
+            m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe))
+            m.d.comb += self.read_strobe.eq(self.out_fifo.r_rdy)
             
         m.d.comb += self.mode_ctrl.out_fifo_r_data.eq(self.out_fifo.r_data)
         m.d.comb += self.mode_ctrl.write_enable.eq(self.write_strobe)
