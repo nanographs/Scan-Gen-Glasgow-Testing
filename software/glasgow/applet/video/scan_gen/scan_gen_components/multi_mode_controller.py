@@ -129,7 +129,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.ras_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
             #m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.beam_controller.x_position) ## loopback
             m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.dwell_avgr.running_average)
-            with m.If(~self.beam_controller.start_dwell):
+            with m.If(~self.beam_controller.prev_dwelling_changed):
                 m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_dwell.eq(self.beam_controller.end_of_dwell)
 
             
@@ -148,7 +148,13 @@ class ModeController(Elaboratable):
 
             with m.If(self.mode == ScanMode.RasterPattern):
                 ## pattern pixels must be in sync with frame pixels, or else pattern gets garbled
-                m.d.comb += self.beam_controller.dwelling.eq(self.ras_mode_ctrl.raster_fifo.r_rdy) 
+                with m.FSM() as fsm:
+                    with m.State("Wait for first USB"):
+                        with m.If(self.ras_mode_ctrl.raster_fifo.r_rdy):
+                            m.d.comb += self.beam_controller.dwelling.eq(1) 
+                            m.next = "Patterning"
+                    with m.State("Patterning"):
+                        m.d.comb += self.beam_controller.dwelling.eq(1) 
                 m.d.comb += self.ras_mode_ctrl.raster_reader.out_fifo_r_data.eq(self.out_fifo_r_data)
                 m.d.comb += self.ras_mode_ctrl.raster_reader.enable.eq(self.read_enable)
                 m.d.comb += self.internal_fifo_ready.eq(self.ras_mode_ctrl.raster_fifo.w_rdy)

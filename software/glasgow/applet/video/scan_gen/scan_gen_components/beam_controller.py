@@ -22,6 +22,11 @@ class BeamController(Elaboratable):
         self.next_y_position = Signal(14)
         self.next_dwell = Signal(14)
         self.dwelling = Signal()
+
+        self.prev_dwelling = Signal()
+        self.dwelling_changed = Signal()
+        self.prev_dwelling_changed = Signal()
+
         self.end_of_dwell = Signal()
         self.start_dwell = Signal()
 
@@ -42,6 +47,10 @@ class BeamController(Elaboratable):
         with m.If(self.count_enable):
             m.d.comb += self.end_of_dwell.eq(self.counter == self.dwell_time)
             m.d.comb += self.start_dwell.eq(self.counter == 0)
+
+        m.d.sync += self.prev_dwelling.eq(self.dwelling)
+        m.d.comb += self.dwelling_changed.eq(self.dwelling != self.prev_dwelling)
+        m.d.sync += self.prev_dwelling_changed.eq(self.dwelling_changed)
 
         with m.If(self.dwelling):
             m.d.comb += self.lock_new_point.eq(self.end_of_dwell)
