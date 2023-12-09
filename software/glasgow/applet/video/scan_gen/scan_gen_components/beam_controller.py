@@ -6,10 +6,43 @@ class BeamController(Elaboratable):
     '''
     
     Attributes:
-        X position, y position: 14-bit values
-        Dwell time : 14 bit value
-        Dwelling - True when counter will be incremented next cycle
-        Counter - Value that is incremented each cycle and compared to dwell time
+        x_position, y_position: Signal, 14
+        dwell_time : Signal, 16
+
+        next_x_position, next_y_position, next_dwell
+            Values to be assigned to x_position, y_position, and dwell_time when lock_new_data is true
+        
+        counter: Signal, 16, out
+            Value that is incremented each cycle and compared to dwell time
+        count_enable: Signal, 1,in
+            The counter is only incremented if this signal is high. This signal is strobed at
+            the end of every min dwell clock cycle
+
+        dwelling: Signal, 1, out
+            True when counter will be incremented next cycle
+        end_of_dwell: Signal, 1, out
+            True when the value of counter is equal to the value of dwell_time.
+        start_dwell: Signal, 1, out
+            True when the value of counter equals zero
+
+        lock_new_point: Signal, 1, internal
+            This signal is driven by end_of_dwell. If this signal is high, the values of
+            x_position, y_position, and dwell_time will be set to next_x_position, next_y_position,
+            and next_dwell.
+
+        
+        prev_dwelling: Signal, 1, internal
+            Assigned the value of dwelling from one cycle previously
+        dwelling_changed: Signal, 1, internal
+            True if dwelling and prev_dwelling are different
+        prev_dwelling_changed: Signal, 1, out
+            Assigned the value of prev_dwelling from one cycle previously
+
+        dwelling:              __---
+        prev_dwelling:         ___--
+        dwelling_changed:      ___-_
+        prev_dwelling_changed: ____-
+
 
     '''
     def __init__(self):
@@ -20,27 +53,20 @@ class BeamController(Elaboratable):
 
         self.next_x_position = Signal(14)
         self.next_y_position = Signal(14)
-        self.next_dwell = Signal(14)
+        self.next_dwell = Signal(16)
+
+        self.counter = Signal(16)
+        self.count_enable = Signal()
+
         self.dwelling = Signal()
+        self.end_of_dwell = Signal()
+        self.start_dwell = Signal()
+        
+        self.lock_new_point = Signal()
 
         self.prev_dwelling = Signal()
         self.dwelling_changed = Signal()
         self.prev_dwelling_changed = Signal()
-
-        self.end_of_dwell = Signal()
-        self.start_dwell = Signal()
-
-        self.counter = Signal(14)
-
-        self.lock_new_point = Signal()
-        self.reset_dwell_ctr = Signal()
-
-        self.count_enable = Signal()
-
-
-
-        self.fresh_data = Signal()
-        self.stale_data = Signal()
 
     def elaborate(self, platform):
         m = Module()
