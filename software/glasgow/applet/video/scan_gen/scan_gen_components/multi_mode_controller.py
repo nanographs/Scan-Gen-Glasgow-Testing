@@ -162,7 +162,14 @@ class ModeController(Elaboratable):
 
             
         with m.If(self.mode == ScanMode.Vector):
-            m.d.comb += self.beam_controller.dwelling.eq(1)
+            with m.FSM() as fsm:
+                    with m.State("Wait for first USB"):
+                        with m.If(self.vec_mode_ctrl.vector_fifo.r_rdy):
+                            m.d.comb += self.beam_controller.dwelling.eq(1) 
+                            m.next = "Patterning"
+                    with m.State("Patterning"):
+                        m.d.comb += self.beam_controller.dwelling.eq(1) 
+
             m.d.comb += self.vec_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.vec_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
             #m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.beam_controller.dwell_time) ## loopback

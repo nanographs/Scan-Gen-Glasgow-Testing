@@ -163,6 +163,8 @@ class IOBus(Elaboratable):
         #### ===========================FIFO CONTROL=================================================
         with m.If(self.mode_ctrl.mode == ScanMode.Vector):
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready)))
+            m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe))
+            m.d.comb += self.read_strobe.eq(self.out_fifo.r_rdy)
 
         with m.If(self.mode_ctrl.mode == ScanMode.RasterPattern):
             m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy)))
