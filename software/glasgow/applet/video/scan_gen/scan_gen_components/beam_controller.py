@@ -108,16 +108,34 @@ class BeamController(Elaboratable):
 def test_beamcontroller():
     dut = BeamController()
     def bench():
-        cycles = 24
+        cycles = 10
         yield dut.dwell_time.eq(cycles)
+        yield dut.next_dwell.eq(6)
         yield dut.dwelling.eq(1)
+        yield dut.count_enable.eq(1)
         yield
-        for n in range(cycles):
-            assert (yield dut.counter == n)
+        assert(yield dut.start_dwell)
+        for n in range(1,cycles):
             yield
-            
+            print("n =", n)
+            assert (yield dut.counter == n)
+        yield
+        assert (yield dut.counter == cycles)
+        assert (yield dut.end_of_dwell)
+        yield
+        assert( yield dut.dwell_time == 6)
+
+        ## counter should not increment when disabled
+        yield dut.count_enable.eq(0)
+        yield
+        yield
+        assert(yield dut.counter == 1) 
     
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
     sim.add_sync_process(bench)
-    sim.run()
+    with sim.write_vcd("beam_controller_sim.vcd"):
+        sim.run()
+
+if __name__ == "__main__":
+    test_beamcontroller()
