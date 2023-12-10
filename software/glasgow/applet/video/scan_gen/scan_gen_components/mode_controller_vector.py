@@ -256,6 +256,7 @@ class VectorModeController(Elaboratable):
         Drives beam_controller.next_y_position
     beam_controller_next_dwell: Signal, out, 16:
         Drives beam_controller.next_dwell
+
     '''
     def __init__(self):
         self.vector_fifo = SyncFIFOBuffered(width = 48, depth = 86)

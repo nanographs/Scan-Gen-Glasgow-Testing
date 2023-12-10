@@ -30,6 +30,13 @@ class BeamController(Elaboratable):
             x_position, y_position, and dwell_time will be set to next_x_position, next_y_position,
             and next_dwell.
 
+        dwell_time:     5 5 5 5 5 5 6
+        next_dwell:               6
+        counter:        0 1 2 3 4 5 0
+        start_of_dwell: -___________-
+        end_of_dwell:   __________-__
+        lock_new_point: __________-__
+
         
         prev_dwelling: Signal, 1, internal
             Assigned the value of dwelling from one cycle previously
