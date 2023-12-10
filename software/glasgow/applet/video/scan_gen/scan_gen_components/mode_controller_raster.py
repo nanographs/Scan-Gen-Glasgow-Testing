@@ -147,13 +147,22 @@ class RasterWriter(Elaboratable):
         self.strobe_in_xy = Signal()
         self.strobe_in_dwell = Signal()
         self.strobe_in_frame_sync = Signal()
+        self.prev_strobe_in_frame_sync = Signal()
         self.strobe_in_line_sync = Signal()
+        self.prev_strobe_in_line_sync = Signal()
         self.strobe_out = Signal()
 
         self.eight_bit_output = Signal()
 
     def elaborate(self, platform):
         m = Module()
+
+        m.d.sync += self.prev_strobe_in_frame_sync.eq(self.strobe_in_frame_sync)
+        m.d.sync += self.prev_strobe_in_line_sync.eq(self.strobe_in_line_sync)
+        ## the line and frame sync strobes only occur on the first byte, D1
+        ## so to make sure the frame sync is inserted at the right point after
+        ## a two-byte output, we need to delay those signals another cycle
+        
 
         with m.FSM() as fsm:
             with m.State("Waiting"):
@@ -173,9 +182,9 @@ class RasterWriter(Elaboratable):
                     m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data_c.D1)
                     with m.If(self.eight_bit_output):
                         with m.If(self.strobe_in_frame_sync):
-                            m.next = "Frame_Sync"
+                            m.next = "Frame_Sync_B1"
                         with m.Elif(self.strobe_in_line_sync):
-                            m.next = "Line_Sync"
+                            m.next = "Line_Sync_B1"
                         with m.Else():
                             m.next = "Dwell_Waiting"
                     with m.Else():
@@ -187,9 +196,9 @@ class RasterWriter(Elaboratable):
                     m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data.D1)
                     with m.If(self.eight_bit_output):
                         with m.If(self.strobe_in_frame_sync):
-                            m.next = "Frame_Sync"
+                            m.next = "Frame_Sync_B1"
                         with m.Elif(self.strobe_in_line_sync):
-                            m.next = "Line_Sync"
+                            m.next = "Line_Sync_B1"
                         with m.Else():
                             m.next = "Dwell_Waiting"
                     with m.Else():
@@ -199,17 +208,31 @@ class RasterWriter(Elaboratable):
                 with m.If(self.enable):
                     m.d.comb += self.strobe_out.eq(0) 
                     m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data.D2)
-                    with m.If(self.strobe_in_frame_sync):
-                            m.next = "Frame_Sync"
-                    with m.Elif(self.strobe_in_line_sync):
-                            m.next = "Line_Sync"
+                    with m.If(self.prev_strobe_in_frame_sync):
+                            m.next = "Frame_Sync_B1"
+                    with m.Elif(self.prev_strobe_in_line_sync):
+                            m.next = "Line_Sync_B1"
                     with m.Else():
                             m.next = "Dwell_Waiting"
-            with m.State("Frame_Sync"):
+            with m.State("Frame_Sync_B1"):
+                m.d.comb += self.in_fifo_w_data.eq(0)
+                with m.If(self.enable):
+                    with m.If(self.eight_bit_output):
+                        m.next = "Dwell_Waiting"
+                    with m.Else():
+                        m.next = "Frame_Sync_B2"
+            with m.State("Frame_Sync_B2"):
                 m.d.comb += self.in_fifo_w_data.eq(0)
                 with m.If(self.enable):
                     m.next = "Dwell_Waiting"
-            with m.State("Line_Sync"):
+            with m.State("Line_Sync_B1"):
+                m.d.comb += self.in_fifo_w_data.eq(1)
+                with m.If(self.enable):
+                    with m.If(self.eight_bit_output):
+                        m.next = "Dwell_Waiting"
+                    with m.Else():
+                        m.next = "Line_Sync_B2"
+            with m.State("Line_Sync_B2"):
                 m.d.comb += self.in_fifo_w_data.eq(1)
                 with m.If(self.enable):
                     m.next = "Dwell_Waiting"
@@ -219,10 +242,14 @@ class RasterWriter(Elaboratable):
 
 class RasterModeController(Elaboratable):
     '''
-    raster_output: See RasterOutput
+    raster_writer: See RasterWriter
         This module takes 32-bit wide raster position data (not used)
         and 16-bit wide dwell time or brightness data, and disassembles
         it into bytes to write to the in_fifo
+
+    raster_reader: See RasterReader
+        This module takes 8-bit values from the out_fifo and combines them
+        into 16-bit dwell time values for raster pattern streaming
     
     raster_point_data: Signal, internal, 48
         This signal is driven by the x and y values from the xy_scan_gen module,
@@ -249,10 +276,8 @@ class RasterModeController(Elaboratable):
     beam_controller_next_dwell: Signal, out, 16:
         Drives beam_controller.next_dwell
 
-    ### TO DO: Implement raster patterning mode
-        - Create a RasterInput module to read a stream of 16-bit dwell times
-        - Possibly create a RasterFIFO, to ensure there is still data to
-        read from when the out_fifo isn't available, and thus keep the beam moving
+    do_frame_sync: Signal, in, 1
+        If true, RasterWriter will write 0 to the in_fifo
     '''
     def __init__(self):
         self.raster_writer = RasterWriter()
@@ -270,7 +295,7 @@ class RasterModeController(Elaboratable):
 
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
-        self.is_patterning = Signal()
+
         self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
 
     def elaborate(self, platform):
@@ -290,7 +315,7 @@ class RasterModeController(Elaboratable):
                 m.d.comb += self.raster_writer.raster_dwell_data_c.eq(1)
             with m.Else():
                 m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
-        with m.If(self.do_line_sync):
+        with m.Elif(self.do_line_sync):
             with m.If(self.raster_point_output == 1):
                 m.d.comb += self.raster_writer.raster_dwell_data_c.eq(2)
             with m.Else():

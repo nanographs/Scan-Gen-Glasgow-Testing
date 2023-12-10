@@ -1,4 +1,5 @@
 import os
+import subprocess
 import types
 import time
 import logging
@@ -54,7 +55,7 @@ class IOBusSubtarget(Elaboratable):
                             y_upper_limit_b1, y_upper_limit_b2,
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
-                            const_dwell_time,
+                            const_dwell_time, test_mode = "data loopback",
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -81,7 +82,7 @@ class IOBusSubtarget(Elaboratable):
         m.d.comb += a_latch.o.eq(self.io_bus.a_latch)
         m.d.comb += a_enable.o.eq(self.io_bus.a_enable)
 
-        m.d.comb += a_clock.o.eq(~self.io_bus.a_clock)
+        m.d.comb += a_clock.o.eq(self.io_bus.a_clock)
         m.d.comb += d_clock.o.eq(self.io_bus.d_clock)
         
         with m.If(self.io_bus.bus_multiplexer.is_x):
@@ -238,7 +239,13 @@ class ScanGenInterface:
     async def set_8bit_output(self):
         await self._device.write_register(self.__addr_8_bit_output, 1)
         self.eight_bit_output = True
-        self.buffer = self.init_buffer()
+        #self.buffer = self.init_buffer()
+    
+    async def set_frame_sync(self):
+        await self._device.write_register(self.__addr_do_frame_sync, 1)
+
+    async def set_line_sync(self):
+        await self._device.write_register(self.__addr_do_line_sync, 1)
 
     async def set_2byte_register(self,val,addr_b1, addr_b2):
         b1, b2 = get_two_bytes(val)
@@ -251,13 +258,13 @@ class ScanGenInterface:
         self.x_width = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
-        self.buffer = self.init_buffer()
+        #self.buffer = self.init_buffer()
 
     async def set_y_resolution(self,val):
         self.y_height = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
-        self.buffer = self.init_buffer()
+        #self.buffer = self.init_buffer()
 
     async def set_x_upper_limit(self, val):
         self.x_upper_limit = val
@@ -486,27 +493,28 @@ class SG_2DBufferInterface(ScanGenInterface):
         #print("=====")
 
 class SG_LocalBufferInterface(ScanGenInterface):
-    cwd = os.getcwd()
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.cwd = os.getcwd()
         self.dimension, self.dimension_path = self.save_dimension(512)
         self.buf, self.buf_path = self.create_buf_file()
         self.last_pixel = 0
     def save_dimension(self, dimension):
-        path = f'{cwd}/current_display_setting'
+        path = f'{self.cwd}/current_display_setting'
         np.savetxt(path, [dimension])
         return dimension, path
     def create_buf_file(self):
-        path = f'{cwd}/current_frame'
+        path = f'{self.cwd}/current_frame'
         buf = np.memmap(path, np.uint8, shape = (self.dimension*self.dimension), mode = "w+")
         return buf, path
     def stream_to_buf(self, raw_data):
         # print("-----------")
         data = raw_data.tolist()
         d = np.array(data)
-        #print(d)
+        print(d)
         # print(buf)
         zero_index = np.nonzero(d < 1)[0]
+        print(zero_index)
         # print("buffer length:", len(buf))
         # print("last pixel:",current.last_pixel)
         #print("d length:", len(d))
@@ -533,10 +541,13 @@ class SG_LocalBufferInterface(ScanGenInterface):
             # print(buf[current.last_pixel:current.last_pixel + d.size])
             self.last_pixel = self.last_pixel + d.size
     async def stream_video(self):
+        print("getting data")
         raw_data = await self.iface.read(16384)
+        print("got data")
         threading.Thread(target=self.stream_to_buf(raw_data)).start()
     def launch_gui(self):
-        from output_formats import pg_gui
+        subprocess.call(["python3", "software/glasgow/applet/video/scan_gen/output_formats/local_gui.py"])
+        
 
 
 class ScanGenApplet(GlasgowApplet):
@@ -634,6 +645,16 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
             )
+        if args.buf == "local":
+            scan_iface = SG_LocalBufferInterface(iface, self.logger, device, self.__addr_scan_mode,
+            self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
+            self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
+            self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
+            self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
+            self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
+            self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
+            )
         else:
             scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
             self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
@@ -656,7 +677,15 @@ class ScanGenApplet(GlasgowApplet):
 
     async def interact(self, device, args, scan_iface):
         print(scan_iface)
-        await scan_iface.hilbert()
+        await scan_iface.set_8bit_output()
+        await scan_iface.set_frame_sync()
+        await scan_iface.set_frame_resolution(512,512)
+        await scan_iface.set_raster_mode()
+        if args.buf == "local":
+            #scan_iface.launch_gui()
+            while True:
+                await scan_iface.stream_video()
+        #await scan_iface.hilbert()
         # futures = []
         # for n in range(100):
         #     i = 0

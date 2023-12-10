@@ -1,5 +1,3 @@
-from time import perf_counter
-
 import numpy as np
 import os
 
@@ -24,7 +22,6 @@ class MainWindow(QWidget):
         self.image_display = ImageDisplay(2048, 2048)
         self.layout.addWidget(self.image_display, 1, 0)
 
-        self.updateTime = perf_counter()
         elapsed = 0
 
         self.timer = QtCore.QTimer()

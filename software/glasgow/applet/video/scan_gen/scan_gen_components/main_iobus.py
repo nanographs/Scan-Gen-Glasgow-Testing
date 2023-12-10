@@ -35,7 +35,7 @@ class IOBus(Elaboratable):
         self.out_fifo = out_fifo
         self.in_fifo = in_fifo
 
-        self.io_strobe = Signal() ## Top level control of fifo data flow
+        ## Top level control of fifo data flow
         self.write_strobe = Signal()
         self.read_strobe = Signal()
 
@@ -135,10 +135,14 @@ class IOBus(Elaboratable):
 
 
         #### =========================="BUS STATE MACHINE"==================================
+        m.d.sync += self.bus_multiplexer.sampling.eq(self.mode_ctrl.beam_controller.dwelling)
+
         if self.test_mode == "fast clock":
+            ### min dwell time is one actual clock cycle
             m.d.comb += self.mode_ctrl.beam_controller.count_enable.eq(1)
         else:
             m.d.comb += self.mode_ctrl.beam_controller.count_enable.eq(self.bus_multiplexer.is_done)
+
         with m.If(self.bus_multiplexer.is_x):
             m.d.comb += self.pins_o.eq(self.mode_ctrl.beam_controller.x_position)
         with m.If(self.bus_multiplexer.is_y):
@@ -152,36 +156,29 @@ class IOBus(Elaboratable):
                     m.d.comb += self.mode_ctrl.adc_data.eq(self.mode_ctrl.beam_controller.dwell_time)
             else:
                 m.d.comb += self.mode_ctrl.adc_data.eq(self.pins_i)
-            #m.d.comb += self.output_bus.in_fifo.w_data.eq(self.mode_ctrl.beam_controller.dwell_time)
-            # if self.is_simulation:
-            #     m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.input_bus.mode_controller.beam_controller.dwell_time)
-            # else:
-            #     m.d.comb += self.output_bus.video_sink.pixel_in.eq(self.pins)
-            # Loopback
         #### =============================================================================
 
         #### ===========================FIFO CONTROL=================================================
         with m.If(self.mode_ctrl.mode == ScanMode.Vector):
-            m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready)))
+            #m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready)))
             m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe))
             m.d.comb += self.read_strobe.eq(self.out_fifo.r_rdy)
 
         with m.If(self.mode_ctrl.mode == ScanMode.RasterPattern):
-            m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy)))
+            #m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy) & ((self.out_fifo.r_rdy)))
             m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe))
             m.d.comb += self.read_strobe.eq(self.out_fifo.r_rdy)
 
-
         with m.If(self.mode_ctrl.mode == ScanMode.Raster):
-            m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy))
+            #m.d.comb += self.io_strobe.eq((self.in_fifo.w_rdy))
             m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe))
             m.d.comb += self.read_strobe.eq(self.out_fifo.r_rdy)
             
         m.d.comb += self.mode_ctrl.out_fifo_r_data.eq(self.out_fifo.r_data)
-        m.d.comb += self.mode_ctrl.write_enable.eq(self.write_strobe)
-        m.d.comb += self.mode_ctrl.read_enable.eq(self.read_strobe)
+        m.d.comb += self.mode_ctrl.write_enable.eq(self.in_fifo.w_rdy)
+        m.d.comb += self.mode_ctrl.read_enable.eq(self.out_fifo.r_rdy)
 
-        m.d.sync += self.bus_multiplexer.sampling.eq(self.mode_ctrl.beam_controller.dwelling)
+        
 
         if self.test_mode == "loopback":
             m.d.comb += self.in_fifo.w_data.eq(self.out_fifo.r_data)
@@ -198,22 +195,16 @@ class IOBus(Elaboratable):
             with m.If(self.out_fifo.r_rdy):
                 m.d.comb += self.out_fifo.r_en.eq(1)
                 
-
         else:
             m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
             with m.If(self.write_strobe):
-                m.d.comb += self.in_fifo.w_en.eq(1)
+                if self.test_mode == "disable output":
+                    pass
+                else:
+                    m.d.comb += self.in_fifo.w_en.eq(1)
             with m.If(self.read_strobe):
                 m.d.comb += self.out_fifo.r_en.eq(1)
-            # with m.If(self.io_strobe):
-            #     m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
-            #     m.d.comb += self.out_fifo.r_en.eq(1)
-            #     with m.If(~(self.mode_ctrl.output_strobe_out)):
-            #         if self.test_mode == "disable output":
-            #             pass
-            #         else:
-            #             m.d.comb += self.in_fifo.w_en.eq(1)
-\
+
         #### =============================================================================
 
         return m

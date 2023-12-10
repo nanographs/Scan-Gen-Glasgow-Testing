@@ -216,10 +216,10 @@ class VectorModeController(Elaboratable):
     vector_fifo: FIFO, 48 bits wide, 12 values deep
         This FIFO holds full vector points
 
-    vector_input: See VectorInput
+    vector_reader: See VectorReader
         This module handles reading data from the out_fifo and 
         assembling into 48-bit vector point format
-    vector_output: See VectorOutput
+    vector_writer: See VectorWriter
         This module takes 32-bit wide vector position data and
         16-bit wide dwell time or brightness data, and disassembles
         it into bytes to write to the in_fifo
@@ -265,7 +265,6 @@ class VectorModeController(Elaboratable):
 
     def elaborate(self, platform):
         m = Module()
-        #m.submodules["BeamController"] = self.beam_controller
         m.submodules["VectorReader"] = self.vector_reader
         m.submodules["VectorWriter"] = self.vector_writer
         m.submodules["VectorFIFO"] = self.vector_fifo
@@ -281,8 +280,6 @@ class VectorModeController(Elaboratable):
             m.d.comb += self.vector_fifo.r_en.eq(1)
             m.d.comb += self.vector_point_data.eq(self.vector_fifo.r_data)
             m.d.comb += self.vector_writer.strobe_in_xy.eq(1)
-            # with m.If(~(self.beam_controller_start_dwell)):
-            #     m.d.comb += self.vector_output.strobe_in_dwell.eq(1)
 
             m.d.comb += self.vector_writer.vector_position_data_c.eq(Cat(self.vector_point_data.X1,
                                                                         self.vector_point_data.X2,
