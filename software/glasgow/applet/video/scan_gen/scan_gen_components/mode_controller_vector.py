@@ -137,10 +137,19 @@ class VectorWriter(Elaboratable):
         Asserted when the data at in_fifo_w_data is *not* valid. 
         If strobe_out is high, data will *not* be written to the in_fifo
 
+    eight_bit_output: Signal, in, 1:
+        If true, only one byte per brightness data point will be written 
+        to the in_fifo. Two bytes of data will still be transmitted for
+        each x and y position.
+
     State Machine:
             ↓------------------------------------------------------↑
         Waiting -> X1 -> X2 -> Y1 -> Y2 -> Dwell Waiting -> D1 -> D2
             ↳------------↑                       ↳-----------------↑
+    With eight bit output:
+            ↓------------------------------------------------↑
+        Waiting -> X1 -> X2 -> Y1 -> Y2 -> Dwell Waiting -> D1
+            ↳------------↑                       ↳-----------↑
     '''
     def __init__(self):
         self.in_fifo_w_data = Signal(8)
