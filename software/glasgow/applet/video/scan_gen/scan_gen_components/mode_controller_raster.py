@@ -135,7 +135,36 @@ class RasterWriter(Elaboratable):
     State Machine:
                     ↓----------------------↑
         Waiting -> Dwell Waiting -> D1 -> D2
-                    ↳----------------------↑                   
+                    ↳----------------------↑       
+        Output: [...16382, 16383,    0, 1, 2, 3...]
+
+    With Line/Frame Sync:
+                    ↓----------------------------------↑
+        Waiting -> Dwell Waiting -> D1 -> D2 -> B1 -> B2
+                    ↳----------------------------------↑     
+        Output: [...16382, 16383, 0, 1, 1, 2, 3...]
+                                  ^ frame sync
+        Output: [...16382, 16383, 1, 2, 2, 2, 3...]
+                                  ^  line sync
+        Output: [...16382, 16383, 0, 2, 2, 2, 3...]
+                                  ^ frame sync & line sync
+
+    With 8-bit Output:
+                    ↓----------------↑
+        Waiting -> Dwell Waiting -> D1
+                    ↳----------------↑   
+        Output: [...254, 255,    0, 1, 2, 3...]
+
+    With 8-bit Output & Frame Sync:
+                    ↓----------------------↑
+        Waiting -> Dwell Waiting -> D1 -> B1
+                    ↳----------------------↑   
+        Output: [...254, 255, 0, 1, 1, 2, 3...]
+                              ^ frame sync
+        Output: [...254, 255, 1, 2, 2, 3...]
+                              ^ line sync
+        Output: [...254, 255, 0, 2, 2, 3...]
+                              ^ frame sync & line sync
     '''
     def __init__(self):
         self.in_fifo_w_data = Signal(8)
