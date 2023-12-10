@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import types
 import time
@@ -404,7 +405,11 @@ class SG_EndpointInterface(ScanGenInterface):
         endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1235"), queue_size=32)
         return endpoint
     def launch_gui(self):
-        from output_formats import streaming_gui
+        ## using sys.prefix instead of "python3" results in a PermissionError
+        ## because pipx isn't supposed to be used that way
+        ## would be nice to stay in the same environment though
+        subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
+                        start_new_session = True)
     async def listen_at_endpoint(self):
         while True:
             try:
@@ -558,6 +563,9 @@ class SG_LocalBufferInterface(ScanGenInterface):
         print("got data")
         threading.Thread(target=self.stream_to_buf(raw_data)).start()
     def launch_gui(self):
+        ## using sys.prefix instead of "python3" results in a PermissionError
+        ## because pipx isn't supposed to be used that way
+        ## would be nice to stay in the same environment though
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/local_gui.py"],
                         start_new_session = True)
         
@@ -583,8 +591,6 @@ class ScanGenApplet(GlasgowApplet):
         parser.add_argument(
         "-B", "--buf", type=str,
         help="local, streaming, 2D", default = "2D")
-
-
 
     def build(self, target, args):
         ### LVDS Header (Not used as LVDS)
@@ -640,7 +646,6 @@ class ScanGenApplet(GlasgowApplet):
             const_dwell_time = const_dwell_time
         ))
         
-
     @classmethod
     def add_run_arguments(cls, parser, access):
         super().add_run_arguments(parser, access)
@@ -681,7 +686,6 @@ class ScanGenApplet(GlasgowApplet):
 
         return scan_iface
         
-
     @classmethod
     def add_interact_arguments(cls, parser):
         parser.add_argument("--gui", default=False, action="store_true")
@@ -689,13 +693,13 @@ class ScanGenApplet(GlasgowApplet):
         #pass
 
     async def interact(self, device, args, scan_iface):
-        await scan_iface.set_frame_resolution(16384,16384)
-        await scan_iface.set_vector_mode()
-        points = [1000, 2000, 0]*16384
-        for n in points:
-            await scan_iface.write_2bytes(n)
-        data = await scan_iface.iface.read()
-        print(scan_iface.decode_vpoint_packet(data))
+        # await scan_iface.set_frame_resolution(16384,16384)
+        # await scan_iface.set_vector_mode()
+        # points = [1000, 2000, 0]*16384
+        # for n in points:
+        #     await scan_iface.write_2bytes(n)
+        # data = await scan_iface.iface.read()
+        # print(scan_iface.decode_vpoint_packet(data))
         # await scan_iface.set_vector_mode()
         
         if args.buf == "local":
@@ -704,8 +708,9 @@ class ScanGenApplet(GlasgowApplet):
             await scan_iface.set_frame_resolution(512,512)
             await scan_iface.set_raster_mode()
             scan_iface.launch_gui()
-            while True:
-                await scan_iface.stream_video()
+            
+            # while True:
+            #     await scan_iface.stream_video()
 
 
 

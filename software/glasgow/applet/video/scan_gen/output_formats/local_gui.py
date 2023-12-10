@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import sys
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore
@@ -18,6 +19,9 @@ class MainWindow(QWidget):
         self.path = path
         self.layout = QGridLayout()
         self.setLayout(self.layout)
+
+        l = QLabel(sys.prefix)
+        self.layout.addWidget(l)
         
         self.dimension = self.get_dimensions()
         self.FrameBufDirectory = self.get_buffer()
