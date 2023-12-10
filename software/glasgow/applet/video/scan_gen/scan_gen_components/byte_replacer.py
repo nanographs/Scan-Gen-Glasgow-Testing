@@ -9,6 +9,30 @@ else:
     from addresses import *
 
 class ByteReplacer(Elaboratable):
+    '''
+        point_data: Signal, in, 16
+            A raw signal to be transmitted by the in_fifo
+            Driven by mode_ctrl.adc_data
+        processed_point_data: Signal, out, 16
+            A modified, filtered version of that signal
+
+        eight_bit_output: Signal, in, 1
+            True: 8 bits per data point are streamed to the in_fifo
+            False: 16 bits per data point are streamed to the in_fifo
+        do_frame_sync: Signal, in, 1
+            If true, "0" should be written to the in_fifo after the last
+            pixel of each frame
+            Data values must be limited to:
+                8 bit mode: 1-255
+                16 bit mode: 1-16383
+        do_line_sync:
+            If true, "1" should be written to the in_fifo after the last
+                pixel of each frame
+                Data values must be limited to:
+                    8 bit mode: 2-255
+                    16 bit mode: 2-16383
+
+    '''
     def __init__(self):
         self.point_data = Signal(vector_dwell)
         self.processed_point_data = Signal(vector_dwell)
@@ -31,17 +55,12 @@ class ByteReplacer(Elaboratable):
         with m.Else():
             m.d.comb += self.processed_point_data.eq(self.point_data)
 
-        
-        test = Signal()
-        
-
         with m.If(self.do_frame_sync):
             with m.If(self.point_data.as_value() == zero.as_value()):
                 m.d.comb += self.processed_point_data.eq(1)
             with m.If(self.eight_bit_output):
                 with m.If(self.point_data.D1 == 0):
                     m.d.comb += self.processed_point_data.D1.eq(1)
-                    m.d.comb += test.eq(1)
 
         with m.If(self.do_line_sync):
             with m.If((self.point_data.as_value() == one.as_value())|(self.point_data.as_value() == zero.as_value())):
@@ -49,24 +68,42 @@ class ByteReplacer(Elaboratable):
             with m.If(self.eight_bit_output):
                 with m.If((self.point_data.D1 == 1)|(self.point_data.D1 == 0)):
                     m.d.comb += self.processed_point_data.D1.eq(2)
-                    m.d.comb += test.eq(1)
-    
-
 
         s = Signal()
         m.d.sync += s.eq(1)
+
         return m
 
 
 def test_bytereplacer():
+    ## this test is weird because it relies on unnecessary synchronous logic
+    ## fix later
     dut = ByteReplacer()
     def bench():
-        yield dut.do_frame_sync.eq(1)
-        yield dut.do_line_sync.eq(1)
-        yield dut.eight_bit_output.eq(1)
-        for n in range(0,513):
-            yield dut.point_data.eq(n)
+        def test_settings (frame_sync, line_sync, eight_bit):
+            yield dut.do_frame_sync.eq(frame_sync)
+            yield dut.do_line_sync.eq(line_sync)
+            yield dut.eight_bit_output.eq(eight_bit)
+        def test_results(data, processed_data):
+            yield dut.point_data.eq(data)
             yield
+            assert(yield dut.processed_point_data.as_value() == processed_data)
+
+
+        ## Sixteen bit output, frame sync
+        yield from test_settings(1, 0, 0)
+
+        yield from test_results (0, 1)
+        yield from test_results (1, 1)
+        yield from test_results (256, 256)
+
+        ## Eight bit output, frame sync
+        yield from test_settings(1, 0, 1)
+
+        yield from test_results (0, 1)
+        yield from test_results (1, 1)
+        yield from test_results (256, 1)
+
             
     
     sim = Simulator(dut)
