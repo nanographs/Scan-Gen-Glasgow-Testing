@@ -378,6 +378,19 @@ class ScanGenInterface:
                 #except:
                     #await asyncio.sleep(10)
 
+    async def hilbert_loop(self):
+        await self.set_frame_resolution(16384,16384)
+        await self.set_vector_mode()
+        stream = open("hilbert.txt")
+        while i < 16384:
+            for n in stream:
+                data = n.strip(",\n")
+                i += 6
+                await self.write_vpoint(eval(data))
+            data = await self.iface.read()
+            print(self.decode_vpoint_packet(data))
+            i = 0
+
 
 class SG_EndpointInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
@@ -676,66 +689,23 @@ class ScanGenApplet(GlasgowApplet):
         #pass
 
     async def interact(self, device, args, scan_iface):
-        print(scan_iface)
-        await scan_iface.set_8bit_output()
-        await scan_iface.set_frame_sync()
-        await scan_iface.set_frame_resolution(512,512)
-        await scan_iface.set_raster_mode()
+        await scan_iface.set_frame_resolution(16384,16384)
+        await scan_iface.set_vector_mode()
+        points = [1000, 2000, 0]*16384
+        for n in points:
+            await scan_iface.write_2bytes(n)
+        data = await scan_iface.iface.read()
+        print(scan_iface.decode_vpoint_packet(data))
+        # await scan_iface.set_vector_mode()
+        
         if args.buf == "local":
+            await scan_iface.set_8bit_output()
+            await scan_iface.set_frame_sync()
+            await scan_iface.set_frame_resolution(512,512)
+            await scan_iface.set_raster_mode()
             scan_iface.launch_gui()
             while True:
                 await scan_iface.stream_video()
-        #await scan_iface.hilbert()
-        # futures = []
-        # for n in range(100):
-        #     i = 0
-        #     while i < 16384:
-        #         i += 6
-        #         for n in test_vector_points:
-        #             await scan_iface.write_vpoint(n)
-        #             #asyncio.sleep(0)
-        #     loop = asyncio.get_running_loop()
-        #     fut = loop.create_future()
-        #     loop.create_task(
-        #         scan_iface.future_packet(fut)
-        #     )
-        #     futures.append(fut)
-        # for f in futures:
-        #     await f
-        # while True:
-        #     await scan_iface.try_read_vpoint(1)
-        # await scan_iface.set_vector_mode()
-        # await scan_iface.send_vec_stream_and_recieve_data()
-        # text_file = open("packets.txt","w")
-        # await scan_iface.set_frame_resolution(100,100)
-        # await scan_iface.set_raster_mode()
-        # data = await scan_iface.read_r_packet()
-        # text_file.write(str(data))
-        # print(data)
-        # await scan_iface.set_x_upper_limit(90)
-        # data = await scan_iface.read_r_packet(100)
-        # text_file.write(str(data))
-        # print(data)
-        #await scan_iface.scan_frame()
-        # for i in range(16384):
-        #     await scan_iface.send_vec_stream_and_recieve_data()
-        #     await asyncio.sleep(0)
-        # while True:
-        #     await scan_iface.send_vec_stream_and_recieve_data()
-        # while True:
-        #     data = await scan_iface.read_r_packet()
-        #     print(data)
-        # 
-        # scan_iface.set_endpoint(endpoint)
-        # if args.gui:
-        #     #run_gui(scan_iface)
-        #     await run_gui(scan_iface)
-
-        #     await scan_iface.set_frame_resolution(2048,2048)
-        #     await scan_iface.set_raster_mode()
-        #     while True:
-        #         data = await iface.read(16384)
-        #         await endpoint.send(data)
 
 
 
