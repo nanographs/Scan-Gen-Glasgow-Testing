@@ -5,11 +5,13 @@ from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 
 
 if "glasgow" in __name__: ## running as applet
+    from ..scan_gen_components.byte_replacer import ByteReplacer
     from ..scan_gen_components.beam_controller import BeamController
     from ..scan_gen_components.xy_scan_gen import XY_Scan_Gen
     from ..scan_gen_components.addresses import *
 else:
 #if __name__ == "__main__":
+    from byte_replacer import ByteReplacer
     from beam_controller import BeamController
     from xy_scan_gen import XY_Scan_Gen
     from addresses import *
@@ -283,6 +285,7 @@ class RasterModeController(Elaboratable):
         self.raster_writer = RasterWriter()
         self.raster_reader = RasterReader()
         self.xy_scan_gen = XY_Scan_Gen()
+        self.byte_replacer = ByteReplacer()
 
         self.raster_point_data = Signal(vector_point)
         self.raster_point_output = Signal(vector_dwell)
@@ -305,40 +308,19 @@ class RasterModeController(Elaboratable):
         m.submodules["RasterReader"] = self.raster_reader
         m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
+        m.submodules["ByteReplace"] = self.byte_replacer
 
         m.d.comb += self.raster_reader.strobe_out.eq(self.raster_fifo.w_rdy)
         with m.If((self.raster_reader.data_complete) & (self.raster_fifo.w_rdy)):
             m.d.comb += self.raster_fifo.w_en.eq(1)
             m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.raster_dwell_data_c)
 
-        m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
+        m.d.comb += self.byte_replacer.do_frame_sync.eq(self.do_frame_sync)
+        m.d.comb += self.byte_replacer.do_line_sync.eq(self.do_line_sync)
+        m.d.comb += self.byte_replacer.eight_bit_output.eq(self.eight_bit_output)
 
-        # zero = Signal(vector_dwell)
-        # m.d.comb += zero.D1.eq(0)
-        # m.d.comb += zero.D2.eq(0)
-
-        # with m.If(self.do_frame_sync):
-        #     with m.If(self.eight_bit_output):
-        #         with m.If(self.raster_point_output.D1 == zero.D1):
-        #             m.d.comb += self.raster_writer.raster_dwell_data_c.D1.eq(1)
-        #     with m.If(self.raster_point_output == zero):
-        #         m.d.comb += self.raster_writer.raster_dwell_data_c.eq(1)
-
-        # one_B1 = Signal(vector_dwell)
-        # m.d.comb += one_B1.D1.eq(1)
-        # m.d.comb += one_B1.D2.eq(0)
-
-        # one_B2 = Signal(vector_dwell)
-        # m.d.comb += one_B1.D1.eq(0)
-        # m.d.comb += one_B1.D2.eq(1)
-
-
-        # with m.If(self.do_line_sync):
-        #     with m.If(self.eight_bit_output):
-        #         with m.If(self.raster_point_output.D1 == one_B1.D1):
-        #             m.d.comb += self.raster_writer.raster_dwell_data_c.D1.eq(2)
-        #     with m.If(self.raster_point_output == one_B2):
-        #         m.d.comb += self.raster_writer.raster_dwell_data_c.eq(2)
+        m.d.comb += self.byte_replacer.point_data.eq(self.raster_point_output)
+        m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.byte_replacer.processed_point_data)
 
         with m.If(self.beam_controller_end_of_dwell):
             with m.If(self.do_frame_sync):
