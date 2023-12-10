@@ -44,12 +44,12 @@ class ByteReplacer(Elaboratable):
                     m.d.comb += test.eq(1)
 
         with m.If(self.do_line_sync):
-            with m.If(self.point_data.as_value() == one):
+            with m.If((self.point_data.as_value() == one)|(self.point_data.as_value() == zero)):
                 m.d.comb += self.processed_point_data.eq(2)
-            # with m.If(self.eight_bit_output):
-            #     with m.If(self.point_data.D1 == 1):
-            #         m.d.comb += self.processed_point_data.D1.eq(2)
-            #         m.d.comb += test.eq(1)
+            with m.If(self.eight_bit_output):
+                with m.If((self.point_data.D1 == 1)|(self.point_data.D1 == 0)):
+                    m.d.comb += self.processed_point_data.D1.eq(2)
+                    m.d.comb += test.eq(1)
     
 
 

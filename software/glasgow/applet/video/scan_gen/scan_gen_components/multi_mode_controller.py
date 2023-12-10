@@ -137,6 +137,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.write_strobe.eq(self.ras_mode_ctrl.raster_writer.strobe_out)
             
             m.d.comb += self.ras_mode_ctrl.raster_writer.eight_bit_output.eq(self.eight_bit_output)
+            m.d.comb += self.ras_mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
 
             
             with m.If(self.mode == ScanMode.Raster):
