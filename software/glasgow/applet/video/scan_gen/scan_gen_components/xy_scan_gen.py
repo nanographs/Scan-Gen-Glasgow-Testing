@@ -10,49 +10,87 @@ else:
     from pixel_ratio_interpolator import PixelRatioInterpolator
 
 class XY_Scan_Gen(Elaboratable):
+    ''' 
+    x_counter: see RampGenerator
+    y_counter: see RampGenerator
+
+    increment: Signal, in, 1
+        If high, the x_counter will be incremented
+    line_sync: Signal, out, 1
+        Asserted if the x counter is in overflow
+    frame_sync: Signal, out, 1
+        Asserted if both counters are in overflow
+                            _________
+                            |   y   |->ovf
+            _________       |counter|   |
+            |   x   |->ovf->|inc----|   |
+            |counter|   |               |
+       inc->|inc----|   --->line sync---&-->frame sync
+
+    x_full_frame_resolution: Signal, in, 16
+        Number of discrete data points in X
+        This is a register-driven value
+    y_full_frame_resolution: Signal, in, 16
+        Number of discrete data points in Y
+        This is a register-driven value
+
+    x_bigger: Signal, 1, out:
+        High if x_full_frame_resolution > y_full_frame_resolution
+    y_bigger: Signal, 1, out:
+        High if x_full_frame_resolution < y_full_frame_resolution
+    full_frame_resolution: Signal, 16, out
+        The maximum of x_full_frame_resolution or y_full_frame_resolution.
+        The number of discrete steps to divide across the full DAC range
+
+    x_upper_limit = Signal, in, 16
+    x_lower_limit = Signal, in, 16
+    y_upper_limit = Signal, in, 16
+    y_lower_limit = Signal, in, 16
+        Register-driven values that describe a reduced rectangle area
+
+            0   x_lower    x_upper  x_full
+            |-----|-----------|------|
+            |     |           |      |
+    y_lower-|-----|-----------|------|
+            |     |...........|      |
+            |     |...........|      |
+            |     |...........|      |
+    y_upper-|-----|-----------|-------
+            |     |           |      |
+    y_full -|------------------------|
+
+    '''
     def __init__(self):
+        self.x_counter = RampGenerator()
+        self.y_counter = RampGenerator()
+
+        self.increment = Signal()
+        self.frame_sync = Signal()
+        self.line_sync = Signal()
+
         self.x_full_frame_resolution = Signal(16)
         self.y_full_frame_resolution = Signal(16)
 
+        self.x_bigger = Signal()
+        self.y_bigger = Signal()
+        self.full_frame_size = Signal(16)
+        
         self.x_lower_limit = Signal(16)
         self.x_upper_limit = Signal(16)
 
         self.y_lower_limit = Signal(16)
         self.y_upper_limit = Signal(16)
 
-        #self.full_frame_size = Signal(14)
-
-        self.increment = Signal()
-
-        self.x_counter = RampGenerator()
-        self.y_counter = RampGenerator()
-
-        self.full_frame_size = Signal(16)
-
-        # self.x_interpolator = PixelRatioInterpolator(self.full_frame_size)
-        # self.y_interpolator = PixelRatioInterpolator(self.full_frame_size)
-
-        self.x_bigger = Signal()
-        self.y_bigger = Signal()
-
-        # self.x_scan = Signal(14)
-        # self.y_scan = Signal(14)
         self.current_x = Signal(16)
         self.current_y = Signal(16)
 
         self.reset = Signal()
-        self.frame_sync = Signal()
-        self.line_sync = Signal()
 
-        self.aa = Signal()
-
-
+    
     def elaborate(self, platform):
         m = Module()
         m.submodules["x_counter"] = self.x_counter
         m.submodules["y_counter"] = self.y_counter
-        # m.submodules["x_interpolator"] = self.x_interpolator
-        # m.submodules["y_interpolator"] = self.y_interpolator
 
         with m.If(self.increment):
             m.d.comb += self.x_counter.increment.eq(self.increment)
@@ -95,13 +133,6 @@ class XY_Scan_Gen(Elaboratable):
         
         m.d.comb += self.current_x.eq(self.x_counter.current_count)
         m.d.comb += self.current_y.eq(self.y_counter.current_count)
-
-        # m.d.comb += self.x_interpolator.input.eq(self.current_x)
-        # m.d.comb += self.y_interpolator.input.eq(self.current_y)
-
-        # m.d.comb += self.x_scan.eq(self.x_interpolator.output)
-        # m.d.comb += self.y_scan.eq(self.y_interpolator.output)
-
 
         return m
     def ports(self):
