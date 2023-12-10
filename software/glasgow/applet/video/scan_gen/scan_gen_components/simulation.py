@@ -148,13 +148,16 @@ def sim_iobus():
     test_mode = "data loopback"
     )
     def bench():
-        # yield from raster_image_sim(dut)
+        yield do_frame_sync.eq(1)
+        #yield eight_bit_output.eq(1)
         yield from set_raster_params(dut)
-        for n in range(150):
-            yield
-        yield scan_mode.eq(ScanMode.Vector)
-        yield
-        yield from vector_pattern_sim(dut)
+        yield from raster_sim(1024)
+        # yield dut.scan_mode.eq(ScanMode.Vector)
+        # yield from vector_sim(16384)
+        # yield from vector_pattern_sim(dut)
+        # for n in range(6):
+        #     data = yield from sim_app_iface.read(6)
+        #     print(sim_scangen_iface.decode_vpoint_packet(data))
 
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz

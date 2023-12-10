@@ -86,7 +86,6 @@ class ModeController(Elaboratable):
         self.read_enable = Signal()
         self.write_enable = Signal()
         self.write_strobe = Signal()
-        self.write_strobe_out = Signal()
 
         self.internal_fifo_ready = Signal()
         self.adc_data = Signal(16)
@@ -172,15 +171,11 @@ class ModeController(Elaboratable):
 
             m.d.comb += self.vec_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.vec_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
-            #m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.beam_controller.dwell_time) ## loopback
-            
-            # m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.adc_data)
-            # with m.If(~self.beam_controller.start_dwell):
-            #     m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq(self.adc_data_strobe)
 
             m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.dwell_avgr.running_average)
-            with m.If(~self.beam_controller.start_dwell):
-                m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq(self.adc_data_strobe)
+
+            with m.If(~self.beam_controller.prev_dwelling_changed):
+                m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq(self.beam_controller.end_of_dwell)
 
             m.d.comb += self.beam_controller.next_x_position.eq(self.vec_mode_ctrl.beam_controller_next_x_position)
             m.d.comb += self.beam_controller.next_y_position.eq(self.vec_mode_ctrl.beam_controller_next_y_position)
