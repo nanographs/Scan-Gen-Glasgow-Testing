@@ -120,7 +120,6 @@ class XY_Scan_Gen(Elaboratable):
 
         with m.If(self.y_upper_limit == 0):
             m.d.comb += self.y_counter.upper_limit.eq(self.y_full_frame_resolution)
-            m.d.comb += self.aa.eq(1)
         
         with m.If(self.x_upper_limit == 0):
             m.d.comb += self.x_counter.upper_limit.eq(self.x_full_frame_resolution)

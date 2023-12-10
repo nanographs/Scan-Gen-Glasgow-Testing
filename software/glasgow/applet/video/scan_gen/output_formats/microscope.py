@@ -1,7 +1,93 @@
 import asyncio
 import numpy as np
+from enum import Enum
+import struct
 
-class ScanController:
+class scan_mode(Enum):
+    stop = 0
+    raster = 1
+    raster_pattern = 2
+    vector = 3
+
+class data_format:
+    frame_sync = "fs"
+    line_sync = "ls" ## frame and line sync
+    eight_bit = "8b"
+
+class frame_vars:
+    x_full_frame_resolution = "rx"
+    y_full_frame_resolution = "ry"
+    x_lower_limit = "lx"
+    x_upper_limit = "ux"
+    y_lower_limit = "ly"
+    y_upper_limit = "uy"
+
+
+class cmd_encoder:
+    def set_scan_mode(self, scan_mode):
+        num = format(scan_mode.value, '05d')
+        cmd = ("sc" + num).encode("UTF-8")
+        return cmd
+    def set_frame(self, var, pixels):
+        num = format(pixels, '05d')
+        cmd = (var + num).encode("UTF-8")
+        return cmd
+    def set_data_format(self, data_format, setting):
+        num = format(setting, '05d')
+        cmd = (data_format + num).encode("UTF-8")
+        return cmd
+
+
+def test_cmd_encoder():
+    cmd = cmd_encoder()
+    assert (cmd.set_scan_mode(scan_mode.raster) == b'sc00001')
+    assert (cmd.set_frame(frame_vars.x_full_frame_resolution, 16384) == b'rx16384')
+    assert (cmd.set_data_format(data_format.eight_bit, True) == b'8b00001')
+
+
+class ScanCtrl:
+    _HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+    _PORT = 1235  
+    cmd = cmd_encoder()
+
+
+    async def connect(self):
+        try:
+            self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT)
+            print(self.writer.transport)
+            print(self.writer.can_write_eof())
+            return "Connected"
+        except Exception as exc:
+            print(exc)
+            return ("Error: {}".format(exc))
+    
+    async def close(self):
+        if self.writer is not None:
+            self.writer.close()
+            await self.writer.wait_closed()
+
+    async def write(self, msg):
+        self.writer.write(msg)
+        await self.writer.drain()
+
+    async def start_raster_scan(self):
+        msg = cmd.set_scan_mode(scan_mode.raster)
+        await self.write(msg)
+    
+    async def set_frame_resolution(self, x_resolution_val, y_resolution_val):
+        msg1 = cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
+        msg2 = cmd.set_frame(frame_vars.y_full_frame_resolution, y_resolution_val)
+        await self.write(msg1+msg2)
+
+    async def set_ROI(self, x_upper, x_lower, y_upper, y_lower):
+        msg1 = cmd.set_frame(frame_vars.x_upper_limit, x_upper)
+        msg2 = cmd.set_frame(frame_vars.x_lower_limit, x_lower)
+        msg3 = cmd.set_frame(frame_vars.y_upper_limit, y_upper)
+        msg4 = cmd.set_frame(frame_vars.y_lower_limit, y_lower)
+        await self.write(msg1+msg2+msg3+msg4)
+        
+
+class ScanStream:
     _HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
     _PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
     
@@ -140,7 +226,7 @@ class ScanController:
 
 
 async def _main():
-    scan_controller = ScanController()
+    scan_controller = ScanCtrl()
     await scan_controller.connect()
 
 
@@ -149,5 +235,5 @@ def main():
     exit(loop.run_until_complete(_main()))
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
