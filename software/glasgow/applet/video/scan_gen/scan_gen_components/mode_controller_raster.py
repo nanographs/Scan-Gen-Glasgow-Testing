@@ -285,7 +285,7 @@ class RasterModeController(Elaboratable):
         self.xy_scan_gen = XY_Scan_Gen()
 
         self.raster_point_data = Signal(vector_point)
-        self.raster_point_output = Signal(16)
+        self.raster_point_output = Signal(vector_dwell)
 
         self.beam_controller_end_of_dwell = Signal()
         self.beam_controller_start_dwell = Signal()
@@ -293,6 +293,7 @@ class RasterModeController(Elaboratable):
         self.beam_controller_next_y_position = Signal(16)
         self.beam_controller_next_dwell = Signal(16)
 
+        self.eight_bit_output = Signal()
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
 
@@ -310,18 +311,34 @@ class RasterModeController(Elaboratable):
             m.d.comb += self.raster_fifo.w_en.eq(1)
             m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.raster_dwell_data_c)
 
-        with m.If(self.do_frame_sync):
-            with m.If(self.raster_point_output == 0):
-                m.d.comb += self.raster_writer.raster_dwell_data_c.eq(1)
-            with m.Else():
-                m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
-        with m.Elif(self.do_line_sync):
-            with m.If(self.raster_point_output == 1):
-                m.d.comb += self.raster_writer.raster_dwell_data_c.eq(2)
-            with m.Else():
-                m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
-        with m.Else():
-            m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
+        m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
+
+        # zero = Signal(vector_dwell)
+        # m.d.comb += zero.D1.eq(0)
+        # m.d.comb += zero.D2.eq(0)
+
+        # with m.If(self.do_frame_sync):
+        #     with m.If(self.eight_bit_output):
+        #         with m.If(self.raster_point_output.D1 == zero.D1):
+        #             m.d.comb += self.raster_writer.raster_dwell_data_c.D1.eq(1)
+        #     with m.If(self.raster_point_output == zero):
+        #         m.d.comb += self.raster_writer.raster_dwell_data_c.eq(1)
+
+        # one_B1 = Signal(vector_dwell)
+        # m.d.comb += one_B1.D1.eq(1)
+        # m.d.comb += one_B1.D2.eq(0)
+
+        # one_B2 = Signal(vector_dwell)
+        # m.d.comb += one_B1.D1.eq(0)
+        # m.d.comb += one_B1.D2.eq(1)
+
+
+        # with m.If(self.do_line_sync):
+        #     with m.If(self.eight_bit_output):
+        #         with m.If(self.raster_point_output.D1 == one_B1.D1):
+        #             m.d.comb += self.raster_writer.raster_dwell_data_c.D1.eq(2)
+        #     with m.If(self.raster_point_output == one_B2):
+        #         m.d.comb += self.raster_writer.raster_dwell_data_c.eq(2)
 
         with m.If(self.beam_controller_end_of_dwell):
             with m.If(self.do_frame_sync):
