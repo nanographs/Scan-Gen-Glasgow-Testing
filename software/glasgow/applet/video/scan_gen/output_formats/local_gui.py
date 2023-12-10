@@ -19,7 +19,9 @@ class MainWindow(QWidget):
         self.layout = QGridLayout()
         self.setLayout(self.layout)
         
-        self.image_display = ImageDisplay(2048, 2048)
+        self.dimension = self.get_dimensions()
+        self.FrameBufDirectory = self.get_buffer()
+        self.image_display = ImageDisplay(self.dimension, self.dimension)
         self.layout.addWidget(self.image_display, 1, 0)
 
         elapsed = 0
@@ -27,6 +29,7 @@ class MainWindow(QWidget):
         self.timer = QtCore.QTimer()
         self.timer.setSingleShot(True)
         # not using QTimer.singleShot() because of persistence on PyQt. see PR #1605
+        self.startUpdating()
     
     def get_dimensions(self):
         settings = np.loadtxt(os.path.join(self.path, "current_display_setting"))
@@ -34,10 +37,11 @@ class MainWindow(QWidget):
         return dimension
     def get_buffer(self):
         FrameBufDirectory = os.path.join(self.path, "current_frame")
+        return FrameBufDirectory
 
     def updateData(self):
-        d = np.memmap(self.FrameBufDirectory, shape = (dimension*dimension),mode = "r+")
-        data = np.reshape(d,(dimension,dimension))
+        d = np.memmap(self.FrameBufDirectory, shape = (self.dimension*self.dimension),mode = "r+")
+        data = np.reshape(d,(self.dimension,self.dimension))
         #data = np.random.rand(dimension,dimension)
 
         print(data)

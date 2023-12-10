@@ -514,7 +514,6 @@ class SG_LocalBufferInterface(ScanGenInterface):
         print(d)
         # print(buf)
         zero_index = np.nonzero(d < 1)[0]
-        print(zero_index)
         # print("buffer length:", len(buf))
         # print("last pixel:",current.last_pixel)
         #print("d length:", len(d))
@@ -528,12 +527,12 @@ class SG_LocalBufferInterface(ScanGenInterface):
             self.buf[:d[zero_index+1:].size] = d[zero_index+1:]
             # print(buf[:d[zero_index+1:].size])
             # print(d[:zero_index+1].size)
-            self.buf[dimension * dimension - zero_index:] = d[:zero_index]
+            self.buf[self.dimension * self.dimension - zero_index:] = d[:zero_index]
             # print(buf[dimension * dimension - zero_index:])
             self.last_pixel = d[zero_index+1:].size
             
         else: 
-            if len(buf[self.last_pixel:self.last_pixel+len(d)]) < len(d):
+            if len(self.buf[self.last_pixel:self.last_pixel+len(d)]) < len(d):
                 pass
             #     print("data too long to fit in end of frame, but no zero")
             #     print(d[:dimension])
@@ -546,7 +545,8 @@ class SG_LocalBufferInterface(ScanGenInterface):
         print("got data")
         threading.Thread(target=self.stream_to_buf(raw_data)).start()
     def launch_gui(self):
-        subprocess.call(["python3", "software/glasgow/applet/video/scan_gen/output_formats/local_gui.py"])
+        subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/local_gui.py"],
+                        start_new_session = True)
         
 
 
@@ -682,7 +682,7 @@ class ScanGenApplet(GlasgowApplet):
         await scan_iface.set_frame_resolution(512,512)
         await scan_iface.set_raster_mode()
         if args.buf == "local":
-            #scan_iface.launch_gui()
+            scan_iface.launch_gui()
             while True:
                 await scan_iface.stream_video()
         #await scan_iface.hilbert()
