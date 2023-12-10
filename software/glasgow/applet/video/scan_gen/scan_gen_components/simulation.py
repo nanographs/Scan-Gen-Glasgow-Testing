@@ -68,8 +68,9 @@ def raster_pattern_sim(dut):
     for n in range(1500):
         yield
 
-def set_raster_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 8, y_upper = 8):
+def set_raster_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
     b1, b2 = get_two_bytes(x_res)
+    print("set x resolution:", x_res)
     b1 = int(bits(b1))
     b2 = int(bits(b2))
 
@@ -149,9 +150,11 @@ def sim_iobus():
     )
     def bench():
         yield do_frame_sync.eq(1)
-        #yield eight_bit_output.eq(1)
-        yield from set_raster_params(dut)
-        yield from raster_sim(1024)
+        yield eight_bit_output.eq(1)
+        yield from set_raster_params(dut, x_res=512, y_res=512)
+        yield
+        yield
+        yield from raster_sim(1024, eight_bit_output = True)
         # yield dut.scan_mode.eq(ScanMode.Vector)
         # yield from vector_sim(16384)
         # yield from vector_pattern_sim(dut)
