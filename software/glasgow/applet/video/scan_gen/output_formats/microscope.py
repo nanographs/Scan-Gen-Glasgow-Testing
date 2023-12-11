@@ -22,7 +22,6 @@ class frame_vars:
     y_lower_limit = "ly"
     y_upper_limit = "uy"
 
-
 class cmd_encoder:
     def set_scan_mode(self, scan_mode):
         num = format(scan_mode.value, '05d')
@@ -37,12 +36,31 @@ class cmd_encoder:
         cmd = (data_format + num).encode("UTF-8")
         return cmd
 
-
 def test_cmd_encoder():
     cmd = cmd_encoder()
     assert (cmd.set_scan_mode(scan_mode.raster) == b'sc00001')
     assert (cmd.set_frame(frame_vars.x_full_frame_resolution, 16384) == b'rx16384')
     assert (cmd.set_data_format(data_format.eight_bit, True) == b'8b00001')
+
+class MyProtocol(asyncio.Protocol):
+
+    def __init__(self, on_con_lost):
+        self.transport = None
+        self.on_con_lost = on_con_lost
+
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def data_received(self, data):
+        print("Received:", data.decode())
+
+        # We are done: close the transport;
+        # connection_lost() will be called automatically.
+        self.transport.close()
+
+    def connection_lost(self, exc):
+        # The socket has been closed
+        self.on_con_lost.set_result(True)
 
 
 class ScanCtrl:
@@ -74,7 +92,14 @@ class ScanCtrl:
 
     async def start_raster_scan(self):
         msg = self.cmd.set_scan_mode(scan_mode.raster)
+        #await self.write(msg)
         await self.write(msg)
+        loop = asyncio.get_event_loop()
+        scan_stream = ScanStream()
+        await asyncio.sleep(1)
+        r = await scan_stream.connect()
+        print(r)
+        loop.create_task(scan_stream.get_single_packet())
     
     async def set_frame_resolution(self, x_resolution_val, y_resolution_val):
         msg1 = self.cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
@@ -108,10 +133,18 @@ class ScanStream:
 
     async def connect(self):
         try:
-            self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT)
-            print(self.writer.transport)
-            print(self.writer.can_write_eof())
-            return "Connected"
+            self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT, limit = 8388608*8)
+            # loop = asyncio.get_event_loop()
+            # on_con_lost = loop.create_future()
+            # transport, protocol = await loop.create_connection(lambda:MyProtocol(on_con_lost), host = self._HOST, port = self._PORT)
+            # try:
+            #     await protocol.on_con_lost
+            # finally:
+            #     transport.close()
+            # print(self.writer.transport)
+            print(vars(self.writer))
+            print(vars(self.reader))
+            return self.reader, self.writer
         except Exception as exc:
             print(exc)
             return ("Error: {}".format(exc))
@@ -224,31 +257,30 @@ class ScanStream:
                 break
 
     async def get_single_packet(self):
-        print("reading")
-        data = await self.reader.read(16384)
-        print("read done")
-        if data is not None:
-            print("recvd", (list(data))[0], ":", (list(data))[-1], "-", len(list(data)))
-            #return data
-            await self.stream_to_buffer(data)
-
-
-
-async def _main():
-    scan_ctrl = ScanCtrl()
-    scan_stream = ScanStream()
-    status = await scan_ctrl.connect()
-    if status == "Connected":
-        await scan_ctrl.start_raster_scan()
-    status = await scan_stream.connect()
-    if status == "Connected":
-        await scan_stream.stream_continously()
-        #await scan_controller.set_frame_resolution(16384,16384)
+        for n in range(10):
+            try:
+                print("reading")
+                data = await asyncio.wait_for(self.reader.read(n=-1), timeout = 1)
+                print(data)
+                print("read done")
+            except Exception as e:
+                print("error:", e)
+                print(type(e))
+        # if data is not None:
+        #     print("recvd", (list(data))[0], ":", (list(data))[-1], "-", len(list(data)))
+        #     #return data
+        #     await self.stream_to_buffer(data)
 
 
 def main():
+    scan_ctrl = ScanCtrl()
+    scan_stream = ScanStream()
     loop = asyncio.get_event_loop()
-    exit(loop.run_until_complete(_main()))
+    loop.run_until_complete(scan_stream.connect())
+    loop.create_task(scan_stream.get_single_packet())
+    #loop.run_until_complete(scan_ctrl.connect())
+    #loop.create_task(scan_ctrl.start_raster_scan())
+    loop.run_forever()
 
 
 if __name__ == "__main__":

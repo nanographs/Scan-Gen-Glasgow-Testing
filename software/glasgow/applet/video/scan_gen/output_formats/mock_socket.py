@@ -18,7 +18,7 @@ class SG_EndpointInterface():
 
     async def listen_at_endpoint(self):
         self.ctrl_endpoint = await self.get_ctrl_endpoint()
-        print(self.ctrl_endpoint)
+        print("ctrl", self.ctrl_endpoint)
         while True:
             try:
                 cmd = await self.ctrl_endpoint.recv(7)
@@ -26,18 +26,22 @@ class SG_EndpointInterface():
                 print("rcvd", cmd)
                 await self.process_cmd(cmd)
             except:
-                break
+                pass
 
     async def stream_to_endpoint(self):
         self.stream_endpoint = await self.get_stream_endpoint()
-        print(self.stream_endpoint)
-        while True:
-            if self.scanning:
-                data = [5]*16384
-                print("sending", data)
-                await self.stream_endpoint.send(data)
-            else:
-                pass
+        print("stream", self.stream_endpoint)
+        #while True:
+        # for n in range(100):
+        # for n in range(1):
+        #     if self.scanning:
+        data = [5]*16384
+        #print("sending", data)
+        await self.stream_endpoint.send(data)
+        print("sent data")
+        print(vars(self.stream_endpoint))
+            # else:
+            #     pass
 
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
@@ -45,17 +49,16 @@ class SG_EndpointInterface():
         print("cmd:", c, "val:", val)
         if c == "sc":
             self.scanning = True
-
-async def _main():
-    scan_iface = SG_EndpointInterface()
-    await asyncio.gather(scan_iface.listen_at_endpoint(),
-                        scan_iface.stream_to_endpoint())
-
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.stream_to_endpoint())
 
 
 def main():
+    scan_iface = SG_EndpointInterface()
     loop = asyncio.get_event_loop()
-    exit(loop.run_until_complete(_main()))
+    #loop.create_task(scan_iface.listen_at_endpoint())
+    loop.create_task(scan_iface.stream_to_endpoint())
+    loop.run_forever()
 
 
 if __name__ == "__main__":
