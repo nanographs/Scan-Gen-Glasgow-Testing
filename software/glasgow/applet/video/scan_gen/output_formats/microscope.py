@@ -53,6 +53,7 @@ class ScanCtrl:
 
     async def connect(self):
         try:
+            print("trying to connect")
             self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT)
             print(self.writer.transport)
             print(self.writer.can_write_eof())
@@ -67,17 +68,23 @@ class ScanCtrl:
             await self.writer.wait_closed()
 
     async def write(self, msg):
+        print("sent", msg)
         self.writer.write(msg)
         await self.writer.drain()
 
     async def start_raster_scan(self):
-        msg = cmd.set_scan_mode(scan_mode.raster)
+        msg = self.cmd.set_scan_mode(scan_mode.raster)
         await self.write(msg)
     
     async def set_frame_resolution(self, x_resolution_val, y_resolution_val):
-        msg1 = cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
-        msg2 = cmd.set_frame(frame_vars.y_full_frame_resolution, y_resolution_val)
+        msg1 = self.cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
+        msg2 = self.cmd.set_frame(frame_vars.y_full_frame_resolution, y_resolution_val)
         await self.write(msg1+msg2)
+
+    async def set_x_resolution(self, x_resolution_val):
+        msg = self.cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
+        await self.write(msg)
+
 
     async def set_ROI(self, x_upper, x_lower, y_upper, y_lower):
         msg1 = cmd.set_frame(frame_vars.x_upper_limit, x_upper)
@@ -96,6 +103,8 @@ class ScanStream:
         self.x_width = 2048
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                             dtype = np.uint16)
+        self.current_x = 0
+        self.current_y = 0
 
     async def connect(self):
         try:
@@ -128,7 +137,7 @@ class ScanStream:
             packet.append(dwell)
         return packet
 
-    def stream_to_buffer(self, data):
+    def stream_to_buffer(self, raw_data):
         data = self.decode_rdwell_packet(raw_data)
         #print("cur x,y", self.current_x, self.current_y)
         
@@ -226,8 +235,15 @@ class ScanStream:
 
 
 async def _main():
-    scan_controller = ScanCtrl()
-    await scan_controller.connect()
+    scan_ctrl = ScanCtrl()
+    scan_stream = ScanStream()
+    status = await scan_ctrl.connect()
+    if status == "Connected":
+        await scan_ctrl.start_raster_scan()
+    status = await scan_stream.connect()
+    if status == "Connected":
+        await scan_stream.stream_continously()
+        #await scan_controller.set_frame_resolution(16384,16384)
 
 
 def main():
@@ -235,5 +251,5 @@ def main():
     exit(loop.run_until_complete(_main()))
 
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()

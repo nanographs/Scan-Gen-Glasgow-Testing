@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import functools
 import types
 import time
 import logging
@@ -21,7 +22,6 @@ from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
 
 from ..scan_gen.output_formats.control_gui import run_gui
-
 
 from ... import *
 
@@ -237,16 +237,19 @@ class ScanGenInterface:
         await self.write_2bytes(y)
         await self.write_2bytes(d)
 
-    async def set_8bit_output(self):
-        await self._device.write_register(self.__addr_8_bit_output, 1)
-        self.eight_bit_output = True
+    async def set_8bit_output(self, val=1):
+        await self._device.write_register(self.__addr_8_bit_output, val)
+        if val == 1:
+            self.eight_bit_output = True
+        else:
+            self.eight_bit_output = False
         #self.buffer = self.init_buffer()
     
-    async def set_frame_sync(self):
-        await self._device.write_register(self.__addr_do_frame_sync, 1)
+    async def set_frame_sync(self, val=1):
+        await self._device.write_register(self.__addr_do_frame_sync, val)
 
-    async def set_line_sync(self):
-        await self._device.write_register(self.__addr_do_line_sync, 1)
+    async def set_line_sync(self,val):
+        await self._device.write_register(self.__addr_do_line_sync, val)
 
     async def set_2byte_register(self,val,addr_b1, addr_b2):
         b1, b2 = get_two_bytes(val)
@@ -256,12 +259,14 @@ class ScanGenInterface:
         await self._device.write_register(addr_b2, b2)
 
     async def set_x_resolution(self,val):
+        print("set x resolution:", val)
         self.x_width = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
         #self.buffer = self.init_buffer()
 
     async def set_y_resolution(self,val):
+        print("set y resolution:", val)
         self.y_height = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
@@ -287,6 +292,10 @@ class ScanGenInterface:
         await self.set_x_resolution(xval)
         await self.set_y_resolution(yval)
         print("set frame resolution x:", xval, "y:", yval)
+
+    async def set_scan_mode(self, val):
+        await self._device.write_register(self.__addr_scan_mode, val)
+        print("set scan mode", val)
 
     async def set_raster_mode(self):
         await self._device.write_register(self.__addr_scan_mode, 1)
@@ -404,30 +413,59 @@ class SG_EndpointInterface(ScanGenInterface):
     async def get_ctrl_endpoint(self):
         endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1235"), queue_size=32)
         return endpoint
+
     def launch_gui(self):
         ## using sys.prefix instead of "python3" results in a PermissionError
         ## because pipx isn't supposed to be used that way
         ## would be nice to stay in the same environment though
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
                         start_new_session = True)
+
     async def listen_at_endpoint(self):
+        self.ctrl_endpoint = await self.get_ctrl_endpoint()
+        print(self.ctrl_endpoint)
         while True:
             try:
-                cmd = await endpoint.recv(4)
+                cmd = await self.ctrl_endpoint.recv(7)
                 cmd = cmd.decode(encoding='utf-8', errors='strict')
+                print("rcvd", cmd)
                 await self.process_cmd(cmd)
             except:
                 break
 
+    async def stream_to_endpoint(self):
+        await self.set_frame_resolution(512,512)
+        await self.set_raster_mode()
+        self.stream_endpoint = await self.get_stream_endpoint()
+        while True:
+            data = await self.iface.read(16384)
+            print("sending", data)
+            await self.stream_endpoint.send(data)
+
     async def process_cmd(self, cmd):
-        if cmd == "scan":
-            pass
-        if cmd.startswith("re"): ## Changing resolution
-            new_bits = int(cmd.strip("re")) 
-            print("resolution:",new_bits)
-        elif cmd.startswith("d"): ## Changing dwell time
-            new_dwell = int(cmd.strip("d"))
-            print("dwell time", new_dwell)
+        c = str(cmd[0:2])
+        val = int(cmd[2:])
+        if c == "sc":
+            await self.set_scan_mode(val)
+        elif c == "rx":
+            await self.set_x_resolution(val)
+        elif c == "ry":
+            await self.set_y_resolution(val)
+        elif c == "ux":
+            await self.set_x_upper_limit(val)
+        elif c == "lx":
+            await self.set_x_lower_limit(val)
+        elif c == "uy":
+            await self.set_y_upper_limit(val)
+        elif c == "ly":
+            await self.set_y_lower_limit(val)
+        elif c == "fs":
+            await self.set_frame_sync(val)
+        elif c == "ls":
+            await self.set_line_sync(val)
+        elif c == "8b":
+            await self.set_8bit_output(val)
+
 class SG_2DBufferInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -673,6 +711,16 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
             )
+        if args.buf == "endpoint":
+            scan_iface = SG_EndpointInterface(iface, self.logger, device, self.__addr_scan_mode,
+            self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
+            self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
+            self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
+            self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
+            self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
+            self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
+            )
         else:
             scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
             self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
@@ -709,6 +757,9 @@ class ScanGenApplet(GlasgowApplet):
             await scan_iface.set_raster_mode()
             scan_iface.launch_gui()
             
+        if args.buf == "endpoint":
+            await asyncio.gather(scan_iface.listen_at_endpoint(),
+                                scan_iface.stream_to_endpoint())
             # while True:
             #     await scan_iface.stream_video()
 

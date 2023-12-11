@@ -40,6 +40,10 @@ class RegisterUpdateBox(QGridLayout):
         self.spinbox.setSingleStep(1)
         self.addWidget(self.spinbox,1,1)
 
+        self.btn = QPushButton("->")
+        self.btn.clicked.connect(self.do_fn)
+        self.addWidget(self.btn, 2, 1)
+
 
     @asyncSlot()
     async def do_fn(self):
