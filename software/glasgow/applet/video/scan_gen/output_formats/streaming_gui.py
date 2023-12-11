@@ -10,7 +10,7 @@ import os, datetime
 
 import numpy as np
 
-from PyQt6.QtWidgets import (QMainWindow, QPushButton, 
+from PyQt6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                             QGridLayout, QWidget, QComboBox, 
                             QLabel, QSpinBox, QFileDialog)
 
@@ -22,7 +22,8 @@ from pyqtgraph.Qt import QtCore
 import qasync
 from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 
-from microscope import ScanController
+from microscope import ScanCtrl, ScanStream
+from even_newer_gui import ImageDisplay, RegisterUpdateBox
 
 
 from bmp_utils import *
@@ -38,30 +39,6 @@ cwd = os.getcwd()
 #     # Set the stylesheet of the application
 #     app.setStyleSheet(style)
 
-
-class ResolutionDropdown(QGridLayout):
-    def __init__(self):
-        super().__init__()
-        self.menu = QComboBox()
-        self.label = QLabel("Resolution")
-        self.menu.addItem('512x512')
-        self.menu.addItem('1024x1024')
-        self.menu.addItem('2048x2048')
-        self.menu.addItem('4096x4096')
-        self.menu.addItem('8192x8192')
-        self.menu.addItem('16384x16384')
-        self.addWidget(self.label,0,1)
-        self.addWidget(self.menu,1,1)
-
-class DwellTimeSelector(QGridLayout):
-    def __init__(self):
-        super().__init__()
-        self.spinbox = QSpinBox()
-        self.label = QLabel("Dwell Time")
-        self.spinbox.setRange(1,255)
-        self.spinbox.setSingleStep(1)
-        self.addWidget(self.label,0,1)
-        self.addWidget(self.spinbox,1,1)
 
 class ImportPatternFileWindow(QWidget):
     def __init__(self):
@@ -120,116 +97,97 @@ def pattern_loop(dimension, pattern_stream):
             yield pattern_stream[n*16384:(n+1)*16384]
         print("pattern complete")
 
-
-
-
-class ImageDisplay(pg.GraphicsLayoutWidget):
-    def __init__(self, height, width):
+class FrameSettings(QHBoxLayout):
+    def __init__(self):
         super().__init__()
-        self.image_view = self.addViewBox(invertY = True)
-        ## lock the aspect ratio so pixels are always square
-        self.image_view.setAspectLocked(True)
-        self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
-        
-        self.live_img = pg.ImageItem(border='w',axisOrder="row-major")
-        self.image_view.addItem(self.live_img)
-
-        # Contrast/color control
-        self.hist = pg.HistogramLUTItem()
-        self.hist.setImageItem(self.live_img)
-        self.hist.disableAutoHistogramRange()
-        self.addItem(self.hist)
-
-        self.hist.setLevels(min=0,max=0)
-
-        self.exporter = pg.exporters.ImageExporter(self.live_img)
-
-
-    def setRange(self, height, width):
-        self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
-
-    def showTest(self):
-        test_file = '/Users/isabelburgos/glasgow_env/Scan-Gen-Glasgow-Testing/software/glasgow/applet/video/scan_gen/Nanographs Pattern Test Logo and Gradients.bmp'
-        bmp = bmp_import(test_file)
-        array = np.array(bmp).astype(np.uint8)
-        self.live_img.setImage(array)
-
-    def saveImage(self, height, width):
-        self.exporter.parameters()['height'] = self.height
-        self.exporter.parameters()['width'] = self.width
-        img_name = "saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif"
-        self.exporter.export(img_name)
 
 class MainWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        scan_controller = ScanController()
-        self.x_width = scan_controller.x_width
-        self.y_height = scan_controller.y_height
+        # scan_controller = ScanController()
+        # self.x_width = scan_controller.x_width
+        # self.y_height = scan_controller.y_height
+
+        self.scan_ctrl = ScanCtrl()
+        self.scan_stream = ScanStream()
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
         self.setLayout(self.layout)
+
+        self.image_display = ImageDisplay(512,512)
+        self.layout.addWidget(self.image_display, 1, 0)
+
+        self.frame_settings = FrameSettings()
+        self.layout.addLayout(self.frame_settings, 2, 0)
+        self.rx = RegisterUpdateBox("X Resolution", 1, 16384, self.scan_ctrl.set_x_resolution)
+        self.frame_settings.addLayout(self.rx)
+        
 
 
         self.conn_btn = QPushButton("Disconnected")
         self.conn_btn.setCheckable(True) 
         self.conn_btn.clicked.connect(self.connect)
 
-        self.mode_select_dropdown = QComboBox()
-        self.mode_select_dropdown.addItem("Imaging")
-        self.mode_select_dropdown.addItem("Patterning")
-        self.mode_select_dropdown.currentIndexChanged.connect(self.mode_select)
+        self.stream_conn_btn = QPushButton("Disconnected")
+        self.stream_conn_btn.setCheckable(True) 
+        self.stream_conn_btn.clicked.connect(self.connect_stream)
 
-        self.loopback_btn = QPushButton("Loopback Off")
-        self.loopback_btn.setCheckable(True) 
-        self.loopback_btn.clicked.connect(self.set_loopback)
+        # self.mode_select_dropdown = QComboBox()
+        # self.mode_select_dropdown.addItem("Imaging")
+        # self.mode_select_dropdown.addItem("Patterning")
+        # self.mode_select_dropdown.currentIndexChanged.connect(self.mode_select)
 
-        self.start_btn = QPushButton('▶️')
-        self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
-        self.start_btn.clicked.connect(self.toggle_scan)
+        # self.loopback_btn = QPushButton("Loopback Off")
+        # self.loopback_btn.setCheckable(True) 
+        # self.loopback_btn.clicked.connect(self.set_loopback)
 
-        self.new_scan_btn = QPushButton('↻')
-        self.new_scan_btn.clicked.connect(self.reset_scan)
+        # self.start_btn = QPushButton('▶️')
+        # self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
+        # self.start_btn.clicked.connect(self.toggle_scan)
 
-        self.save_btn = QPushButton('save')
-        self.save_btn.clicked.connect(self.saveImage)
+        # self.new_scan_btn = QPushButton('↻')
+        # self.new_scan_btn.clicked.connect(self.reset_scan)
+
+        # # self.save_btn = QPushButton('save')
+        # # self.save_btn.clicked.connect(self.saveImage)
         
         
 
-        mode_options = QGridLayout()
-        mode_options.addWidget(self.conn_btn,0,0)
-        mode_options.addWidget(self.mode_select_dropdown,0,1)
-        mode_options.addWidget(self.loopback_btn,0,3)
-        mode_options.addWidget(self.start_btn,0,4)
-        mode_options.addWidget(self.new_scan_btn,0,5)
-        mode_options.addWidget(self.save_btn, 0, 6)
+        # mode_options = QGridLayout()
+        self.layout.addWidget(self.conn_btn,0,0)
+        self.layout.addWidget(self.stream_conn_btn,0,1)
+        # mode_options.addWidget(self.mode_select_dropdown,0,1)
+        # mode_options.addWidget(self.loopback_btn,0,3)
+        #mode_options.addWidget(self.start_btn,0,4)
+        # mode_options.addWidget(self.new_scan_btn,0,5)
+        # # mode_options.addWidget(self.save_btn, 0, 6)
 
 
-        self.layout.addLayout(mode_options,0,0)
+        # self.layout.addLayout(mode_options,0,0)
 
-        self.resolution_options = ResolutionDropdown()
-        self.layout.addLayout(self.resolution_options, 1,0)
-        self.resolution_options.menu.currentIndexChanged.connect(self.changeResolution)
+        # self.resolution_options = ResolutionDropdown()
+        # self.layout.addLayout(self.resolution_options, 1,0)
+        # self.resolution_options.menu.currentIndexChanged.connect(self.changeResolution)
 
-        self.dwell_options = DwellTimeSelector()
-        self.layout.addLayout(self.dwell_options, 1,1)
-        self.dwell_options.spinbox.valueChanged.connect(self.changeDwellTime)
+        # self.dwell_options = DwellTimeSelector()
+        # self.layout.addLayout(self.dwell_options, 1,1)
+        # self.dwell_options.spinbox.valueChanged.connect(self.changeDwellTime)
 
-        self.new_pattern_btn = QPushButton('Pattern file')
-        self.new_pattern_btn.clicked.connect(self.file_select)
-        self.layout.addWidget(self.new_pattern_btn, 1,1)
-        self.new_pattern_btn.setHidden(True)
+        # self.new_pattern_btn = QPushButton('Pattern file')
+        # self.new_pattern_btn.clicked.connect(self.file_select)
+        # self.layout.addWidget(self.new_pattern_btn, 1,1)
+        # self.new_pattern_btn.setHidden(True)
 
-        self.image_display = ImageDisplay(512, 512)
-        self.image_display.live_img.setImage(scan_controller.buf) #set blank 512x512 image
-        self.layout.addWidget(self.image_display)
+        # self.image_display = ImageDisplay(512, 512)
+        # self.image_display.live_img.setImage(scan_controller.buf) #set blank 512x512 image
+        # self.layout.addWidget(self.image_display)
 
-        self.setState("disconnected")
-        self.mode = "Imaging"
+        # self.setState("disconnected")
+        # self.mode = "Imaging"
 
-        self.image_display.showTest()
+        # self.image_display.showTest()
 
     def file_select(self):
         self.file_dialog = ImportPatternFileWindow()
@@ -244,10 +202,17 @@ class MainWindow(QWidget):
 
     @asyncSlot()
     async def connect(self):
-        connection = await scan_controller.connect()
+        connection = await self.scan_ctrl.connect()
         self.conn_btn.setText(connection)
-        if connection == "Connected":
-            self.setState("scan_not_started")
+        # if connection == "Connected":
+        #     self.setState("scan_not_started")
+
+    @asyncSlot()
+    async def connect_stream(self):
+        connection = await self.scan_stream.connect()
+        self.conn_btn.setText(connection)
+        data = await self.scan_stream.get_single_packet()
+        print(data)
     
     @asyncSlot()
     async def mode_select(self):
@@ -321,26 +286,26 @@ class MainWindow(QWidget):
         await scan_controller.set_dwell_time(int(dwell_time))
         print("setting dwell time to", dwell_time)
 
-    async def keepUpdating(self):
-        while True:   
-            try:
-                await self.updateData()
-            except RuntimeError:
-                print("error")
-                break
+    # async def keepUpdating(self):
+    #     while True:   
+    #         try:
+    #             await self.updateData()
+    #         except RuntimeError:
+    #             print("error")
+    #             break
     
-    async def updateData(self):
-        print("mode=", self.mode)
-        if self.mode == "Imaging":
-            await scan_controller.get_single_packet()
-        if self.mode == "Patterning":
-            pattern_slice = (next(self.pattern)).tobytes(order='C')
-            print("sending single packet")
-            await scan_controller.send_single_packet(pattern_slice)
-            print("recieving single packet")
-            await scan_controller.get_single_packet()
-        self.image_display.live_img.setImage(scan_controller.buf, autoLevels = False)
-        print(scan_controller.buf)
+    # async def updateData(self):
+    #     print("mode=", self.mode)
+    #     if self.mode == "Imaging":
+    #         await scan_controller.get_single_packet()
+    #     if self.mode == "Patterning":
+    #         pattern_slice = (next(self.pattern)).tobytes(order='C')
+    #         print("sending single packet")
+    #         await scan_controller.send_single_packet(pattern_slice)
+    #         print("recieving single packet")
+    #         await scan_controller.get_single_packet()
+    #     self.image_display.live_img.setImage(scan_controller.buf, autoLevels = False)
+    #     print(scan_controller.buf)
         
     
         
