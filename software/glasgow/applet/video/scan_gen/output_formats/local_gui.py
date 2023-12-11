@@ -12,7 +12,6 @@ from PyQt6.QtWidgets import (QMainWindow, QPushButton,
 from even_newer_gui import ImageDisplay
 
 
-
 class MainWindow(QWidget):
     def __init__(self, path):
         super().__init__()
