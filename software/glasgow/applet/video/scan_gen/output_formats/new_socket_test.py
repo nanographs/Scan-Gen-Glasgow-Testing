@@ -67,10 +67,6 @@ class ConnectionManager:
         self.data_writer = writer
         self.data_reader = reader
 
-        # print('Close the connection')
-        # writer.close()
-        # await writer.wait_closed()
-
     async def tcp_msg_client(self, message):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
@@ -81,7 +77,7 @@ class ConnectionManager:
         writer.write(message.encode())
         await writer.drain()
 
-        print('Close the connection')
+        print('Close tcp_msg_client')
         writer.close()
         await writer.wait_closed()
 
@@ -90,19 +86,16 @@ class ConnectionManager:
         await asyncio.sleep(10)
         await self.stop_reading()
         
-
     async def start_reading(self):
-    #     #self.streaming = asyncio.ensure_future(self.recieve_data_client())
         asyncio.ensure_future(self.tcp_msg_client('rx16384'))
         self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader))
-    #     asyncio.ensure_future(self.recieve_data_client())
 
     async def stop_reading(self):
         await self.tcp_msg_client('1111111')
         self.streaming.cancel()
     
     async def close_data_stream(self):
-        print('Close the connection')
+        print('Close data stream')
         self.data_writer.close()
         await self.data_writer.wait_closed()
 
@@ -110,12 +103,17 @@ class ConnectionManager:
 def main():
     con = ConnectionManager()
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(con.recieve_data_client())
-    loop.run_until_complete(con.start_reading())
-    loop.run_until_complete(con.wait_stop())
-    loop.run_until_complete(con.start_reading())
-    loop.run_until_complete(con.wait_stop())
-    loop.run_until_complete(con.close_data_stream())
-    loop.run_forever()
+    loop.run_until_complete(con.tcp_msg_client("rx16384"))
+    loop.run_until_complete(con.tcp_msg_client("ry16384"))
+    # loop.run_until_complete(con.tcp_msg_client("sc00001"))
+    # # con = ConnectionManager()
+    
+    # loop.run_until_complete(con.recieve_data_client())
+    # loop.run_until_complete(con.start_reading())
+    # loop.run_until_complete(con.wait_stop())
+    # loop.run_until_complete(con.start_reading())
+    # loop.run_until_complete(con.wait_stop())
+    # loop.run_until_complete(con.close_data_stream())
+    # loop.run_forever()
 
 main()
