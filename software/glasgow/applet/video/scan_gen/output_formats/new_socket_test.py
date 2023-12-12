@@ -1,41 +1,9 @@
 import asyncio
 
-async def recieve_data_client():
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
-    print("opening connection")
-    while True:
-        await asyncio.sleep(0)
-        try:
-            reader, writer = await asyncio.open_connection(
-                HOST, PORT)
-            print("connection made")
-            addr = writer.get_extra_info('peername')
-            print(f"addr: {addr!r}")
-            break
-        except:
-            pass
-    while True:
-        try:
-            if not reader.at_eof():
-                await asyncio.sleep(0)
-                data = await reader.read(16384)
-                print("recieved data")
-                print(f'Received: {data.decode()!r}')
-            else:
-                print("at eof?")
-                print(reader)
-                break
-        except Exception as e:
-            print("error:", e)
-            break
-    print('Close the connection')
-    writer.close()
-    await writer.wait_closed()
 
 async def tcp_echo_client(message):
     HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1235  # Port to listen on (non-privileged ports are > 1023)
+    PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
     reader, writer = await asyncio.open_connection(
         HOST, PORT)
 
@@ -52,31 +20,102 @@ async def tcp_echo_client(message):
 
 
 
-async def tcp_msg_client(message):
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1236  # Port to listen on (non-privileged ports are > 1023)
-    reader, writer = await asyncio.open_connection(
-        HOST, PORT)
+class ConnectionManager:
+    def __init__(self):
+        pass
+    async def open_connection(self, host, port, future):
+        while True:
+            print("trying to open connection")
+            try:
+                reader, writer = await asyncio.open_connection(
+                    host, port)
+                print("connection made")
+                addr = writer.get_extra_info('peername')
+                print(f"addr: {addr!r}")
+                future.set_result([reader,writer])
+                break
+            except ConnectionError:
+                print("connection error")
+                pass
 
-    print(f'Send: {message!r}')
-    writer.write(message.encode())
-    await writer.drain()
+    async def read_continously(self, reader):
+        while True:
+            try:
+                if not reader.at_eof():
+                    await asyncio.sleep(0)
+                    data = await reader.read(16384)
+                    print("recieved data")
+                    print(f'Received: {data.decode()!r}')
+                else:
+                    print("at eof?")
+                    print(reader)
+                    break
+            except Exception as e:
+                print("error:", e)
+                break
 
-    print('Close the connection')
-    writer.close()
-    await writer.wait_closed()
+
+    async def recieve_data_client(self):
+        host = "127.0.0.1"  # Standard loopback interface address (localhost)
+        port = 1238  # Port to listen on (non-privileged ports are > 1023)
+        print("opening connection")
+        loop = asyncio.get_event_loop()
+        future_con = loop.create_future()
+        loop.create_task(self.open_connection(host, port, future_con))
+        await asyncio.sleep(0)
+        reader, writer = await future_con
+        self.data_writer = writer
+        self.data_reader = reader
+
+        # print('Close the connection')
+        # writer.close()
+        # await writer.wait_closed()
+
+    async def tcp_msg_client(self, message):
+        HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+        PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
+        reader, writer = await asyncio.open_connection(
+            HOST, PORT)
+
+        print(f'Send: {message!r}')
+        writer.write(message.encode())
+        await writer.drain()
+
+        print('Close the connection')
+        writer.close()
+        await writer.wait_closed()
 
 
-async def wait():
-    await asyncio.sleep(10)
-    await tcp_msg_client('1111111')
+    async def wait_stop(self):
+        await asyncio.sleep(10)
+        await self.stop_reading()
+        
+
+    async def start_reading(self):
+    #     #self.streaming = asyncio.ensure_future(self.recieve_data_client())
+        asyncio.ensure_future(self.tcp_msg_client('rx16384'))
+        self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader))
+    #     asyncio.ensure_future(self.recieve_data_client())
+
+    async def stop_reading(self):
+        await self.tcp_msg_client('1111111')
+        self.streaming.cancel()
+    
+    async def close_data_stream(self):
+        print('Close the connection')
+        self.data_writer.close()
+        await self.data_writer.wait_closed()
 
 
 def main():
+    con = ConnectionManager()
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(tcp_msg_client('rx16384'))
-    loop.create_task(recieve_data_client())
-    loop.create_task(wait())
+    loop.run_until_complete(con.recieve_data_client())
+    loop.run_until_complete(con.start_reading())
+    loop.run_until_complete(con.wait_stop())
+    loop.run_until_complete(con.start_reading())
+    loop.run_until_complete(con.wait_stop())
+    loop.run_until_complete(con.close_data_stream())
     loop.run_forever()
 
 main()
