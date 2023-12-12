@@ -194,12 +194,13 @@ class RasterWriter(Elaboratable):
         self.enable = Signal()
         self.strobe_in_xy = Signal()
         self.strobe_in_dwell = Signal()
+        self.strobe_out = Signal()
+
         self.strobe_in_frame_sync = Signal()
         self.prev_strobe_in_frame_sync = Signal()
         self.strobe_in_line_sync = Signal()
         self.prev_strobe_in_line_sync = Signal()
-        self.strobe_out = Signal()
-
+        
         self.eight_bit_output = Signal()
 
     def elaborate(self, platform):
