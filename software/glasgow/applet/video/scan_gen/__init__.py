@@ -14,6 +14,7 @@ import threading
 from amaranth import *
 from amaranth.build import *
 from ....support.endpoint import *
+from ....support.task_queue import *
 from ....support.bits import *
 from amaranth.sim import Simulator
 
@@ -22,6 +23,7 @@ from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
 
 from ..scan_gen.output_formats.control_gui import run_gui
+from ..scan_gen.output_formats.new_server_test import ServerHost
 
 from ... import *
 
@@ -405,14 +407,38 @@ class ScanGenInterface:
 class SG_EndpointInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.task_queue = TaskQueue()
+        self.server_host = ServerHost(self.task_queue, self.process_cmd)
+        
 
-    async def get_stream_endpoint(self):
-        endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
-        return endpoint
+    def start_servers(self, close_future):
+        self.close_future = close_future
+        loop = asyncio.get_event_loop()
+        self.server_host.start_servers()
 
-    async def get_ctrl_endpoint(self):
-        endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1235"), queue_size=32)
-        return endpoint
+    def close(self):
+        self.close_future.set_result("Closed")
+    
+    # async def get_cmd(self):
+    #     try:
+    #         loop = asyncio.get_event_loop()
+    #         future_cmd = loop.create_future()
+    #         loop.create_task(self.server_host.get_next_cmd(future_cmd))
+    #         future_done = loop.create_future()
+    #         loop.create_task(self.process_future_cmd(future_cmd, future_done))
+    #         await future_done
+    #         print("done")
+    #         await self.get_cmd()
+    #     except Exception as e:
+    #         print("error:", e)
+
+    # async def get_stream_endpoint(self):
+    #     endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
+    #     return endpoint
+
+    # async def get_ctrl_endpoint(self):
+    #     endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1235"), queue_size=32)
+    #     return endpoint
 
     def launch_gui(self):
         ## using sys.prefix instead of "python3" results in a PermissionError
@@ -442,11 +468,29 @@ class SG_EndpointInterface(ScanGenInterface):
             print("sending", data)
             await self.stream_endpoint.send(data)
 
+    async def process_future_cmd(self, future_cmd, future_done):
+        print("awaiting cmd")
+        if future_cmd.cancelled():
+            future_done.set_result("done")
+        else:
+            cmd = await future_cmd
+            print("got cmd from fut", cmd)
+            await self.process_cmd(cmd)
+            future_done.set_result("done")
+
+    async def stream_data(self):
+        while True:
+            data = await self.iface.read(16384)
+            self.server_host.data_writer.write(data)
+            await self.server_host.data_writer.drain()
+
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
         val = int(cmd[2:])
         if c == "sc":
             await self.set_scan_mode(val)
+            if val == 1:
+                self.streaming = asyncio.ensure_future(self.stream_data())
         elif c == "rx":
             await self.set_x_resolution(val)
         elif c == "ry":
@@ -758,8 +802,12 @@ class ScanGenApplet(GlasgowApplet):
             scan_iface.launch_gui()
             
         if args.buf == "endpoint":
-            await asyncio.gather(scan_iface.listen_at_endpoint(),
-                                scan_iface.stream_to_endpoint())
+            loop = asyncio.get_event_loop()
+            close_future = loop.create_future()
+            scan_iface.start_servers(close_future)
+            await close_future
+            # await asyncio.gather(scan_iface.listen_at_endpoint(),
+            #                     scan_iface.stream_to_endpoint())
             # while True:
             #     await scan_iface.stream_video()
 

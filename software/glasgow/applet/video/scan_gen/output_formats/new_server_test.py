@@ -26,14 +26,22 @@ async def handle_echo(reader, writer):
     await writer.wait_closed()
 
 class ServerHost:
-    def __init__(self):
-        self.servers = []
+    def __init__(self, queue, process_cmd):
         self.streaming = None
+        self.HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+        self.PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
+        self.queue = queue
+        self.process_cmd = process_cmd
 
-    async def start_servers(self, client_thread, host, port):
-        server = await asyncio.start_server(client_thread, host, port)
-        self.servers.append(server)
-        await server.serve_forever()
+
+    def start_servers(self):
+        try:
+            # self.cmd_reader_future = future
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.start_cmd_server(self.HOST, self.PORT))
+            loop.create_task(self.start_data_server(self.HOST, self.PORT+1))
+        except Exception as e:
+            print("error:", e)
     
     async def start_cmd_server(self, host, port):
         print("starting cmd server")
@@ -43,15 +51,9 @@ class ServerHost:
     async def start_data_server(self, host, port):
         print("starting data server")
         #self.streaming = True
-        self.data_server = await asyncio.start_server(self.send_data, host, port)
+        self.data_server = await asyncio.start_server(self.handle_data, host, port+1)
         await self.data_server.serve_forever()
 
-    # def startdata(self):
-    #     HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    #     PORT = 1238  # Port to listen on (non-privileged ports are > 1023)
-    #     loop = asyncio.get_event_loop()
-    #     loop.create_task(self.start_data_server(HOST, PORT))
-    
     async def stopdata(self):
         print("closing data writer")
         self.streaming.cancel()
@@ -59,29 +61,35 @@ class ServerHost:
         await self.data_writer.wait_closed()
 
     async def handle_cmd(self, reader, writer):
-        data = await reader.read(7)
-        message = data.decode()
+        self.cmd_reader = reader
+        self.cmd_writer = writer
+        # self.cmd_reader_future.set_result(reader)
+        print("cmd server started")
+        loop = asyncio.get_running_loop()
+        try:
+            print("awaiting read")
+            data = await self.cmd_reader.readexactly(7)
+            message = data.decode()
+            print("message:", message)
+            self.queue.submit(self.process_cmd(msg))
+        except asyncio.IncompleteReadError:
+            print("err")
 
-        print("message:", message)
-        print("Close the connection")
-        writer.close()
-        await writer.wait_closed()
+        # print("message:", message)
+        # print("closing cmd writer")
+        # writer.close()
+        # await writer.wait_closed()
 
-        loop = asyncio.get_event_loop()
-        # loop.call_soon(
-        # functools.partial(print, "Hello", flush=True))
-        if message == "rx16384":
-            # loop.call_soon(
-            # functools.partial(self.startdata))
-            self.streaming = asyncio.ensure_future(self.send_data_continously())
-        elif message == "1111111":
-            print(server_host.data_server)
-            # loop.call_soon(
-            # functools.partial(self.stopdata))
-            # loop.create_task(self.stopdata())
-            self.streaming.cancel()
+        # loop = asyncio.get_event_loop()
+        # if message == "rx16384":
+        #     print("initiating stream")
+        #     self.streaming = asyncio.ensure_future(self.send_data_continously())
+        # elif message == "1111111":
+        #     print("canceling stream")
+        #     self.streaming.cancel()
 
-    async def send_data(self, reader, writer):
+
+    async def handle_data(self, reader, writer):
         self.data_writer = writer
         addr = writer.get_extra_info('peername')
         print(f"addr: {addr!r}")
@@ -100,20 +108,10 @@ class ServerHost:
 
 
 
-server_host = ServerHost()
+# server_host = ServerHost()
 
 
 def main():
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
-    try:
-        loop = asyncio.get_event_loop()
-        #loop.create_task(server_host.start_servers(handle_echo, HOST, PORT))
-        loop.create_task(server_host.start_cmd_server(HOST, PORT))
-        loop.create_task(server_host.start_data_server(HOST, PORT+1))
-        loop.run_forever()
-    except Exception as e:
-        print("error:", e)
+    server_host.start_servers()
 
-
-main()
+# main()
