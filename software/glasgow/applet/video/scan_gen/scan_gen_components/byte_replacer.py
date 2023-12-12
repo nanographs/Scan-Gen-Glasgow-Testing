@@ -33,14 +33,24 @@ class ByteReplacer(Elaboratable):
                     16 bit mode: 2-16383
 
     '''
-    def __init__(self):
+    def __init__(self, dac_bits = 14):
+        self.dac_bits = dac_bits
         self.point_data = Signal(vector_dwell)
         self.processed_point_data = Signal(vector_dwell)
         self.eight_bit_output = Signal()
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
+        self.most_significant_8_bits = Signal(8)
     def elaborate(self, platform):
         m = Module()
+
+        m.d.comb += self.most_significant_8_bits.eq(self.point_data.as_value()[(self.dac_bits - 8):self.dac_bits])
+
+        with m.If(self.eight_bit_output):
+            m.d.comb += self.processed_point_data.D1.eq(self.most_significant_8_bits)
+            m.d.comb += self.processed_point_data.D2.eq(0)
+        with m.Else():
+            m.d.comb += self.processed_point_data.eq(self.point_data)
 
         zero = Signal(vector_dwell)
         m.d.comb += zero.D1.eq(0)
@@ -50,23 +60,18 @@ class ByteReplacer(Elaboratable):
         m.d.comb += one.D1.eq(1)
         m.d.comb += one.D2.eq(0)
 
-        with m.If(self.eight_bit_output):
-            m.d.comb += self.processed_point_data.as_value().eq(Cat(self.point_data.D1, zero.D1))
-        with m.Else():
-            m.d.comb += self.processed_point_data.eq(self.point_data)
-
         with m.If(self.do_frame_sync):
             with m.If(self.point_data.as_value() == zero.as_value()):
                 m.d.comb += self.processed_point_data.eq(1)
             with m.If(self.eight_bit_output):
-                with m.If(self.point_data.D1 == 0):
+                with m.If(self.most_significant_8_bits == 0):
                     m.d.comb += self.processed_point_data.D1.eq(1)
 
         with m.If(self.do_line_sync):
             with m.If((self.point_data.as_value() == one.as_value())|(self.point_data.as_value() == zero.as_value())):
                 m.d.comb += self.processed_point_data.eq(2)
             with m.If(self.eight_bit_output):
-                with m.If((self.point_data.D1 == 1)|(self.point_data.D1 == 0)):
+                with m.If((self.most_significant_8_bits == 1)|(self.most_significant_8_bits == 0)):
                     m.d.comb += self.processed_point_data.D1.eq(2)
 
         s = Signal()
@@ -89,7 +94,6 @@ def test_bytereplacer():
             yield
             assert(yield dut.processed_point_data.as_value() == processed_data)
 
-
         ## Sixteen bit output, frame sync
         yield from test_settings(1, 0, 0)
 
@@ -102,7 +106,8 @@ def test_bytereplacer():
 
         yield from test_results (0, 1)
         yield from test_results (1, 1)
-        yield from test_results (256, 1)
+        yield from test_results (256, 4)
+        yield from test_results (16383, 255)
 
             
     
