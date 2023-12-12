@@ -6,6 +6,13 @@ async def get_data():
     return data
     #future.set_result(data)
 
+def get_data_continously():
+    print("getting data")
+    # data = yield get_data()
+    # print(data)
+
+#get_data_continously()
+
 
 async def send_data(reader, writer):
     addr = writer.get_extra_info('peername')

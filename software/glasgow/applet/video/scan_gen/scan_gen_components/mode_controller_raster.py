@@ -132,6 +132,19 @@ class RasterWriter(Elaboratable):
         Asserted when the data at in_fifo_w_data is *not* valid. 
         If strobe_out is high, data will *not* be written to the in_fifo
 
+    strobe_in_frame_sync: Signal, in, 1
+        Asserted when you want to insert a 0 into the data stream.
+        Driven by xy_scan_gen x_ovf & y_ovf
+    prev_strobe_in_frame_sync: Signal, out, 1
+        Equal to the value of strobe_in_frame_sync one cycle previously.
+        This signal "holds on to" the strobe for an extra cycle
+    strobe_in_line_sync: Signal, in, 1
+        Asserted when you want to insert a 1 into the data stream.
+        Driven by xy_scan_gen x_ovf
+    prev_strobe_in_line_sync: Signal, out, 1
+        Equal to the value of strobe_in_line_sync one cycle previously.
+        This signal "holds on to" the strobe for an extra cycle
+
     State Machine:
                     ↓----------------------↑
         Waiting -> Dwell Waiting -> D1 -> D2
