@@ -19,28 +19,30 @@ else:
 
 class RasterReader(Elaboratable): 
     '''
+    This module is only used in raster patterning mode.
+
     out_fifo_r_data: Signal, in, 8
         This signal is combinatorially driven by the top level out_fifo.r_data
     
-    raster_point_data: Signal, internal, 48
+    raster_dwell_data: Signal, internal, 16
         Each cycle that the out_fifo is read from, a byte is synchronously written 
         to vector_point_data. 
-    raster_point_data_c: Signal, out, 48
-        This is the signal that the next values for the beam controller are read from.
+    raster_dwell_data_c: Signal, out, 16
+        This is the signal that the next dwell time values are read from.
         This signal is combinatorially assigned to the value of vector_point_data
         and the latest byte from the out_fifo. This is so that the full vector point
         data can be used immediately. If the data can't be used immediately, the last
-        byte is synchronously added to raster_point_data and the state machine moves to 
+        byte is synchronously added to raster_dwell_data and the state machine moves to 
         the HOLD state.
 
     data_complete: Signal, out, 1:
         Asserted when all 2 bytes of a dwell time have been assembled. When this is true,
-        the value of raster_point_c is valid to assign as the next beam controller dwell
+        the value of raster_dwell_c is valid to assign as the next beam controller dwell
     enable: Signal, in, 1:
         Asserted when the out_fifo is ready to be read from. This signal is driven by 
         mode_ctrl.output_enable, which is driven by the top level io_strobe
     strobe_out: Signal, in, 1:
-        Asserted when the data held in raster_point_data is used. On the cycle after this is
+        Asserted when the data held in raster_dwell_data is used. On the cycle after this is
         asserted, the module will return to state X1 and be ready to read a new point in
 
     State Machine:
