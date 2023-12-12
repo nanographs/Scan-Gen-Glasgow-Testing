@@ -44,7 +44,8 @@ class ByteReplacer(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += self.most_significant_8_bits.eq(self.point_data.as_value()[(self.dac_bits - 8):self.dac_bits])
+        #m.d.comb += self.most_significant_8_bits.eq(self.point_data.as_value()[(self.dac_bits - 8):self.dac_bits])
+        m.d.comb += self.most_significant_8_bits.eq(self.point_data.D1)
 
         with m.If(self.eight_bit_output):
             m.d.comb += self.processed_point_data.D1.eq(self.most_significant_8_bits)
