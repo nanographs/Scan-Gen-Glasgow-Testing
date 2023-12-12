@@ -152,10 +152,10 @@ def sim_iobus():
         yield do_frame_sync.eq(1)
         yield do_line_sync.eq(0)
         yield eight_bit_output.eq(1)
-        yield from set_raster_params(dut, x_res=8, y_res=8)
+        yield from set_raster_params(dut, x_res=512, y_res=512)
         yield
         yield
-        yield from raster_sim(88, eight_bit_output = True)
+        yield from raster_sim(100, eight_bit_output = True)
         # yield dut.scan_mode.eq(ScanMode.Vector)
         # yield from vector_sim(16384)
         # yield from vector_pattern_sim(dut)
