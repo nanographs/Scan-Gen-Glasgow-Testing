@@ -116,7 +116,7 @@ class RasterWriter(Elaboratable):
         This signal is combinatorially driven by ras_mode_ctrl.raster_output_data.
         This data is driven from the ADC input data, or if testing in loopback, 
         the beam controller next dwell time
-    raster_position_data: Signal, internal, 16
+    raster_dwell_data: Signal, internal, 16
         When strobe_in_dwell is asserted, this signal is synchronously set
         to the value of vector_dwell_data_c
 
@@ -267,26 +267,34 @@ class RasterWriter(Elaboratable):
                     with m.Else():
                             m.next = "Dwell_Waiting"
             with m.State("Frame_Sync_B1"):
+                m.d.comb += self.strobe_out.eq(1) 
                 m.d.comb += self.in_fifo_w_data.eq(0)
                 with m.If(self.enable):
+                    m.d.comb += self.strobe_out.eq(0) 
                     with m.If(self.eight_bit_output):
                         m.next = "Dwell_Waiting"
                     with m.Else():
                         m.next = "Frame_Sync_B2"
             with m.State("Frame_Sync_B2"):
+                m.d.comb += self.strobe_out.eq(1) 
                 m.d.comb += self.in_fifo_w_data.eq(0)
                 with m.If(self.enable):
+                    m.d.comb += self.strobe_out.eq(0) 
                     m.next = "Dwell_Waiting"
             with m.State("Line_Sync_B1"):
+                m.d.comb += self.strobe_out.eq(1) 
                 m.d.comb += self.in_fifo_w_data.eq(1)
                 with m.If(self.enable):
+                    m.d.comb += self.strobe_out.eq(0) 
                     with m.If(self.eight_bit_output):
                         m.next = "Dwell_Waiting"
                     with m.Else():
                         m.next = "Line_Sync_B2"
             with m.State("Line_Sync_B2"):
+                m.d.comb += self.strobe_out.eq(1) 
                 m.d.comb += self.in_fifo_w_data.eq(1)
                 with m.If(self.enable):
+                    m.d.comb += self.strobe_out.eq(0) 
                     m.next = "Dwell_Waiting"
         return m
 
