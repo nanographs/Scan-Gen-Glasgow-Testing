@@ -120,6 +120,7 @@ class RasterWriter(Elaboratable):
         When strobe_in_dwell is asserted, this signal is synchronously set
         to the value of vector_dwell_data_c
 
+    ## TODO: more descriptive name here
     enable: Signal, in, 1:
         Asserted when the in_fifo is ready to be written to. This signal is driven by 
         mode_ctrl.output_enable, which is driven by the top level io_strobe
