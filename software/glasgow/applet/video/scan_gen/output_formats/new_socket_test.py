@@ -5,6 +5,7 @@ async def recieve_data_client():
     PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
     print("opening connection")
     while True:
+        await asyncio.sleep(0)
         try:
             reader, writer = await asyncio.open_connection(
                 HOST, PORT)
@@ -15,11 +16,18 @@ async def recieve_data_client():
         except:
             pass
     while True:
-        if not reader.at_eof():
-            data = await reader.read(16384)
-            print("recieved data")
-            print(f'Received: {data.decode()!r}')
-        else:
+        try:
+            if not reader.at_eof():
+                await asyncio.sleep(0)
+                data = await reader.read(16384)
+                print("recieved data")
+                print(f'Received: {data.decode()!r}')
+            else:
+                print("at eof?")
+                print(reader)
+                break
+        except Exception as e:
+            print("error:", e)
             break
     print('Close the connection')
     writer.close()
@@ -58,5 +66,17 @@ async def tcp_msg_client(message):
     writer.close()
     await writer.wait_closed()
 
-asyncio.run(tcp_msg_client('rx16384'))
-asyncio.run(recieve_data_client())
+
+async def wait():
+    await asyncio.sleep(10)
+    await tcp_msg_client('1111111')
+
+
+def main():
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(tcp_msg_client('rx16384'))
+    loop.create_task(recieve_data_client())
+    loop.create_task(wait())
+    loop.run_forever()
+
+main()
