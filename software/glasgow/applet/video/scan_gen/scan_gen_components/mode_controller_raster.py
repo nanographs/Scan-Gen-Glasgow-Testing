@@ -144,6 +144,10 @@ class RasterWriter(Elaboratable):
     prev_strobe_in_line_sync: Signal, out, 1
         Equal to the value of strobe_in_line_sync one cycle previously.
         This signal "holds on to" the strobe for an extra cycle
+    eight_bit_output: Signal, in, 1
+        If true, only one byte per data point will be written to
+        the in_fifo.
+
 
     State Machine:
                     ↓----------------------↑
