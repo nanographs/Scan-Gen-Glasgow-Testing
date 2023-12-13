@@ -25,98 +25,46 @@ class frame_vars:
 class cmd_encoder:
     def set_scan_mode(self, scan_mode):
         num = format(scan_mode.value, '05d')
-        cmd = ("sc" + num).encode("UTF-8")
+        cmd = ("sc" + num)
         return cmd
     def set_frame(self, var, pixels):
         num = format(pixels, '05d')
-        cmd = (var + num).encode("UTF-8")
+        cmd = (var + num)
         return cmd
     def set_data_format(self, data_format, setting):
         num = format(setting, '05d')
-        cmd = (data_format + num).encode("UTF-8")
+        cmd = (data_format + num)
         return cmd
 
 def test_cmd_encoder():
     cmd = cmd_encoder()
-    assert (cmd.set_scan_mode(scan_mode.raster) == b'sc00001')
-    assert (cmd.set_frame(frame_vars.x_full_frame_resolution, 16384) == b'rx16384')
-    assert (cmd.set_data_format(data_format.eight_bit, True) == b'8b00001')
-
-class MyProtocol(asyncio.Protocol):
-
-    def __init__(self, on_con_lost):
-        self.transport = None
-        self.on_con_lost = on_con_lost
-
-    def connection_made(self, transport):
-        self.transport = transport
-
-    def data_received(self, data):
-        print("Received:", data.decode())
-
-        # We are done: close the transport;
-        # connection_lost() will be called automatically.
-        self.transport.close()
-
-    def connection_lost(self, exc):
-        # The socket has been closed
-        self.on_con_lost.set_result(True)
+    assert (cmd.set_scan_mode(scan_mode.raster) == "sc00001")
+    assert (cmd.set_frame(frame_vars.x_full_frame_resolution, 16384) == "rx16384")
+    assert (cmd.set_data_format(data_format.eight_bit, True) == "8b00001")
 
 
 class ScanCtrl:
-    _HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    _PORT = 1235  
-    cmd = cmd_encoder()
-
-
-    async def connect(self):
-        try:
-            print("trying to connect")
-            self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT)
-            print(self.writer.transport)
-            print(self.writer.can_write_eof())
-            return "Connected"
-        except Exception as exc:
-            print(exc)
-            return ("Error: {}".format(exc))
-    
-    async def close(self):
-        if self.writer is not None:
-            self.writer.close()
-            await self.writer.wait_closed()
-
-    async def write(self, msg):
-        print("sent", msg)
-        self.writer.write(msg)
-        await self.writer.drain()
-
-    async def start_raster_scan(self):
-        msg = self.cmd.set_scan_mode(scan_mode.raster)
-        #await self.write(msg)
-        await self.write(msg)
-        loop = asyncio.get_event_loop()
-        scan_stream = ScanStream()
-        await asyncio.sleep(1)
-        r = await scan_stream.connect()
-        print(r)
-        loop.create_task(scan_stream.get_single_packet())
-    
+    def __init__(self):
+        self.cmd = cmd_encoder()
     async def set_frame_resolution(self, x_resolution_val, y_resolution_val):
         msg1 = self.cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
         msg2 = self.cmd.set_frame(frame_vars.y_full_frame_resolution, y_resolution_val)
-        await self.write(msg1+msg2)
+        return (msg1+msg2)
 
     async def set_x_resolution(self, x_resolution_val):
         msg = self.cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
-        await self.write(msg)
+        return msg
 
+    async def set_y_resolution(self, y_resolution_val):
+        msg = self.cmd.set_frame(frame_vars.y_full_frame_resolution, y_resolution_val)
+        return msg
 
     async def set_ROI(self, x_upper, x_lower, y_upper, y_lower):
         msg1 = cmd.set_frame(frame_vars.x_upper_limit, x_upper)
         msg2 = cmd.set_frame(frame_vars.x_lower_limit, x_lower)
         msg3 = cmd.set_frame(frame_vars.y_upper_limit, y_upper)
         msg4 = cmd.set_frame(frame_vars.y_lower_limit, y_lower)
-        await self.write(msg1+msg2+msg3+msg4)
+        return (msg1+msg2+msg3+msg4)
         
 
 class ScanStream:
@@ -124,35 +72,21 @@ class ScanStream:
     _PORT = 1234  # Port to listen on (non-privileged ports are > 1023)
     
     def __init__(self):
-        self.y_height = 2048
-        self.x_width = 2048
-        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
-                            dtype = np.uint16)
+        self.y_height = 512
+        self.x_width = 512
+
         self.current_x = 0
         self.current_y = 0
 
-    async def connect(self):
-        try:
-            self.reader, self.writer = await asyncio.open_connection(self._HOST, self._PORT, limit = 8388608*8)
-            # loop = asyncio.get_event_loop()
-            # on_con_lost = loop.create_future()
-            # transport, protocol = await loop.create_connection(lambda:MyProtocol(on_con_lost), host = self._HOST, port = self._PORT)
-            # try:
-            #     await protocol.on_con_lost
-            # finally:
-            #     transport.close()
-            # print(self.writer.transport)
-            print(vars(self.writer))
-            print(vars(self.reader))
-            return self.reader, self.writer
-        except Exception as exc:
-            print(exc)
-            return ("Error: {}".format(exc))
+        self.eight_bit_output = True
+        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
+                    dtype = np.uint8)
     
-    async def close(self):
-        if self.writer is not None:
-            self.writer.close()
-            await self.writer.wait_closed()
+    def change_buffer(self, x_width, y_height):
+        self.x_width = x_width
+        self.y_height = y_height
+        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
+                    dtype = np.uint8)
 
     def decode_rdwell(self, n):
         a2, a1 = n
@@ -164,11 +98,14 @@ class ScanStream:
             data = list(raw_data)
         else:
             data = raw_data.tolist()
-        packet = []
-        for n in range(0,len(data),2):
-            dwell = self.decode_rdwell(data[n:n+2])
-            packet.append(dwell)
-        return packet
+        if self.eight_bit_output:
+            return data
+        else:
+            packet = []
+            for n in range(0,len(data),2):
+                dwell = self.decode_rdwell(data[n:n+2])
+                packet.append(dwell)
+            return packet
 
     def stream_to_buffer(self, raw_data):
         data = self.decode_rdwell_packet(raw_data)
@@ -224,64 +161,3 @@ class ScanStream:
 
         print(self.buffer)
         #print("=====")
-
-
-    async def start_scan_stream(self):
-        await self.start_scan()
-        self.scanning = asyncio.ensure_future(self.stream_continously())
-
-    async def start_scan_pattern_stream(self, pattern_stream):
-        pattern = self.pattern_loop(512, pattern_stream)
-        await self.start_scan()
-        self.scanning = asyncio.ensure_future(self.stream_continously_pattern(pattern))
-
-    def pattern_loop(self, dimension, pattern_stream):
-        while 1:
-            for n in range(int(dimension*dimension/16384)): #packets per frame
-                print(n)
-                yield pattern_stream[n*16384:(n+1)*16384]
-            print("pattern complete")
-        
-    async def send_single_packet(self, pattern_slice):
-            print("writing")
-            self.writer.write(pattern_slice)
-            print("write", pattern_slice[0], ":", pattern_slice[-1], "-", len(pattern_slice))
-            await self.writer.drain()
-
-    async def stream_continously(self):
-        while True:
-            try:
-                await self.get_single_packet()
-            except RuntimeError:
-                print("eof:", self.reader.at_eof())
-                break
-
-    async def get_single_packet(self):
-        for n in range(10):
-            try:
-                print("reading")
-                data = await asyncio.wait_for(self.reader.read(n=-1), timeout = 1)
-                print(data)
-                print("read done")
-            except Exception as e:
-                print("error:", e)
-                print(type(e))
-        # if data is not None:
-        #     print("recvd", (list(data))[0], ":", (list(data))[-1], "-", len(list(data)))
-        #     #return data
-        #     await self.stream_to_buffer(data)
-
-
-def main():
-    scan_ctrl = ScanCtrl()
-    scan_stream = ScanStream()
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(scan_stream.connect())
-    loop.create_task(scan_stream.get_single_packet())
-    #loop.run_until_complete(scan_ctrl.connect())
-    #loop.create_task(scan_ctrl.start_raster_scan())
-    loop.run_forever()
-
-
-if __name__ == "__main__":
-    main()

@@ -26,6 +26,8 @@ from qasync import QEventLoop, QApplication, asyncSlot, asyncClose
 # from bmp_utils import *
 from argparse import Namespace
 
+from new_socket_test import ConnectionManager
+
 class RegisterUpdateBox(QGridLayout):
     def __init__(self, label, lower_limit, upper_limit, fn=None):
         super().__init__()
@@ -165,7 +167,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.hist.disableAutoHistogramRange()
         self.addItem(self.hist)
 
-        self.hist.setLevels(min=0,max=0)
+        self.hist.setLevels(min=0,max=255)
 
 
         ### reverse the default LUT

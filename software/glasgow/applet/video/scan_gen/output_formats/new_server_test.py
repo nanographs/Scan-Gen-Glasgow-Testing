@@ -69,25 +69,13 @@ class ServerHost:
         try:
             print("awaiting read")
             data = await self.cmd_reader.readexactly(7)
+            print("data", data)
             message = data.decode()
             print("message:", message)
             self.queue.submit(self.process_cmd(message))
             await self.queue.poll()
         except asyncio.IncompleteReadError:
             print("err")
-
-        # print("message:", message)
-        # print("closing cmd writer")
-        # writer.close()
-        # await writer.wait_closed()
-
-        # loop = asyncio.get_event_loop()
-        # if message == "rx16384":
-        #     print("initiating stream")
-        #     self.streaming = asyncio.ensure_future(self.send_data_continously())
-        # elif message == "1111111":
-        #     print("canceling stream")
-        #     self.streaming.cancel()
 
 
     async def handle_data(self, reader, writer):

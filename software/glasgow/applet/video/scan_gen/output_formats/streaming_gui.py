@@ -22,8 +22,9 @@ from pyqtgraph.Qt import QtCore
 import qasync
 from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 
-from microscope import ScanCtrl, ScanStream
-from even_newer_gui import ImageDisplay, RegisterUpdateBox
+#from microscope import ScanCtrl, ScanStream
+from new_socket_test import ConnectionManager
+from even_newer_gui import ImageDisplay
 
 
 from bmp_utils import *
@@ -97,6 +98,33 @@ def pattern_loop(dimension, pattern_stream):
             yield pattern_stream[n*16384:(n+1)*16384]
         print("pattern complete")
 
+class RegisterUpdateBox(QGridLayout):
+    def __init__(self, label, lower_limit, upper_limit, con=None, msgfn=None):
+        super().__init__()
+        self.name = label
+        self.msgfn = msgfn
+        self.con = con
+        self.label = QLabel(label)
+        self.addWidget(self.label,0,1)
+
+        self.spinbox = QSpinBox()
+        self.spinbox.setRange(lower_limit, upper_limit)
+        self.spinbox.setSingleStep(1)
+        self.addWidget(self.spinbox,1,1)
+
+        self.btn = QPushButton("->")
+        self.btn.clicked.connect(self.do_fn)
+        self.addWidget(self.btn, 2, 1)
+
+    @asyncSlot()
+    async def do_fn(self):
+        val = int(self.spinbox.cleanText())
+        print("set", self.name, ":", val)
+        if self.con:
+            msg = await self.msgfn(val)
+            await self.con.tcp_msg_client(msg)
+
+
 class FrameSettings(QHBoxLayout):
     def __init__(self):
         super().__init__()
@@ -109,8 +137,9 @@ class MainWindow(QWidget):
         # self.x_width = scan_controller.x_width
         # self.y_height = scan_controller.y_height
 
-        self.scan_ctrl = ScanCtrl()
-        self.scan_stream = ScanStream()
+        # self.scan_ctrl = ScanCtrl()
+        # self.scan_stream = ScanStream()
+        self.con = ConnectionManager()
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
@@ -121,18 +150,19 @@ class MainWindow(QWidget):
 
         self.frame_settings = FrameSettings()
         self.layout.addLayout(self.frame_settings, 2, 0)
-        self.rx = RegisterUpdateBox("X Resolution", 1, 16384, self.scan_ctrl.set_x_resolution)
+        self.rx = RegisterUpdateBox("X Resolution", 1, 16384, self.con, self.con.scan_ctrl.set_x_resolution)
         self.frame_settings.addLayout(self.rx)
-        
+        self.ry = RegisterUpdateBox("Y Resolution", 1, 16384, self.con, self.con.scan_ctrl.set_y_resolution)
+        self.frame_settings.addLayout(self.ry)
+
+        self.rx.btn.clicked.connect(self.updateFrameSize)
+        self.ry.btn.clicked.connect(self.updateFrameSize)
 
 
-        self.conn_btn = QPushButton("Disconnected")
+        self.conn_btn = QPushButton("Click to Connect")
         self.conn_btn.setCheckable(True) 
         self.conn_btn.clicked.connect(self.connect)
 
-        self.stream_conn_btn = QPushButton("Disconnected")
-        self.stream_conn_btn.setCheckable(True) 
-        self.stream_conn_btn.clicked.connect(self.connect_stream)
 
         # self.mode_select_dropdown = QComboBox()
         # self.mode_select_dropdown.addItem("Imaging")
@@ -143,9 +173,9 @@ class MainWindow(QWidget):
         # self.loopback_btn.setCheckable(True) 
         # self.loopback_btn.clicked.connect(self.set_loopback)
 
-        # self.start_btn = QPushButton('▶️')
-        # self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
-        # self.start_btn.clicked.connect(self.toggle_scan)
+        self.start_btn = QPushButton('▶️')
+        self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
+        self.start_btn.clicked.connect(self.toggle_scan)
 
         # self.new_scan_btn = QPushButton('↻')
         # self.new_scan_btn.clicked.connect(self.reset_scan)
@@ -157,10 +187,9 @@ class MainWindow(QWidget):
 
         # mode_options = QGridLayout()
         self.layout.addWidget(self.conn_btn,0,0)
-        self.layout.addWidget(self.stream_conn_btn,0,1)
         # mode_options.addWidget(self.mode_select_dropdown,0,1)
         # mode_options.addWidget(self.loopback_btn,0,3)
-        #mode_options.addWidget(self.start_btn,0,4)
+        self.layout.addWidget(self.start_btn,0,1)
         # mode_options.addWidget(self.new_scan_btn,0,5)
         # # mode_options.addWidget(self.save_btn, 0, 6)
 
@@ -198,22 +227,23 @@ class MainWindow(QWidget):
         # self.image_display.image_view.addItem(self.file_dialog.image_display.live_img) #oof
         # self.image_display.image_view.autoRange()
         # print(self.image_display.image_view.allChildren())
-        
+
+    @asyncSlot()
+    async def updateFrameSize(self):
+        x_width = int(self.rx.spinbox.cleanText())
+        y_height = int(self.rx.spinbox.cleanText())
+        self.con.scan_stream.change_buffer(x_width, y_height)
+        self.image_display.setRange(x_width, y_height)
 
     @asyncSlot()
     async def connect(self):
-        connection = await self.scan_ctrl.connect()
-        self.conn_btn.setText(connection)
+        await self.con.recieve_data_client()
+        await self.con.tcp_msg_client("rx16384")
+        await self.con.tcp_msg_client("ry16384")
         # if connection == "Connected":
         #     self.setState("scan_not_started")
 
-    @asyncSlot()
-    async def connect_stream(self):
-        connection = await self.scan_stream.connect()
-        self.conn_btn.setText(connection)
-        data = await self.scan_stream.get_single_packet()
-        print(data)
-    
+
     @asyncSlot()
     async def mode_select(self):
         await scan_controller.reset_scan()
@@ -249,65 +279,35 @@ class MainWindow(QWidget):
     async def toggle_scan(self):
         if self.start_btn.isChecked():
             self.start_btn.setText('🔄')
-            self.mode = self.mode_select_dropdown.currentText()
-            await scan_controller.start_scan()
-            # if mode == "Imaging":
-            #     await scan_controller.start_scan()
-            #     await scan_controller.start_scan_pattern_stream(pattern_stream)
             loop = asyncio.get_event_loop()
-            print("GUI", loop)
+            loop.create_task(self.con.start_reading())
             self.update_continously = asyncio.ensure_future(self.keepUpdating())
-            self.setState("scanning")
+            # self.setState("scanning")
             self.start_btn.setText('⏸️')
 
         else:
             print("Stopped scanning now")
             self.start_btn.setText('🔄')
             self.update_continously.cancel()
-            await scan_controller.stop_scan()
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.con.stop_reading())
             # if self.mode == "Patterning":
             #     scan_controller.writer.write_eof()
-            self.setState("scan_paused")
+            # self.setState("scan_paused")
             self.start_btn.setText('▶️')
-            
-    
-    @asyncSlot()
-    async def changeResolution(self):
-        res_bits = self.resolution_options.menu.currentIndex() + 9 #9 through 14
-        dimension = pow(2,res_bits)
-        await scan_controller.set_resolution(res_bits)
-        self.image_display.setRange(dimension, dimension)
-        self.dimension = dimension
-        print("setting resolution to", dimension)
 
-    @asyncSlot()
-    async def changeDwellTime(self):
-        dwell_time = self.dwell_options.spinbox.cleanText()
-        await scan_controller.set_dwell_time(int(dwell_time))
-        print("setting dwell time to", dwell_time)
-
-    # async def keepUpdating(self):
-    #     while True:   
-    #         try:
-    #             await self.updateData()
-    #         except RuntimeError:
-    #             print("error")
-    #             break
+    async def keepUpdating(self):
+        while True:   
+            await asyncio.sleep(0)
+            try:
+                await self.updateData()
+            except RuntimeError:
+                print("error")
+                break
     
-    # async def updateData(self):
-    #     print("mode=", self.mode)
-    #     if self.mode == "Imaging":
-    #         await scan_controller.get_single_packet()
-    #     if self.mode == "Patterning":
-    #         pattern_slice = (next(self.pattern)).tobytes(order='C')
-    #         print("sending single packet")
-    #         await scan_controller.send_single_packet(pattern_slice)
-    #         print("recieving single packet")
-    #         await scan_controller.get_single_packet()
-    #     self.image_display.live_img.setImage(scan_controller.buf, autoLevels = False)
-    #     print(scan_controller.buf)
+    async def updateData(self):
+        self.image_display.live_img.setImage(self.con.scan_stream.buffer, autoLevels = False)
         
-    
         
     def setState(self, state):
         if state == "disconnected":
