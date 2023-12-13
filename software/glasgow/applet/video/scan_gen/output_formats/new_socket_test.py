@@ -24,8 +24,8 @@ class ConnectionManager:
     def __init__(self):
         pass
     async def open_connection(self, host, port, future):
+        print("trying to open connection at", host, port)
         while True:
-            print("trying to open connection")
             try:
                 reader, writer = await asyncio.open_connection(
                     host, port)
@@ -35,7 +35,7 @@ class ConnectionManager:
                 future.set_result([reader,writer])
                 break
             except ConnectionError:
-                print("connection error")
+                #print("connection error")
                 pass
 
     async def read_continously(self, reader):
@@ -45,7 +45,8 @@ class ConnectionManager:
                     await asyncio.sleep(0)
                     data = await reader.read(16384)
                     print("recieved data")
-                    print(f'Received: {data.decode()!r}')
+                    print(data)
+                    #print(f'Received: {data.decode()!r}')
                 else:
                     print("at eof?")
                     print(reader)
@@ -58,7 +59,7 @@ class ConnectionManager:
     async def recieve_data_client(self):
         host = "127.0.0.1"  # Standard loopback interface address (localhost)
         port = 1238  # Port to listen on (non-privileged ports are > 1023)
-        print("opening connection")
+        print("opening data client")
         loop = asyncio.get_event_loop()
         future_con = loop.create_future()
         loop.create_task(self.open_connection(host, port, future_con))
@@ -70,8 +71,14 @@ class ConnectionManager:
     async def tcp_msg_client(self, message):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
-        reader, writer = await asyncio.open_connection(
-            HOST, PORT)
+        print("opening cmd client")
+        loop = asyncio.get_event_loop()
+        future_con = loop.create_future()
+        loop.create_task(self.open_connection(HOST, PORT, future_con))
+        await asyncio.sleep(0)
+        reader, writer = await future_con
+        # reader, writer = await asyncio.open_connection(
+        #     HOST, PORT)
 
         print(f'Send: {message!r}')
         writer.write(message.encode())
@@ -87,7 +94,7 @@ class ConnectionManager:
         await self.stop_reading()
         
     async def start_reading(self):
-        asyncio.ensure_future(self.tcp_msg_client('rx16384'))
+        asyncio.ensure_future(self.tcp_msg_client('sc00001'))
         self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader))
 
     async def stop_reading(self):
@@ -103,12 +110,15 @@ class ConnectionManager:
 def main():
     con = ConnectionManager()
     loop = asyncio.get_event_loop()
+    loop.run_until_complete(con.recieve_data_client())
     loop.run_until_complete(con.tcp_msg_client("rx16384"))
     loop.run_until_complete(con.tcp_msg_client("ry16384"))
-    # loop.run_until_complete(con.tcp_msg_client("sc00001"))
+    loop.create_task(con.start_reading())
+    loop.create_task(con.wait_stop())
+    loop.run_forever()
+    #loop.run_until_complete(con.tcp_msg_client("sc00001"))
     # # con = ConnectionManager()
     
-    # loop.run_until_complete(con.recieve_data_client())
     # loop.run_until_complete(con.start_reading())
     # loop.run_until_complete(con.wait_stop())
     # loop.run_until_complete(con.start_reading())

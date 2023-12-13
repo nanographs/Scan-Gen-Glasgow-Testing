@@ -418,7 +418,7 @@ class SG_EndpointInterface(ScanGenInterface):
 
     def close(self):
         self.close_future.set_result("Closed")
-    
+
     # async def get_cmd(self):
     #     try:
     #         loop = asyncio.get_event_loop()
@@ -481,6 +481,7 @@ class SG_EndpointInterface(ScanGenInterface):
     async def stream_data(self):
         while True:
             data = await self.iface.read(16384)
+            print("writing", data)
             self.server_host.data_writer.write(data)
             await self.server_host.data_writer.drain()
 
@@ -490,6 +491,7 @@ class SG_EndpointInterface(ScanGenInterface):
         if c == "sc":
             await self.set_scan_mode(val)
             if val == 1:
+                print("start stream...")
                 self.streaming = asyncio.ensure_future(self.stream_data())
         elif c == "rx":
             await self.set_x_resolution(val)

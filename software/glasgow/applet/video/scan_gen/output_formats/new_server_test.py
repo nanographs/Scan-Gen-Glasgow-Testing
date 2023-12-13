@@ -44,14 +44,14 @@ class ServerHost:
             print("error:", e)
     
     async def start_cmd_server(self, host, port):
-        print("starting cmd server")
+        print("starting cmd server at", host, port)
         self.cmd_server = await asyncio.start_server(self.handle_cmd, host, port)
         await self.cmd_server.serve_forever()
 
     async def start_data_server(self, host, port):
-        print("starting data server")
+        print("starting data server at", host, port)
         #self.streaming = True
-        self.data_server = await asyncio.start_server(self.handle_data, host, port+1)
+        self.data_server = await asyncio.start_server(self.handle_data, host, port)
         await self.data_server.serve_forever()
 
     async def stopdata(self):
@@ -64,14 +64,15 @@ class ServerHost:
         self.cmd_reader = reader
         self.cmd_writer = writer
         # self.cmd_reader_future.set_result(reader)
-        print("cmd server started")
+        print("cmd server made connection")
         loop = asyncio.get_running_loop()
         try:
             print("awaiting read")
             data = await self.cmd_reader.readexactly(7)
             message = data.decode()
             print("message:", message)
-            self.queue.submit(self.process_cmd(msg))
+            self.queue.submit(self.process_cmd(message))
+            await self.queue.poll()
         except asyncio.IncompleteReadError:
             print("err")
 
@@ -90,7 +91,9 @@ class ServerHost:
 
 
     async def handle_data(self, reader, writer):
+        self.data_reader = reader
         self.data_writer = writer
+        print("data server made connection")
         addr = writer.get_extra_info('peername')
         print(f"addr: {addr!r}")
         
