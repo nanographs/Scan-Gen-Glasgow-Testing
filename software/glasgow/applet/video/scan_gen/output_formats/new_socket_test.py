@@ -1,28 +1,13 @@
 import asyncio
 
-
-async def tcp_echo_client(message):
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
-    reader, writer = await asyncio.open_connection(
-        HOST, PORT)
-
-    print(f'Send: {message!r}')
-    writer.write(message.encode())
-    await writer.drain()
-
-    data = await reader.read(100)
-    print(f'Received: {data.decode()!r}')
-
-    print('Close the connection')
-    writer.close()
-    await writer.wait_closed()
+from microscope import ScanStream, ScanCtrl
 
 
 
 class ConnectionManager:
     def __init__(self):
-        pass
+        self.scan_stream = ScanStream()
+        self.scan_ctrl = ScanCtrl()
     async def open_connection(self, host, port, future):
         print("trying to open connection at", host, port)
         while True:
@@ -45,7 +30,8 @@ class ConnectionManager:
                     await asyncio.sleep(0)
                     data = await reader.read(16384)
                     print("recieved data")
-                    print(data)
+                    data = memoryview(data)
+                    self.scan_stream.stream_to_buffer(data)
                     #print(f'Received: {data.decode()!r}')
                 else:
                     print("at eof?")
@@ -77,9 +63,6 @@ class ConnectionManager:
         loop.create_task(self.open_connection(HOST, PORT, future_con))
         await asyncio.sleep(0)
         reader, writer = await future_con
-        # reader, writer = await asyncio.open_connection(
-        #     HOST, PORT)
-
         print(f'Send: {message!r}')
         writer.write(message.encode())
         await writer.drain()
@@ -92,13 +75,17 @@ class ConnectionManager:
     async def wait_stop(self):
         await asyncio.sleep(10)
         await self.stop_reading()
-        
+        await asyncio.sleep(1)
+        await self.start_reading()
+        await asyncio.sleep(10)
+        await self.stop_reading()
+
     async def start_reading(self):
         asyncio.ensure_future(self.tcp_msg_client('sc00001'))
         self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader))
 
     async def stop_reading(self):
-        await self.tcp_msg_client('1111111')
+        await self.tcp_msg_client('sc00000')
         self.streaming.cancel()
     
     async def close_data_stream(self):
@@ -126,4 +113,4 @@ def main():
     # loop.run_until_complete(con.close_data_stream())
     # loop.run_forever()
 
-main()
+# main()

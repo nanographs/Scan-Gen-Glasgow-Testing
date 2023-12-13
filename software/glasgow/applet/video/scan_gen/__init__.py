@@ -419,64 +419,12 @@ class SG_EndpointInterface(ScanGenInterface):
     def close(self):
         self.close_future.set_result("Closed")
 
-    # async def get_cmd(self):
-    #     try:
-    #         loop = asyncio.get_event_loop()
-    #         future_cmd = loop.create_future()
-    #         loop.create_task(self.server_host.get_next_cmd(future_cmd))
-    #         future_done = loop.create_future()
-    #         loop.create_task(self.process_future_cmd(future_cmd, future_done))
-    #         await future_done
-    #         print("done")
-    #         await self.get_cmd()
-    #     except Exception as e:
-    #         print("error:", e)
-
-    # async def get_stream_endpoint(self):
-    #     endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1234"), queue_size=8388608*8)
-    #     return endpoint
-
-    # async def get_ctrl_endpoint(self):
-    #     endpoint = await ServerEndpoint("socket", None, ("tcp","localhost","1235"), queue_size=32)
-    #     return endpoint
-
     def launch_gui(self):
         ## using sys.prefix instead of "python3" results in a PermissionError
         ## because pipx isn't supposed to be used that way
         ## would be nice to stay in the same environment though
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
                         start_new_session = True)
-
-    async def listen_at_endpoint(self):
-        self.ctrl_endpoint = await self.get_ctrl_endpoint()
-        print(self.ctrl_endpoint)
-        while True:
-            try:
-                cmd = await self.ctrl_endpoint.recv(7)
-                cmd = cmd.decode(encoding='utf-8', errors='strict')
-                print("rcvd", cmd)
-                await self.process_cmd(cmd)
-            except:
-                break
-
-    async def stream_to_endpoint(self):
-        await self.set_frame_resolution(512,512)
-        await self.set_raster_mode()
-        self.stream_endpoint = await self.get_stream_endpoint()
-        while True:
-            data = await self.iface.read(16384)
-            print("sending", data)
-            await self.stream_endpoint.send(data)
-
-    async def process_future_cmd(self, future_cmd, future_done):
-        print("awaiting cmd")
-        if future_cmd.cancelled():
-            future_done.set_result("done")
-        else:
-            cmd = await future_cmd
-            print("got cmd from fut", cmd)
-            await self.process_cmd(cmd)
-            future_done.set_result("done")
 
     async def stream_data(self):
         while True:
@@ -490,7 +438,10 @@ class SG_EndpointInterface(ScanGenInterface):
         val = int(cmd[2:])
         if c == "sc":
             await self.set_scan_mode(val)
-            if val == 1:
+            if val == 0:
+                print("stop stream...")
+                self.streaming.cancel()
+            elif val == 1:
                 print("start stream...")
                 self.streaming = asyncio.ensure_future(self.stream_data())
         elif c == "rx":
@@ -804,6 +755,7 @@ class ScanGenApplet(GlasgowApplet):
             scan_iface.launch_gui()
             
         if args.buf == "endpoint":
+            await scan_iface.set_8bit_output(1)
             loop = asyncio.get_event_loop()
             close_future = loop.create_future()
             scan_iface.start_servers(close_future)
