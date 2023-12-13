@@ -167,15 +167,27 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
 
         self.hist.setLevels(min=0,max=0)
 
+
+        ### reverse the default LUT
+        lut = []
+        for n in range(0, 256):
+            lut.append([255-n,255-n,255-n])
+        
+        lut = np.array(lut, dtype = np.uint8)
+        self.live_img.setLookupTable(lut)
+
+
         self.exporter = pg.exporters.ImageExporter(self.live_img)
 
     def setRange(self, height, width):
         self.image_view.setRange(QtCore.QRectF(0, 0, width, height))
     
     def showTest(self):
-        test_file = "software/glasgow/applet/video/scan_gen/output_formats/Nanographs Pattern Test Logo and Gradients.bmp"
-        bmp = bmp_import(test_file)
-        array = np.array(bmp).astype(np.uint8)
+        # test_file = "software/glasgow/applet/video/scan_gen/output_formats/Nanographs Pattern Test Logo and Gradients.bmp"
+        # bmp = bmp_import(test_file)
+        # array = np.array(bmp).astype(np.uint8)
+        array = np.random.randint(0, 255,size = (512,512))
+        array = array.astype(np.uint8)
         self.live_img.setImage(array)
 class MainWindow(QWidget):
 

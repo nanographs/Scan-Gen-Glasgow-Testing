@@ -1,0 +1,415 @@
+<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg version="1.1" width="1200" height="362" onload="init(evt)" viewBox="0 0 1200 362" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:fg="http://github.com/jonhoo/inferno"><!--Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples.--><!--NOTES: --><defs><linearGradient id="background" y1="0" y2="1" x1="0" x2="0"><stop stop-color="#eeeeee" offset="5%"/><stop stop-color="#eeeeb0" offset="95%"/></linearGradient></defs><style type="text/css">
+text { font-family:"Verdana"; font-size:12px; fill:rgb(0,0,0); }
+#title { text-anchor:middle; font-size:17px; }
+#matched { text-anchor:end; }
+#search { text-anchor:end; opacity:0.1; cursor:pointer; }
+#search:hover, #search.show { opacity:1; }
+#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+#unzoom { cursor:pointer; }
+#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+.hide { display:none; }
+.parent { opacity:0.5; }
+</style><script type="text/ecmascript"><![CDATA[
+        var nametype = 'Function:';
+        var fontsize = 12;
+        var fontwidth = 0.59;
+        var xpad = 10;
+        var inverted = true;
+        var searchcolor = 'rgb(230,0,230)';
+        var fluiddrawing = true;
+        var truncate_text_right = false;
+    ]]><![CDATA["use strict";
+var details, searchbtn, unzoombtn, matchedtxt, svg, searching, frames;
+function init(evt) {
+    details = document.getElementById("details").firstChild;
+    searchbtn = document.getElementById("search");
+    unzoombtn = document.getElementById("unzoom");
+    matchedtxt = document.getElementById("matched");
+    svg = document.getElementsByTagName("svg")[0];
+    frames = document.getElementById("frames");
+    total_samples = parseInt(frames.attributes.total_samples.value);
+    searching = 0;
+
+    // Use GET parameters to restore a flamegraph's state.
+    var restore_state = function() {
+        var params = get_params();
+        if (params.x && params.y)
+            zoom(find_group(document.querySelector('[*|x="' + params.x + '"][y="' + params.y + '"]')));
+        if (params.s)
+            search(params.s);
+    };
+
+    if (fluiddrawing) {
+        // Make width dynamic so the SVG fits its parent's width.
+        svg.removeAttribute("width");
+        // Edge requires us to have a viewBox that gets updated with size changes.
+        var isEdge = /Edge\/\d./i.test(navigator.userAgent);
+        var update_for_width_change = function() {
+            if (isEdge) {
+                svg.attributes.viewBox.value = "0 0 " + svg.width.baseVal.value + " " + svg.height.baseVal.value;
+            }
+
+            // Keep consistent padding on left and right of frames container.
+            frames.attributes.width.value = svg.width.baseVal.value - xpad * 2;
+
+            // Text truncation needs to be adjusted for the current width.
+            var el = frames.children;
+            for(var i = 0; i < el.length; i++) {
+                update_text(el[i]);
+            }
+
+            // Keep search elements at a fixed distance from right edge.
+            var svgWidth = svg.width.baseVal.value;
+            searchbtn.attributes.x.value = svgWidth - xpad;
+            matchedtxt.attributes.x.value = svgWidth - xpad;
+        };
+        window.addEventListener('resize', function() {
+            update_for_width_change();
+        });
+        // This needs to be done asynchronously for Safari to work.
+        setTimeout(function() {
+            unzoom();
+            update_for_width_change();
+            restore_state();
+            if (!isEdge) {
+                svg.removeAttribute("viewBox");
+            }
+        }, 0);
+    } else {
+        restore_state();
+    }
+}
+// event listeners
+window.addEventListener("click", function(e) {
+    var target = find_group(e.target);
+    if (target) {
+        if (target.nodeName == "a") {
+            if (e.ctrlKey === false) return;
+            e.preventDefault();
+        }
+        if (target.classList.contains("parent")) unzoom();
+        zoom(target);
+
+        // set parameters for zoom state
+        var el = target.querySelector("rect");
+        if (el && el.attributes && el.attributes.y && el.attributes["fg:x"]) {
+            var params = get_params()
+            params.x = el.attributes["fg:x"].value;
+            params.y = el.attributes.y.value;
+            history.replaceState(null, null, parse_params(params));
+        }
+    }
+    else if (e.target.id == "unzoom") {
+        unzoom();
+
+        // remove zoom state
+        var params = get_params();
+        if (params.x) delete params.x;
+        if (params.y) delete params.y;
+        history.replaceState(null, null, parse_params(params));
+    }
+    else if (e.target.id == "search") search_prompt();
+}, false)
+// mouse-over for info
+// show
+window.addEventListener("mouseover", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = nametype + " " + g_to_text(target);
+}, false)
+// clear
+window.addEventListener("mouseout", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = ' ';
+}, false)
+// ctrl-F for search
+window.addEventListener("keydown",function (e) {
+    if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+        e.preventDefault();
+        search_prompt();
+    }
+}, false)
+// functions
+function get_params() {
+    var params = {};
+    var paramsarr = window.location.search.substr(1).split('&');
+    for (var i = 0; i < paramsarr.length; ++i) {
+        var tmp = paramsarr[i].split("=");
+        if (!tmp[0] || !tmp[1]) continue;
+        params[tmp[0]]  = decodeURIComponent(tmp[1]);
+    }
+    return params;
+}
+function parse_params(params) {
+    var uri = "?";
+    for (var key in params) {
+        uri += key + '=' + encodeURIComponent(params[key]) + '&';
+    }
+    if (uri.slice(-1) == "&")
+        uri = uri.substring(0, uri.length - 1);
+    if (uri == '?')
+        uri = window.location.href.split('?')[0];
+    return uri;
+}
+function find_child(node, selector) {
+    var children = node.querySelectorAll(selector);
+    if (children.length) return children[0];
+    return;
+}
+function find_group(node) {
+    var parent = node.parentElement;
+    if (!parent) return;
+    if (parent.id == "frames") return node;
+    return find_group(parent);
+}
+function orig_save(e, attr, val) {
+    if (e.attributes["fg:orig_" + attr] != undefined) return;
+    if (e.attributes[attr] == undefined) return;
+    if (val == undefined) val = e.attributes[attr].value;
+    e.setAttribute("fg:orig_" + attr, val);
+}
+function orig_load(e, attr) {
+    if (e.attributes["fg:orig_"+attr] == undefined) return;
+    e.attributes[attr].value = e.attributes["fg:orig_" + attr].value;
+    e.removeAttribute("fg:orig_" + attr);
+}
+function g_to_text(e) {
+    var text = find_child(e, "title").firstChild.nodeValue;
+    return (text)
+}
+function g_to_func(e) {
+    var func = g_to_text(e);
+    // if there's any manipulation we want to do to the function
+    // name before it's searched, do it here before returning.
+    return (func);
+}
+function update_text(e) {
+    var r = find_child(e, "rect");
+    var t = find_child(e, "text");
+    var w = parseFloat(r.attributes.width.value) * frames.attributes.width.value / 100 - 3;
+    var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+    t.attributes.x.value = format_percent((parseFloat(r.attributes.x.value) + (100 * 3 / frames.attributes.width.value)));
+    // Smaller than this size won't fit anything
+    if (w < 2 * fontsize * fontwidth) {
+        t.textContent = "";
+        return;
+    }
+    t.textContent = txt;
+    // Fit in full text width
+    if (/^ *\$/.test(txt) || t.getComputedTextLength() < w)
+        return;
+    if (truncate_text_right) {
+        // Truncate the right side of the text.
+        for (var x = txt.length - 2; x > 0; x--) {
+            if (t.getSubStringLength(0, x + 2) <= w) {
+                t.textContent = txt.substring(0, x) + "..";
+                return;
+            }
+        }
+    } else {
+        // Truncate the left side of the text.
+        for (var x = 2; x < txt.length; x++) {
+            if (t.getSubStringLength(x - 2, txt.length) <= w) {
+                t.textContent = ".." + txt.substring(x, txt.length);
+                return;
+            }
+        }
+    }
+    t.textContent = "";
+}
+// zoom
+function zoom_reset(e) {
+    if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * parseInt(e.attributes["fg:x"].value) / total_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / total_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_reset(c[i]);
+    }
+}
+function zoom_child(e, x, zoomed_width_samples) {
+    if (e.tagName == "text") {
+        var parent_x = parseFloat(find_child(e.parentNode, "rect[x]").attributes.x.value);
+        e.attributes.x.value = format_percent(parent_x + (100 * 3 / frames.attributes.width.value));
+    } else if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * (parseInt(e.attributes["fg:x"].value) - x) / zoomed_width_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / zoomed_width_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_child(c[i], x, zoomed_width_samples);
+    }
+}
+function zoom_parent(e) {
+    if (e.attributes) {
+        if (e.attributes.x != undefined) {
+            e.attributes.x.value = "0.0%";
+        }
+        if (e.attributes.width != undefined) {
+            e.attributes.width.value = "100.0%";
+        }
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_parent(c[i]);
+    }
+}
+function zoom(node) {
+    var attr = find_child(node, "rect").attributes;
+    var width = parseInt(attr["fg:w"].value);
+    var xmin = parseInt(attr["fg:x"].value);
+    var xmax = xmin + width;
+    var ymin = parseFloat(attr.y.value);
+    unzoombtn.classList.remove("hide");
+    var el = frames.children;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        var a = find_child(e, "rect").attributes;
+        var ex = parseInt(a["fg:x"].value);
+        var ew = parseInt(a["fg:w"].value);
+        // Is it an ancestor
+        if (!inverted) {
+            var upstack = parseFloat(a.y.value) > ymin;
+        } else {
+            var upstack = parseFloat(a.y.value) < ymin;
+        }
+        if (upstack) {
+            // Direct ancestor
+            if (ex <= xmin && (ex+ew) >= xmax) {
+                e.classList.add("parent");
+                zoom_parent(e);
+                update_text(e);
+            }
+            // not in current path
+            else
+                e.classList.add("hide");
+        }
+        // Children maybe
+        else {
+            // no common path
+            if (ex < xmin || ex >= xmax) {
+                e.classList.add("hide");
+            }
+            else {
+                zoom_child(e, xmin, width);
+                update_text(e);
+            }
+        }
+    }
+}
+function unzoom() {
+    unzoombtn.classList.add("hide");
+    var el = frames.children;
+    for(var i = 0; i < el.length; i++) {
+        el[i].classList.remove("parent");
+        el[i].classList.remove("hide");
+        zoom_reset(el[i]);
+        update_text(el[i]);
+    }
+}
+// search
+function reset_search() {
+    var el = document.querySelectorAll("#frames rect");
+    for (var i = 0; i < el.length; i++) {
+        orig_load(el[i], "fill")
+    }
+    var params = get_params();
+    delete params.s;
+    history.replaceState(null, null, parse_params(params));
+}
+function search_prompt() {
+    if (!searching) {
+        var term = prompt("Enter a search term (regexp " +
+            "allowed, eg: ^ext4_)", "");
+        if (term != null) {
+            search(term)
+        }
+    } else {
+        reset_search();
+        searching = 0;
+        searchbtn.classList.remove("show");
+        searchbtn.firstChild.nodeValue = "Search"
+        matchedtxt.classList.add("hide");
+        matchedtxt.firstChild.nodeValue = ""
+    }
+}
+function search(term) {
+    var re = new RegExp(term);
+    var el = frames.children;
+    var matches = new Object();
+    var maxwidth = 0;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        // Skip over frames which are either not visible, or below the zoomed-to frame
+        if (e.classList.contains("hide") || e.classList.contains("parent")) {
+            continue;
+        }
+        var func = g_to_func(e);
+        var rect = find_child(e, "rect");
+        if (func == null || rect == null)
+            continue;
+        // Save max width. Only works as we have a root frame
+        var w = parseInt(rect.attributes["fg:w"].value);
+        if (w > maxwidth)
+            maxwidth = w;
+        if (func.match(re)) {
+            // highlight
+            var x = parseInt(rect.attributes["fg:x"].value);
+            orig_save(rect, "fill");
+            rect.attributes.fill.value = searchcolor;
+            // remember matches
+            if (matches[x] == undefined) {
+                matches[x] = w;
+            } else {
+                if (w > matches[x]) {
+                    // overwrite with parent
+                    matches[x] = w;
+                }
+            }
+            searching = 1;
+        }
+    }
+    if (!searching)
+        return;
+    var params = get_params();
+    params.s = term;
+    history.replaceState(null, null, parse_params(params));
+
+    searchbtn.classList.add("show");
+    searchbtn.firstChild.nodeValue = "Reset Search";
+    // calculate percent matched, excluding vertical overlap
+    var count = 0;
+    var lastx = -1;
+    var lastw = 0;
+    var keys = Array();
+    for (k in matches) {
+        if (matches.hasOwnProperty(k))
+            keys.push(k);
+    }
+    // sort the matched frames by their x location
+    // ascending, then width descending
+    keys.sort(function(a, b){
+        return a - b;
+    });
+    // Step through frames saving only the biggest bottom-up frames
+    // thanks to the sort order. This relies on the tree property
+    // where children are always smaller than their parents.
+    for (var k in keys) {
+        var x = parseInt(keys[k]);
+        var w = matches[keys[k]];
+        if (x >= lastx + lastw) {
+            count += w;
+            lastx = x;
+            lastw = w;
+        }
+    }
+    // display matched percent
+    matchedtxt.classList.remove("hide");
+    var pct = 100 * count / maxwidth;
+    if (pct != 100) pct = pct.toFixed(1);
+    matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+}
+function format_percent(n) {
+    return n.toFixed(4) + "%";
+}
+]]></script><rect x="0" y="0" width="100%" height="362" fill="url(#background)"/><text id="title" x="50.0000%" y="24.00">py-spy record -o profile.svg -- /opt/homebrew/opt/python@3.11/bin/python3.11 /Users/isabelburgos/Scan-Gen-Glasgow-Testing/software/glasgow/applet/video/scan_gen/output_formats/new_socket_test.py</text><text id="details" x="10" y="40.00"> </text><text id="unzoom" class="hide" x="10" y="24.00">Reset Zoom</text><text id="search" x="1190" y="24.00">Search</text><text id="matched" x="1190" y="351.00"> </text><svg id="frames" x="10" width="1180" total_samples="4778"><g><title>_run_once (asyncio/base_events.py:1877) (5 samples, 0.10%)</title><rect x="0.3977%" y="132" width="0.1046%" height="15" fill="rgb(227,0,7)" fg:x="19" fg:w="5"/><text x="0.6477%" y="142.50"></text></g><g><title>_run_once (asyncio/base_events.py:1884) (28 samples, 0.59%)</title><rect x="0.5860%" y="132" width="0.5860%" height="15" fill="rgb(217,0,24)" fg:x="28" fg:w="28"/><text x="0.8360%" y="142.50"></text></g><g><title>select (selectors.py:578) (10 samples, 0.21%)</title><rect x="0.9627%" y="148" width="0.2093%" height="15" fill="rgb(221,193,54)" fg:x="46" fg:w="10"/><text x="1.2127%" y="158.50"></text></g><g><title>_key_from_fd (selectors.py:285) (10 samples, 0.21%)</title><rect x="0.9627%" y="164" width="0.2093%" height="15" fill="rgb(248,212,6)" fg:x="46" fg:w="10"/><text x="1.2127%" y="174.50"></text></g><g><title>_process_events (asyncio/selector_events.py:734) (11 samples, 0.23%)</title><rect x="1.4023%" y="148" width="0.2302%" height="15" fill="rgb(208,68,35)" fg:x="67" fg:w="11"/><text x="1.6523%" y="158.50"></text></g><g><title>_process_events (asyncio/selector_events.py:735) (11 samples, 0.23%)</title><rect x="1.6325%" y="148" width="0.2302%" height="15" fill="rgb(232,128,0)" fg:x="78" fg:w="11"/><text x="1.8825%" y="158.50"></text></g><g><title>_process_events (asyncio/selector_events.py:736) (8 samples, 0.17%)</title><rect x="1.8627%" y="148" width="0.1674%" height="15" fill="rgb(207,160,47)" fg:x="89" fg:w="8"/><text x="2.1127%" y="158.50"></text></g><g><title>_process_events (asyncio/selector_events.py:741) (5 samples, 0.10%)</title><rect x="2.0301%" y="148" width="0.1046%" height="15" fill="rgb(228,23,34)" fg:x="97" fg:w="5"/><text x="2.2801%" y="158.50"></text></g><g><title>_add_callback (asyncio/base_events.py:1832) (8 samples, 0.17%)</title><rect x="2.3022%" y="164" width="0.1674%" height="15" fill="rgb(218,30,26)" fg:x="110" fg:w="8"/><text x="2.5522%" y="174.50"></text></g><g><title>_run_once (asyncio/base_events.py:1885) (64 samples, 1.34%)</title><rect x="1.1720%" y="132" width="1.3395%" height="15" fill="rgb(220,122,19)" fg:x="56" fg:w="64"/><text x="1.4220%" y="142.50"></text></g><g><title>_process_events (asyncio/selector_events.py:745) (17 samples, 0.36%)</title><rect x="2.1557%" y="148" width="0.3558%" height="15" fill="rgb(250,228,42)" fg:x="103" fg:w="17"/><text x="2.4057%" y="158.50"></text></g><g><title>_run_once (asyncio/base_events.py:1890) (32 samples, 0.67%)</title><rect x="2.5115%" y="132" width="0.6697%" height="15" fill="rgb(240,193,28)" fg:x="120" fg:w="32"/><text x="2.7615%" y="142.50"></text></g><g><title>time (asyncio/base_events.py:707) (25 samples, 0.52%)</title><rect x="2.6580%" y="148" width="0.5232%" height="15" fill="rgb(216,20,37)" fg:x="127" fg:w="25"/><text x="2.9080%" y="158.50"></text></g><g><title>_run_once (asyncio/base_events.py:1905) (22 samples, 0.46%)</title><rect x="3.2440%" y="132" width="0.4604%" height="15" fill="rgb(206,188,39)" fg:x="155" fg:w="22"/><text x="3.4940%" y="142.50"></text></g><g><title>_run_once (asyncio/base_events.py:1906) (29 samples, 0.61%)</title><rect x="3.7045%" y="132" width="0.6069%" height="15" fill="rgb(217,207,13)" fg:x="177" fg:w="29"/><text x="3.9545%" y="142.50"></text></g><g><title>_run_once (asyncio/base_events.py:1907) (144 samples, 3.01%)</title><rect x="4.3114%" y="132" width="3.0138%" height="15" fill="rgb(231,73,38)" fg:x="206" fg:w="144"/><text x="4.5614%" y="142.50">_ru..</text></g><g><title>_run_once (asyncio/base_events.py:1908) (13 samples, 0.27%)</title><rect x="7.3252%" y="132" width="0.2721%" height="15" fill="rgb(225,20,46)" fg:x="350" fg:w="13"/><text x="7.5752%" y="142.50"></text></g><g><title>_sock_connect_cb (asyncio/selector_events.py:667) (7 samples, 0.15%)</title><rect x="11.0506%" y="164" width="0.1465%" height="15" fill="rgb(210,31,41)" fg:x="528" fg:w="7"/><text x="11.3006%" y="174.50"></text></g><g><title>_sock_connect_cb (asyncio/selector_events.py:671) (90 samples, 1.88%)</title><rect x="11.1972%" y="164" width="1.8836%" height="15" fill="rgb(221,200,47)" fg:x="535" fg:w="90"/><text x="11.4472%" y="174.50">_..</text></g><g><title>_sock_connect_cb (asyncio/selector_events.py:674) (72 samples, 1.51%)</title><rect x="13.1226%" y="164" width="1.5069%" height="15" fill="rgb(226,26,5)" fg:x="627" fg:w="72"/><text x="13.3726%" y="174.50"></text></g><g><title>_sock_connect_cb (asyncio/selector_events.py:678) (9 samples, 0.19%)</title><rect x="14.7133%" y="164" width="0.1884%" height="15" fill="rgb(249,33,26)" fg:x="703" fg:w="9"/><text x="14.9633%" y="174.50"></text></g><g><title>call_soon (asyncio/base_events.py:761) (10 samples, 0.21%)</title><rect x="15.6342%" y="180" width="0.2093%" height="15" fill="rgb(235,183,28)" fg:x="747" fg:w="10"/><text x="15.8842%" y="190.50"></text></g><g><title>_call_soon (asyncio/base_events.py:781) (32 samples, 0.67%)</title><rect x="15.9272%" y="196" width="0.6697%" height="15" fill="rgb(221,5,38)" fg:x="761" fg:w="32"/><text x="16.1772%" y="206.50"></text></g><g><title>_sock_connect_cb (asyncio/selector_events.py:681) (89 samples, 1.86%)</title><rect x="14.9016%" y="164" width="1.8627%" height="15" fill="rgb(247,18,42)" fg:x="712" fg:w="89"/><text x="15.1516%" y="174.50">_..</text></g><g><title>call_soon (asyncio/base_events.py:765) (43 samples, 0.90%)</title><rect x="15.8644%" y="180" width="0.9000%" height="15" fill="rgb(241,131,45)" fg:x="758" fg:w="43"/><text x="16.1144%" y="190.50"></text></g><g><title>_call_soon (asyncio/base_events.py:784) (6 samples, 0.13%)</title><rect x="16.6388%" y="196" width="0.1256%" height="15" fill="rgb(249,31,29)" fg:x="795" fg:w="6"/><text x="16.8888%" y="206.50"></text></g><g><title>_sock_write_done (asyncio/selector_events.py:663) (7 samples, 0.15%)</title><rect x="16.8062%" y="164" width="0.1465%" height="15" fill="rgb(225,111,53)" fg:x="803" fg:w="7"/><text x="17.0562%" y="174.50"></text></g><g><title>__getitem__ (weakref.py:134) (6 samples, 0.13%)</title><rect x="17.5806%" y="212" width="0.1256%" height="15" fill="rgb(238,160,17)" fg:x="840" fg:w="6"/><text x="17.8306%" y="222.50"></text></g><g><title>_ensure_fd_no_transport (asyncio/selector_events.py:252) (38 samples, 0.80%)</title><rect x="17.1620%" y="196" width="0.7953%" height="15" fill="rgb(214,148,48)" fg:x="820" fg:w="38"/><text x="17.4120%" y="206.50"></text></g><g><title>__getitem__ (weakref.py:136) (11 samples, 0.23%)</title><rect x="17.7271%" y="212" width="0.2302%" height="15" fill="rgb(232,36,49)" fg:x="847" fg:w="11"/><text x="17.9771%" y="222.50"></text></g><g><title>remove_writer (asyncio/selector_events.py:354) (54 samples, 1.13%)</title><rect x="16.9946%" y="180" width="1.1302%" height="15" fill="rgb(209,103,24)" fg:x="812" fg:w="54"/><text x="17.2446%" y="190.50"></text></g><g><title>_ensure_fd_no_transport (asyncio/selector_events.py:253) (8 samples, 0.17%)</title><rect x="17.9573%" y="196" width="0.1674%" height="15" fill="rgb(229,88,8)" fg:x="858" fg:w="8"/><text x="18.2073%" y="206.50"></text></g><g><title>_remove_writer (asyncio/selector_events.py:316) (5 samples, 0.10%)</title><rect x="18.2922%" y="196" width="0.1046%" height="15" fill="rgb(213,181,19)" fg:x="874" fg:w="5"/><text x="18.5422%" y="206.50"></text></g><g><title>get_key (selectors.py:186) (5 samples, 0.10%)</title><rect x="18.5433%" y="212" width="0.1046%" height="15" fill="rgb(254,191,54)" fg:x="886" fg:w="5"/><text x="18.7933%" y="222.50"></text></g><g><title>__getitem__ (selectors.py:71) (16 samples, 0.33%)</title><rect x="18.7317%" y="228" width="0.3349%" height="15" fill="rgb(241,83,37)" fg:x="895" fg:w="16"/><text x="18.9817%" y="238.50"></text></g><g><title>_fileobj_lookup (selectors.py:225) (14 samples, 0.29%)</title><rect x="18.7735%" y="244" width="0.2930%" height="15" fill="rgb(233,36,39)" fg:x="897" fg:w="14"/><text x="19.0235%" y="254.50"></text></g><g><title>_remove_writer (asyncio/selector_events.py:319) (35 samples, 0.73%)</title><rect x="18.4387%" y="196" width="0.7325%" height="15" fill="rgb(226,3,54)" fg:x="881" fg:w="35"/><text x="18.6887%" y="206.50"></text></g><g><title>get_key (selectors.py:190) (24 samples, 0.50%)</title><rect x="18.6689%" y="212" width="0.5023%" height="15" fill="rgb(245,192,40)" fg:x="892" fg:w="24"/><text x="18.9189%" y="222.50"></text></g><g><title>__getitem__ (selectors.py:72) (5 samples, 0.10%)</title><rect x="19.0666%" y="228" width="0.1046%" height="15" fill="rgb(238,167,29)" fg:x="911" fg:w="5"/><text x="19.3166%" y="238.50"></text></g><g><title>unregister (selectors.py:535) (5 samples, 0.10%)</title><rect x="19.5061%" y="212" width="0.1046%" height="15" fill="rgb(232,182,51)" fg:x="932" fg:w="5"/><text x="19.7561%" y="222.50"></text></g><g><title>unregister (selectors.py:536) (44 samples, 0.92%)</title><rect x="19.6107%" y="212" width="0.9209%" height="15" fill="rgb(231,60,39)" fg:x="937" fg:w="44"/><text x="19.8607%" y="222.50"></text></g><g><title>unregister (selectors.py:249) (22 samples, 0.46%)</title><rect x="20.0712%" y="228" width="0.4604%" height="15" fill="rgb(208,69,12)" fg:x="959" fg:w="22"/><text x="20.3212%" y="238.50"></text></g><g><title>unregister (selectors.py:547) (5 samples, 0.10%)</title><rect x="20.5944%" y="212" width="0.1046%" height="15" fill="rgb(235,93,37)" fg:x="984" fg:w="5"/><text x="20.8444%" y="222.50"></text></g><g><title>unregister (selectors.py:548) (19 samples, 0.40%)</title><rect x="20.6990%" y="212" width="0.3977%" height="15" fill="rgb(213,116,39)" fg:x="989" fg:w="19"/><text x="20.9490%" y="222.50"></text></g><g><title>unregister (selectors.py:550) (6 samples, 0.13%)</title><rect x="21.1386%" y="212" width="0.1256%" height="15" fill="rgb(222,207,29)" fg:x="1010" fg:w="6"/><text x="21.3886%" y="222.50"></text></g><g><title>unregister (selectors.py:552) (109 samples, 2.28%)</title><rect x="21.2641%" y="212" width="2.2813%" height="15" fill="rgb(206,96,30)" fg:x="1016" fg:w="109"/><text x="21.5141%" y="222.50">u..</text></g><g><title>_remove_writer (asyncio/selector_events.py:327) (204 samples, 4.27%)</title><rect x="19.3177%" y="196" width="4.2696%" height="15" fill="rgb(218,138,4)" fg:x="923" fg:w="204"/><text x="19.5677%" y="206.50">_remo..</text></g><g><title>cancel (asyncio/events.py:65) (5 samples, 0.10%)</title><rect x="23.7338%" y="212" width="0.1046%" height="15" fill="rgb(250,191,14)" fg:x="1134" fg:w="5"/><text x="23.9838%" y="222.50"></text></g><g><title>cancel (asyncio/events.py:67) (5 samples, 0.10%)</title><rect x="23.8384%" y="212" width="0.1046%" height="15" fill="rgb(239,60,40)" fg:x="1139" fg:w="5"/><text x="24.0884%" y="222.50"></text></g><g><title>_remove_writer (asyncio/selector_events.py:332) (19 samples, 0.40%)</title><rect x="23.6082%" y="196" width="0.3977%" height="15" fill="rgb(206,27,48)" fg:x="1128" fg:w="19"/><text x="23.8582%" y="206.50"></text></g><g><title>_sock_write_done (asyncio/selector_events.py:664) (339 samples, 7.10%)</title><rect x="16.9527%" y="164" width="7.0950%" height="15" fill="rgb(225,35,8)" fg:x="810" fg:w="339"/><text x="17.2027%" y="174.50">_sock_writ..</text></g><g><title>remove_writer (asyncio/selector_events.py:355) (283 samples, 5.92%)</title><rect x="18.1247%" y="180" width="5.9230%" height="15" fill="rgb(250,213,24)" fg:x="866" fg:w="283"/><text x="18.3747%" y="190.50">remove_w..</text></g><g><title>open_connection (asyncio/streams.py:26) (10 samples, 0.21%)</title><rect x="24.8430%" y="180" width="0.2093%" height="15" fill="rgb(247,123,22)" fg:x="1187" fg:w="10"/><text x="25.0930%" y="190.50"></text></g><g><title>__init__ (asyncio/streams.py:414) (7 samples, 0.15%)</title><rect x="25.7639%" y="196" width="0.1465%" height="15" fill="rgb(231,138,38)" fg:x="1231" fg:w="7"/><text x="26.0139%" y="206.50"></text></g><g><title>open_connection (asyncio/streams.py:46) (42 samples, 0.88%)</title><rect x="25.1360%" y="180" width="0.8790%" height="15" fill="rgb(231,145,46)" fg:x="1201" fg:w="42"/><text x="25.3860%" y="190.50"></text></g><g><title>__init__ (asyncio/streams.py:132) (35 samples, 0.73%)</title><rect x="26.8941%" y="212" width="0.7325%" height="15" fill="rgb(251,118,11)" fg:x="1285" fg:w="35"/><text x="27.1441%" y="222.50"></text></g><g><title>__init__ (asyncio/streams.py:192) (64 samples, 1.34%)</title><rect x="26.3290%" y="196" width="1.3395%" height="15" fill="rgb(217,147,25)" fg:x="1258" fg:w="64"/><text x="26.5790%" y="206.50"></text></g><g><title>__init__ (asyncio/streams.py:194) (13 samples, 0.27%)</title><rect x="27.6894%" y="196" width="0.2721%" height="15" fill="rgb(247,81,37)" fg:x="1323" fg:w="13"/><text x="27.9394%" y="206.50"></text></g><g><title>__init__ (asyncio/streams.py:195) (8 samples, 0.17%)</title><rect x="27.9615%" y="196" width="0.1674%" height="15" fill="rgb(209,12,38)" fg:x="1336" fg:w="8"/><text x="28.2115%" y="206.50"></text></g><g><title>open_connection (asyncio/streams.py:47) (126 samples, 2.64%)</title><rect x="26.0151%" y="180" width="2.6371%" height="15" fill="rgb(227,1,9)" fg:x="1243" fg:w="126"/><text x="26.2651%" y="190.50">op..</text></g><g><title>__init__ (asyncio/streams.py:209) (22 samples, 0.46%)</title><rect x="28.1917%" y="196" width="0.4604%" height="15" fill="rgb(248,47,43)" fg:x="1347" fg:w="22"/><text x="28.4417%" y="206.50"></text></g><g><title>create_future (asyncio/base_events.py:427) (19 samples, 0.40%)</title><rect x="28.2545%" y="212" width="0.3977%" height="15" fill="rgb(221,10,30)" fg:x="1350" fg:w="19"/><text x="28.5045%" y="222.50"></text></g><g><title>_ensure_resolved (asyncio/base_events.py:1413) (7 samples, 0.15%)</title><rect x="30.3474%" y="212" width="0.1465%" height="15" fill="rgb(210,229,1)" fg:x="1450" fg:w="7"/><text x="30.5974%" y="222.50"></text></g><g><title>_ipaddr_info (asyncio/base_events.py:102) (6 samples, 0.13%)</title><rect x="30.7869%" y="228" width="0.1256%" height="15" fill="rgb(222,148,37)" fg:x="1471" fg:w="6"/><text x="31.0369%" y="238.50"></text></g><g><title>_ipaddr_info (asyncio/base_events.py:105) (28 samples, 0.59%)</title><rect x="30.9125%" y="228" width="0.5860%" height="15" fill="rgb(234,67,33)" fg:x="1477" fg:w="28"/><text x="31.1625%" y="238.50"></text></g><g><title>_ipaddr_info (asyncio/base_events.py:129) (7 samples, 0.15%)</title><rect x="31.7497%" y="228" width="0.1465%" height="15" fill="rgb(247,98,35)" fg:x="1517" fg:w="7"/><text x="31.9997%" y="238.50"></text></g><g><title>_ipaddr_info (asyncio/base_events.py:145) (21 samples, 0.44%)</title><rect x="32.1683%" y="228" width="0.4395%" height="15" fill="rgb(247,138,52)" fg:x="1537" fg:w="21"/><text x="32.4183%" y="238.50"></text></g><g><title>_ensure_resolved (asyncio/base_events.py:1414) (107 samples, 2.24%)</title><rect x="30.4939%" y="212" width="2.2394%" height="15" fill="rgb(213,79,30)" fg:x="1457" fg:w="107"/><text x="30.7439%" y="222.50">_..</text></g><g><title>create_connection (asyncio/base_events.py:1045) (131 samples, 2.74%)</title><rect x="30.0544%" y="196" width="2.7417%" height="15" fill="rgb(246,177,23)" fg:x="1436" fg:w="131"/><text x="30.3044%" y="206.50">cr..</text></g><g><title>_connect_sock (asyncio/base_events.py:943) (7 samples, 0.15%)</title><rect x="35.1612%" y="212" width="0.1465%" height="15" fill="rgb(230,62,27)" fg:x="1680" fg:w="7"/><text x="35.4112%" y="222.50"></text></g><g><title>_connect_sock (asyncio/base_events.py:946) (9 samples, 0.19%)</title><rect x="35.3077%" y="212" width="0.1884%" height="15" fill="rgb(216,154,8)" fg:x="1687" fg:w="9"/><text x="35.5577%" y="222.50"></text></g><g><title>_connect_sock (asyncio/base_events.py:950) (496 samples, 10.38%)</title><rect x="35.5170%" y="212" width="10.3809%" height="15" fill="rgb(244,35,45)" fg:x="1697" fg:w="496"/><text x="35.7670%" y="222.50">_connect_sock (..</text></g><g><title>__init__ (socket.py:232) (468 samples, 9.79%)</title><rect x="36.1030%" y="228" width="9.7949%" height="15" fill="rgb(251,115,12)" fg:x="1725" fg:w="468"/><text x="36.3530%" y="238.50">__init__ (sock..</text></g><g><title>_connect_sock (asyncio/base_events.py:951) (30 samples, 0.63%)</title><rect x="45.8979%" y="212" width="0.6279%" height="15" fill="rgb(240,54,50)" fg:x="2193" fg:w="30"/><text x="46.1479%" y="222.50"></text></g><g><title>sock_connect (asyncio/selector_events.py:614) (10 samples, 0.21%)</title><rect x="48.7442%" y="228" width="0.2093%" height="15" fill="rgb(233,84,52)" fg:x="2329" fg:w="10"/><text x="48.9942%" y="238.50"></text></g><g><title>_check_ssl_socket (asyncio/base_events.py:201) (5 samples, 0.10%)</title><rect x="49.1419%" y="244" width="0.1046%" height="15" fill="rgb(207,117,47)" fg:x="2348" fg:w="5"/><text x="49.3919%" y="254.50"></text></g><g><title>sock_connect (asyncio/selector_events.py:619) (22 samples, 0.46%)</title><rect x="48.9535%" y="228" width="0.4604%" height="15" fill="rgb(249,43,39)" fg:x="2339" fg:w="22"/><text x="49.2035%" y="238.50"></text></g><g><title>_check_ssl_socket (asyncio/base_events.py:202) (8 samples, 0.17%)</title><rect x="49.2465%" y="244" width="0.1674%" height="15" fill="rgb(209,38,44)" fg:x="2353" fg:w="8"/><text x="49.4965%" y="254.50"></text></g><g><title>family (socket.py:515) (5 samples, 0.10%)</title><rect x="49.6233%" y="244" width="0.1046%" height="15" fill="rgb(236,212,23)" fg:x="2371" fg:w="5"/><text x="49.8733%" y="254.50"></text></g><g><title>_intenum_converter (socket.py:105) (44 samples, 0.92%)</title><rect x="49.8954%" y="260" width="0.9209%" height="15" fill="rgb(242,79,21)" fg:x="2384" fg:w="44"/><text x="50.1454%" y="270.50"></text></g><g><title>__call__ (enum.py:712) (24 samples, 0.50%)</title><rect x="50.3139%" y="276" width="0.5023%" height="15" fill="rgb(211,96,35)" fg:x="2404" fg:w="24"/><text x="50.5639%" y="286.50"></text></g><g><title>__new__ (enum.py:1103) (7 samples, 0.15%)</title><rect x="50.6697%" y="292" width="0.1465%" height="15" fill="rgb(253,215,40)" fg:x="2421" fg:w="7"/><text x="50.9197%" y="302.50"></text></g><g><title>sock_connect (asyncio/selector_events.py:623) (68 samples, 1.42%)</title><rect x="49.4140%" y="228" width="1.4232%" height="15" fill="rgb(211,81,21)" fg:x="2361" fg:w="68"/><text x="49.6640%" y="238.50"></text></g><g><title>family (socket.py:519) (53 samples, 1.11%)</title><rect x="49.7279%" y="244" width="1.1093%" height="15" fill="rgb(208,190,38)" fg:x="2376" fg:w="53"/><text x="49.9779%" y="254.50"></text></g><g><title>_ipaddr_info (asyncio/base_events.py:102) (6 samples, 0.13%)</title><rect x="51.5697%" y="260" width="0.1256%" height="15" fill="rgb(235,213,38)" fg:x="2464" fg:w="6"/><text x="51.8197%" y="270.50"></text></g><g><title>_ipaddr_info (asyncio/base_events.py:105) (19 samples, 0.40%)</title><rect x="51.6953%" y="260" width="0.3977%" height="15" fill="rgb(237,122,38)" fg:x="2470" fg:w="19"/><text x="51.9453%" y="270.50"></text></g><g><title>_ipaddr_info (asyncio/base_events.py:145) (14 samples, 0.29%)</title><rect x="52.5534%" y="260" width="0.2930%" height="15" fill="rgb(244,218,35)" fg:x="2511" fg:w="14"/><text x="52.8034%" y="270.50"></text></g><g><title>_ipaddr_info (asyncio/base_events.py:147) (6 samples, 0.13%)</title><rect x="52.8464%" y="260" width="0.1256%" height="15" fill="rgb(240,68,47)" fg:x="2525" fg:w="6"/><text x="53.0964%" y="270.50"></text></g><g><title>_ensure_resolved (asyncio/base_events.py:1414) (82 samples, 1.72%)</title><rect x="51.3185%" y="244" width="1.7162%" height="15" fill="rgb(210,16,53)" fg:x="2452" fg:w="82"/><text x="51.5685%" y="254.50"></text></g><g><title>sock_connect (asyncio/selector_events.py:625) (106 samples, 2.22%)</title><rect x="50.8372%" y="228" width="2.2185%" height="15" fill="rgb(235,124,12)" fg:x="2429" fg:w="106"/><text x="51.0872%" y="238.50">s..</text></g><g><title>__new__ (enum.py:1097) (5 samples, 0.10%)</title><rect x="53.9766%" y="292" width="0.1046%" height="15" fill="rgb(224,169,11)" fg:x="2579" fg:w="5"/><text x="54.2266%" y="302.50"></text></g><g><title>_intenum_converter (socket.py:105) (32 samples, 0.67%)</title><rect x="53.5789%" y="260" width="0.6697%" height="15" fill="rgb(250,166,2)" fg:x="2560" fg:w="32"/><text x="53.8289%" y="270.50"></text></g><g><title>__call__ (enum.py:712) (23 samples, 0.48%)</title><rect x="53.7673%" y="276" width="0.4814%" height="15" fill="rgb(242,216,29)" fg:x="2569" fg:w="23"/><text x="54.0173%" y="286.50"></text></g><g><title>__new__ (enum.py:1103) (7 samples, 0.15%)</title><rect x="54.1021%" y="292" width="0.1465%" height="15" fill="rgb(230,116,27)" fg:x="2585" fg:w="7"/><text x="54.3521%" y="302.50"></text></g><g><title>family (socket.py:519) (43 samples, 0.90%)</title><rect x="53.3696%" y="244" width="0.9000%" height="15" fill="rgb(228,99,48)" fg:x="2550" fg:w="43"/><text x="53.6196%" y="254.50"></text></g><g><title>_intenum_converter (socket.py:105) (22 samples, 0.46%)</title><rect x="54.4998%" y="260" width="0.4604%" height="15" fill="rgb(253,11,6)" fg:x="2604" fg:w="22"/><text x="54.7498%" y="270.50"></text></g><g><title>__call__ (enum.py:712) (16 samples, 0.33%)</title><rect x="54.6254%" y="276" width="0.3349%" height="15" fill="rgb(247,143,39)" fg:x="2610" fg:w="16"/><text x="54.8754%" y="286.50"></text></g><g><title>__new__ (enum.py:1103) (8 samples, 0.17%)</title><rect x="54.7928%" y="292" width="0.1674%" height="15" fill="rgb(236,97,10)" fg:x="2618" fg:w="8"/><text x="55.0428%" y="302.50"></text></g><g><title>sock_connect (asyncio/selector_events.py:626) (92 samples, 1.93%)</title><rect x="53.0557%" y="228" width="1.9255%" height="15" fill="rgb(233,208,19)" fg:x="2535" fg:w="92"/><text x="53.3057%" y="238.50">s..</text></g><g><title>type (socket.py:525) (32 samples, 0.67%)</title><rect x="54.3114%" y="244" width="0.6697%" height="15" fill="rgb(216,164,2)" fg:x="2595" fg:w="32"/><text x="54.5614%" y="254.50"></text></g><g><title>sock_connect (asyncio/selector_events.py:631) (27 samples, 0.57%)</title><rect x="55.0440%" y="228" width="0.5651%" height="15" fill="rgb(220,129,5)" fg:x="2630" fg:w="27"/><text x="55.2940%" y="238.50"></text></g><g><title>create_future (asyncio/base_events.py:427) (23 samples, 0.48%)</title><rect x="55.1277%" y="244" width="0.4814%" height="15" fill="rgb(242,17,10)" fg:x="2634" fg:w="23"/><text x="55.3777%" y="254.50"></text></g><g><title>_sock_connect (asyncio/selector_events.py:642) (1,123 samples, 23.50%)</title><rect x="55.9021%" y="244" width="23.5036%" height="15" fill="rgb(242,107,0)" fg:x="2671" fg:w="1123"/><text x="56.1521%" y="254.50">_sock_connect (asyncio/selector_event..</text></g><g><title>_sock_connect (asyncio/selector_events.py:643) (7 samples, 0.15%)</title><rect x="79.4056%" y="244" width="0.1465%" height="15" fill="rgb(251,28,31)" fg:x="3794" fg:w="7"/><text x="79.6556%" y="254.50"></text></g><g><title>_ensure_fd_no_transport (asyncio/selector_events.py:252) (43 samples, 0.90%)</title><rect x="79.7614%" y="260" width="0.9000%" height="15" fill="rgb(233,223,10)" fg:x="3811" fg:w="43"/><text x="80.0114%" y="270.50"></text></g><g><title>__getitem__ (weakref.py:136) (16 samples, 0.33%)</title><rect x="80.3265%" y="276" width="0.3349%" height="15" fill="rgb(215,21,27)" fg:x="3838" fg:w="16"/><text x="80.5765%" y="286.50"></text></g><g><title>_sock_connect (asyncio/selector_events.py:648) (63 samples, 1.32%)</title><rect x="79.5521%" y="244" width="1.3185%" height="15" fill="rgb(232,23,21)" fg:x="3801" fg:w="63"/><text x="79.8021%" y="254.50"></text></g><g><title>_ensure_fd_no_transport (asyncio/selector_events.py:253) (10 samples, 0.21%)</title><rect x="80.6614%" y="260" width="0.2093%" height="15" fill="rgb(244,5,23)" fg:x="3854" fg:w="10"/><text x="80.9114%" y="270.50"></text></g><g><title>__init__ (asyncio/events.py:33) (6 samples, 0.13%)</title><rect x="81.3311%" y="276" width="0.1256%" height="15" fill="rgb(226,81,46)" fg:x="3886" fg:w="6"/><text x="81.5811%" y="286.50"></text></g><g><title>_add_writer (asyncio/selector_events.py:300) (36 samples, 0.75%)</title><rect x="80.9753%" y="260" width="0.7535%" height="15" fill="rgb(247,70,30)" fg:x="3869" fg:w="36"/><text x="81.2253%" y="270.50"></text></g><g><title>__init__ (asyncio/events.py:40) (9 samples, 0.19%)</title><rect x="81.5404%" y="276" width="0.1884%" height="15" fill="rgb(212,68,19)" fg:x="3896" fg:w="9"/><text x="81.7904%" y="286.50"></text></g><g><title>get_key (selectors.py:186) (7 samples, 0.15%)</title><rect x="82.0846%" y="276" width="0.1465%" height="15" fill="rgb(240,187,13)" fg:x="3922" fg:w="7"/><text x="82.3346%" y="286.50"></text></g><g><title>__getitem__ (selectors.py:69) (5 samples, 0.10%)</title><rect x="82.6915%" y="292" width="0.1046%" height="15" fill="rgb(223,113,26)" fg:x="3951" fg:w="5"/><text x="82.9415%" y="302.50"></text></g><g><title>_fileobj_to_fd (selectors.py:21) (6 samples, 0.13%)</title><rect x="82.9845%" y="324" width="0.1256%" height="15" fill="rgb(206,192,2)" fg:x="3965" fg:w="6"/><text x="83.2345%" y="334.50"></text></g><g><title>__getitem__ (selectors.py:71) (18 samples, 0.38%)</title><rect x="82.7961%" y="292" width="0.3767%" height="15" fill="rgb(241,108,4)" fg:x="3956" fg:w="18"/><text x="83.0461%" y="302.50"></text></g><g><title>_fileobj_lookup (selectors.py:225) (12 samples, 0.25%)</title><rect x="82.9217%" y="308" width="0.2512%" height="15" fill="rgb(247,173,49)" fg:x="3962" fg:w="12"/><text x="83.1717%" y="318.50"></text></g><g><title>__getitem__ (selectors.py:72) (17 samples, 0.36%)</title><rect x="83.1729%" y="292" width="0.3558%" height="15" fill="rgb(224,114,35)" fg:x="3974" fg:w="17"/><text x="83.4229%" y="302.50"></text></g><g><title>get_key (selectors.py:190) (102 samples, 2.13%)</title><rect x="82.2311%" y="276" width="2.1348%" height="15" fill="rgb(245,159,27)" fg:x="3929" fg:w="102"/><text x="82.4811%" y="286.50">g..</text></g><g><title>__getitem__ (selectors.py:74) (36 samples, 0.75%)</title><rect x="83.6124%" y="292" width="0.7535%" height="15" fill="rgb(245,172,44)" fg:x="3995" fg:w="36"/><text x="83.8624%" y="302.50"></text></g><g><title>_add_writer (asyncio/selector_events.py:302) (183 samples, 3.83%)</title><rect x="81.7288%" y="260" width="3.8301%" height="15" fill="rgb(236,23,11)" fg:x="3905" fg:w="183"/><text x="81.9788%" y="270.50">_add..</text></g><g><title>get_key (selectors.py:192) (55 samples, 1.15%)</title><rect x="84.4077%" y="276" width="1.1511%" height="15" fill="rgb(205,117,38)" fg:x="4033" fg:w="55"/><text x="84.6577%" y="286.50"></text></g><g><title>register (selectors.py:235) (10 samples, 0.21%)</title><rect x="86.4797%" y="292" width="0.2093%" height="15" fill="rgb(237,72,25)" fg:x="4132" fg:w="10"/><text x="86.7297%" y="302.50"></text></g><g><title>&lt;lambda&gt; (&lt;string&gt;:1) (21 samples, 0.44%)</title><rect x="87.0029%" y="308" width="0.4395%" height="15" fill="rgb(244,70,9)" fg:x="4157" fg:w="21"/><text x="87.2529%" y="318.50"></text></g><g><title>register (selectors.py:238) (48 samples, 1.00%)</title><rect x="86.6890%" y="292" width="1.0046%" height="15" fill="rgb(217,125,39)" fg:x="4142" fg:w="48"/><text x="86.9390%" y="302.50"></text></g><g><title>_fileobj_lookup (selectors.py:225) (8 samples, 0.17%)</title><rect x="87.5262%" y="308" width="0.1674%" height="15" fill="rgb(235,36,10)" fg:x="4182" fg:w="8"/><text x="87.7762%" y="318.50"></text></g><g><title>register (selectors.py:240) (17 samples, 0.36%)</title><rect x="87.6936%" y="292" width="0.3558%" height="15" fill="rgb(251,123,47)" fg:x="4190" fg:w="17"/><text x="87.9436%" y="302.50"></text></g><g><title>register (selectors.py:518) (103 samples, 2.16%)</title><rect x="85.9774%" y="276" width="2.1557%" height="15" fill="rgb(221,13,13)" fg:x="4108" fg:w="103"/><text x="86.2274%" y="286.50">r..</text></g><g><title>register (selectors.py:526) (12 samples, 0.25%)</title><rect x="88.2378%" y="276" width="0.2512%" height="15" fill="rgb(238,131,9)" fg:x="4216" fg:w="12"/><text x="88.4878%" y="286.50"></text></g><g><title>_sock_connect (asyncio/selector_events.py:649) (472 samples, 9.88%)</title><rect x="80.8707%" y="244" width="9.8786%" height="15" fill="rgb(211,50,8)" fg:x="3864" fg:w="472"/><text x="81.1207%" y="254.50">_sock_connect ..</text></g><g><title>_add_writer (asyncio/selector_events.py:304) (244 samples, 5.11%)</title><rect x="85.6425%" y="260" width="5.1067%" height="15" fill="rgb(245,182,24)" fg:x="4092" fg:w="244"/><text x="85.8925%" y="270.50">_add_w..</text></g><g><title>register (selectors.py:528) (108 samples, 2.26%)</title><rect x="88.4889%" y="276" width="2.2604%" height="15" fill="rgb(242,14,37)" fg:x="4228" fg:w="108"/><text x="88.7389%" y="286.50">r..</text></g><g><title>_sock_connect (asyncio/selector_events.py:651) (9 samples, 0.19%)</title><rect x="90.8330%" y="244" width="0.1884%" height="15" fill="rgb(246,228,12)" fg:x="4340" fg:w="9"/><text x="91.0830%" y="254.50"></text></g><g><title>_sock_connect (asyncio/selector_events.py:652) (32 samples, 0.67%)</title><rect x="91.0213%" y="244" width="0.6697%" height="15" fill="rgb(213,55,15)" fg:x="4349" fg:w="32"/><text x="91.2713%" y="254.50"></text></g><g><title>sock_connect (asyncio/selector_events.py:632) (1,726 samples, 36.12%)</title><rect x="55.6090%" y="228" width="36.1239%" height="15" fill="rgb(209,9,3)" fg:x="2657" fg:w="1726"/><text x="55.8590%" y="238.50">sock_connect (asyncio/selector_events.py:632)</text></g><g><title>sock_connect (asyncio/selector_events.py:634) (50 samples, 1.05%)</title><rect x="91.7329%" y="228" width="1.0465%" height="15" fill="rgb(230,59,30)" fg:x="4383" fg:w="50"/><text x="91.9829%" y="238.50"></text></g><g><title>_connect_sock (asyncio/base_events.py:973) (2,222 samples, 46.50%)</title><rect x="46.5257%" y="212" width="46.5048%" height="15" fill="rgb(209,121,21)" fg:x="2223" fg:w="2222"/><text x="46.7757%" y="222.50">_connect_sock (asyncio/base_events.py:973)</text></g><g><title>sock_connect (asyncio/selector_events.py:637) (12 samples, 0.25%)</title><rect x="92.7794%" y="228" width="0.2512%" height="15" fill="rgb(220,109,13)" fg:x="4433" fg:w="12"/><text x="93.0294%" y="238.50"></text></g><g><title>_connect_sock (asyncio/base_events.py:978) (115 samples, 2.41%)</title><rect x="93.1561%" y="212" width="2.4069%" height="15" fill="rgb(232,18,1)" fg:x="4451" fg:w="115"/><text x="93.4061%" y="222.50">_c..</text></g><g><title>close (socket.py:503) (92 samples, 1.93%)</title><rect x="93.6375%" y="228" width="1.9255%" height="15" fill="rgb(215,41,42)" fg:x="4474" fg:w="92"/><text x="93.8875%" y="238.50">c..</text></g><g><title>_real_close (socket.py:497) (85 samples, 1.78%)</title><rect x="93.7840%" y="244" width="1.7790%" height="15" fill="rgb(224,123,36)" fg:x="4481" fg:w="85"/><text x="94.0340%" y="254.50">_..</text></g><g><title>create_connection (asyncio/base_events.py:1069) (3,003 samples, 62.85%)</title><rect x="33.0892%" y="196" width="62.8506%" height="15" fill="rgb(240,125,3)" fg:x="1581" fg:w="3003"/><text x="33.3392%" y="206.50">create_connection (asyncio/base_events.py:1069)</text></g><g><title>_connect_sock (asyncio/base_events.py:985) (18 samples, 0.38%)</title><rect x="95.5630%" y="212" width="0.3767%" height="15" fill="rgb(205,98,50)" fg:x="4566" fg:w="18"/><text x="95.8130%" y="222.50"></text></g><g><title>create_connection (asyncio/base_events.py:1082) (38 samples, 0.80%)</title><rect x="96.1072%" y="196" width="0.7953%" height="15" fill="rgb(205,185,37)" fg:x="4592" fg:w="38"/><text x="96.3572%" y="206.50"></text></g><g><title>&lt;listcomp&gt; (asyncio/base_events.py:1082) (19 samples, 0.40%)</title><rect x="96.5048%" y="212" width="0.3977%" height="15" fill="rgb(238,207,15)" fg:x="4611" fg:w="19"/><text x="96.7548%" y="222.50"></text></g><g><title>create_connection (asyncio/base_events.py:1084) (6 samples, 0.13%)</title><rect x="96.9025%" y="196" width="0.1256%" height="15" fill="rgb(213,199,42)" fg:x="4630" fg:w="6"/><text x="97.1525%" y="206.50"></text></g><g><title>create_connection (asyncio/base_events.py:1085) (100 samples, 2.09%)</title><rect x="97.0280%" y="196" width="2.0929%" height="15" fill="rgb(235,201,11)" fg:x="4636" fg:w="100"/><text x="97.2780%" y="206.50">c..</text></g><g><title>create_connection (asyncio/base_events.py:1096) (14 samples, 0.29%)</title><rect x="99.1210%" y="196" width="0.2930%" height="15" fill="rgb(207,46,11)" fg:x="4736" fg:w="14"/><text x="99.3710%" y="206.50"></text></g><g><title>open_connection (asyncio/streams.py:48) (3,392 samples, 70.99%)</title><rect x="28.6522%" y="180" width="70.9920%" height="15" fill="rgb(241,35,35)" fg:x="1369" fg:w="3392"/><text x="28.9022%" y="190.50">open_connection (asyncio/streams.py:48)</text></g><g><title>create_connection (asyncio/base_events.py:987) (11 samples, 0.23%)</title><rect x="99.4140%" y="196" width="0.2302%" height="15" fill="rgb(243,32,47)" fg:x="4750" fg:w="11"/><text x="99.6640%" y="206.50"></text></g><g><title>open_connection (glasgow/applet/video/scan_gen/output_formats/new_socket_test.py:30) (3,614 samples, 75.64%)</title><rect x="24.0477%" y="164" width="75.6383%" height="15" fill="rgb(247,202,23)" fg:x="1149" fg:w="3614"/><text x="24.2977%" y="174.50">open_connection (glasgow/applet/video/scan_gen/output_formats/new_socket_test.py:30)</text></g><g><title>_run_once (asyncio/base_events.py:1922) (4,401 samples, 92.11%)</title><rect x="7.6810%" y="132" width="92.1097%" height="15" fill="rgb(219,102,11)" fg:x="367" fg:w="4401"/><text x="7.9310%" y="142.50">_run_once (asyncio/base_events.py:1922)</text></g><g><title>_run (asyncio/events.py:80) (4,386 samples, 91.80%)</title><rect x="7.9950%" y="148" width="91.7957%" height="15" fill="rgb(243,110,44)" fg:x="382" fg:w="4386"/><text x="8.2450%" y="158.50">_run (asyncio/events.py:80)</text></g><g><title>open_connection (glasgow/applet/video/scan_gen/output_formats/new_socket_test.py:37) (5 samples, 0.10%)</title><rect x="99.6861%" y="164" width="0.1046%" height="15" fill="rgb(222,74,54)" fg:x="4763" fg:w="5"/><text x="99.9361%" y="174.50"></text></g><g><title>run_forever (asyncio/base_events.py:607) (4,767 samples, 99.77%)</title><rect x="0.1046%" y="116" width="99.7698%" height="15" fill="rgb(216,99,12)" fg:x="5" fg:w="4767"/><text x="0.3546%" y="126.50">run_forever (asyncio/base_events.py:607)</text></g><g><title>all (4,778 samples, 100%)</title><rect x="0.0000%" y="52" width="100.0000%" height="15" fill="rgb(226,22,26)" fg:x="0" fg:w="4778"/><text x="0.2500%" y="62.50"></text></g><g><title>&lt;module&gt; (glasgow/applet/video/scan_gen/output_formats/new_socket_test.py:120) (4,777 samples, 99.98%)</title><rect x="0.0209%" y="68" width="99.9791%" height="15" fill="rgb(217,163,10)" fg:x="1" fg:w="4777"/><text x="0.2709%" y="78.50">&lt;module&gt; (glasgow/applet/video/scan_gen/output_formats/new_socket_test.py:120)</text></g><g><title>main (glasgow/applet/video/scan_gen/output_formats/new_socket_test.py:107) (4,777 samples, 99.98%)</title><rect x="0.0209%" y="84" width="99.9791%" height="15" fill="rgb(213,25,53)" fg:x="1" fg:w="4777"/><text x="0.2709%" y="94.50">main (glasgow/applet/video/scan_gen/output_formats/new_socket_test.py:107)</text></g><g><title>run_until_complete (asyncio/base_events.py:640) (4,777 samples, 99.98%)</title><rect x="0.0209%" y="100" width="99.9791%" height="15" fill="rgb(252,105,26)" fg:x="1" fg:w="4777"/><text x="0.2709%" y="110.50">run_until_complete (asyncio/base_events.py:640)</text></g><g><title>run_forever (asyncio/base_events.py:608) (6 samples, 0.13%)</title><rect x="99.8744%" y="116" width="0.1256%" height="15" fill="rgb(220,39,43)" fg:x="4772" fg:w="6"/><text x="100.1244%" y="126.50"></text></g></svg></svg>
