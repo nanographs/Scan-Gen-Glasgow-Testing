@@ -159,6 +159,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.image_view.setRange(QtCore.QRectF(0, 0, height, width))
         
         self.live_img = pg.ImageItem(border='w',axisOrder="row-major")
+        self.live_img.setImage(np.zeros((height, width)).astype(np.uint8), rect = (0,0,width, height))
         self.image_view.addItem(self.live_img)
 
         # Contrast/color control

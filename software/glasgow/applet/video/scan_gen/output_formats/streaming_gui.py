@@ -1,3 +1,9 @@
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
+
 import asyncio
 import functools
 import sys
@@ -120,9 +126,8 @@ class RegisterUpdateBox(QGridLayout):
     async def do_fn(self):
         val = int(self.spinbox.cleanText())
         print("set", self.name, ":", val)
-        if self.con:
-            msg = await self.msgfn(val)
-            await self.con.tcp_msg_client(msg)
+        msg = await self.msgfn(val)
+        await self.con.tcp_msg_client(msg)
 
 
 class FrameSettings(QHBoxLayout):
@@ -146,6 +151,7 @@ class MainWindow(QWidget):
         self.setLayout(self.layout)
 
         self.image_display = ImageDisplay(512,512)
+        self.image_display.setRange(512,512)
         self.layout.addWidget(self.image_display, 1, 0)
 
         self.frame_settings = FrameSettings()
@@ -157,6 +163,8 @@ class MainWindow(QWidget):
 
         self.rx.btn.clicked.connect(self.updateFrameSize)
         self.ry.btn.clicked.connect(self.updateFrameSize)
+        self.rx.spinbox.setValue(512)
+        self.ry.spinbox.setValue(512)
 
 
         self.conn_btn = QPushButton("Click to Connect")
@@ -231,15 +239,17 @@ class MainWindow(QWidget):
     @asyncSlot()
     async def updateFrameSize(self):
         x_width = int(self.rx.spinbox.cleanText())
-        y_height = int(self.rx.spinbox.cleanText())
+        y_height = int(self.ry.spinbox.cleanText())
+        print("updating frame size",x_width, y_height)
         self.con.scan_stream.change_buffer(x_width, y_height)
         self.image_display.setRange(x_width, y_height)
+        self.image_display.live_img.setImage(np.zeros((y_height, x_width)).astype(np.uint8), rect = (0,0,x_width, y_height))
 
     @asyncSlot()
     async def connect(self):
         await self.con.recieve_data_client()
-        await self.con.tcp_msg_client("rx16384")
-        await self.con.tcp_msg_client("ry16384")
+        await self.con.tcp_msg_client("sc00000")
+        # await self.con.tcp_msg_client("ry16384")
         # if connection == "Connected":
         #     self.setState("scan_not_started")
 

@@ -87,6 +87,9 @@ class ScanStream:
         self.y_height = y_height
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                     dtype = np.uint8)
+        print("new buffer size:", x_width, y_height)
+        self.current_x = 0
+        self.current_y = 0
 
     def decode_rdwell(self, n):
         a2, a1 = n
@@ -157,7 +160,7 @@ class ScanStream:
         #print(self.buffer[self.current_y])
         
         self.current_x = partial_end_points
-        assert (self.buffer[self.current_y][0] == 0)
+        #assert (self.buffer[self.current_y][0] == 0)
 
         print(self.buffer)
         #print("=====")

@@ -409,6 +409,7 @@ class SG_EndpointInterface(ScanGenInterface):
         super().__init__(*args, **kwargs)
         self.task_queue = TaskQueue()
         self.server_host = ServerHost(self.task_queue, self.process_cmd)
+        self.streaming = None
         
 
     def start_servers(self, close_future):
@@ -440,9 +441,14 @@ class SG_EndpointInterface(ScanGenInterface):
             await self.set_scan_mode(val)
             if val == 0:
                 print("stop stream...")
-                self.streaming.cancel()
+                if not self.streaming == None:
+                    self.streaming.cancel()
+                    print(self.server_host.data_writer)
+                    await self.server_host.data_writer.drain()
+                    self._logger.info("streaming canceled" + repr(self.server_host.data_writer))
             elif val == 1:
                 print("start stream...")
+                self._logger.info("streaming started")
                 self.streaming = asyncio.ensure_future(self.stream_data())
         elif c == "rx":
             await self.set_x_resolution(val)
