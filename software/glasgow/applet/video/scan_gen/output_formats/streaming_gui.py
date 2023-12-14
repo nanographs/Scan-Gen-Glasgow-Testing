@@ -30,7 +30,8 @@ from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 
 #from microscope import ScanCtrl, ScanStream
 from new_socket_test import ConnectionManager
-from even_newer_gui import ImageDisplay
+from gui_modules.image_display import ImageDisplay
+from gui_modules.frame_settings import FrameSettings, RegisterUpdateBox
 
 
 from bmp_utils import *
@@ -104,35 +105,36 @@ def pattern_loop(dimension, pattern_stream):
             yield pattern_stream[n*16384:(n+1)*16384]
         print("pattern complete")
 
-class RegisterUpdateBox(QGridLayout):
-    def __init__(self, label, lower_limit, upper_limit, con=None, msgfn=None):
-        super().__init__()
-        self.name = label
+class StreamRegisterUpdateBox(RegisterUpdateBox):
+    def __init__(self, label, lower_limit, upper_limit, initial_val, con=None, msgfn=None):
+        super().__init__(label, lower_limit, upper_limit, initial_val)
         self.msgfn = msgfn
         self.con = con
-        self.label = QLabel(label)
-        self.addWidget(self.label,0,1)
-
-        self.spinbox = QSpinBox()
-        self.spinbox.setRange(lower_limit, upper_limit)
-        self.spinbox.setSingleStep(1)
-        self.addWidget(self.spinbox,1,1)
-
-        self.btn = QPushButton("->")
-        self.btn.clicked.connect(self.do_fn)
-        self.addWidget(self.btn, 2, 1)
 
     @asyncSlot()
     async def do_fn(self):
-        val = int(self.spinbox.cleanText())
+        val = self.getval()
         print("set", self.name, ":", val)
         msg = await self.msgfn(val)
         await self.con.tcp_msg_client(msg)
 
 
-class FrameSettings(QHBoxLayout):
-    def __init__(self):
-        super().__init__()
+class StreamFrameSettings(FrameSettings):
+    def __init__(self, con):
+        super().__init__(StreamRegisterUpdateBox)
+        self.con = con
+        self.btn = self.addButton()
+        self.btn.clicked.connect(self.do_fns)
+
+        self.rx.con = self.con
+        self.rx.msgfn = self.con.scan_ctrl.set_x_resolution
+        self.ry.con = self.con
+        self.ry.msgfn = self.con.scan_ctrl.set_y_resolution
+
+    @asyncSlot()
+    async def do_fns(self):
+        for register in self.registers:
+            await register.do_fn()
 
 class MainWindow(QWidget):
 
@@ -154,18 +156,10 @@ class MainWindow(QWidget):
         self.image_display.setRange(512,512)
         self.layout.addWidget(self.image_display, 1, 0)
 
-        self.frame_settings = FrameSettings()
+        self.frame_settings = StreamFrameSettings(self.con)
         self.layout.addLayout(self.frame_settings, 2, 0)
-        self.rx = RegisterUpdateBox("X Resolution", 1, 16384, self.con, self.con.scan_ctrl.set_x_resolution)
-        self.frame_settings.addLayout(self.rx)
-        self.ry = RegisterUpdateBox("Y Resolution", 1, 16384, self.con, self.con.scan_ctrl.set_y_resolution)
-        self.frame_settings.addLayout(self.ry)
 
-        self.rx.btn.clicked.connect(self.updateFrameSize)
-        self.ry.btn.clicked.connect(self.updateFrameSize)
-        self.rx.spinbox.setValue(512)
-        self.ry.spinbox.setValue(512)
-
+        self.frame_settings.btn.clicked.connect(self.updateFrameSize)
 
         self.conn_btn = QPushButton("Click to Connect")
         self.conn_btn.setCheckable(True) 
@@ -238,8 +232,7 @@ class MainWindow(QWidget):
 
     @asyncSlot()
     async def updateFrameSize(self):
-        x_width = int(self.rx.spinbox.cleanText())
-        y_height = int(self.ry.spinbox.cleanText())
+        x_width, y_height = self.frame_settings.getframe()
         print("updating frame size",x_width, y_height)
         self.con.scan_stream.change_buffer(x_width, y_height)
         self.image_display.setRange(x_width, y_height)

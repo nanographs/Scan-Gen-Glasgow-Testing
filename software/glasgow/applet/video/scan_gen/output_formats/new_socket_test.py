@@ -12,6 +12,11 @@ class ConnectionManager:
     def __init__(self):
         self.scan_stream = ScanStream()
         self.scan_ctrl = ScanCtrl()
+
+        self.data_writer = None
+        self.data_reader = None
+
+        self.streaming = None
     async def open_connection(self, host, port, future):
         print("trying to open connection at", host, port)
         while True:
@@ -93,7 +98,8 @@ class ConnectionManager:
     async def stop_reading(self):
         await self.tcp_msg_client('sc00000')
         #self.data_reader.feed_eof()
-        self.streaming.cancel()
+        if not self.streaming == None:
+            self.streaming.cancel()
         
     
     async def close_data_stream(self):
