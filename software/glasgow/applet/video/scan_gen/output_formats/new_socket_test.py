@@ -2,7 +2,11 @@ import asyncio
 
 from microscope import ScanStream, ScanCtrl
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
+logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
 
 class ConnectionManager:
     def __init__(self):
@@ -38,7 +42,9 @@ class ConnectionManager:
                     print(reader)
                     break
             except Exception as e:
-                print("error:", e)
+                print("error:", e, type(e), vars(e))
+                print(reader)
+                logging.debug("continous read error" + repr(reader))
                 break
 
 
@@ -86,7 +92,9 @@ class ConnectionManager:
 
     async def stop_reading(self):
         await self.tcp_msg_client('sc00000')
+        #self.data_reader.feed_eof()
         self.streaming.cancel()
+        
     
     async def close_data_stream(self):
         print('Close data stream')
