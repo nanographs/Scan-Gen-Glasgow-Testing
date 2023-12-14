@@ -671,6 +671,8 @@ class ScanGenApplet(GlasgowApplet):
 
         const_dwell_time,      self.__addr_const_dwell_time = target.registers.add_rw(8, reset=0)
 
+        configuration,      self.__addr_configuration = target.registers.add_rw(1, reset=0)
+
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
