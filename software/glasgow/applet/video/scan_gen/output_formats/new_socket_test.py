@@ -40,7 +40,8 @@ class ConnectionManager:
                     data = await reader.read(16384)
                     print("recieved data")
                     data = memoryview(data)
-                    self.scan_stream.stream_to_buffer(data)
+                    #self.scan_stream.stream_to_buffer(data)
+                    self.scan_stream.handle_config(data)
                     #print(f'Received: {data.decode()!r}')
                 else:
                     print("at eof?")
@@ -65,7 +66,7 @@ class ConnectionManager:
         self.data_writer = writer
         self.data_reader = reader
 
-    async def tcp_msg_client(self, message):
+    async def tcp_msg_client(self, messages):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
         print("opening cmd client")
@@ -74,9 +75,10 @@ class ConnectionManager:
         loop.create_task(self.open_connection(HOST, PORT, future_con))
         await asyncio.sleep(0)
         reader, writer = await future_con
-        print(f'Send: {message!r}')
-        writer.write(message.encode())
-        await writer.drain()
+        for message in messages:
+            print(f'Send: {message!r}')
+            writer.write(message.encode())
+            await writer.drain()
 
         print('Close tcp_msg_client')
         writer.close()
@@ -92,11 +94,12 @@ class ConnectionManager:
         await self.stop_reading()
 
     async def start_reading(self):
-        asyncio.ensure_future(self.tcp_msg_client('sc00001'))
+        print("start reading")
+        asyncio.ensure_future(self.tcp_msg_client(['sc00001', self.con.scan_ctrl.lower_config_flag()]))
         self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader))
 
     async def stop_reading(self):
-        await self.tcp_msg_client('sc00000')
+        await self.tcp_msg_client(['sc00000', self.con.scan_ctrl.raise_config_flag()])
         #self.data_reader.feed_eof()
         if not self.streaming == None:
             self.streaming.cancel()

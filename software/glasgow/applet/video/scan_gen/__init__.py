@@ -59,7 +59,7 @@ class IOBusSubtarget(Elaboratable):
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
                             const_dwell_time, configuration, 
-                            test_mode = "data loopback",
+                            test_mode = "data loopback", use_config_handler = True, 
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -118,6 +118,7 @@ class ScanGenInterface:
                 __addr_y_upper_limit_b1, __addr_y_upper_limit_b2,
                 __addr_y_lower_limit_b1, __addr_y_lower_limit_b2,
                 __addr_8_bit_output, __addr_do_frame_sync, __addr_do_line_sync,
+                __addr_configuration,
                 is_simulation = False):
         self.iface = iface
         self._logger = logger
@@ -142,6 +143,8 @@ class ScanGenInterface:
         self.__addr_8_bit_output = __addr_8_bit_output
         self.__addr_do_frame_sync = __addr_do_frame_sync
         self.__addr_do_line_sync = __addr_do_line_sync
+
+        self.__addr_configuration = __addr_configuration
 
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
@@ -300,6 +303,11 @@ class ScanGenInterface:
         await self._device.write_register(self.__addr_scan_mode, val)
         print("set scan mode", val)
 
+    async def set_config_flag(self, val):
+        await self._device.write_register(self.__addr_configuration, val)
+        print("set config flag", val)
+
+
     async def set_raster_mode(self):
         await self._device.write_register(self.__addr_scan_mode, 1)
         print("set raster mode")
@@ -434,6 +442,7 @@ class SG_EndpointInterface(ScanGenInterface):
             print("writing", data)
             self.server_host.data_writer.write(data)
             await self.server_host.data_writer.drain()
+            await asyncio.sleep(5)
 
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
@@ -469,6 +478,8 @@ class SG_EndpointInterface(ScanGenInterface):
             await self.set_line_sync(val)
         elif c == "8b":
             await self.set_8bit_output(val)
+        elif c == "cf":
+            await self.set_configuration(val)
 
 class SG_2DBufferInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
@@ -673,11 +684,12 @@ class ScanGenApplet(GlasgowApplet):
         const_dwell_time,      self.__addr_const_dwell_time = target.registers.add_rw(8, reset=0)
 
         configuration,      self.__addr_configuration = target.registers.add_rw(1, reset=0)
+        print("configuration register:", self.__addr_configuration)
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
-            in_fifo = iface.get_in_fifo(auto_flush = False),
+            in_fifo = iface.get_in_fifo(auto_flush = True),
             out_fifo = iface.get_out_fifo(),
             scan_mode = scan_mode,
             x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
@@ -705,7 +717,8 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
-            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
+            self.__addr_configuration
             )
         if args.buf == "local":
             scan_iface = SG_LocalBufferInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -715,7 +728,8 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
-            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
+            self.__addr_configuration
             )
         if args.buf == "endpoint":
             scan_iface = SG_EndpointInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -725,7 +739,8 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
-            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
+            self.__addr_configuration
             )
         else:
             scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -735,7 +750,8 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
-            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
+            self.__addr_configuration
             )
 
         return scan_iface
@@ -747,15 +763,6 @@ class ScanGenApplet(GlasgowApplet):
         #pass
 
     async def interact(self, device, args, scan_iface):
-        # await scan_iface.set_frame_resolution(16384,16384)
-        # await scan_iface.set_vector_mode()
-        # points = [1000, 2000, 0]*16384
-        # for n in points:
-        #     await scan_iface.write_2bytes(n)
-        # data = await scan_iface.iface.read()
-        # print(scan_iface.decode_vpoint_packet(data))
-        # await scan_iface.set_vector_mode()
-        
         if args.buf == "local":
             await scan_iface.set_8bit_output()
             await scan_iface.set_frame_sync()
@@ -769,10 +776,7 @@ class ScanGenApplet(GlasgowApplet):
             close_future = loop.create_future()
             scan_iface.start_servers(close_future)
             await close_future
-            # await asyncio.gather(scan_iface.listen_at_endpoint(),
-            #                     scan_iface.stream_to_endpoint())
-            # while True:
-            #     await scan_iface.stream_video()
+
 
 
 

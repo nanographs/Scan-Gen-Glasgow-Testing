@@ -30,7 +30,7 @@ sim_iface.out_fifo = sim_iface.get_out_fifo()
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
-                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, is_simulation = True)
+                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, is_simulation = True)
 
 
 def raster_sim(n=16384, eight_bit_output=False):
@@ -159,6 +159,8 @@ def sim_iobus():
         yield
         yield configuration.eq(1)
         yield
+        for n in range(10):
+            yield
         yield configuration.eq(0)
         yield
         yield from raster_sim(100, eight_bit_output = True)
