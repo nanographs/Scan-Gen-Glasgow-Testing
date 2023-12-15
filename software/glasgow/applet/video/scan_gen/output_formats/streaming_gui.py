@@ -115,8 +115,8 @@ class StreamRegisterUpdateBox(RegisterUpdateBox):
     async def do_fn(self):
         val = self.getval()
         print("set", self.name, ":", val)
-        msg = await self.msgfn(val)
-        await self.con.tcp_msg_client(msg)
+        msg = self.msgfn(val)
+        await self.con.tcp_msg_client([self.con.scan_ctrl.raise_config_flag(), msg])
 
 
 class StreamFrameSettings(FrameSettings):
@@ -235,13 +235,13 @@ class MainWindow(QWidget):
         x_width, y_height = self.frame_settings.getframe()
         print("updating frame size",x_width, y_height)
         self.con.scan_stream.change_buffer(x_width, y_height)
-        self.image_display.setRange(x_width, y_height)
-        self.image_display.live_img.setImage(np.zeros((y_height, x_width)).astype(np.uint8), rect = (0,0,x_width, y_height))
+        #self.image_display.setRange(x_width, y_height)
+        #self.image_display.live_img.setImage(np.zeros((y_height, x_width)).astype(np.uint8), rect = (0,0,x_width, y_height))
 
     @asyncSlot()
     async def connect(self):
         await self.con.recieve_data_client()
-        await self.con.tcp_msg_client("sc00000")
+        await self.con.tcp_msg_client(["sc00000", self.con.scan_ctrl.raise_config_flag()])
         # await self.con.tcp_msg_client("ry16384")
         # if connection == "Connected":
         #     self.setState("scan_not_started")
@@ -281,6 +281,7 @@ class MainWindow(QWidget):
     @asyncSlot()
     async def toggle_scan(self):
         if self.start_btn.isChecked():
+            print("starting scan")
             self.start_btn.setText('🔄')
             loop = asyncio.get_event_loop()
             loop.create_task(self.con.start_reading())
@@ -291,7 +292,7 @@ class MainWindow(QWidget):
         else:
             print("Stopped scanning now")
             self.start_btn.setText('🔄')
-            self.update_continously.cancel()
+            #self.update_continously.cancel()
             loop = asyncio.get_event_loop()
             loop.create_task(self.con.stop_reading())
             # if self.mode == "Patterning":
@@ -309,7 +310,7 @@ class MainWindow(QWidget):
                 break
     
     async def updateData(self):
-        self.image_display.live_img.setImage(self.con.scan_stream.buffer, autoLevels = False)
+        self.image_display.setImage(self.con.scan_stream.y_height, self.con.scan_stream.x_width, self.con.scan_stream.buffer)
         
         
     def setState(self, state):

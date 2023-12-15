@@ -77,7 +77,7 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.strobe_out.eq(1)
                 with m.If(self.enable):
                     m.d.comb += self.strobe_out.eq(0)
-                    m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b1)
+                    m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b2)
                     m.next = "X2"
             with m.State("X2"):
                 m.d.comb += l.eq(1)
@@ -85,7 +85,7 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.strobe_out.eq(1)
                 with m.If(self.enable):
                     m.d.comb += self.strobe_out.eq(0)
-                    m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b2)
+                    m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b1)
                     m.next = "Y1"
             with m.State("Y1"):
                 m.d.comb += l.eq(1)
@@ -93,7 +93,7 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.strobe_out.eq(1)
                 with m.If(self.enable):
                     m.d.comb += self.strobe_out.eq(0)
-                    m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b1)
+                    m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b2)
                     m.next = "Y2"
             with m.State("Y2"):
                 
@@ -101,7 +101,7 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.strobe_out.eq(1)
                 with m.If(self.enable):
                     m.d.comb += self.strobe_out.eq(0)
-                    m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b2)
+                    m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b1)
                     m.next = "Insert_End"
             with m.State("Insert_End"):
                 m.d.comb += self.writing_config.eq(1)
@@ -114,6 +114,7 @@ class ConfigHandler(Elaboratable):
                     with m.Else():
                         m.next = "Wait_unlatch"
             with m.State("Wait_unlatch"):
+                m.d.comb += self.strobe_out.eq(1)
                 m.d.comb += self.writing_config.eq(0)
                 with m.If(~self.configuration_flag):
                     m.next = "Latch"

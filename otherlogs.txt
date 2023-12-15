@@ -1,4 +1,19 @@
 INFO:OpenGL.acceleratesupport:No OpenGL_accelerate module loaded: No module named 'OpenGL_accelerate'
 INFO:qasync:Using Qt Implementation: PyQt6
 DEBUG:asyncio:Using selector: _Selector
+ERROR:qasync._QEventLoop:Task exception was never retrieved
+future: <Task finished name='Task-12' coro=<ConnectionManager.start_reading() done, defined at /Users/isabelburgos/Scan-Gen-Glasgow-Testing/software/glasgow/applet/video/scan_gen/output_formats/new_socket_test.py:96> exception=AttributeError("'ConnectionManager' object has no attribute 'con'")>
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.11/site-packages/qasync/__init__.py", line 380, in run_forever
+    rslt = self.__app.exec_()
+           ^^^^^^^^^^^^^^^^
+AttributeError: 'QApplication' object has no attribute 'exec_'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software/glasgow/applet/video/scan_gen/output_formats/new_socket_test.py", line 97, in start_reading
+    asyncio.ensure_future(self.tcp_msg_client(['sc00001', self.con.scan_ctrl.lower_config_flag()]))
+                                                          ^^^^^^^^
+AttributeError: 'ConnectionManager' object has no attribute 'con'
 DEBUG:qasync._unix._Selector:Closing

@@ -26,7 +26,7 @@ class IOBus(Elaboratable):
                 eight_bit_output, do_frame_sync, do_line_sync,
                 const_dwell_time, configuration,
                 is_simulation = True, test_mode = None,
-                use_config_handler = True):
+                use_config_handler = False):
         ### Build arguments
         self.is_simulation = is_simulation
         self.test_mode = test_mode
@@ -71,6 +71,7 @@ class IOBus(Elaboratable):
         self.y_lower_limit = Signal(16)
 
         if self.use_config_handler:
+            print("building with config handler")
             self.config_handler = ConfigHandler()
             self.configuration_flag = configuration
             self.handling_config = Signal()
