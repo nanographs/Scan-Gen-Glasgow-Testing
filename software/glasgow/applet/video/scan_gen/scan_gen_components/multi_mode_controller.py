@@ -112,6 +112,10 @@ class ModeController(Elaboratable):
         m.d.comb += self.dwell_avgr.strobe.eq(self.adc_data_strobe)
         m.d.comb += self.dwell_avgr.start_new_average.eq(self.beam_controller.end_of_dwell)
 
+        with m.If(self.mode == 0): ### when in DO NOTHING mode, do nothing.
+            m.d.comb += self.write_strobe.eq(1)
+            m.d.comb += self.beam_controller.dwelling.eq(0)
+
         with m.If((self.mode == ScanMode.Raster)|(self.mode == ScanMode.RasterPattern)):
             #### Interpolation 
             m.d.comb += self.ras_mode_ctrl.xy_scan_gen.x_full_frame_resolution.eq(self.x_full_frame_resolution)

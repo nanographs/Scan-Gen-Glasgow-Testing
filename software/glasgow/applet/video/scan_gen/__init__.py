@@ -43,7 +43,7 @@ class IOBusSubtarget(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
-                const_dwell_time):
+                const_dwell_time, configuration):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
@@ -58,7 +58,8 @@ class IOBusSubtarget(Elaboratable):
                             y_upper_limit_b1, y_upper_limit_b2,
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
-                            const_dwell_time, test_mode = "data loopback",
+                            const_dwell_time, configuration, 
+                            test_mode = "data loopback",
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -686,7 +687,7 @@ class ScanGenApplet(GlasgowApplet):
             y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
             y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
             eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync,
-            const_dwell_time = const_dwell_time
+            const_dwell_time = const_dwell_time, configuration = configuration
         ))
         
     @classmethod
