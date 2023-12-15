@@ -38,8 +38,8 @@ class ByteReplacer(Elaboratable):
         self.point_data = Signal(vector_dwell)
         self.processed_point_data = Signal(vector_dwell)
         self.eight_bit_output = Signal()
-        self.do_frame_sync = Signal()
-        self.do_line_sync = Signal()
+        self.replace_0_to_1 = Signal()
+        self.replace_0_to_2 = Signal()
         self.most_significant_8_bits = Signal(8)
     def elaborate(self, platform):
         m = Module()
@@ -62,14 +62,14 @@ class ByteReplacer(Elaboratable):
         m.d.comb += one.D1.eq(1)
         m.d.comb += one.D2.eq(0)
 
-        with m.If(self.do_frame_sync):
+        with m.If(self.replace_0_to_1):
             with m.If(self.point_data.as_value() == zero.as_value()):
                 m.d.comb += self.processed_point_data.eq(1)
             with m.If(self.eight_bit_output):
                 with m.If(self.most_significant_8_bits == 0):
                     m.d.comb += self.processed_point_data.D1.eq(1)
 
-        with m.If(self.do_line_sync):
+        with m.If(self.replace_0_to_2):
             with m.If((self.point_data.as_value() == one.as_value())|(self.point_data.as_value() == zero.as_value())):
                 m.d.comb += self.processed_point_data.eq(2)
             with m.If(self.eight_bit_output):

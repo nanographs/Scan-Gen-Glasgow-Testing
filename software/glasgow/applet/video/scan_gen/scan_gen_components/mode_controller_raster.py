@@ -357,6 +357,7 @@ class RasterModeController(Elaboratable):
         self.eight_bit_output = Signal()
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
+        self.replace_0_to_1 = Signal()
 
         self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
 
@@ -373,8 +374,8 @@ class RasterModeController(Elaboratable):
             m.d.comb += self.raster_fifo.w_en.eq(1)
             m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.raster_dwell_data_c)
 
-        m.d.comb += self.byte_replacer.do_frame_sync.eq(self.do_frame_sync)
-        m.d.comb += self.byte_replacer.do_line_sync.eq(self.do_line_sync)
+        m.d.comb += self.byte_replacer.replace_0_to_1.eq((self.do_frame_sync)|(self.replace_0_to_1))
+        m.d.comb += self.byte_replacer.replace_0_to_2.eq(self.do_line_sync)
         m.d.comb += self.byte_replacer.eight_bit_output.eq(self.eight_bit_output)
 
         m.d.comb += self.byte_replacer.point_data.eq(self.raster_point_output)

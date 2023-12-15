@@ -13,7 +13,7 @@ from glasgow.access.simulation import SimulationMultiplexerInterface, Simulation
 from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGenInterface
 from glasgow.applet.video.scan_gen.scan_gen_components.main_iobus import IOBus
 from glasgow.applet.video.scan_gen.scan_gen_components.test_streams import *
-from glasgow.applet.video.scan_gen.output_formats.even_newer_gui import run_gui
+#from glasgow.applet.video.scan_gen.output_formats.even_newer_gui import run_gui
 from glasgow.device.hardware import GlasgowHardwareDevice
 from glasgow.device.simulation import GlasgowSimulationDevice
 from glasgow.target.simulation import GlasgowSimulationTarget
@@ -135,6 +135,7 @@ def sim_iobus():
     do_frame_sync = Signal()
     do_line_sync = Signal()
     const_dwell_time = Signal()
+    configuration = Signal()
 
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
@@ -144,16 +145,21 @@ def sim_iobus():
     y_upper_limit_b1, y_upper_limit_b2,
     y_lower_limit_b1, y_lower_limit_b2,
     eight_bit_output, do_frame_sync, do_line_sync,
-    const_dwell_time,
+    const_dwell_time, configuration,
     is_simulation = True,
-    test_mode = "data loopback"
+    test_mode = "data loopback", use_config_handler = True
     )
     def bench():
-        yield do_frame_sync.eq(1)
-        yield do_line_sync.eq(0)
-        yield eight_bit_output.eq(1)
-        yield from set_raster_params(dut, x_res=512, y_res=512)
+        # yield do_frame_sync.eq(1)
+        # yield do_line_sync.eq(0)
+        # yield eight_bit_output.eq(1)
         yield
+        yield from set_raster_params(dut, x_res=512, y_res=512)
+        yield scan_mode.eq(1)
+        yield
+        yield configuration.eq(1)
+        yield
+        yield configuration.eq(0)
         yield
         yield from raster_sim(100, eight_bit_output = True)
         # yield dut.scan_mode.eq(ScanMode.Vector)
