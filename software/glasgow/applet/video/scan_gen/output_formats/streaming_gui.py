@@ -112,6 +112,7 @@ class StreamRegisterUpdateBox(RegisterUpdateBox):
         self.con = con
 
 
+
 class StreamFrameSettings(FrameSettings):
     def __init__(self, con):
         super().__init__(StreamRegisterUpdateBox)
@@ -121,6 +122,24 @@ class StreamFrameSettings(FrameSettings):
         self.rx.msgfn = self.con.scan_ctrl.set_x_resolution
         self.ry.con = self.con
         self.ry.msgfn = self.con.scan_ctrl.set_y_resolution
+
+        self.rx.spinbox.valueChanged.connect(self.set_x)
+        self.ry.spinbox.valueChanged.connect(self.set_y)
+
+    
+    @asyncSlot()
+    async def set_x(self):
+        xval = self.rx.getval()
+        await self.con.tcp_msg_client(self.con.scan_ctrl.set_x_resolution(xval))
+        await self.con.tcp_msg_client(self.con.scan_ctrl.raise_config_flag())
+        await self.con.tcp_msg_client(self.con.scan_ctrl.lower_config_flag())
+
+    @asyncSlot()
+    async def set_y(self):
+        yval = self.ry.getval()
+        await self.con.tcp_msg_client(self.con.scan_ctrl.set_y_resolution(yval))
+        await self.con.tcp_msg_client(self.con.scan_ctrl.raise_config_flag())
+        await self.con.tcp_msg_client(self.con.scan_ctrl.lower_config_flag())
 
 
 class MainWindow(QWidget):

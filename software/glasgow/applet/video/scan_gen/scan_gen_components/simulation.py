@@ -164,6 +164,11 @@ def sim_iobus():
         yield configuration.eq(0)
         yield
         yield from raster_sim(100, eight_bit_output = True)
+        yield scan_mode.eq(0)
+        for n in range(100):
+            yield
+        #yield from raster_sim(100, eight_bit_output = True)
+        
         # yield dut.scan_mode.eq(ScanMode.Vector)
         # yield from vector_sim(16384)
         # yield from vector_pattern_sim(dut)

@@ -136,47 +136,54 @@ class ScanStream:
 
     def buffer_with_config(self, config, data):
         self.parse_config(config)
-        self.stream_to_buffer(data, print_debug = True)
+        self.stream_to_buffer(data)
 
     def handle_config(self, raw_data, config_bytes = 4, print_debug = False):
-        print("handling mixed data stream")
-        # data = raw_data
-        data = self.decode_rdwell_packet(raw_data)
+        #print("handling mixed data stream")
+        data = raw_data
+        #data = self.decode_rdwell_packet(raw_data)
         d = np.array(data)
-        zero_indices = np.nonzero(d < 1)[0]
-        start_flag = int(zero_indices[0])
-        stop_flag = start_flag + config_bytes + 1
-        data_start = stop_flag
-        config = d[start_flag+1:stop_flag]
         if print_debug:
-            print("config:", config, "start", start_flag, "stop", stop_flag)
-        stop_index = np.where(zero_indices == stop_flag)[0][0]
-        zero_indices = zero_indices[stop_index+1:]
-        while len(zero_indices) > 0:
-            if print_debug:
-                print("zero indices", zero_indices)
+            print("data:", d)
+        zero_indices = np.nonzero(d < 1)[0]
+        if print_debug:
+            print("zero indices:", zero_indices)
+        if len(zero_indices) == 0:
+            self.stream_to_buffer(data)
+        else:
             start_flag = int(zero_indices[0])
-            data_with_config = d[stop_flag+1:start_flag]
-            if print_debug:
-                print("data", data_with_config, "start", stop_flag+1, "stop", start_flag)
-            self.buffer_with_config(config, data_with_config)
             stop_flag = start_flag + config_bytes + 1
+            data_start = stop_flag
             config = d[start_flag+1:stop_flag]
             if print_debug:
-                print("start", start_flag, "stop", stop_flag)
-                print("config:", config)
+                print("config:", config, "start", start_flag, "stop", stop_flag)
             stop_index = np.where(zero_indices == stop_flag)[0][0]
             zero_indices = zero_indices[stop_index+1:]
-        data_with_config = d[stop_flag+1:]
-        if print_debug:
-            print("data", data_with_config)
-        self.buffer_with_config(config, data_with_config)
+            while len(zero_indices) > 0:
+                if print_debug:
+                    print("zero indices", zero_indices)
+                start_flag = int(zero_indices[0])
+                data_with_config = d[stop_flag+1:start_flag]
+                if print_debug:
+                    print("data", data_with_config, "start", stop_flag+1, "stop", start_flag)
+                self.buffer_with_config(config, data_with_config)
+                stop_flag = start_flag + config_bytes + 1
+                config = d[start_flag+1:stop_flag]
+                if print_debug:
+                    print("start", start_flag, "stop", stop_flag)
+                    print("config:", config)
+                stop_index = np.where(zero_indices == stop_flag)[0][0]
+                zero_indices = zero_indices[stop_index+1:]
+            data_with_config = d[stop_flag+1:]
+            if print_debug:
+                print("data", data_with_config)
+            self.buffer_with_config(config, data_with_config)
             
             
         
     def stream_to_buffer(self, raw_data, print_debug = False):
-        #data = self.decode_rdwell_packet(raw_data)
-        data = raw_data
+        data = self.decode_rdwell_packet(raw_data)
+        #data = raw_data
         if print_debug:
             print("data length:", len(data))
             print("frame size (x, y):", self.x_width, self.y_height)
@@ -238,7 +245,7 @@ class ScanStream:
         self.current_x = partial_end_points
         #assert (self.buffer[self.current_y][0] == 0)
 
-        print(self.buffer)
+        #print(self.buffer)
         #print("=====")
 
 
@@ -246,6 +253,8 @@ if __name__ == "__main__":
     scanctrl = ScanCtrl()
     print(scanctrl.raise_config_flag())
     print(scanctrl.lower_config_flag())
-    # scanstream = ScanStream()
-    # data = [250, 251, 252, 253, 254, 255, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5]
-    # scanstream.handle_config(data)
+    scanstream = ScanStream()
+    data = [250, 251, 252, 253, 254, 255, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5]
+    data2 = [255]*16384
+    scanstream.handle_config(data, print_debug=True)
+    scanstream.handle_config(data2, print_debug=True)

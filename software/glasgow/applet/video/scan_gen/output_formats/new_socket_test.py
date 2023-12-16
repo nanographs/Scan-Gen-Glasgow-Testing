@@ -38,10 +38,10 @@ class ConnectionManager:
                 if not reader.at_eof():
                     await asyncio.sleep(0)
                     data = await reader.read(16384)
-                    print("recieved data")
+                    #print("recieved data")
                     data = memoryview(data)
                     #self.scan_stream.stream_to_buffer(data)
-                    self.scan_stream.handle_config(data)
+                    self.scan_stream.handle_config(data, print_debug = True)
                     #print(f'Received: {data.decode()!r}')
                 else:
                     print("at eof?")
@@ -80,9 +80,9 @@ class ConnectionManager:
         writer.write(message.encode())
         await writer.drain()
 
-        print('Close tcp_msg_client')
-        writer.close()
-        await writer.wait_closed()
+        # print('Close tcp_msg_client')
+        # writer.close()
+        # await writer.wait_closed()
 
 
     async def wait_stop(self):
@@ -98,10 +98,10 @@ class ConnectionManager:
         self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader))
 
     async def stop_reading(self):
-        await self.tcp_msg_client(['sc00000', self.con.scan_ctrl.raise_config_flag()])
+        await self.tcp_msg_client("sc00000")
         #self.data_reader.feed_eof()
-        if not self.streaming == None:
-            self.streaming.cancel()
+        # if not self.streaming == None:
+        #     self.streaming.cancel()
         
     
     async def close_data_stream(self):
