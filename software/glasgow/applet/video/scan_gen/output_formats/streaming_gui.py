@@ -111,30 +111,17 @@ class StreamRegisterUpdateBox(RegisterUpdateBox):
         self.msgfn = msgfn
         self.con = con
 
-    @asyncSlot()
-    async def do_fn(self):
-        val = self.getval()
-        print("set", self.name, ":", val)
-        msg = self.msgfn(val)
-        await self.con.tcp_msg_client([self.con.scan_ctrl.raise_config_flag(), msg])
-
 
 class StreamFrameSettings(FrameSettings):
     def __init__(self, con):
         super().__init__(StreamRegisterUpdateBox)
         self.con = con
-        self.btn = self.addButton()
-        self.btn.clicked.connect(self.do_fns)
 
         self.rx.con = self.con
         self.rx.msgfn = self.con.scan_ctrl.set_x_resolution
         self.ry.con = self.con
         self.ry.msgfn = self.con.scan_ctrl.set_y_resolution
 
-    @asyncSlot()
-    async def do_fns(self):
-        for register in self.registers:
-            await register.do_fn()
 
 class MainWindow(QWidget):
 
@@ -159,17 +146,15 @@ class MainWindow(QWidget):
         self.frame_settings = StreamFrameSettings(self.con)
         self.layout.addLayout(self.frame_settings, 2, 0)
 
-        self.frame_settings.btn.clicked.connect(self.updateFrameSize)
-
         self.conn_btn = QPushButton("Click to Connect")
         self.conn_btn.setCheckable(True) 
         self.conn_btn.clicked.connect(self.connect)
 
 
-        # self.mode_select_dropdown = QComboBox()
-        # self.mode_select_dropdown.addItem("Imaging")
-        # self.mode_select_dropdown.addItem("Patterning")
-        # self.mode_select_dropdown.currentIndexChanged.connect(self.mode_select)
+        self.mode_select_dropdown = QComboBox()
+        self.mode_select_dropdown.addItem("Imaging")
+        self.mode_select_dropdown.addItem("Raster Patterning")
+        self.mode_select_dropdown.addItem("Vector Patterning")
 
         # self.loopback_btn = QPushButton("Loopback Off")
         # self.loopback_btn.setCheckable(True) 
@@ -187,38 +172,16 @@ class MainWindow(QWidget):
         
         
 
-        # mode_options = QGridLayout()
-        self.layout.addWidget(self.conn_btn,0,0)
-        # mode_options.addWidget(self.mode_select_dropdown,0,1)
+        mode_options = QGridLayout()
+        mode_options.addWidget(self.conn_btn,0,0)
+        mode_options.addWidget(self.mode_select_dropdown,0,1)
         # mode_options.addWidget(self.loopback_btn,0,3)
-        self.layout.addWidget(self.start_btn,0,1)
+        mode_options.addWidget(self.start_btn,0,2)
         # mode_options.addWidget(self.new_scan_btn,0,5)
         # # mode_options.addWidget(self.save_btn, 0, 6)
 
 
-        # self.layout.addLayout(mode_options,0,0)
-
-        # self.resolution_options = ResolutionDropdown()
-        # self.layout.addLayout(self.resolution_options, 1,0)
-        # self.resolution_options.menu.currentIndexChanged.connect(self.changeResolution)
-
-        # self.dwell_options = DwellTimeSelector()
-        # self.layout.addLayout(self.dwell_options, 1,1)
-        # self.dwell_options.spinbox.valueChanged.connect(self.changeDwellTime)
-
-        # self.new_pattern_btn = QPushButton('Pattern file')
-        # self.new_pattern_btn.clicked.connect(self.file_select)
-        # self.layout.addWidget(self.new_pattern_btn, 1,1)
-        # self.new_pattern_btn.setHidden(True)
-
-        # self.image_display = ImageDisplay(512, 512)
-        # self.image_display.live_img.setImage(scan_controller.buf) #set blank 512x512 image
-        # self.layout.addWidget(self.image_display)
-
-        # self.setState("disconnected")
-        # self.mode = "Imaging"
-
-        # self.image_display.showTest()
+        self.layout.addLayout(mode_options,0,0)
 
     def file_select(self):
         self.file_dialog = ImportPatternFileWindow()
@@ -230,61 +193,36 @@ class MainWindow(QWidget):
         # self.image_display.image_view.autoRange()
         # print(self.image_display.image_view.allChildren())
 
-    @asyncSlot()
-    async def updateFrameSize(self):
-        x_width, y_height = self.frame_settings.getframe()
-        print("updating frame size",x_width, y_height)
-        self.con.scan_stream.change_buffer(x_width, y_height)
-        #self.image_display.setRange(x_width, y_height)
-        #self.image_display.live_img.setImage(np.zeros((y_height, x_width)).astype(np.uint8), rect = (0,0,x_width, y_height))
 
     @asyncSlot()
     async def connect(self):
+        await self.transmit_current_settings()
+        await self.con.tcp_msg_client(self.con.scan_ctrl.raise_config_flag())
+        await self.con.tcp_msg_client(self.con.scan_ctrl.lower_config_flag())
         await self.con.recieve_data_client()
-        await self.con.tcp_msg_client(["sc00000", self.con.scan_ctrl.raise_config_flag()])
         # await self.con.tcp_msg_client("ry16384")
         # if connection == "Connected":
         #     self.setState("scan_not_started")
 
 
     @asyncSlot()
-    async def mode_select(self):
-        await scan_controller.reset_scan()
-        await scan_controller.set_mode()
-        self.mode = self.mode_select_dropdown.currentText()
-        if self.mode == "Imaging":
-            print("Imaging")
-            self.new_pattern_btn.setHidden(True)
-            self.dwell_options.label.setHidden(False)
-            self.dwell_options.spinbox.setHidden(False)
-        if self.mode == "Patterning":
-            print("Patterning")
-            self.dwell_options.label.setHidden(True)
-            self.dwell_options.spinbox.setHidden(True)
-            self.new_pattern_btn.setHidden(False)
-            
-            
+    async def transmit_current_settings(self):
+        x_width, y_height = self.frame_settings.getframe()
+        await self.con.tcp_msg_client(self.con.scan_ctrl.set_x_resolution(x_width))
+        await self.con.tcp_msg_client(self.con.scan_ctrl.set_y_resolution(y_height))
 
-    @asyncSlot()
-    async def set_loopback(self):
-        await scan_controller.set_loopback()
-        if self.loopback_btn.isChecked():
-            self.loopback_btn.setText("Loopback On")
-        else:
-            self.loopback_btn.setText("Loopback Off")
         
-
-    @asyncSlot()
-    async def reset_scan(self):
-        await scan_controller.reset_scan()
 
     @asyncSlot()
     async def toggle_scan(self):
         if self.start_btn.isChecked():
             print("starting scan")
             self.start_btn.setText('🔄')
-            loop = asyncio.get_event_loop()
-            loop.create_task(self.con.start_reading())
+            mode = self.mode_select_dropdown.currentIndex() + 1
+            await self.con.tcp_msg_client("sc0000" + str(mode))
+
+            #loop = asyncio.get_event_loop()
+            #oop.create_task(self.con.start_reading())
             self.update_continously = asyncio.ensure_future(self.keepUpdating())
             # self.setState("scanning")
             self.start_btn.setText('⏸️')

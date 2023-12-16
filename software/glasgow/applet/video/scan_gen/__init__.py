@@ -425,6 +425,7 @@ class SG_EndpointInterface(ScanGenInterface):
         self.close_future = close_future
         loop = asyncio.get_event_loop()
         self.server_host.start_servers()
+        self.streaming = asyncio.ensure_future(self.stream_data())
 
     def close(self):
         self.close_future.set_result("Closed")
@@ -438,28 +439,29 @@ class SG_EndpointInterface(ScanGenInterface):
 
     async def stream_data(self):
         while True:
+            print("awaiting read")
             data = await self.iface.read(16384)
             print("writing", data)
+            self.text_file.write(str(data.tolist()))
             self.server_host.data_writer.write(data)
             await self.server_host.data_writer.drain()
-            await asyncio.sleep(5)
 
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
         val = int(cmd[2:])
         if c == "sc":
             await self.set_scan_mode(val)
-            if val == 0:
-                print("stop stream...")
-                if not self.streaming == None:
-                    self.streaming.cancel()
-                    print(self.server_host.data_writer)
-                    await self.server_host.data_writer.drain()
-                    self._logger.info("streaming canceled" + repr(self.server_host.data_writer))
-            elif val == 1:
-                print("start stream...")
-                self._logger.info("streaming started")
-                self.streaming = asyncio.ensure_future(self.stream_data())
+            # if val == 0:
+            #     if not self.streaming == None:
+            #         print("stop stream...")
+            #         self.streaming.cancel()
+            #         print(self.server_host.data_writer)
+            #         await self.server_host.data_writer.drain()
+            #         self._logger.info("streaming canceled" + repr(self.server_host.data_writer))
+            # else:
+            #     print("start stream...")
+            #     self._logger.info("streaming started")
+            #     self.streaming = asyncio.ensure_future(self.stream_data())
         elif c == "rx":
             await self.set_x_resolution(val)
         elif c == "ry":
@@ -479,7 +481,8 @@ class SG_EndpointInterface(ScanGenInterface):
         elif c == "8b":
             await self.set_8bit_output(val)
         elif c == "cf":
-            await self.set_configuration(val)
+            await self.set_config_flag(val)
+
 
 class SG_2DBufferInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
@@ -763,6 +766,15 @@ class ScanGenApplet(GlasgowApplet):
         #pass
 
     async def interact(self, device, args, scan_iface):
+        # await scan_iface.set_8bit_output()
+        # await scan_iface.set_frame_resolution(512,512)
+        # await scan_iface.set_config_flag(1)
+        # await scan_iface.set_raster_mode()
+        # await scan_iface.set_config_flag(0)
+        # for n in range(10):
+        #     data = await scan_iface.iface.read(16384)
+        #     scan_iface.text_file.write(str(data.tolist()))
+
         if args.buf == "local":
             await scan_iface.set_8bit_output()
             await scan_iface.set_frame_sync()

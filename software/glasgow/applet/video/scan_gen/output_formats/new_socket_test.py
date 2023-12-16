@@ -65,8 +65,9 @@ class ConnectionManager:
         reader, writer = await future_con
         self.data_writer = writer
         self.data_reader = reader
+        await self.start_reading()
 
-    async def tcp_msg_client(self, messages):
+    async def tcp_msg_client(self, message):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
         print("opening cmd client")
@@ -75,10 +76,9 @@ class ConnectionManager:
         loop.create_task(self.open_connection(HOST, PORT, future_con))
         await asyncio.sleep(0)
         reader, writer = await future_con
-        for message in messages:
-            print(f'Send: {message!r}')
-            writer.write(message.encode())
-            await writer.drain()
+        print(f'Send: {message!r}')
+        writer.write(message.encode())
+        await writer.drain()
 
         print('Close tcp_msg_client')
         writer.close()
@@ -95,7 +95,6 @@ class ConnectionManager:
 
     async def start_reading(self):
         print("start reading")
-        asyncio.ensure_future(self.tcp_msg_client(['sc00001', self.con.scan_ctrl.lower_config_flag()]))
         self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader))
 
     async def stop_reading(self):

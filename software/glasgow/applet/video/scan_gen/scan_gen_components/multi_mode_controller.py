@@ -86,6 +86,7 @@ class ModeController(Elaboratable):
         self.read_enable = Signal()
         self.write_enable = Signal()
         self.write_strobe = Signal()
+        self.write_ready = Signal()
 
         self.internal_fifo_ready = Signal()
         self.adc_data = Signal(16)
@@ -145,7 +146,7 @@ class ModeController(Elaboratable):
 
             
             with m.If(self.mode == ScanMode.Raster):
-                m.d.comb += self.beam_controller.dwelling.eq(1)
+                m.d.comb += self.beam_controller.dwelling.eq(self.write_ready)
                 m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
                 m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal 
                 
@@ -155,7 +156,7 @@ class ModeController(Elaboratable):
                 with m.FSM() as fsm:
                     with m.State("Wait for first USB"):
                         with m.If(self.ras_mode_ctrl.raster_fifo.r_rdy):
-                            m.d.comb += self.beam_controller.dwelling.eq(1) 
+                            m.d.comb += self.beam_controller.dwelling.eq(self.write_ready) 
                             m.next = "Patterning"
                     with m.State("Patterning"):
                         m.d.comb += self.beam_controller.dwelling.eq(1) 

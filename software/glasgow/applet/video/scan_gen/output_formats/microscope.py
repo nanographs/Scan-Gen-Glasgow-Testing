@@ -67,6 +67,7 @@ class ScanCtrl:
         msg4 = self.cmd.set_frame(frame_vars.y_lower_limit, y_lower)
         return (msg1+msg2+msg3+msg4)
 
+
     def raise_config_flag(self):
         msg = self.cmd.set_data_format(data_format.config, True)   
         return msg
@@ -74,6 +75,8 @@ class ScanCtrl:
     def lower_config_flag(self):
         msg = self.cmd.set_data_format(data_format.config, False)   
         return msg
+
+
 
 class ScanStream:
     _HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
@@ -124,9 +127,11 @@ class ScanStream:
         if ((new_x != self.x_width) | (new_y != self.y_height)):
             self.current_x = 0
             self.current_y = 0
-        print("new x", new_x, "new_y", new_y)
-        self.x_width = new_x
-        self.y_height = new_y
+            self.x_width = new_x + 1
+            self.y_height = new_y + 1
+            self.buffer = np.zeros(shape=(self.y_height, self.x_width),
+                        dtype = np.uint8)
+            print("new buffer size:", self.x_width, self.y_height)
         
 
     def buffer_with_config(self, config, data):
@@ -238,6 +243,9 @@ class ScanStream:
 
 
 if __name__ == "__main__":
-    scanstream = ScanStream()
-    data = [250, 251, 252, 253, 254, 255, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5]
-    scanstream.handle_config(data)
+    scanctrl = ScanCtrl()
+    print(scanctrl.raise_config_flag())
+    print(scanctrl.lower_config_flag())
+    # scanstream = ScanStream()
+    # data = [250, 251, 252, 253, 254, 255, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5]
+    # scanstream.handle_config(data)
