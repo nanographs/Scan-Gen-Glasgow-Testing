@@ -131,11 +131,10 @@ class IOBus(Elaboratable):
             m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
             m.d.comb += self.handling_config.eq((self.configuration_flag) | (self.config_handler.writing_config))
 
-            m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
             with m.If(self.handling_config):
                 m.d.comb += self.mode_ctrl.mode.eq(0)
             with m.Else():
-                m.d.comb += self.mode_ctrl.mode.eq(self.config_handler.scan_mode_locked)
+                m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
 
             m.d.comb += self.config_handler.x_full_frame_resolution_b1.eq(self.x_full_resolution_b1)
             m.d.comb += self.config_handler.x_full_frame_resolution_b2.eq(self.x_full_resolution_b2)
@@ -205,13 +204,13 @@ class IOBus(Elaboratable):
                 m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.config_handler.strobe_out))
             with m.Else():
                 m.d.comb += self.mode_ctrl.write_enable.eq(self.in_fifo.w_rdy)
-                m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe))
+                m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe) & (self.mode_ctrl.beam_controller.dwelling))
 
         else:
             m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe))
             m.d.comb += self.mode_ctrl.write_enable.eq(self.in_fifo.w_rdy)
         
-        
+        m.d.comb += self.mode_ctrl.write_ready.eq(self.in_fifo.w_rdy)
 
 
         if self.test_mode == "loopback":

@@ -54,7 +54,6 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.strobe_out.eq(1)
                 with m.If(self.configuration_flag):
                     m.d.comb += self.writing_config.eq(1)
-                    m.d.sync += self.scan_mode_locked.eq(self.scan_mode)
                     m.d.sync += self.x_full_frame_resolution_locked.eq(Cat(self.x_full_frame_resolution_b2,
                                                                             self.x_full_frame_resolution_b1))
                     m.d.sync += self.y_full_frame_resolution_locked.eq(Cat(self.y_full_frame_resolution_b2,
