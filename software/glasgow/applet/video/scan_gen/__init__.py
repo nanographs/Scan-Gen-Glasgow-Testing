@@ -125,6 +125,7 @@ class ScanGenInterface:
         self._level  = logging.DEBUG if self._logger.name == __name__ else logging.TRACE
         self._device = device
         self.__addr_scan_mode = __addr_scan_mode
+        self.scan_mode = 0
         self.__addr_x_full_resolution_b1 = __addr_x_full_resolution_b1
         self.__addr_x_full_resolution_b2 = __addr_x_full_resolution_b2
         self.__addr_y_full_resolution_b1 = __addr_y_full_resolution_b1
@@ -301,6 +302,7 @@ class ScanGenInterface:
 
     async def set_scan_mode(self, val):
         await self._device.write_register(self.__addr_scan_mode, val)
+        self.scan_mode = val
         print("set scan mode", val)
 
     async def set_config_flag(self, val):
