@@ -442,9 +442,10 @@ class SG_EndpointInterface(ScanGenInterface):
             print("awaiting read")
             data = await self.iface.read(16384)
             print("writing", data)
-            self.text_file.write(str(data.tolist()))
             self.server_host.data_writer.write(data)
             await self.server_host.data_writer.drain()
+            self.text_file.write(str(data.tolist()))
+            print("send complete")
 
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
@@ -783,6 +784,7 @@ class ScanGenApplet(GlasgowApplet):
             scan_iface.launch_gui()
             
         if args.buf == "endpoint":
+            #scan_iface.launch_gui()
             await scan_iface.set_8bit_output(1)
             loop = asyncio.get_event_loop()
             close_future = loop.create_future()

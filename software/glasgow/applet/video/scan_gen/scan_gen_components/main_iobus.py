@@ -131,6 +131,9 @@ class IOBus(Elaboratable):
             m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
             m.d.comb += self.handling_config.eq((self.configuration_flag) | (self.config_handler.writing_config))
 
+            ## Reset counters when configuration changes
+            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.reset.eq(self.handling_config)
+
             with m.If(self.handling_config):
                 m.d.comb += self.mode_ctrl.mode.eq(0)
             with m.Else():
@@ -143,6 +146,8 @@ class IOBus(Elaboratable):
 
             m.d.comb += self.mode_ctrl.x_full_frame_resolution.eq(self.config_handler.x_full_frame_resolution_locked)
             m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked) 
+
+            
 
         else:
             m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
@@ -169,7 +174,7 @@ class IOBus(Elaboratable):
 
 
         #### =========================="BUS STATE MACHINE"==================================
-        m.d.sync += self.bus_multiplexer.sampling.eq(self.mode_ctrl.beam_controller.dwelling)
+        m.d.comb += self.bus_multiplexer.sampling.eq(self.mode_ctrl.beam_controller.dwelling)
 
         if self.test_mode == "fast clock":
             ### min dwell time is one actual clock cycle

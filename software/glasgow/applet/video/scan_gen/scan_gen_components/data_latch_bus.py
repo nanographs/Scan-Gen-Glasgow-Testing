@@ -157,33 +157,33 @@ class BusMultiplexer(Elaboratable):
         m.d.comb += self.d_clock.eq(self.sample_clock.clock)
 
         
-        with m.FSM() as fsm:
-            m.d.comb += self.is_x.eq(fsm.ongoing("X"))
-            m.d.comb += self.is_y.eq(fsm.ongoing("Y"))
-            m.d.comb += self.is_a.eq(fsm.ongoing("A"))
-            m.d.comb += self.is_done.eq(fsm.ongoing("Start"))
+        with m.If(self.sampling):
+            with m.FSM() as fsm:
+                m.d.comb += self.is_x.eq(fsm.ongoing("X"))
+                m.d.comb += self.is_y.eq(fsm.ongoing("Y"))
+                m.d.comb += self.is_a.eq(fsm.ongoing("A"))
+                m.d.comb += self.is_done.eq(fsm.ongoing("Start"))
 
-            with m.State("Start"):
-                with m.If(self.sampling):
-                    m.next = "X"
-            with m.State("X"):
-                m.d.comb += x_dac.sampling.eq(1)
-                with m.If(x_dac.released):
-                    m.next = "Y"
-            with m.State("Y"):
-                m.d.comb += y_dac.sampling.eq(1)
-                with m.If(y_dac.released):
-                    m.next = "Wait for A"
-            with m.State("Wait for A"):
-                with m.If(self.d_clock):
-                    m.next = "A"
-            with m.State("A"):
-                m.d.comb += a_adc.sampling.eq(1)
-                with m.If(a_adc.released):
-                    m.next = "Wait"
-            with m.State("Wait"):
-                with m.If(self.a_clock):
-                    m.next = "Start"
+                with m.State("Start"):
+                        m.next = "X"
+                with m.State("X"):
+                    m.d.comb += x_dac.sampling.eq(1)
+                    with m.If(x_dac.released):
+                        m.next = "Y"
+                with m.State("Y"):
+                    m.d.comb += y_dac.sampling.eq(1)
+                    with m.If(y_dac.released):
+                        m.next = "Wait for A"
+                with m.State("Wait for A"):
+                    with m.If(self.d_clock):
+                        m.next = "A"
+                with m.State("A"):
+                    m.d.comb += a_adc.sampling.eq(1)
+                    with m.If(a_adc.released):
+                        m.next = "Wait"
+                with m.State("Wait"):
+                    with m.If(self.a_clock):
+                        m.next = "Start"
 
         return m
 
