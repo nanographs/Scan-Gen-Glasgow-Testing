@@ -1,5 +1,4 @@
 INFO:OpenGL.acceleratesupport:No OpenGL_accelerate module loaded: No module named 'OpenGL_accelerate'
 INFO:qasync:Using Qt Implementation: PyQt6
 DEBUG:asyncio:Using selector: _Selector
-DEBUG:root:continous read error<StreamReader 229376 bytes transport=<_SelectorSocketTransport fd=33 read=idle write=<idle, bufsize=0>> paused>
 DEBUG:qasync._unix._Selector:Closing

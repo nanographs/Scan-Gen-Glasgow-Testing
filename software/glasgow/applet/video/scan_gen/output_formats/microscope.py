@@ -92,6 +92,8 @@ class ScanStream:
         self.eight_bit_output = True
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                     dtype = np.uint8)
+
+        self.pointbuffer = []
     
     def change_buffer(self, x_width, y_height):
         self.x_width = x_width
@@ -121,6 +123,82 @@ class ScanStream:
                 packet.append(dwell)
             return packet
 
+    def decode_vpoint(self, n):
+        try:
+            if self.eight_bit_output:
+                x2, x1, y2, y1, a1 = n
+            else:
+                x2, x1, y2, y1, a2, a1 = n
+            x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
+            y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
+            if self.eight_bit_output:
+                a = int("{0:08b}".format(a1),2)
+            else:
+                a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+                
+            return [x, y, a]
+        except ValueError:
+            pass ## 16384 isn't divisible by 3...
+            #ignore those pesky extra values.... just for new
+
+    def decode_vpoint_to_buffer(self, n):
+        if self.eight_bit_output:
+            x2, x1, y2, y1, a1 = n
+        else:
+            x2, x1, y2, y1, a2, a1 = n
+        x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
+        y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
+        if self.eight_bit_output:
+            a = int("{0:08b}".format(a1),2)
+            self.buffer[y][x] = a
+        else:
+            a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
+            self.buffer[y][x] = a
+        return [x, y, a]
+
+    def decode_vpoint_packet(self, raw_data, to_buffer = False):
+        if isinstance(raw_data, bytes):
+            data = list(raw_data)
+        if isinstance(raw_data, memoryview):
+            data = raw_data.tolist()
+        else:
+            data = raw_data
+        packet = []
+        if self.eight_bit_output:
+            for n in range(0,len(data),5):
+                if to_buffer:
+                    self.decode_vpoint_to_buffer(data[n:n+5])
+                else:
+                    point = self.decode_vpoint(data[n:n+5])
+                    print("point", point)
+                    packet.append(point)
+        else:
+            for n in range(0,len(data),6):
+                if to_buffer:
+                    self.decode_vpoint_to_buffer(data[n:n+6])
+                else:
+                    point = self.decode_vpoint(data[n:n+6])
+                    print("point", point)
+                    packet.append(point)
+        
+        if not to_buffer:
+            return packet
+
+    def stream_points_to_buffer(self, raw_data):
+        if isinstance(raw_data, bytes):
+            data = list(raw_data)
+        if isinstance(raw_data, memoryview):
+            data = raw_data.tolist()
+        else:
+            data = raw_data
+        data = self.pointbuffer + data
+        n_complete_points = len(data)//5
+        complete_points = np.array(data[:n_complete_points*5]).reshape((n_complete_points, 5))
+        for n in complete_points:
+            self.decode_vpoint_to_buffer(n) 
+        extra_points = data[n_complete_points*5:]
+        self.pointbuffer += extra_points
+
     def parse_config(self, config):
         new_x = self.decode_rdwell(config[0:2])
         new_y = self.decode_rdwell(config[2:4])
@@ -133,7 +211,6 @@ class ScanStream:
                         dtype = np.uint8)
             print("new buffer size:", self.x_width, self.y_height)
         
-
     def buffer_with_config(self, config, data):
         self.parse_config(config)
         self.stream_to_buffer(data)
@@ -179,8 +256,6 @@ class ScanStream:
                 print("data", data_with_config)
             self.buffer_with_config(config, data_with_config)
             
-            
-        
     def stream_to_buffer(self, raw_data, print_debug = False):
         data = self.decode_rdwell_packet(raw_data)
         #data = raw_data
@@ -219,7 +294,8 @@ class ScanStream:
             partial_start_points = 0
             partial_end_points = ((len(data))%self.x_width)
             full_lines = ((len(data))//self.x_width)
-            
+
+        ## TODO: rewrite without a for loop   
         for i in range(0,full_lines):
             if print_debug:
                 print("current y", self.current_y)
@@ -251,10 +327,19 @@ class ScanStream:
 
 if __name__ == "__main__":
     scanctrl = ScanCtrl()
-    print(scanctrl.raise_config_flag())
-    print(scanctrl.lower_config_flag())
     scanstream = ScanStream()
-    data = [250, 251, 252, 253, 254, 255, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5]
-    data2 = [255]*16384
-    scanstream.handle_config(data, print_debug=True)
-    scanstream.handle_config(data2, print_debug=True)
+    def test_raster_parsing():
+        data = [250, 251, 252, 253, 254, 255, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 2, 0, 2, 0, 1, 1, 2, 3, 4, 5]
+        data2 = [255]*16384
+        scanstream.handle_config(data, print_debug=True)
+        scanstream.handle_config(data2, print_debug=True)
+    def test_vector_parsing():
+        data = [100, 0, 200, 0, 255, 150, 0, 250, 0, 200, 0,0,0,0]
+        data2 = [255] + [100, 0, 200, 0, 255, 150, 0, 250, 0, 200, 0,0,0,0,255]*512
+        scanstream.change_buffer(255,255)
+        scanstream.stream_points_to_buffer(data)
+        scanstream.stream_points_to_buffer(data2)
+        #scanstream.decode_vpoint_packet(data)
+        #print(scanstream.buffer)
+
+    test_vector_parsing()
