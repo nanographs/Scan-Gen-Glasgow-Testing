@@ -138,6 +138,10 @@ class IOBus(Elaboratable):
             with m.Else():
                 m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
 
+            m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
+            m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
+
+
             m.d.comb += self.config_handler.x_full_frame_resolution_b1.eq(self.x_full_resolution_b1)
             m.d.comb += self.config_handler.x_full_frame_resolution_b2.eq(self.x_full_resolution_b2)
             m.d.comb += self.config_handler.y_full_frame_resolution_b1.eq(self.y_full_resolution_b1)
