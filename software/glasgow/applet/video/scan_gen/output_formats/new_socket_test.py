@@ -17,6 +17,8 @@ class ConnectionManager:
         self.data_reader = None
 
         self.streaming = None
+
+        self.scan_mode = 0
     async def open_connection(self, host, port, future):
         print("trying to open connection at", host, port)
         while True:
@@ -35,10 +37,11 @@ class ConnectionManager:
     async def read_continously(self, reader):
         while True:
             try:
+                print("trying to read")
                 if not reader.at_eof():
                     await asyncio.sleep(0)
                     data = await reader.read(16384)
-                    #print("recieved data")
+                    print("recieved data")
                     data = memoryview(data)
                     #self.scan_stream.stream_to_buffer(data)
                     self.scan_stream.handle_config(data, print_debug = True)
@@ -79,6 +82,7 @@ class ConnectionManager:
         print(f'Send: {message!r}')
         writer.write(message.encode())
         await writer.drain()
+        print("sent")
 
         # print('Close tcp_msg_client')
         # writer.close()

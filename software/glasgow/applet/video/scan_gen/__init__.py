@@ -226,7 +226,7 @@ class ScanGenInterface:
         
     async def write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
-        print("writing", b1, b2)
+        #print("writing", b1, b2)
         await self.iface.write(bits(b2))
         await self.iface.write(bits(b1))
 
@@ -303,6 +303,7 @@ class ScanGenInterface:
     async def set_scan_mode(self, val):
         await self._device.write_register(self.__addr_scan_mode, val)
         self.scan_mode = val
+        self._logger.info("set scan mode " + str(val))
         print("set scan mode", val)
 
     async def set_config_flag(self, val):
@@ -439,9 +440,17 @@ class SG_EndpointInterface(ScanGenInterface):
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
                         start_new_session = True)
 
+    async def write_points(self):
+        n = 0
+        while n < 16384*3:
+            await self.write_vpoint([255,255,0])
+            n+=6
+        print("wrote", n, "bytes")
+
     async def stream_data(self):
         while True:
             print("awaiting read")
+            self._logger.info("awaiting read")
             data = await self.iface.read(16384)
             print("writing", data)
             self.server_host.data_writer.write(data)
@@ -454,17 +463,15 @@ class SG_EndpointInterface(ScanGenInterface):
         val = int(cmd[2:])
         if c == "sc":
             await self.set_scan_mode(val)
-            # if val == 0:
-            #     if not self.streaming == None:
-            #         print("stop stream...")
-            #         self.streaming.cancel()
-            #         print(self.server_host.data_writer)
-            #         await self.server_host.data_writer.drain()
-            #         self._logger.info("streaming canceled" + repr(self.server_host.data_writer))
-            # else:
-            #     print("start stream...")
-            #     self._logger.info("streaming started")
-            #     self.streaming = asyncio.ensure_future(self.stream_data())
+            if val == 3:
+                print("writing points")
+                self._logger.info("writing points")
+                await self.write_points()
+            print("streaming?", self.stream_data)
+            print("current task:", asyncio.current_task())
+            tasks = asyncio.all_tasks()
+            for task in tasks:
+                print(task.get_name(), ":", task.get_coro())
         elif c == "rx":
             await self.set_x_resolution(val)
         elif c == "ry":
@@ -695,7 +702,7 @@ class ScanGenApplet(GlasgowApplet):
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
-            in_fifo = iface.get_in_fifo(auto_flush = True),
+            in_fifo = iface.get_in_fifo(auto_flush = False),
             out_fifo = iface.get_out_fifo(),
             scan_mode = scan_mode,
             x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
@@ -778,20 +785,84 @@ class ScanGenApplet(GlasgowApplet):
         #     data = await scan_iface.iface.read(16384)
         #     scan_iface.text_file.write(str(data.tolist()))
 
-        if args.buf == "local":
-            await scan_iface.set_8bit_output()
-            await scan_iface.set_frame_sync()
-            await scan_iface.set_frame_resolution(512,512)
-            await scan_iface.set_raster_mode()
-            scan_iface.launch_gui()
+        await scan_iface.set_8bit_output(0)
+        await scan_iface.set_vector_mode()
+        n = 0
+
+        #https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
+        L = [255, 255, 0]
+        def gentr_fn(alist):
+            while 1:
+                for j in alist:
+                    yield j
+        a = gentr_fn(L)
+
+        async def rcv_future_data(future):
+            data = await scan_iface.iface.read(16384)
+            future.set_result(data)
+
+        futures = []
+
+        for i in range(5):
+            n = 0
+            while True:
+                #print("writing")
+                n += 2
+                await scan_iface.write_2bytes(next(a))
+                
+                if n >= 16384:
+                    break
+            print("wrote", n)
+            #print("reading")
+            try:
+                #print(scan_iface.iface._in_buffer._wtotal)
+                #await scan_iface.iface.flush()
+                loop = asyncio.get_event_loop()
+                future = loop.create_future()
+                futures.append(future)
+                loop.create_task(rcv_future_data(future))
+                #data = await asyncio.wait_for(scan_iface.iface.read(16384),timeout=10)
+                #print("read", len(data.tolist()))
+                #print(data.tolist())
+                #scan_iface.text_file.write(str(data.tolist()))
+            except:
+                #print("timeout")
+                pass
+        
+        for future in futures:
+            data = await future
+            print("recieved", len(data.tolist()))
+            scan_iface.text_file.write(str(data.tolist()))
+            #print(data.tolist())
+
+        # await scan_iface.write_points()
+        # n = 0
+        # while True:
+        #     try:
+        #         data = await asyncio.wait_for(scan_iface.iface.read(),timeout=10)
+        #         await asyncio.sleep(10)
+        #         scan_iface.text_file.write(str(data.tolist()))
+        #         n += len(data.tolist())
+        #         print("read", len(data.tolist()), "bytes")
+        #     except:
+        #         print("total:", n, "bytes")
+        #         break
+
+        # if args.buf == "local":
+        #     await scan_iface.set_8bit_output()
+        #     await scan_iface.set_frame_sync()
+        #     await scan_iface.set_frame_resolution(512,512)
+        #     await scan_iface.set_raster_mode()
+        #     scan_iface.launch_gui()
             
-        if args.buf == "endpoint":
-            #scan_iface.launch_gui()
-            await scan_iface.set_8bit_output(1)
-            loop = asyncio.get_event_loop()
-            close_future = loop.create_future()
-            scan_iface.start_servers(close_future)
-            await close_future
+        # if args.buf == "endpoint":
+        #     #scan_iface.launch_gui()
+        #     await scan_iface.set_8bit_output(1)
+        #     loop = asyncio.get_event_loop()
+        #     #loop.set_debug(True)
+        #     close_future = loop.create_future()
+        #     scan_iface.start_servers(close_future)
+        #     await close_future
 
 
 
