@@ -24,8 +24,8 @@ from test_streams import *
 
 
 sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
-sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=True, depth = 5)
-sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 5)
+sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=False)
+sim_iface.out_fifo = sim_iface.get_out_fifo()
 # print(vars(ScanGenApplet))
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
@@ -42,8 +42,6 @@ def raster_sim(n=16384, eight_bit_output=False):
     
 
 
-
-
 def vector_sim(r):
     i = 0
     while i < r:
@@ -52,31 +50,13 @@ def vector_sim(r):
             i += 6
             #yield from write_vector_point(n, sim_app_iface)
             yield from sim_scangen_iface.sim_write_vpoint(n)
-            print("i:", i, "<", r)
-
-
-#https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
-L = [255, 0, 255, 0, 2, 0]
-def gentr_fn(alist):
-    while 1:
-        for j in alist:
-            yield j
-a = gentr_fn(L)
-
-def v_sim(r):
-    i = 0
-    while i < r:
-        yield from sim_scangen_iface.iface.write([next(a)])
-        i += 1
-    print("wrote", i)
 
 
 def vector_pattern_sim(dut):
     yield dut.scan_mode.eq(ScanMode.Vector)
-    yield from v_sim(9)
-    #yield from vector_sim(30)
-    # for n in range(200):
-    #     yield
+    yield from vector_sim(10)
+    for n in range(200):
+        yield
 
 def raster_pattern_sim(dut):
     pattern = test_raster_pattern_checkerboard(5,5)
@@ -173,29 +153,25 @@ def sim_iobus():
         # yield do_frame_sync.eq(1)
         # yield do_line_sync.eq(0)
         # yield eight_bit_output.eq(1)
-        def config_test():
+        yield
+        yield from set_raster_params(dut, x_res=512, y_res=512)
+        yield scan_mode.eq(1)
+        yield
+        yield configuration.eq(1)
+        yield
+        for n in range(10):
             yield
-            yield from set_raster_params(dut, x_res=512, y_res=512)
-            yield scan_mode.eq(1)
+        yield configuration.eq(0)
+        yield
+        yield from raster_sim(100, eight_bit_output = True)
+        yield scan_mode.eq(0)
+        for n in range(100):
             yield
-            yield configuration.eq(1)
-            yield
-            for n in range(10):
-                yield
-            yield configuration.eq(0)
-            yield
-            yield from raster_sim(100, eight_bit_output = True)
-            yield scan_mode.eq(0)
-            for n in range(100):
-                yield
         #yield from raster_sim(100, eight_bit_output = True)
         
-        yield eight_bit_output.eq(0)
-        for n in range(3):
-            yield from vector_pattern_sim(dut)
-            data = yield from sim_app_iface.read(9)
-            print(list(data))
-
+        # yield dut.scan_mode.eq(ScanMode.Vector)
+        # yield from vector_sim(16384)
+        # yield from vector_pattern_sim(dut)
         # for n in range(6):
         #     data = yield from sim_app_iface.read(6)
         #     print(sim_scangen_iface.decode_vpoint_packet(data))

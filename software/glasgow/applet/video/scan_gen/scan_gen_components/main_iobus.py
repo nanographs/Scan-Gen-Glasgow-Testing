@@ -124,6 +124,7 @@ class IOBus(Elaboratable):
 
         #### =========================== REGISTERS ====================================
         if self.use_config_handler:
+            m.d.comb += self.mode_ctrl.eight_bit_output.eq(1)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.replace_0_to_1.eq(1)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(0)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(0)
@@ -198,24 +199,21 @@ class IOBus(Elaboratable):
 
         #### ===========================FIFO CONTROL=================================================
         
-        #m.d.comb += self.read_strobe.eq((self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready))
-        # m.d.comb += self.read_strobe.eq(((self.out_fifo.r_rdy) &((~self.mode_ctrl.internal_fifo_ready)))|
-        #                                 ((~(self.out_fifo.r_rdy)) &(self.mode_ctrl.internal_fifo_ready)))
-        m.d.comb += self.read_strobe.eq((~(self.mode_ctrl.reader_data_complete))&(self.out_fifo.r_rdy))
+        m.d.comb += self.read_strobe.eq(self.out_fifo.r_rdy)
         m.d.comb += self.mode_ctrl.out_fifo_r_data.eq(self.out_fifo.r_data)
-        m.d.comb += self.mode_ctrl.read_happened.eq((self.read_strobe))
+        m.d.comb += self.mode_ctrl.read_enable.eq(self.out_fifo.r_rdy)
 
         if self.use_config_handler:
             with m.If(self.handling_config):
-                m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.config_handler.config_data_valid))
-                m.d.comb += self.config_handler.write_happened.eq(self.write_strobe)
+                m.d.comb += self.config_handler.enable.eq(self.in_fifo.w_rdy)
+                m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.config_handler.strobe_out))
             with m.Else():
-                m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.mode_ctrl.writer_data_valid))
-                m.d.comb += self.mode_ctrl.write_happened.eq(self.write_strobe)
+                m.d.comb += self.mode_ctrl.write_enable.eq(self.in_fifo.w_rdy)
+                m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe) & (self.mode_ctrl.beam_controller.dwelling))
 
         else:
-            m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.mode_ctrl.writer_data_valid))
-            m.d.comb += self.mode_ctrl.write_happened.eq(self.write_strobe)
+            m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (~self.mode_ctrl.write_strobe))
+            m.d.comb += self.mode_ctrl.write_enable.eq(self.in_fifo.w_rdy)
         
         m.d.comb += self.mode_ctrl.write_ready.eq(self.in_fifo.w_rdy)
 

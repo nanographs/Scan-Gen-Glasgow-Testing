@@ -52,10 +52,10 @@ class ModeController(Elaboratable):
     output_enable: Signal, in, 1
         Asserted when fifos can be read to and written from
         Driven by top level io_strobe
-    writer_data_valid: Signal, out, 1
-        Asserted when in_fifo_w_data is valid
-        Driven by either vec_mode_ctrl.vector_output.data_valid
-        or  ras_mode_ctrl.raster_output.data_valid
+    output_strobe_out: Signal, out, 1
+        Asserted when in_fifo_w_data is *not* valid
+        Driven by either vec_mode_ctrl.vector_output.strobe_out 
+        or  ras_mode_ctrl.raster_output.strobe_out
     internal_fifo_ready: Signal, out, 1
         Vector mode: Asserted when vector_fifo.w_rdy is true
         Raster mode: Always true
@@ -83,16 +83,10 @@ class ModeController(Elaboratable):
         self.in_fifo_w_data = Signal(8)
         self.out_fifo_r_data = Signal(8)
 
-        #self.read_enable = Signal()
-        #self.write_enable = Signal()
-        #self.write_strobe = Signal()
+        self.read_enable = Signal()
+        self.write_enable = Signal()
+        self.write_strobe = Signal()
         self.write_ready = Signal()
-        #self.read_strobe = Signal()
-        self.reader_data_complete = Signal()
-        self.read_happened = Signal()
-
-        self.write_happened = Signal()
-        self.writer_data_valid = Signal()
 
         self.internal_fifo_ready = Signal()
         self.adc_data = Signal(16)
@@ -119,9 +113,9 @@ class ModeController(Elaboratable):
         m.d.comb += self.dwell_avgr.strobe.eq(self.adc_data_strobe)
         m.d.comb += self.dwell_avgr.start_new_average.eq(self.beam_controller.end_of_dwell)
 
-        # with m.If(self.mode == 0): ### when in DO NOTHING mode, do nothing.
-        #     m.d.comb += self.write_happened.eq(0)
-        #     m.d.comb += self.beam_controller.dwelling.eq(0)
+        with m.If(self.mode == 0): ### when in DO NOTHING mode, do nothing.
+            m.d.comb += self.write_strobe.eq(1)
+            m.d.comb += self.beam_controller.dwelling.eq(0)
 
         with m.If((self.mode == ScanMode.Raster)|(self.mode == ScanMode.RasterPattern)):
             #### Interpolation 
@@ -144,8 +138,8 @@ class ModeController(Elaboratable):
 
             
             m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.raster_writer.in_fifo_w_data)
-            m.d.comb += self.ras_mode_ctrl.raster_writer.write_happened.eq(self.write_happened)
-            m.d.comb += self.writer_data_valid.eq(self.ras_mode_ctrl.raster_writer.data_valid)
+            m.d.comb += self.ras_mode_ctrl.raster_writer.enable.eq(self.write_enable)
+            m.d.comb += self.write_strobe.eq(self.ras_mode_ctrl.raster_writer.strobe_out)
             
             m.d.comb += self.ras_mode_ctrl.raster_writer.eight_bit_output.eq(self.eight_bit_output)
             m.d.comb += self.ras_mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
@@ -165,54 +159,38 @@ class ModeController(Elaboratable):
                             m.d.comb += self.beam_controller.dwelling.eq(self.write_ready) 
                             m.next = "Patterning"
                     with m.State("Patterning"):
-                        m.d.comb += self.beam_controller.dwelling.eq(self.write_ready) 
+                        m.d.comb += self.beam_controller.dwelling.eq(1) 
                 m.d.comb += self.ras_mode_ctrl.raster_reader.out_fifo_r_data.eq(self.out_fifo_r_data)
-                m.d.comb += self.ras_mode_ctrl.raster_reader.read_happened.eq(self.read_happened)
+                m.d.comb += self.ras_mode_ctrl.raster_reader.enable.eq(self.read_enable)
                 m.d.comb += self.internal_fifo_ready.eq(self.ras_mode_ctrl.raster_fifo.w_rdy)
                 m.d.comb += self.beam_controller.next_dwell.eq(self.ras_mode_ctrl.beam_controller_next_dwell)
 
             
         with m.If(self.mode == ScanMode.Vector):
-            m.d.comb += self.reader_data_complete.eq((self.vec_mode_ctrl.vector_reader.data_complete))
-            m.d.comb += self.vec_mode_ctrl.vector_reader.read_happened.eq(self.read_happened)
             with m.FSM() as fsm:
                     with m.State("Wait for first USB"):
-                        #with m.If(self.vec_mode_ctrl.vector_fifo.r_rdy):
-                        with m.If(self.vec_mode_ctrl.vector_reader.data_complete):
-                            m.d.comb += self.beam_controller.dwelling.eq(self.write_ready)
+                        with m.If(self.vec_mode_ctrl.vector_fifo.r_rdy):
+                            m.d.comb += self.beam_controller.dwelling.eq(1) 
                             m.next = "Patterning"
                     with m.State("Patterning"):
-                        m.d.comb += self.beam_controller.dwelling.eq(self.write_ready) 
-                        m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_xy.eq((self.beam_controller.end_of_dwell))
-                        m.d.comb += self.vec_mode_ctrl.vector_reader.data_point_used.eq(self.beam_controller.end_of_dwell)
-                        m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq((self.beam_controller.end_of_dwell))
-
-                    # 
-            # with m.If((~self.beam_controller.dwelling_changed) & (self.reader_data_complete)):
-            #     
-            # with m.If((~self.beam_controller.dwelling_changed)):
-            #     
-
-
-
+                        m.d.comb += self.beam_controller.dwelling.eq(1) 
 
             m.d.comb += self.vec_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.vec_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
 
             m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.dwell_avgr.running_average)
 
-            #with m.If(~self.beam_controller.dwelling_changed & (self.reader_data_complete)):
-
-            m.d.comb += self.vec_mode_ctrl.beam_controller_dwelling_changed.eq(self.beam_controller.dwelling_changed)
+            with m.If(~self.beam_controller.prev_dwelling_changed):
+                m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq(self.beam_controller.end_of_dwell)
 
             m.d.comb += self.beam_controller.next_x_position.eq(self.vec_mode_ctrl.beam_controller_next_x_position)
             m.d.comb += self.beam_controller.next_y_position.eq(self.vec_mode_ctrl.beam_controller_next_y_position)
             m.d.comb += self.beam_controller.next_dwell.eq(self.vec_mode_ctrl.beam_controller_next_dwell)
 
             m.d.comb += self.in_fifo_w_data.eq(self.vec_mode_ctrl.vector_writer.in_fifo_w_data)
-            m.d.comb += self.vec_mode_ctrl.vector_writer.write_happened.eq(self.write_happened)
-            m.d.comb += self.vec_mode_ctrl.vector_reader.read_happened.eq(self.read_happened)
-            m.d.comb += self.writer_data_valid.eq(self.vec_mode_ctrl.vector_writer.data_valid)
+            m.d.comb += self.vec_mode_ctrl.vector_writer.enable.eq(self.write_enable)
+            m.d.comb += self.vec_mode_ctrl.vector_reader.enable.eq(self.read_enable)
+            m.d.comb += self.write_strobe.eq(self.vec_mode_ctrl.vector_writer.strobe_out)
             m.d.comb += self.vec_mode_ctrl.vector_reader.out_fifo_r_data.eq(self.out_fifo_r_data)
             m.d.comb += self.internal_fifo_ready.eq((self.vec_mode_ctrl.vector_fifo.w_rdy))
 
