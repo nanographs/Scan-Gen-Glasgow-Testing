@@ -3,6 +3,79 @@ from amaranth.sim import Simulator
 
 
 class ConfigHandler(Elaboratable):
+    '''
+    Inserts a demarcated "packet" into the outgoing data stream, 
+    which contains the current operating parameters.
+
+    configuration_flag: Signal, in, 1
+        This value is set by the configuration register and can be
+        externally updated. Once this value is asserted, the config
+        writing state machine is initiated
+    writing_config: Signal, out, 1
+        This value is high while the config writing state machine is
+        still ongoing.
+    
+        Short pulse:
+            configuration_flag: __-______
+            writing_config:     __-------_
+        Long pulse:
+            configuration_flag: __---------_
+            writing_config:     __-------___
+
+    State Machine:
+        Eight bit mode:
+            ↓------------------------------------------↑------↑
+        Latch -> SB1 -> X1 -> X2 -> Y1 -> Y2 -> SC -> EB1 -> Wait
+            ↳------------↑ 
+
+        Sixteen bit mode:
+            ↓----------------------------------------------------------------↑------↑
+        Latch -> SB1 -> SB2 -> X1 -> X2 -> Y1 -> Y2 -> SC1 -> SC2 -> EB1 -> EB2 -> Wait
+            ↳------------↑ 
+
+
+    Registers that are "locked in" by strobing configuration:
+        x_full_frame_resolution_b1: Signal, in, 8
+        x_full_frame_resolution_b2: Signal, in, 8
+                            ↓
+        x_full_frame_resolution_locked: Signal, out, 16
+
+        y_full_frame_resolution_b1: Signal, in, 8
+        y_full_frame_resolution_b2: Signal, in, 8
+                            ↓
+        y_full_frame_resolution_locked: Signal, out, 16
+
+        ... repeat for x and y lower and upper limits
+
+    Registers that are used, but not "locked in":
+        eight_bit_output: Signal, in, 1
+            If true, output should be fully eight bit...
+            except what's inside the configuration packet?
+
+            Example: [0, 255, 0, 255, 0, 1, 0, 1, 1, 2, 3...]
+                      ^--X res, Y res, mode--^ ^--start of 8 bit output
+            
+            If false, output should be fully 16 bit,
+            including the configuration demarcation
+
+            Example: [0, 0, 255, 1, 255, 1, 3, 0, 0, 0, 1, 0, 1, 0, 2, 0, 3, 0...]
+                      ^^^^--X res, Y res, mode----^^^^  ^-- start of 16 bit output
+                    When read in 16 bit chunks, the sequence looks like this:
+                    [0, 511, 511, 3, 0, 1, 1, 2, 3...]
+
+        scan_mode: Signal, in, 1
+            This register is not locked in by strobing configuration, but its 
+            instantaneous value is included in the configuration packet
+    
+    in_fifo_w_data: Signal, in, 8
+        If writing_config is high, this signal combinatorially drives 
+        the top level in_fifo.w_data
+    config_data_valid: Signal, out, 1
+        If high, the value of in_fifo_w_data should be written 
+    write_happened: Signal, in, 1
+        If high, in_fifo.w_en is also high
+
+    '''               
     def __init__(self):
         self.x_full_frame_resolution_b1 = Signal(8)
         self.x_full_frame_resolution_b2 = Signal(8)
@@ -29,7 +102,7 @@ class ConfigHandler(Elaboratable):
         self.y_upper_limit_locked = Signal(16)
         
         self.scan_mode = Signal(2)
-        self.scan_mode_locked = Signal(2)
+
         self.eight_bit_output = Signal()
 
         self.configuration_flag = Signal()
