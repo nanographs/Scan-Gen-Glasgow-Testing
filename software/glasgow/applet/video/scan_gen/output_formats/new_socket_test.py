@@ -151,6 +151,32 @@ class ConnectionManager:
         await self.data_writer.wait_closed()
 
 
+class ScanInterface(ConnectionManager):
+    def __init__(self):
+        super().__init__()
+
+    async def strobe_config(self):
+        await self.tcp_msg_client(self.scan_ctrl.raise_config_flag())
+        await self.tcp_msg_client(self.scan_ctrl.lower_config_flag())
+
+    async def set_x_resolution(self, xval):
+        await self.tcp_msg_client(self.scan_ctrl.set_x_resolution(xval))
+
+    async def set_y_resolution(self, yval):
+        await self.tcp_msg_client(self.scan_ctrl.set_y_resolution(yval))
+
+    async def set_scan_mode(self, mode):
+        await self.tcp_msg_client(self.scan_ctrl.set_scan_mode(mode))
+    
+    async def pause(self):
+        await self.tcp_msg_client(self.scan_ctrl.pause())
+
+    async def unpause(self):
+        await self.tcp_msg_client(self.scan_ctrl.unpause())
+
+
+
+
 def main():
     print(get_two_bytes(511))
 
