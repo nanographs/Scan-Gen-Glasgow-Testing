@@ -146,7 +146,6 @@ class IOBus(Elaboratable):
             m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
             m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
 
-
             m.d.comb += self.config_handler.x_full_frame_resolution_b1.eq(self.x_full_resolution_b1)
             m.d.comb += self.config_handler.x_full_frame_resolution_b2.eq(self.x_full_resolution_b2)
             m.d.comb += self.config_handler.y_full_frame_resolution_b1.eq(self.y_full_resolution_b1)
@@ -207,9 +206,24 @@ class IOBus(Elaboratable):
 
         #### ===========================FIFO CONTROL=================================================
         
-        #m.d.comb += self.read_strobe.eq((self.out_fifo.r_rdy) & (self.mode_ctrl.internal_fifo_ready))
-        # m.d.comb += self.read_strobe.eq(((self.out_fifo.r_rdy) &((~self.mode_ctrl.internal_fifo_ready)))|
-        #                                 ((~(self.out_fifo.r_rdy)) &(self.mode_ctrl.internal_fifo_ready)))
+        '''
+        read_strobe: Signal, 1, in
+            This signal is high when:
+                - the out fifo is ready to be read from, AND
+                - the "reader" module has NOT recieved a complete data point
+        read_happened: Signal, 1, out
+            This signal is driven by read_strobe
+            out_fifo.r_en is also driven by read_strobe
+
+        write_strobe: Signal, 1, in
+            This signal is high when:
+                - the in fifo is ready to be written to, AND
+                - the "writer" module has valid data to write
+        write_happened: Signal, 1, out
+            This signal is driven by write_strobe
+            in_fifo.w_en is also driven by write_strobe
+        '''
+
         m.d.comb += self.read_strobe.eq((~(self.mode_ctrl.reader_data_complete))&(self.out_fifo.r_rdy))
         m.d.comb += self.mode_ctrl.out_fifo_r_data.eq(self.out_fifo.r_data)
         m.d.comb += self.mode_ctrl.read_happened.eq((self.read_strobe))
