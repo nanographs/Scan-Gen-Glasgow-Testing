@@ -102,7 +102,7 @@ class ConnectionManager:
                 logging.debug("continous read error" + repr(reader))
                 break
 
-    async def recieve_data_client(self):
+    async def open_data_client(self):
         host = "127.0.0.1"  # Standard loopback interface address (localhost)
         port = 1238  # Port to listen on (non-privileged ports are > 1023)
         print("opening data client")
@@ -115,7 +115,7 @@ class ConnectionManager:
         self.data_reader = reader
         await self.start_reading()
 
-    async def tcp_msg_client(self, message):
+    async def cmd_client(self, message):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
         print("opening cmd client")
@@ -156,23 +156,23 @@ class ScanInterface(ConnectionManager):
         super().__init__()
 
     async def strobe_config(self):
-        await self.tcp_msg_client(self.scan_ctrl.raise_config_flag())
-        await self.tcp_msg_client(self.scan_ctrl.lower_config_flag())
+        await self.cmd_client(self.scan_ctrl.raise_config_flag())
+        await self.cmd_client(self.scan_ctrl.lower_config_flag())
 
     async def set_x_resolution(self, xval):
-        await self.tcp_msg_client(self.scan_ctrl.set_x_resolution(xval))
+        await self.cmd_client(self.scan_ctrl.set_x_resolution(xval))
 
     async def set_y_resolution(self, yval):
-        await self.tcp_msg_client(self.scan_ctrl.set_y_resolution(yval))
+        await self.cmd_client(self.scan_ctrl.set_y_resolution(yval))
 
     async def set_scan_mode(self, mode):
-        await self.tcp_msg_client(self.scan_ctrl.set_scan_mode(mode))
+        await self.cmd_client(self.scan_ctrl.set_scan_mode(mode))
     
     async def pause(self):
-        await self.tcp_msg_client(self.scan_ctrl.pause())
+        await self.cmd_client(self.scan_ctrl.pause())
 
     async def unpause(self):
-        await self.tcp_msg_client(self.scan_ctrl.unpause())
+        await self.cmd_client(self.scan_ctrl.unpause())
 
 
 

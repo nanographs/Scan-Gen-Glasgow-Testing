@@ -209,11 +209,7 @@ class MainWindow(QWidget):
     async def connect(self):
         await self.transmit_current_settings()
         await self.con.strobe_config()
-        await self.con.recieve_data_client()
-        # await self.con.tcp_msg_client("ry16384")
-        # if connection == "Connected":
-        #     self.setState("scan_not_started")
-
+        await self.con.open_data_client()
 
     @asyncSlot()
     async def transmit_current_settings(self):
@@ -251,11 +247,6 @@ class MainWindow(QWidget):
             self.con.stream_pattern = False
             await self.con.pause()
             self.update_continously.cancel()
-            # loop = asyncio.get_event_loop()
-            # loop.create_task(self.con.stop_reading())
-            # if self.mode == "Patterning":
-            #     scan_controller.writer.write_eof()
-            # self.setState("scan_paused")
             self.start_btn.setText('▶️')
 
     async def keepUpdating(self):
