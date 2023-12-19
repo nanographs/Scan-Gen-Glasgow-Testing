@@ -105,23 +105,11 @@ def pattern_loop(dimension, pattern_stream):
             yield pattern_stream[n*16384:(n+1)*16384]
         print("pattern complete")
 
-class StreamRegisterUpdateBox(RegisterUpdateBox):
-    def __init__(self, label, lower_limit, upper_limit, initial_val, con=None, msgfn=None):
-        super().__init__(label, lower_limit, upper_limit, initial_val)
-        self.msgfn = msgfn
-        self.con = con
-
-
 
 class StreamFrameSettings(FrameSettings):
     def __init__(self, con):
-        super().__init__(StreamRegisterUpdateBox)
+        super().__init__(RegisterUpdateBox)
         self.con = con
-
-        self.rx.con = self.con
-        self.rx.msgfn = self.con.scan_ctrl.set_x_resolution
-        self.ry.con = self.con
-        self.ry.msgfn = self.con.scan_ctrl.set_y_resolution
 
         self.rx.spinbox.valueChanged.connect(self.set_x)
         self.ry.spinbox.valueChanged.connect(self.set_y)
@@ -144,12 +132,6 @@ class MainWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        # scan_controller = ScanController()
-        # self.x_width = scan_controller.x_width
-        # self.y_height = scan_controller.y_height
-
-        # self.scan_ctrl = ScanCtrl()
-        # self.scan_stream = ScanStream()
         self.con = ScanInterface()
 
         self.setWindowTitle("Scan Control")
@@ -175,9 +157,6 @@ class MainWindow(QWidget):
 
         self.mode_select_dropdown.currentIndexChanged.connect(self.set_scan_mode)
 
-        # self.loopback_btn = QPushButton("Loopback Off")
-        # self.loopback_btn.setCheckable(True) 
-        # self.loopback_btn.clicked.connect(self.set_loopback)
 
         self.start_btn = QPushButton('▶️')
         self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
@@ -189,14 +168,6 @@ class MainWindow(QWidget):
 
         self.info_btn = QPushButton('?')
         self.info_btn.clicked.connect(self.getinfo)
-
-        # self.new_scan_btn = QPushButton('↻')
-        # self.new_scan_btn.clicked.connect(self.reset_scan)
-
-        # # self.save_btn = QPushButton('save')
-        # # self.save_btn.clicked.connect(self.saveImage)
-        
-        
 
         mode_options = QGridLayout()
         mode_options.addWidget(self.conn_btn,0,0)
