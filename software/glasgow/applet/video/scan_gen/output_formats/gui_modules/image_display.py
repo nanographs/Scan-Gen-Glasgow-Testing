@@ -35,12 +35,12 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
 
 
         ### reverse the default LUT
-        lut = []
-        for n in range(0, 256):
-            lut.append([255-n,255-n,255-n])
+        # lut = []
+        # for n in range(0, 256):
+        #     lut.append([255-n,255-n,255-n])
         
-        lut = np.array(lut, dtype = np.uint8)
-        self.live_img.setLookupTable(lut)
+        # lut = np.array(lut, dtype = np.uint8)
+        # self.live_img.setLookupTable(lut)
 
 
         self.exporter = pg.exporters.ImageExporter(self.live_img)

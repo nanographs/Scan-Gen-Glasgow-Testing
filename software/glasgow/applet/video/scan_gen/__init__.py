@@ -43,7 +43,7 @@ class IOBusSubtarget(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
-                const_dwell_time, configuration):
+                const_dwell_time, configuration, unpause):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
@@ -58,7 +58,7 @@ class IOBusSubtarget(Elaboratable):
                             y_upper_limit_b1, y_upper_limit_b2,
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
-                            const_dwell_time, configuration, 
+                            const_dwell_time, configuration, unpause,
                             test_mode = "data loopback", use_config_handler = True, 
                             is_simulation = False)
 
@@ -118,7 +118,7 @@ class ScanGenInterface:
                 __addr_y_upper_limit_b1, __addr_y_upper_limit_b2,
                 __addr_y_lower_limit_b1, __addr_y_lower_limit_b2,
                 __addr_8_bit_output, __addr_do_frame_sync, __addr_do_line_sync,
-                __addr_configuration,
+                __addr_configuration, __addr_unpause,
                 is_simulation = False):
         self.iface = iface
         self._logger = logger
@@ -146,6 +146,7 @@ class ScanGenInterface:
         self.__addr_do_line_sync = __addr_do_line_sync
 
         self.__addr_configuration = __addr_configuration
+        self.__addr_unpause = __addr_unpause
 
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
@@ -226,7 +227,7 @@ class ScanGenInterface:
         
     async def write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
-        #print("writing", b1, b2)
+        print("writing", b1, b2)
         await self.iface.write(bits(b2))
         await self.iface.write(bits(b1))
 
@@ -310,6 +311,11 @@ class ScanGenInterface:
         await self._device.write_register(self.__addr_configuration, val)
         print("set config flag", val)
 
+    async def pause(self):
+        await self._device.write_register(self.__addr_unpause, 0)
+
+    async def unpause(self):
+        await self._device.write_register(self.__addr_unpause, 1)
 
     async def set_raster_mode(self):
         await self._device.write_register(self.__addr_scan_mode, 1)
@@ -343,6 +349,12 @@ class ScanGenInterface:
         print(output)
         self.text_file.write(output)
         fut.set_result(data)
+
+    async def rcv_future_data(self, future):
+        print("waiting for iface read...")
+        data = await self.iface.read(16384)
+        print("got future data", data)
+        future.set_result(data)
 
     async def read_r_packet(self, length = 16384):
         loop = asyncio.get_running_loop()
@@ -427,7 +439,8 @@ class SG_EndpointInterface(ScanGenInterface):
     def start_servers(self, close_future):
         self.close_future = close_future
         loop = asyncio.get_event_loop()
-        self.server_host.start_servers()
+        self.data_server_future = loop.create_future()
+        self.server_host.start_servers(self.data_server_future)
         self.streaming = asyncio.ensure_future(self.stream_data())
 
     def close(self):
@@ -440,38 +453,91 @@ class SG_EndpointInterface(ScanGenInterface):
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
                         start_new_session = True)
 
-    async def write_points(self):
-        n = 0
-        while n < 16384*3:
-            await self.write_vpoint([255,255,0])
-            n+=6
-        print("wrote", n, "bytes")
+
+    async def send_packet(self, future_data):
+        await self.rcv_future_data(future_data)
+        data = future_data.result()
+        self._logger.info("recieved future data")
+        print("writing", data)
+        self.server_host.data_writer.write(data)
+        await self.server_host.data_writer.drain()
+        self._logger.info("wrote future data to socket")
+        if data is not None:
+            self.text_file.write(str(data.tolist()))
+        print("send complete")
+
+    async def recv_packet(self):
+        print("standing by to recieve packet...")
+        await self.data_server_future
+        print("reading from server")
+        self._logger.info("reading from server")
+        print(self.server_host.data_reader)
+        while True:
+            try:
+                data = await self.server_host.data_reader.readexactly(16384)
+                print(type(data))
+                print("recieved points!", len(data))
+                self._logger.info("recieved points from server")
+                await self.iface.write(list(data))
+                print("wrote data to iface")
+                self._logger.info("wrote data to iface")
+            except:
+                print("err")
+                break
+
 
     async def stream_data(self):
         while True:
-            print("awaiting read")
-            self._logger.info("awaiting read")
-            data = await self.iface.read(16384)
-            print("writing", data)
-            self.server_host.data_writer.write(data)
-            await self.server_host.data_writer.drain()
-            self.text_file.write(str(data.tolist()))
-            print("send complete")
+            loop = asyncio.get_event_loop()
+            future_data = loop.create_future()
+            print("created future data")
+            self._logger.info("created future data")
+
+            self._logger.info("created recv_packet task")
+            loop.create_task(self.recv_packet())
+            print("hello?")
+            loop.create_task(self.send_packet(future_data))
+            await future_data
+            print("future awaited")
+            self._logger.info("future awaited")
+            await asyncio.sleep(0)
+            # print("awaiting read")
+            # self._logger.info("awaiting read")
+            # data = await self.iface.read(16384)
+            # print("writing", data)
+            # self.server_host.data_writer.write(data)
+            # await self.server_host.data_writer.drain()
+            # self.text_file.write(str(data.tolist()))
+            # print("send complete")
 
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
         val = int(cmd[2:])
-        if c == "sc":
+        if c == "ps":
+            if val == 0:
+                print("pause")
+                await self.pause()
+            if val == 1:
+                await self.unpause()
+                print("unpaused")
+                tasks = asyncio.all_tasks()
+                for task in tasks:
+                    print(task.get_name(), ":", task.get_coro())
+                if self.scan_mode == 3:
+                    await self.recv_packet()
+                    tasks = asyncio.all_tasks()
+                    for task in tasks:
+                        print(task.get_name(), ":", task.get_coro())
+                        task.print_stack()
+        elif c == "sc":
             await self.set_scan_mode(val)
-            if val == 3:
-                print("writing points")
-                self._logger.info("writing points")
-                await self.write_points()
-            print("streaming?", self.stream_data)
-            print("current task:", asyncio.current_task())
-            tasks = asyncio.all_tasks()
-            for task in tasks:
-                print(task.get_name(), ":", task.get_coro())
+            print("set scan mode done")
+            
+            # print("streaming?", self.stream_data)
+            # print("current task:", asyncio.current_task())
+            # tasks = asyncio.all_tasks()
+            # for task in tasks:
+            #     print(task.get_name(), ":", task.get_coro())
         elif c == "rx":
             await self.set_x_resolution(val)
         elif c == "ry":
@@ -511,6 +577,17 @@ class SG_2DBufferInterface(ScanGenInterface):
         self.current_y = 0
 
         self.buffer = self.init_buffer()
+
+        self.a = self.testpattern()
+
+    def testpattern(self):
+        L = [255, 255, 0]
+        def gentr_fn(alist):
+            while 1:
+                for j in alist:
+                    yield j
+        a = gentr_fn(L)
+        return a
 
     def init_buffer(self):
         if self.eight_bit_output:
@@ -696,8 +773,10 @@ class ScanGenApplet(GlasgowApplet):
 
         const_dwell_time,      self.__addr_const_dwell_time = target.registers.add_rw(8, reset=0)
 
-        configuration,      self.__addr_configuration = target.registers.add_rw(1, reset=0)
+        configuration,         self.__addr_configuration = target.registers.add_rw(1, reset=0)
         print("configuration register:", self.__addr_configuration)
+
+        unpause,                 self.__addr_unpause = target.registers.add_rw(1, reset = 0)
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -712,7 +791,7 @@ class ScanGenApplet(GlasgowApplet):
             y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
             y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
             eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync,
-            const_dwell_time = const_dwell_time, configuration = configuration
+            const_dwell_time = const_dwell_time, configuration = configuration, unpause = unpause
         ))
         
     @classmethod
@@ -731,7 +810,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration
+            self.__addr_configuration, self.__addr_unpause
             )
         if args.buf == "local":
             scan_iface = SG_LocalBufferInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -742,7 +821,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration
+            self.__addr_configuration, self.__addr_unpause
             )
         if args.buf == "endpoint":
             scan_iface = SG_EndpointInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -753,7 +832,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration
+            self.__addr_configuration, self.__addr_unpause
             )
         else:
             scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -764,7 +843,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration
+            self.__addr_configuration, self.__addr_unpause
             )
 
         return scan_iface
@@ -790,16 +869,9 @@ class ScanGenApplet(GlasgowApplet):
         # n = 0
 
         # #https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
-        # L = [255, 255, 0]
-        # def gentr_fn(alist):
-        #     while 1:
-        #         for j in alist:
-        #             yield j
-        # a = gentr_fn(L)
 
-        # async def rcv_future_data(future):
-        #     data = await scan_iface.iface.read(16384)
-        #     future.set_result(data)
+
+
 
         # futures = []
 
@@ -835,17 +907,20 @@ class ScanGenApplet(GlasgowApplet):
         #     scan_iface.text_file.write(str(data.tolist()))
         #     #print(data.tolist())
 
+        # await scan_iface.set_vector_mode()
+        # for n in range(3):
+        #     await scan_iface.write_points()
 
-        if args.buf == "local":
-            await scan_iface.set_8bit_output()
-            await scan_iface.set_frame_sync()
-            await scan_iface.set_frame_resolution(512,512)
-            await scan_iface.set_raster_mode()
-            scan_iface.launch_gui()
+        # if args.buf == "local":
+        #     await scan_iface.set_8bit_output()
+        #     await scan_iface.set_frame_sync()
+        #     await scan_iface.set_frame_resolution(512,512)
+        #     await scan_iface.set_raster_mode()
+        #     scan_iface.launch_gui()
             
         if args.buf == "endpoint":
             #scan_iface.launch_gui()
-            await scan_iface.set_8bit_output(1)
+            await scan_iface.set_8bit_output(0)
             loop = asyncio.get_event_loop()
             #loop.set_debug(True)
             close_future = loop.create_future()

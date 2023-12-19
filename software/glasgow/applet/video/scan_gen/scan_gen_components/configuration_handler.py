@@ -61,10 +61,22 @@ class ConfigHandler(Elaboratable):
                     m.d.comb += self.config_data_valid.eq(1)
                     m.d.comb += self.in_fifo_w_data.eq(0)
                     with m.If(self.write_happened):
-                        m.next = "X1"
+                        with m.If(self.eight_bit_output):
+                            m.next = "X1"
+                        with m.Else():
+                            m.next = "Insert_Start_B2"
                     with m.Else():
                         m.next = "Insert_Start"
             with m.State("Insert_Start"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(0)
+                    with m.If(self.eight_bit_output):
+                        m.next = "X1"
+                    with m.Else():
+                        m.next = "Insert_Start_B2"
+            with m.State("Insert_Start_B2"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
@@ -95,6 +107,27 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b1)
+                    m.next = "SC"
+            with m.State("SC"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.scan_mode)
+                    with m.If(self.eight_bit_output):
+                        m.next = "Insert_End"
+                    with m.Else():
+                        m.next = "SC_B2"
+            with m.State("SC_B2"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(0)
+                    m.next = "Insert_End_B1"
+            with m.State("Insert_End_B1"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(0)
                     m.next = "Insert_End"
             with m.State("Insert_End"):
                 m.d.comb += self.writing_config.eq(1)

@@ -30,7 +30,7 @@ sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 5)
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
-                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, is_simulation = True)
+                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, is_simulation = True)
 
 
 def raster_sim(n=16384, eight_bit_output=False):
@@ -56,7 +56,7 @@ def vector_sim(r):
 
 
 #https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
-L = [255, 0, 255, 0, 2, 0]
+L = [255, 0, 255, 0, 0, 0]
 def gentr_fn(alist):
     while 1:
         for j in alist:
@@ -88,7 +88,7 @@ def raster_pattern_sim(dut):
     for n in range(1500):
         yield
 
-def set_raster_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
+def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
     b1, b2 = get_two_bytes(x_res)
     print("set x resolution:", x_res)
     b1 = int(bits(b1))
@@ -133,7 +133,7 @@ def set_raster_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper
     yield dut.y_upper_limit_b2.eq(b2)
 
 
-    yield dut.scan_mode.eq(ScanMode.Raster)
+    #yield dut.scan_mode.eq(ScanMode.Raster)
 
 
 
@@ -156,6 +156,7 @@ def sim_iobus():
     do_line_sync = Signal()
     const_dwell_time = Signal()
     configuration = Signal()
+    unpause = Signal()
 
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
@@ -165,7 +166,7 @@ def sim_iobus():
     y_upper_limit_b1, y_upper_limit_b2,
     y_lower_limit_b1, y_lower_limit_b2,
     eight_bit_output, do_frame_sync, do_line_sync,
-    const_dwell_time, configuration,
+    const_dwell_time, configuration, unpause,
     is_simulation = True,
     test_mode = "data loopback", use_config_handler = True
     )
@@ -175,7 +176,7 @@ def sim_iobus():
         # yield eight_bit_output.eq(1)
         def config_test():
             yield
-            yield from set_raster_params(dut, x_res=512, y_res=512)
+            yield from set_frame_params(dut, x_res=512, y_res=512)
             yield scan_mode.eq(1)
             yield
             yield configuration.eq(1)
@@ -190,7 +191,16 @@ def sim_iobus():
                 yield
         #yield from raster_sim(100, eight_bit_output = True)
         
-        yield eight_bit_output.eq(0)
+        yield eight_bit_output.eq(1)
+        yield scan_mode.eq(3)
+        yield from set_frame_params(dut, x_res=512, y_res=512)
+        yield
+        yield configuration.eq(1)
+        yield
+        yield configuration.eq(0)
+        yield unpause.eq(1)
+        data = yield from sim_app_iface.read(10)
+        print(list(data))
         for n in range(3):
             yield from vector_pattern_sim(dut)
             data = yield from sim_app_iface.read(9)
