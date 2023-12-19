@@ -19,19 +19,20 @@ class ByteReplacer(Elaboratable):
         eight_bit_output: Signal, in, 1
             True: 8 bits per data point are streamed to the in_fifo
             False: 16 bits per data point are streamed to the in_fifo
-        do_frame_sync: Signal, in, 1
-            If true, "0" should be written to the in_fifo after the last
-            pixel of each frame
+        replace_0_to_1: Signal, in, 1
             Data values must be limited to:
                 8 bit mode: 1-255
                 16 bit mode: 1-16383
-        do_line_sync:
-            If true, "1" should be written to the in_fifo after the last
-                pixel of each frame
-                Data values must be limited to:
-                    8 bit mode: 2-255
-                    16 bit mode: 2-16383
+        replace_0_to_2: Signal, in, 1
+            Data values must be limited to:
+                8 bit mode: 2-255
+                16 bit mode: 2-16383
 
+        replace_FF_to_FE: Signal, in , 1
+            If true, "255" should be replaced with "254"
+            We don't need to do anything to 16-bit values right now,
+            because we are using 14 bit DACs and ADCs, so our
+            range is already limited.
     '''
     def __init__(self, dac_bits = 14):
         self.dac_bits = dac_bits
@@ -40,6 +41,7 @@ class ByteReplacer(Elaboratable):
         self.eight_bit_output = Signal()
         self.replace_0_to_1 = Signal()
         self.replace_0_to_2 = Signal()
+        self.replace_FF_to_FE = Signal()
         self.most_significant_8_bits = Signal(8)
     def elaborate(self, platform):
         m = Module()
@@ -76,6 +78,12 @@ class ByteReplacer(Elaboratable):
                 with m.If((self.most_significant_8_bits == 1)|(self.most_significant_8_bits == 0)):
                     m.d.comb += self.processed_point_data.D1.eq(2)
 
+        with m.If(self.replace_FF_to_FE):
+            with m.If(self.eight_bit_output):
+                with m.If((self.most_significant_8_bits == 255)):
+                    m.d.comb += self.processed_point_data.D1.eq(254)
+
+
         s = Signal()
         m.d.sync += s.eq(1)
 
@@ -87,29 +95,33 @@ def test_bytereplacer():
     ## fix later
     dut = ByteReplacer()
     def bench():
-        def test_settings (frame_sync, line_sync, eight_bit):
-            yield dut.do_frame_sync.eq(frame_sync)
-            yield dut.do_line_sync.eq(line_sync)
+        def test_settings (replace_0_to_1, replace_0_to_2, eight_bit, replace_FF_to_FE):
+            yield dut.replace_0_to_1.eq(replace_0_to_1)
+            yield dut.replace_0_to_2.eq(replace_0_to_2)
             yield dut.eight_bit_output.eq(eight_bit)
+            yield dut.replace_FF_to_FE.eq(replace_FF_to_FE)
         def test_results(data, processed_data):
             yield dut.point_data.eq(data)
             yield
             assert(yield dut.processed_point_data.as_value() == processed_data)
 
         ## Sixteen bit output, frame sync
-        yield from test_settings(1, 0, 0)
+        yield from test_settings(1, 0, 0,0)
 
         yield from test_results (0, 1)
         yield from test_results (1, 1)
         yield from test_results (256, 256)
 
         ## Eight bit output, frame sync
-        yield from test_settings(1, 0, 1)
+        yield from test_settings(1, 0, 1,0)
 
         yield from test_results (0, 1)
         yield from test_results (1, 1)
-        yield from test_results (256, 4)
+        yield from test_results (256, 1)
         yield from test_results (16383, 255)
+
+        yield from test_settings(0, 0, 1, 1)
+        yield from test_results(255, 254)
 
             
     

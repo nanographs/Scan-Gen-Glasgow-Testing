@@ -25,23 +25,39 @@ def hilbert():
         npts = 2**(N*p)
         pts = []
         for i in range(npts):
-            pts.append(hc.point_from_distance(i))
-        pts = [
-            [(pt[0]*side/sidep) + offset,
-            (pt[1]*side/sidep) + offset]
-            for pt in pts]
-
-
-        for i in pts:
-            print(i)
-            #text_file.write(str([int(i[0]*8), int(i[1]*8), 2])+",\n")
-            points.append([int(i[0]), int(i[1]), 2])
+            pt = hc.point_from_distance(i)
+            x = pt[0]*side/sidep + offset
+            y = pt[1]*side/sidep + offset
+            yield int(x)
+            yield int(y)
+            yield 1
 
         offset += dx
         dx *= 2
-        yield points
+        # pts = [
+        #     [(pt[0]*side/sidep) + offset,
+        #     (pt[1]*side/sidep) + offset]
+        #     for pt in pts]
+
+
+        # for i in pts:
+        #     print(i)
+        #     #text_file.write(str([int(i[0]*8), int(i[1]*8), 2])+",\n")
+        #     points.append([int(i[0]), int(i[1]), 2])
+
+
+        #yield points
+
+# def hilbert_generator():
+#     points = next(hilbert())
+#     yield points
+
+    
 
 if __name__ == "__main__":
-    points = next(hilbert())
-    print(points)
-    print(len(points))
+    hil = hilbert()
+    for n in range(100):
+        print(next(hil))
+        
+        
+    

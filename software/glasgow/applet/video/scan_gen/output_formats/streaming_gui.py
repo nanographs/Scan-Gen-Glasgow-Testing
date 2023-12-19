@@ -29,7 +29,7 @@ import qasync
 from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 
 #from microscope import ScanCtrl, ScanStream
-from new_socket_test import ConnectionManager
+from new_socket_test import ScanInterface
 from gui_modules.image_display import ImageDisplay
 from gui_modules.frame_settings import FrameSettings, RegisterUpdateBox
 

@@ -50,9 +50,11 @@ def test_cmd_encoder():
 class ScanCtrl:
     def __init__(self):
         self.cmd = cmd_encoder()
+
     def set_scan_mode(self, val):
         msg = "sc0000" + str(val)
-        
+        return msg
+
     def set_frame_resolution(self, x_resolution_val, y_resolution_val):
         msg1 = self.cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
         msg2 = self.cmd.set_frame(frame_vars.y_full_frame_resolution, y_resolution_val)
@@ -265,7 +267,7 @@ class ScanStream:
         #print("data:", data)
         d = np.array(data)
         if print_debug:
-            print("data:", d)
+            print("data first line:", d[0:13])
         zero_indices = np.nonzero(d < 1)[0]
         if print_debug:
             print("zero indices:", zero_indices)
@@ -282,8 +284,8 @@ class ScanStream:
             print("stop index", stop_index)
             zero_indices = zero_indices[stop_index+1:]
             while len(zero_indices) > 0:
-                if print_debug:
-                    print("zero indices", zero_indices)
+                #if print_debug:
+                    #print("zero indices", zero_indices)
                 start_flag = int(zero_indices[0])
                 data_with_config = d[stop_flag+1:start_flag]
                 if print_debug:

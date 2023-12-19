@@ -8,6 +8,8 @@ logger.setLevel(logging.DEBUG)
 
 logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
 
+from hilbert_test import hilbert
+
 
 def get_two_bytes(n: int):
     bits = "{0:016b}".format(n)
@@ -28,7 +30,8 @@ class ConnectionManager:
 
         self.scan_mode = 0
 
-        self.pattern_loop = self.loop_pattern()
+        #self.pattern_loop = self.loop_pattern()
+        self.pattern_loop = hilbert()
 
     def looppattern(self):
         L = [255, 255, 10, 100, 100, 10, 250, 100, 10, 200, 200, 10, 150, 150, 10, 100, 150, 10,
@@ -59,9 +62,9 @@ class ConnectionManager:
     async def write_2bytes(self, val):
         writer = self.data_writer
         b1, b2 = get_two_bytes(val)
-        writer.write(b1)
+        writer.write(b2.to_bytes())
         await writer.drain()
-        writer.write(b2)
+        writer.write(b1.to_bytes())
         await writer.drain()
 
     async def write_points(self):
@@ -143,7 +146,7 @@ class ConnectionManager:
 
     async def start_reading(self):
         print("start reading")
-        self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader, self.data_writer))
+        self.streaming = asyncio.ensure_future(self.read_continously())
     
     async def close_data_stream(self):
         print('Close data stream')

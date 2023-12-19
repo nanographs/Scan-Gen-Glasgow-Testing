@@ -1,0 +1,11 @@
+INFO:OpenGL.acceleratesupport:No OpenGL_accelerate module loaded: No module named 'OpenGL_accelerate'
+INFO:qasync:Using Qt Implementation: PyQt6
+DEBUG:matplotlib:matplotlib data path: /opt/homebrew/lib/python3.11/site-packages/matplotlib/mpl-data
+DEBUG:matplotlib:CONFIGDIR=/Users/isabelburgos/.matplotlib
+DEBUG:matplotlib:interactive is False
+DEBUG:matplotlib:platform is darwin
+DEBUG:matplotlib:CACHEDIR=/Users/isabelburgos/.matplotlib
+DEBUG:matplotlib.font_manager:Using fontManager instance from /Users/isabelburgos/.matplotlib/fontlist-v330.json
+DEBUG:asyncio:Using selector: _Selector
+DEBUG:root:continous read error<StreamReader 131072 bytes transport=<_SelectorSocketTransport fd=33 read=idle write=<idle, bufsize=0>> paused>
+DEBUG:qasync._unix._Selector:Closing
