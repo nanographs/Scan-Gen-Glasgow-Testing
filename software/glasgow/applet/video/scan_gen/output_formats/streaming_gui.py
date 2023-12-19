@@ -130,16 +130,14 @@ class StreamFrameSettings(FrameSettings):
     @asyncSlot()
     async def set_x(self):
         xval = self.rx.getval()
-        await self.con.tcp_msg_client(self.con.scan_ctrl.set_x_resolution(xval))
-        await self.con.tcp_msg_client(self.con.scan_ctrl.raise_config_flag())
-        await self.con.tcp_msg_client(self.con.scan_ctrl.lower_config_flag())
+        await self.con.set_x_resolution(xval)
+        await self.con.strobe_config()
 
     @asyncSlot()
     async def set_y(self):
         yval = self.ry.getval()
-        await self.con.tcp_msg_client(self.con.scan_ctrl.set_y_resolution(yval))
-        await self.con.tcp_msg_client(self.con.scan_ctrl.raise_config_flag())
-        await self.con.tcp_msg_client(self.con.scan_ctrl.lower_config_flag())
+        await self.con.set_y_resolution(yval)
+        await self.con.strobe_config()
 
 
 class MainWindow(QWidget):
@@ -152,7 +150,7 @@ class MainWindow(QWidget):
 
         # self.scan_ctrl = ScanCtrl()
         # self.scan_stream = ScanStream()
-        self.con = ConnectionManager()
+        self.con = ScanInterface()
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
@@ -239,8 +237,7 @@ class MainWindow(QWidget):
     @asyncSlot()
     async def connect(self):
         await self.transmit_current_settings()
-        await self.con.tcp_msg_client(self.con.scan_ctrl.raise_config_flag())
-        await self.con.tcp_msg_client(self.con.scan_ctrl.lower_config_flag())
+        await self.con.strobe_config()
         await self.con.recieve_data_client()
         # await self.con.tcp_msg_client("ry16384")
         # if connection == "Connected":
@@ -250,16 +247,15 @@ class MainWindow(QWidget):
     @asyncSlot()
     async def transmit_current_settings(self):
         x_width, y_height = self.frame_settings.getframe()
-        await self.con.tcp_msg_client(self.con.scan_ctrl.set_x_resolution(x_width))
-        await self.con.tcp_msg_client(self.con.scan_ctrl.set_y_resolution(y_height))
+        await self.con.set_x_resolution(x_width)
+        await self.con.set_y_resolution(y_height)
 
 
     @asyncSlot()
     async def set_scan_mode(self):
         mode = self.mode_select_dropdown.currentIndex() + 1
-        await self.con.tcp_msg_client("sc0000" + str(mode))
-        await self.con.tcp_msg_client(self.con.scan_ctrl.raise_config_flag())
-        await self.con.tcp_msg_client(self.con.scan_ctrl.lower_config_flag())
+        await self.con.set_scan_mode(mode)
+        await self.con.strobe_config()
 
         
     @asyncSlot()
@@ -267,7 +263,7 @@ class MainWindow(QWidget):
         if self.start_btn.isChecked():
             print("starting scan")
             self.start_btn.setText('🔄')
-            await self.con.tcp_msg_client(self.con.scan_ctrl.unpause())
+            await self.con.unpause()
             mode = self.mode_select_dropdown.currentIndex() + 1
             if mode == 3:
                 self.con.stream_pattern = True
@@ -282,7 +278,7 @@ class MainWindow(QWidget):
             print("Stopped scanning now")
             self.start_btn.setText('🔄')
             self.con.stream_pattern = False
-            await self.con.tcp_msg_client(self.con.scan_ctrl.pause())
+            await self.con.pause()
             self.update_continously.cancel()
             # loop = asyncio.get_event_loop()
             # loop.create_task(self.con.stop_reading())

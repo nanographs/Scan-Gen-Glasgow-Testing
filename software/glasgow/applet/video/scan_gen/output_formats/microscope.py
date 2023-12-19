@@ -52,6 +52,7 @@ class ScanCtrl:
         self.cmd = cmd_encoder()
     def set_scan_mode(self, val):
         msg = "sc0000" + str(val)
+        
     def set_frame_resolution(self, x_resolution_val, y_resolution_val):
         msg1 = self.cmd.set_frame(frame_vars.x_full_frame_resolution, x_resolution_val)
         msg2 = self.cmd.set_frame(frame_vars.y_full_frame_resolution, y_resolution_val)
