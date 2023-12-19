@@ -76,7 +76,9 @@ class ConfigHandler(Elaboratable):
         If high, in_fifo.w_en is also high
 
     '''               
-    def __init__(self):
+    def __init__(self, demarcator = 255):
+        self.demarcator = 255
+
         self.x_full_frame_resolution_b1 = Signal(8)
         self.x_full_frame_resolution_b2 = Signal(8)
         self.y_full_frame_resolution_b1 = Signal(8)
@@ -118,11 +120,8 @@ class ConfigHandler(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        l = Signal()
-
         with m.FSM() as fsm:
             with m.State("Latch"):
-                m.d.comb += l.eq(1)
                 m.d.comb += self.writing_config.eq(0)
                 m.d.comb += self.config_data_valid.eq(0)
                 with m.If(self.configuration_flag):
@@ -132,7 +131,7 @@ class ConfigHandler(Elaboratable):
                     m.d.sync += self.y_full_frame_resolution_locked.eq(Cat(self.y_full_frame_resolution_b2,
                                                                             self.y_full_frame_resolution_b1))
                     m.d.comb += self.config_data_valid.eq(1)
-                    m.d.comb += self.in_fifo_w_data.eq(0)
+                    m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     with m.If(self.write_happened):
                         with m.If(self.eight_bit_output):
                             m.next = "X1"
@@ -144,7 +143,7 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(0)
+                    m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     with m.If(self.eight_bit_output):
                         m.next = "X1"
                     with m.Else():
@@ -153,7 +152,7 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(0)
+                    m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     m.next = "X1"
             with m.State("X1"):
                 m.d.comb += self.writing_config.eq(1)
@@ -162,14 +161,12 @@ class ConfigHandler(Elaboratable):
                     m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b2)
                     m.next = "X2"
             with m.State("X2"):
-                m.d.comb += l.eq(1)
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b1)
                     m.next = "Y1"
             with m.State("Y1"):
-                m.d.comb += l.eq(1)
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
@@ -200,13 +197,13 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(0)
+                    m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     m.next = "Insert_End"
             with m.State("Insert_End"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(0)
+                    m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     with m.If(~self.configuration_flag):
                         m.next = "Latch"
                     with m.Else():

@@ -106,6 +106,7 @@ class ModeController(Elaboratable):
         self.const_dwell_time = Signal(8)
 
         self.replace_0_to_1 = Signal()
+        self.replace_FF_to_FE = Signal()
         
     def elaborate(self, platform):
         m = Module()
@@ -128,6 +129,7 @@ class ModeController(Elaboratable):
 
         m.d.comb += self.byte_replacer.point_data.eq(self.dwell_avgr.running_average)
         m.d.comb += self.byte_replacer.replace_0_to_1.eq(self.replace_0_to_1)
+        m.d.comb += self.byte_replacer.replace_FF_to_FE.eq(self.replace_FF_to_FE)
         m.d.comb += self.byte_replacer.eight_bit_output.eq(self.eight_bit_output)
 
         # with m.If(self.mode == 0): ### when in DO NOTHING mode, do nothing.
