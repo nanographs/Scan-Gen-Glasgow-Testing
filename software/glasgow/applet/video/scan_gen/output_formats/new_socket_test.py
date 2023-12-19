@@ -8,6 +8,14 @@ logger.setLevel(logging.DEBUG)
 
 logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
 
+
+def get_two_bytes(n: int):
+    bits = "{0:016b}".format(n)
+    b1 = int(bits[0:8], 2)
+    b2 = int(bits[8:16], 2)
+    return b1, b2
+
+
 class ConnectionManager:
     def __init__(self):
         self.scan_stream = ScanStream()
@@ -16,9 +24,23 @@ class ConnectionManager:
         self.data_writer = None
         self.data_reader = None
 
-        self.streaming = None
+        self.stream_pattern = False
 
         self.scan_mode = 0
+
+        self.pattern_loop = self.loop_pattern()
+
+    def looppattern(self):
+        L = [255, 255, 10, 100, 100, 10, 250, 100, 10, 200, 200, 10, 150, 150, 10, 100, 150, 10,
+            230, 220, 10, 50, 10, 10]
+        def gentr_fn(alist):
+            while 1:
+                for j in alist:
+                    yield j
+
+        a = gentr_fn(L)
+        return a
+
     async def open_connection(self, host, port, future):
         print("trying to open connection at", host, port)
         while True:
@@ -34,7 +56,27 @@ class ConnectionManager:
                 #print("connection error")
                 pass
 
-    async def read_continously(self, reader):
+    async def write_2bytes(self, val):
+        writer = self.data_writer
+        b1, b2 = get_two_bytes(val)
+        writer.write(b1)
+        await writer.drain()
+        writer.write(b2)
+        await writer.drain()
+
+    async def write_points(self):
+        writer = self.data_writer
+        print("writing points")
+        n = 0
+        while n <= 16384:
+            n += 1
+            point = next(self.pattern_loop)
+            await self.write_2bytes(point)
+        print("wrote", n)
+
+    async def read_continously(self):
+        reader = self.data_reader
+        writer = self.data_writer
         while True:
             try:
                 print("trying to read")
@@ -45,7 +87,11 @@ class ConnectionManager:
                     data = memoryview(data)
                     #self.scan_stream.stream_to_buffer(data)
                     self.scan_stream.handle_config(data, print_debug = True)
+                    #self.scan_stream.stream_points_to_buffer(data)
                     #print(f'Received: {data.decode()!r}')
+                    if self.stream_pattern == True:
+                        await self.write_points()
+
                 else:
                     print("at eof?")
                     print(reader)
@@ -55,7 +101,6 @@ class ConnectionManager:
                 print(reader)
                 logging.debug("continous read error" + repr(reader))
                 break
-
 
     async def recieve_data_client(self):
         host = "127.0.0.1"  # Standard loopback interface address (localhost)
@@ -88,7 +133,6 @@ class ConnectionManager:
         # writer.close()
         # await writer.wait_closed()
 
-
     async def wait_stop(self):
         await asyncio.sleep(10)
         await self.stop_reading()
@@ -99,14 +143,7 @@ class ConnectionManager:
 
     async def start_reading(self):
         print("start reading")
-        self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader))
-
-    async def stop_reading(self):
-        await self.tcp_msg_client("sc00000")
-        #self.data_reader.feed_eof()
-        # if not self.streaming == None:
-        #     self.streaming.cancel()
-        
+        self.streaming = asyncio.ensure_future(self.read_continously(self.data_reader, self.data_writer))
     
     async def close_data_stream(self):
         print('Close data stream')
@@ -115,22 +152,7 @@ class ConnectionManager:
 
 
 def main():
-    con = ConnectionManager()
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(con.recieve_data_client())
-    loop.run_until_complete(con.tcp_msg_client("rx16384"))
-    loop.run_until_complete(con.tcp_msg_client("ry16384"))
-    loop.create_task(con.start_reading())
-    loop.create_task(con.wait_stop())
-    loop.run_forever()
-    #loop.run_until_complete(con.tcp_msg_client("sc00001"))
-    # # con = ConnectionManager()
-    
-    # loop.run_until_complete(con.start_reading())
-    # loop.run_until_complete(con.wait_stop())
-    # loop.run_until_complete(con.start_reading())
-    # loop.run_until_complete(con.wait_stop())
-    # loop.run_until_complete(con.close_data_stream())
-    # loop.run_forever()
+    print(get_two_bytes(511))
 
-# main()
+if __name__ == "__main__":
+    main()

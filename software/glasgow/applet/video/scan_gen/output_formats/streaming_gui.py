@@ -175,6 +175,8 @@ class MainWindow(QWidget):
         self.mode_select_dropdown.addItem("Raster Patterning")
         self.mode_select_dropdown.addItem("Vector Patterning")
 
+        self.mode_select_dropdown.currentIndexChanged.connect(self.set_scan_mode)
+
         # self.loopback_btn = QPushButton("Loopback Off")
         # self.loopback_btn.setCheckable(True) 
         # self.loopback_btn.clicked.connect(self.set_loopback)
@@ -182,6 +184,13 @@ class MainWindow(QWidget):
         self.start_btn = QPushButton('▶️')
         self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
         self.start_btn.clicked.connect(self.toggle_scan)
+
+        self.reset_btn = QPushButton("clear")
+        self.reset_btn.clicked.connect(self.reset_display)
+
+
+        self.info_btn = QPushButton('?')
+        self.info_btn.clicked.connect(self.getinfo)
 
         # self.new_scan_btn = QPushButton('↻')
         # self.new_scan_btn.clicked.connect(self.reset_scan)
@@ -196,6 +205,8 @@ class MainWindow(QWidget):
         mode_options.addWidget(self.mode_select_dropdown,0,1)
         # mode_options.addWidget(self.loopback_btn,0,3)
         mode_options.addWidget(self.start_btn,0,2)
+        mode_options.addWidget(self.reset_btn,0,3)
+        mode_options.addWidget(self.info_btn,0,4)
         # mode_options.addWidget(self.new_scan_btn,0,5)
         # # mode_options.addWidget(self.save_btn, 0, 6)
 
@@ -211,6 +222,18 @@ class MainWindow(QWidget):
         # self.image_display.image_view.addItem(self.file_dialog.image_display.live_img) #oof
         # self.image_display.image_view.autoRange()
         # print(self.image_display.image_view.allChildren())
+
+    @asyncSlot()
+    async def reset_display(self):
+        self.con.scan_stream.clear_buffer()
+        await self.updateData()
+
+    @asyncSlot()
+    async def getinfo(self):
+        tasks = asyncio.all_tasks()
+        for task in tasks:
+            print(task.get_name(), ":", task.get_coro())
+            task.print_stack()
 
 
     @asyncSlot()
@@ -230,16 +253,25 @@ class MainWindow(QWidget):
         await self.con.tcp_msg_client(self.con.scan_ctrl.set_x_resolution(x_width))
         await self.con.tcp_msg_client(self.con.scan_ctrl.set_y_resolution(y_height))
 
-        
 
+    @asyncSlot()
+    async def set_scan_mode(self):
+        mode = self.mode_select_dropdown.currentIndex() + 1
+        await self.con.tcp_msg_client("sc0000" + str(mode))
+        await self.con.tcp_msg_client(self.con.scan_ctrl.raise_config_flag())
+        await self.con.tcp_msg_client(self.con.scan_ctrl.lower_config_flag())
+
+        
     @asyncSlot()
     async def toggle_scan(self):
         if self.start_btn.isChecked():
             print("starting scan")
             self.start_btn.setText('🔄')
+            await self.con.tcp_msg_client(self.con.scan_ctrl.unpause())
             mode = self.mode_select_dropdown.currentIndex() + 1
-            await self.con.tcp_msg_client("sc0000" + str(mode))
-
+            if mode == 3:
+                self.con.stream_pattern = True
+                await self.con.write_points()
             #loop = asyncio.get_event_loop()
             #oop.create_task(self.con.start_reading())
             self.update_continously = asyncio.ensure_future(self.keepUpdating())
@@ -249,9 +281,11 @@ class MainWindow(QWidget):
         else:
             print("Stopped scanning now")
             self.start_btn.setText('🔄')
-            #self.update_continously.cancel()
-            loop = asyncio.get_event_loop()
-            loop.create_task(self.con.stop_reading())
+            self.con.stream_pattern = False
+            await self.con.tcp_msg_client(self.con.scan_ctrl.pause())
+            self.update_continously.cancel()
+            # loop = asyncio.get_event_loop()
+            # loop.create_task(self.con.stop_reading())
             # if self.mode == "Patterning":
             #     scan_controller.writer.write_eof()
             # self.setState("scan_paused")
@@ -265,7 +299,7 @@ class MainWindow(QWidget):
             except RuntimeError:
                 print("error")
                 break
-    
+
     async def updateData(self):
         self.image_display.setImage(self.con.scan_stream.y_height, self.con.scan_stream.x_width, self.con.scan_stream.buffer)
         

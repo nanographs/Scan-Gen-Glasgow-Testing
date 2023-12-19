@@ -12,6 +12,7 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.addresses import *
     from ..scan_gen_components.pixel_ratio_interpolator import PixelRatioInterpolator
     from ..scan_gen_components.output_handling import DwellTimeAverager
+    from ..scan_gen_components.byte_replacer import ByteReplacer
 # if __name__ == "__main__":
 else:
     from beam_controller import BeamController
@@ -21,6 +22,7 @@ else:
     from mode_controller_vector import VectorModeController
     from pixel_ratio_interpolator import PixelRatioInterpolator
     from output_handling import DwellTimeAverager
+    from byte_replacer import ByteReplacer
 
 
 
@@ -73,6 +75,8 @@ class ModeController(Elaboratable):
         self.x_interpolator = PixelRatioInterpolator()
         self.y_interpolator = PixelRatioInterpolator()
 
+        self.byte_replacer = ByteReplacer()
+
         self.dwell_avgr = DwellTimeAverager()
 
         self.x_full_frame_resolution = Signal(16)
@@ -100,6 +104,8 @@ class ModeController(Elaboratable):
 
         self.eight_bit_output = Signal()
         self.const_dwell_time = Signal(8)
+
+        self.replace_0_to_1 = Signal()
         
     def elaborate(self, platform):
         m = Module()
@@ -111,6 +117,7 @@ class ModeController(Elaboratable):
         m.submodules["YInt"] = self.y_interpolator
 
         m.submodules["DwellAvgr"] = self.dwell_avgr
+        m.submodules["ByteReplace"] = self.byte_replacer
 
         m.d.comb += self.x_interpolator.frame_size.eq(self.x_full_frame_resolution)
         m.d.comb += self.y_interpolator.frame_size.eq(self.y_full_frame_resolution)
@@ -118,6 +125,10 @@ class ModeController(Elaboratable):
         m.d.comb += self.dwell_avgr.pixel_in.eq(self.adc_data)
         m.d.comb += self.dwell_avgr.strobe.eq(self.adc_data_strobe)
         m.d.comb += self.dwell_avgr.start_new_average.eq(self.beam_controller.end_of_dwell)
+
+        m.d.comb += self.byte_replacer.point_data.eq(self.dwell_avgr.running_average)
+        m.d.comb += self.byte_replacer.replace_0_to_1.eq(self.replace_0_to_1)
+        m.d.comb += self.byte_replacer.eight_bit_output.eq(self.eight_bit_output)
 
         # with m.If(self.mode == 0): ### when in DO NOTHING mode, do nothing.
         #     m.d.comb += self.write_happened.eq(0)
@@ -137,8 +148,8 @@ class ModeController(Elaboratable):
             
             m.d.comb += self.ras_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.ras_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
-            #m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.beam_controller.x_position) ## loopback
-            m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.dwell_avgr.running_average)
+            m.d.comb += self.ras_mode_ctrl.raster_point_output.eq(self.byte_replacer.processed_point_data)
+
             with m.If(~self.beam_controller.prev_dwelling_changed):
                 m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_dwell.eq(self.beam_controller.end_of_dwell)
 
@@ -149,6 +160,8 @@ class ModeController(Elaboratable):
             
             m.d.comb += self.ras_mode_ctrl.raster_writer.eight_bit_output.eq(self.eight_bit_output)
             m.d.comb += self.ras_mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
+            m.d.comb += self.byte_replacer.replace_0_to_1.eq(self.ras_mode_ctrl.do_frame_sync)
+            m.d.comb += self.byte_replacer.replace_0_to_2.eq(self.ras_mode_ctrl.do_line_sync)
 
             
             with m.If(self.mode == ScanMode.Raster):
@@ -199,7 +212,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.vec_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.vec_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
 
-            m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.dwell_avgr.running_average)
+            m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.byte_replacer.processed_point_data)
 
             #with m.If(~self.beam_controller.dwelling_changed & (self.reader_data_complete)):
 

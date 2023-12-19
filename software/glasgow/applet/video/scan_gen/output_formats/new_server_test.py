@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import sys
 
 
 async def get_data():
@@ -16,7 +17,8 @@ class ServerHost:
         self.process_cmd = process_cmd
 
 
-    def start_servers(self):
+    def start_servers(self, data_server_future):
+        self.data_server_future = data_server_future
         try:
             # self.cmd_reader_future = future
             loop = asyncio.get_event_loop()
@@ -49,11 +51,10 @@ class ServerHost:
         print("cmd server made connection")
         loop = asyncio.get_running_loop()
         try:
-            print("awaiting read")
+            print("awaiting cmd read")
             data = await self.cmd_reader.readexactly(7)
-            print("data", data)
             message = data.decode()
-            print("message:", message)
+            print("cmd:", message)
             self.queue.submit(self.process_cmd(message))
             await self.queue.poll()
         except asyncio.IncompleteReadError:
@@ -66,6 +67,7 @@ class ServerHost:
         print("data server made connection")
         addr = writer.get_extra_info('peername')
         print(f"addr: {addr!r}")
+        self.data_server_future.set_result("done")
         
 
     async def send_data_continously(self):
@@ -85,6 +87,16 @@ class ServerHost:
 
 
 def main():
-    server_host.start_servers()
+    sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
+    from glasgow.support.task_queue import TaskQueue
+    queue = TaskQueue()
+    loop = asyncio.get_event_loop()
+    data_server_future = loop.create_future()
+    def process_cmd(cmd):
+        print("cmd:", cmd)
+    server_host = ServerHost(queue, process_cmd)
+    server_host.start_servers(data_server_future)
+    loop.run_forever()
 
-# main()
+if __name__ == "__main__":
+    main()

@@ -334,7 +334,7 @@ class RasterModeController(Elaboratable):
         self.raster_writer = RasterWriter()
         self.raster_reader = RasterReader()
         self.xy_scan_gen = XY_Scan_Gen()
-        self.byte_replacer = ByteReplacer()
+        #self.byte_replacer = ByteReplacer()
 
         self.raster_point_data = Signal(vector_point)
         self.raster_point_output = Signal(vector_dwell)
@@ -348,7 +348,6 @@ class RasterModeController(Elaboratable):
         self.eight_bit_output = Signal()
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
-        self.replace_0_to_1 = Signal()
 
         self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
 
@@ -358,19 +357,15 @@ class RasterModeController(Elaboratable):
         m.submodules["RasterReader"] = self.raster_reader
         m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
-        m.submodules["ByteReplace"] = self.byte_replacer
+        # m.submodules["ByteReplace"] = self.byte_replacer
 
         with m.If((self.raster_reader.data_complete) & (self.raster_fifo.w_rdy)):
             m.d.comb += self.raster_reader.data_point_used.eq(1)
             m.d.comb += self.raster_fifo.w_en.eq(1)
             m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.raster_dwell_data_c)
 
-        m.d.comb += self.byte_replacer.replace_0_to_1.eq((self.do_frame_sync)|(self.replace_0_to_1))
-        m.d.comb += self.byte_replacer.replace_0_to_2.eq(self.do_line_sync)
-        m.d.comb += self.byte_replacer.eight_bit_output.eq(self.eight_bit_output)
 
-        m.d.comb += self.byte_replacer.point_data.eq(self.raster_point_output)
-        m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.byte_replacer.processed_point_data)
+        m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
 
         with m.If(self.beam_controller_end_of_dwell):
             with m.If(self.do_frame_sync):

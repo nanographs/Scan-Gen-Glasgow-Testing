@@ -2,6 +2,8 @@ import asyncio
 import numpy as np
 from enum import Enum
 import struct
+import time
+
 
 class scan_mode(Enum):
     stop = 0
@@ -14,6 +16,7 @@ class data_format:
     line_sync = "ls" ## frame and line sync
     eight_bit = "8b"
     config = "cf"
+    pause = "ps"
 
 class frame_vars:
     x_full_frame_resolution = "rx"
@@ -78,6 +81,14 @@ class ScanCtrl:
         msg = self.cmd.set_data_format(data_format.config, False)   
         return msg
 
+    def pause(self):
+        msg = self.cmd.set_data_format(data_format.pause, 0)   
+        return msg
+    
+    def unpause(self):
+        msg = self.cmd.set_data_format(data_format.pause, 1)   
+        return msg
+
 
 
 class ScanStream:
@@ -91,11 +102,13 @@ class ScanStream:
         self.current_x = 0
         self.current_y = 0
 
-        self.eight_bit_output = True
+        self.scan_mode = 0
+
+        self.eight_bit_output = False
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                     dtype = np.uint8)
 
-        self.pointbuffer = []
+        self.pointbuffer = np.array([], dtype = np.uint8)
     
     def change_buffer(self, x_width, y_height):
         self.x_width = x_width
@@ -106,6 +119,11 @@ class ScanStream:
         self.current_x = 0
         self.current_y = 0
 
+    def clear_buffer(self):
+        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
+                    dtype = np.uint8)
+        print("cleared buffer")
+
     def decode_rdwell(self, n):
         a2, a1 = n
         a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
@@ -114,8 +132,12 @@ class ScanStream:
     def decode_rdwell_packet(self, raw_data):
         if isinstance(raw_data, bytes):
             data = list(raw_data)
-        else:
+        elif isinstance(raw_data, memoryview):
             data = raw_data.tolist()
+        else:
+            data = raw_data
+        #print("bytes:", data)
+        print("first line:", data[0:12])
         if self.eight_bit_output:
             return data
         else:
@@ -144,6 +166,7 @@ class ScanStream:
             #ignore those pesky extra values.... just for new
 
     def decode_vpoint_to_buffer(self, n):
+        print("point:", n)
         if self.eight_bit_output:
             x2, x1, y2, y1, a1 = n
         else:
@@ -152,10 +175,10 @@ class ScanStream:
         y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
         if self.eight_bit_output:
             a = int("{0:08b}".format(a1),2)
-            self.buffer[y][x] = a
         else:
             a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
-            self.buffer[y][x] = a
+        print("x, y, a:", x, y, a)
+        self.buffer[y][x] = a
         return [x, y, a]
 
     def decode_vpoint_packet(self, raw_data, to_buffer = False):
@@ -186,24 +209,35 @@ class ScanStream:
         if not to_buffer:
             return packet
 
-    def stream_points_to_buffer(self, raw_data):
-        if isinstance(raw_data, bytes):
-            data = list(raw_data)
-        if isinstance(raw_data, memoryview):
-            data = raw_data.tolist()
-        else:
-            data = raw_data
-        data = self.pointbuffer + data
-        n_complete_points = len(data)//5
-        complete_points = np.array(data[:n_complete_points*5]).reshape((n_complete_points, 5))
+    def stream_points_to_buffer(self, data):
+        print("decoding points")
+        data = np.append(self.pointbuffer,data)
+        print("buffered points:", self.pointbuffer)
+        n_complete_points = len(data)//3
+        print("n complete points:", n_complete_points)
+        print("data [:",n_complete_points*3,"]")
+        complete_points = np.array(data[:n_complete_points*3]).reshape((n_complete_points, 3))
+        start = time.perf_counter()
         for n in complete_points:
-            self.decode_vpoint_to_buffer(n) 
-        extra_points = data[n_complete_points*5:]
-        self.pointbuffer += extra_points
+            x, y, a = n
+            self.buffer[y][x] = a
+        end = time.perf_counter()
+        print("total time:", end - start)
+        if n_complete_points > 0:
+            print("time per point:", (end-start)/n_complete_points)
+        print("decoded all points")
+        print("extra points:",data[n_complete_points*3:])
+        extra_points = data[n_complete_points*3:]
+        self.pointbuffer = extra_points
 
     def parse_config(self, config):
-        new_x = self.decode_rdwell(config[0:2])
-        new_y = self.decode_rdwell(config[2:4])
+        # new_x = self.decode_rdwell(config[0:2])
+        # new_y = self.decode_rdwell(config[2:4])
+        # scan_mode = config[4]
+        new_x = config[0]
+        new_y = config[1]
+        scan_mode = config[2]
+        self.scan_mode = scan_mode
         if ((new_x != self.x_width) | (new_y != self.y_height)):
             self.current_x = 0
             self.current_y = 0
@@ -215,12 +249,19 @@ class ScanStream:
         
     def buffer_with_config(self, config, data):
         self.parse_config(config)
+        print("scan mode:", self.scan_mode)
         self.stream_to_buffer(data)
 
-    def handle_config(self, raw_data, config_bytes = 4, print_debug = False):
+    def stream_to_buffer(self, data):
+        if self.scan_mode == 1:
+            self.stream_to_buffer(data)
+        if self.scan_mode == 3:
+            self.stream_points_to_buffer(data)
+
+    def handle_config(self, raw_data, config_bytes = 3, print_debug = False):
         #print("handling mixed data stream")
-        data = raw_data
-        #data = self.decode_rdwell_packet(raw_data)
+        data = self.decode_rdwell_packet(raw_data)
+        #print("data:", data)
         d = np.array(data)
         if print_debug:
             print("data:", d)
@@ -237,6 +278,7 @@ class ScanStream:
             if print_debug:
                 print("config:", config, "start", start_flag, "stop", stop_flag)
             stop_index = np.where(zero_indices == stop_flag)[0][0]
+            print("stop index", stop_index)
             zero_indices = zero_indices[stop_index+1:]
             while len(zero_indices) > 0:
                 if print_debug:
@@ -258,8 +300,8 @@ class ScanStream:
                 print("data", data_with_config)
             self.buffer_with_config(config, data_with_config)
             
-    def stream_to_buffer(self, raw_data, print_debug = False):
-        data = self.decode_rdwell_packet(raw_data)
+    def stream_frame_to_buffer(self, data, print_debug = False):
+        #data = self.decode_rdwell_packet(raw_data)
         #data = raw_data
         if print_debug:
             print("data length:", len(data))
@@ -336,11 +378,12 @@ if __name__ == "__main__":
         scanstream.handle_config(data, print_debug=True)
         scanstream.handle_config(data2, print_debug=True)
     def test_vector_parsing():
-        data = [100, 0, 200, 0, 255, 150, 0, 250, 0, 200, 0,0,0,0]
-        data2 = [255] + [100, 0, 200, 0, 255, 150, 0, 250, 0, 200, 0,0,0,0,255]*512
-        scanstream.change_buffer(255,255)
-        scanstream.stream_points_to_buffer(data)
-        scanstream.stream_points_to_buffer(data2)
+        # data = [100, 0, 200, 0, 255, 150, 0, 250, 0, 200, 0,0,0,0]
+        # data2 = [255] + [100, 0, 200, 0, 255, 150, 0, 250, 0, 200, 0,0,0,0,255]*512
+        # scanstream.change_buffer(255,255)
+        data = [0, 0, 255, 1, 255, 1, 3, 0, 0, 0, 255, 0, 255, 0, 1, 0]
+        scanstream.handle_config(data)
+        # scanstream.stream_points_to_buffer(data2)
         #scanstream.decode_vpoint_packet(data)
         #print(scanstream.buffer)
 

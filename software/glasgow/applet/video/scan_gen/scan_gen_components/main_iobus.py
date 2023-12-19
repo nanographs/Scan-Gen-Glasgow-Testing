@@ -24,7 +24,7 @@ class IOBus(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
-                const_dwell_time, configuration,
+                const_dwell_time, configuration, unpause,
                 is_simulation = True, test_mode = None,
                 use_config_handler = False):
         ### Build arguments
@@ -49,6 +49,7 @@ class IOBus(Elaboratable):
         self.do_frame_sync = do_frame_sync
         self.do_line_sync = do_line_sync
         self.const_dwell_time = const_dwell_time
+        self.unpause = unpause
         
         self.x_full_resolution_b1 = x_full_resolution_b1
         self.x_full_resolution_b2 = x_full_resolution_b2
@@ -124,10 +125,11 @@ class IOBus(Elaboratable):
 
         #### =========================== REGISTERS ====================================
         if self.use_config_handler:
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.replace_0_to_1.eq(1)
+            m.d.comb += self.mode_ctrl.replace_0_to_1.eq(1)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(0)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(0)
             m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
+            m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
             m.d.comb += self.handling_config.eq((self.configuration_flag) | (self.config_handler.writing_config))
 
             ## Reset counters when configuration changes
@@ -136,7 +138,10 @@ class IOBus(Elaboratable):
             with m.If(self.handling_config):
                 m.d.comb += self.mode_ctrl.mode.eq(0)
             with m.Else():
-                m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
+                with m.If(self.unpause):
+                    m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
+                with m.Else():
+                    m.d.comb += self.mode_ctrl.mode.eq(0)
 
             m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
             m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
