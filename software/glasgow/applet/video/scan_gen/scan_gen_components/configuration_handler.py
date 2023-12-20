@@ -30,7 +30,7 @@ class ConfigHandler(Elaboratable):
 
     Registers that are "locked in" by strobing configuration:
         eight_bit_output: Signal, in, 1
-        
+
         x_full_frame_resolution_b1: Signal, in, 8
         x_full_frame_resolution_b2: Signal, in, 8
                             ↓
@@ -86,6 +86,7 @@ class ConfigHandler(Elaboratable):
         self.scan_mode = Signal(2)
 
         self.eight_bit_output = Signal()
+        self.eight_bit_output_locked = Signal()
 
         self.configuration_flag = Signal()
 
