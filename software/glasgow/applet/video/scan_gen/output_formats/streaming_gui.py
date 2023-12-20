@@ -216,6 +216,8 @@ class MainWindow(QWidget):
         x_width, y_height = self.frame_settings.getframe()
         await self.con.set_x_resolution(x_width)
         await self.con.set_y_resolution(y_height)
+        mode = self.mode_select_dropdown.currentIndex() + 1
+        await self.con.set_scan_mode(mode)
 
 
     @asyncSlot()
@@ -246,7 +248,7 @@ class MainWindow(QWidget):
             self.start_btn.setText('🔄')
             self.con.stream_pattern = False
             await self.con.pause()
-            self.update_continously.cancel()
+            #self.update_continously.cancel()
             self.start_btn.setText('▶️')
 
     async def keepUpdating(self):

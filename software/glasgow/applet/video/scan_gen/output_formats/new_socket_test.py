@@ -9,6 +9,7 @@ logger.setLevel(logging.DEBUG)
 logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
 
 from hilbert_test import hilbert
+import time
 
 
 def get_two_bytes(n: int):
@@ -87,9 +88,12 @@ class ConnectionManager:
                     await asyncio.sleep(0)
                     data = await reader.read(16384)
                     print("recieved data")
+                    start = time.perf_counter()
                     data = memoryview(data)
-                    #self.scan_stream.stream_to_buffer(data)
-                    self.scan_stream.handle_config(data, print_debug = True)
+                    end = time.perf_counter()
+                    print("memview time", end-start)
+                    #self.scan_stream.stream_frame_to_buffer(data)
+                    self.scan_stream.handle_config(data)
                     #self.scan_stream.stream_points_to_buffer(data)
                     #print(f'Received: {data.decode()!r}')
                     if self.stream_pattern == True:

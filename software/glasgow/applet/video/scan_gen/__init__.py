@@ -350,9 +350,11 @@ class ScanGenInterface:
         self.text_file.write(output)
         fut.set_result(data)
 
-    async def rcv_future_data(self, future):
+    async def rcv_future_data(self, future, n):
         print("waiting for iface read...")
+        self._logger.info(f'waiting for read {n}')
         data = await self.iface.read(16384)
+        self._logger.info(f'got future data {n}')
         print("got future data", data)
         future.set_result(data)
 
@@ -454,17 +456,20 @@ class SG_EndpointInterface(ScanGenInterface):
                         start_new_session = True)
 
 
-    async def send_packet(self, future_data):
-        await self.rcv_future_data(future_data)
-        data = future_data.result()
-        self._logger.info("recieved future data")
+    async def send_packet(self, future_data,n):
+        loop = asyncio.get_event_loop()
+        future_future_data = loop.create_future()
+        await self.rcv_future_data(future_future_data,n)
+        data = future_future_data.result()
+        self._logger.info(f'recieved future data {n}, length: {str(len(data))}' )
         print("writing", data)
-        self.server_host.data_writer.write(data)
-        await self.server_host.data_writer.drain()
-        self._logger.info("wrote future data to socket")
         if data is not None:
+            self.server_host.data_writer.write(data)
+            await self.server_host.data_writer.drain()
+            self._logger.info(f'wrote future data to socket {n}, length: {str(len(data))}')
             self.text_file.write(str(data.tolist()))
-        print("send complete")
+            print("send complete")
+        future_data.set_result(n)
 
     async def recv_packet(self):
         print("standing by to recieve packet...")
@@ -487,20 +492,25 @@ class SG_EndpointInterface(ScanGenInterface):
 
 
     async def stream_data(self):
+        n = 0
         while True:
-            loop = asyncio.get_event_loop()
-            future_data = loop.create_future()
-            print("created future data")
-            self._logger.info("created future data")
-
-            self._logger.info("created recv_packet task")
-            loop.create_task(self.recv_packet())
-            print("hello?")
-            loop.create_task(self.send_packet(future_data))
-            await future_data
-            print("future awaited")
-            self._logger.info("future awaited")
-            await asyncio.sleep(0)
+            n += 1
+            # loop = asyncio.get_event_loop()
+            # future_data = loop.create_future()
+            self._logger.info(f'awaiting read {n}')
+            if self.scan_mode == 3:
+                self._logger.info("created recv_packet task")
+                loop.create_task(self.recv_packet())
+            data = await self.iface.read(16384)
+            self._logger.info(f'got read data {n}')
+            self.server_host.data_writer.write(data)
+            await self.server_host.data_writer.drain()
+            self._logger.info(f'wrote data to socket {n}')
+            #await future_data
+            #loop.create_task(self.send_packet(future_data,n))
+            #n_fut = await future_data
+            #self._logger.info(f'future awaited {n}, future {n_fut}')
+            #await asyncio.sleep(0)
             # print("awaiting read")
             # self._logger.info("awaiting read")
             # data = await self.iface.read(16384)

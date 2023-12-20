@@ -136,11 +136,15 @@ class ScanStream:
         if isinstance(raw_data, bytes):
             data = list(raw_data)
         elif isinstance(raw_data, memoryview):
+            start = time.perf_counter()
             data = raw_data.tolist()
+            end = time.perf_counter()
+            print("list time", end-start)
         else:
             data = raw_data
         #print("bytes:", data)
         print("first line:", data[0:12])
+        start = time.perf_counter()
         if self.eight_bit_output:
             return data
         else:
@@ -148,6 +152,8 @@ class ScanStream:
             for n in range(0,len(data),2):
                 dwell = self.decode_rdwell(data[n:n+2])
                 packet.append(dwell)
+            end = time.perf_counter()
+            print("merge time", end-start)
             return packet
 
     def decode_vpoint(self, n):
@@ -257,22 +263,33 @@ class ScanStream:
 
     def stream_to_buffer(self, data):
         if self.scan_mode == 1:
-            self.stream_to_buffer(data)
+            self.stream_frame_to_buffer(data)
         if self.scan_mode == 3:
             self.stream_points_to_buffer(data)
 
     def handle_config(self, raw_data, config_bytes = 3, print_debug = False):
         #print("handling mixed data stream")
+        start = time.perf_counter()
         data = self.decode_rdwell_packet(raw_data)
+        end = time.perf_counter()
+        print("time to decode 16 to 8:", end-start)
         #print("data:", data)
+        start = time.perf_counter()
         d = np.array(data)
         if print_debug:
             print("data first line:", d[0:13])
-        zero_indices = np.nonzero(d < 1)[0]
+        #zero_indices = np.nonzero(d < 1)[0] ## To look for zeros
+        startb = time.perf_counter()
+        zero_indices = np.nonzero(d == 65535)[0]
+        endb = time.perf_counter()
+        print("time to check for config", endb-startb)
         if print_debug:
             print("zero indices:", zero_indices)
         if len(zero_indices) == 0:
+            start_a = time.perf_counter()
             self.stream_to_buffer(data)
+            end_a = time.perf_counter()
+            print("time to stuff", end_a-start_a)
         else:
             start_flag = int(zero_indices[0])
             stop_flag = start_flag + config_bytes + 1
@@ -283,14 +300,21 @@ class ScanStream:
             stop_index = np.where(zero_indices == stop_flag)[0][0]
             print("stop index", stop_index)
             zero_indices = zero_indices[stop_index+1:]
+            n = 0
             while len(zero_indices) > 0:
+                n += 1
                 #if print_debug:
                     #print("zero indices", zero_indices)
                 start_flag = int(zero_indices[0])
                 data_with_config = d[stop_flag+1:start_flag]
                 if print_debug:
                     print("data", data_with_config, "start", stop_flag+1, "stop", start_flag)
+                end = time.perf_counter()
+                print("time to parse config #",n,  end-start)
+                start = time.perf_counter()
                 self.buffer_with_config(config, data_with_config)
+                end = time.perf_counter()
+                print("time to stuff data", end - start)
                 stop_flag = start_flag + config_bytes + 1
                 config = d[start_flag+1:stop_flag]
                 if print_debug:
@@ -384,7 +408,7 @@ if __name__ == "__main__":
         # data = [100, 0, 200, 0, 255, 150, 0, 250, 0, 200, 0,0,0,0]
         # data2 = [255] + [100, 0, 200, 0, 255, 150, 0, 250, 0, 200, 0,0,0,0,255]*512
         # scanstream.change_buffer(255,255)
-        data = [0, 0, 255, 1, 255, 1, 3, 0, 0, 0, 255, 0, 255, 0, 1, 0]
+        data = [255, 255, 255, 1, 255, 1, 3, 0, 255, 255, 255, 0, 255, 0, 1, 0]
         scanstream.handle_config(data)
         # scanstream.stream_points_to_buffer(data2)
         #scanstream.decode_vpoint_packet(data)
