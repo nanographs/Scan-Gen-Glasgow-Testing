@@ -23,18 +23,14 @@ class ConfigHandler(Elaboratable):
             writing_config:     __-------___
 
     State Machine:
-        Eight bit mode:
-            ↓------------------------------------------↑------↑
-        Latch -> SB1 -> X1 -> X2 -> Y1 -> Y2 -> SC -> EB1 -> Wait
-            ↳------------↑ 
-
-        Sixteen bit mode:
-            ↓----------------------------------------------------------------↑------↑
-        Latch -> SB1 -> SB2 -> X1 -> X2 -> Y1 -> Y2 -> SC1 -> SC2 -> EB1 -> EB2 -> Wait
+            ↓--------------------------------------------------------------↑------↑
+        Latch -> SB1 -> SB2 -> X1 -> X2 -> Y1 -> Y2 -> SC -> 8B -> EB1 -> EB2 -> Wait
             ↳------------↑ 
 
 
     Registers that are "locked in" by strobing configuration:
+        eight_bit_output: Signal, in, 1
+        
         x_full_frame_resolution_b1: Signal, in, 8
         x_full_frame_resolution_b2: Signal, in, 8
                             ↓
@@ -46,22 +42,6 @@ class ConfigHandler(Elaboratable):
         y_full_frame_resolution_locked: Signal, out, 16
 
         ... repeat for x and y lower and upper limits
-
-    Registers that are used, but not "locked in":
-        eight_bit_output: Signal, in, 1
-            If true, output should be fully eight bit...
-            except what's inside the configuration packet?
-
-            Example: [0, 255, 0, 255, 0, 1, 0, 1, 1, 2, 3...]
-                      ^--X res, Y res, mode--^ ^--start of 8 bit output
-            
-            If false, output should be fully 16 bit,
-            including the configuration demarcation
-
-            Example: [0, 0, 255, 1, 255, 1, 3, 0, 0, 0, 1, 0, 1, 0, 2, 0, 3, 0...]
-                      ^^^^--X res, Y res, mode----^^^^  ^-- start of 16 bit output
-                    When read in 16 bit chunks, the sequence looks like this:
-                    [0, 511, 511, 3, 0, 1, 1, 2, 3...]
 
         scan_mode: Signal, in, 1
             This register is not locked in by strobing configuration, but its 
@@ -130,13 +110,11 @@ class ConfigHandler(Elaboratable):
                                                                             self.x_full_frame_resolution_b1))
                     m.d.sync += self.y_full_frame_resolution_locked.eq(Cat(self.y_full_frame_resolution_b2,
                                                                             self.y_full_frame_resolution_b1))
+                    m.d.sync += self.eight_bit_output_locked.eq(self.eight_bit_output)
                     m.d.comb += self.config_data_valid.eq(1)
                     m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     with m.If(self.write_happened):
-                        with m.If(self.eight_bit_output):
-                            m.next = "X1"
-                        with m.Else():
-                            m.next = "Insert_Start_B2"
+                        m.next = "Insert_Start_B2"
                     with m.Else():
                         m.next = "Insert_Start"
             with m.State("Insert_Start"):
@@ -144,10 +122,7 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
-                    with m.If(self.eight_bit_output):
-                        m.next = "X1"
-                    with m.Else():
-                        m.next = "Insert_Start_B2"
+                    m.next = "Insert_Start_B2"
             with m.State("Insert_Start_B2"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
@@ -183,15 +158,12 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.scan_mode)
-                    with m.If(self.eight_bit_output):
-                        m.next = "Insert_End"
-                    with m.Else():
-                        m.next = "SC_B2"
-            with m.State("SC_B2"):
+                    m.next = "8B"
+            with m.State("8B"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(0)
+                    m.d.comb += self.in_fifo_w_data.eq(self.eight_bit_output)
                     m.next = "Insert_End_B1"
             with m.State("Insert_End_B1"):
                 m.d.comb += self.writing_config.eq(1)
