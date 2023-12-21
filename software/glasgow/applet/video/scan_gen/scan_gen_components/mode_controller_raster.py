@@ -237,6 +237,7 @@ class RasterWriter(Elaboratable):
                         with m.Elif(self.strobe_in_line_sync):
                             m.next = "Line_Sync_B1"
                         with m.Else():
+                            m.d.comb += self.data_complete.eq(1)
                             m.next = "Dwell_Waiting"
                     with m.Else():
                         m.next = "D2"
@@ -250,6 +251,7 @@ class RasterWriter(Elaboratable):
                         with m.Elif(self.strobe_in_line_sync):
                             m.next = "Line_Sync_B1"
                         with m.Else():
+                            m.d.comb += self.data_complete.eq(1)
                             m.next = "Dwell_Waiting"
                     with m.Else():
                         m.next = "D2"

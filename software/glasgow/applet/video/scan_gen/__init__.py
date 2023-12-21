@@ -524,6 +524,7 @@ class SG_EndpointInterface(ScanGenInterface):
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
         val = int(cmd[2:])
+        self._logger.info(f'cmd recieved: {cmd} - {val}')
         if c == "ps":
             if val == 0:
                 await self.pause()
@@ -936,7 +937,11 @@ class ScanGenApplet(GlasgowApplet):
             #loop.set_debug(True)
             close_future = loop.create_future()
             scan_iface.start_servers(close_future)
-            await close_future
+            try:
+                await close_future
+            except Exception as err:
+                print(f'close error: {err}')
+                #await iface.flush()
 
 
 

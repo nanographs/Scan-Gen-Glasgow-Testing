@@ -176,6 +176,7 @@ def sim_iobus():
         # yield eight_bit_output.eq(1)
         def config_test():
             yield
+            yield eight_bit_output.eq(1)
             yield const_dwell_time.eq(2)
             yield from set_frame_params(dut, x_res=512, y_res=512)
             yield scan_mode.eq(1)
@@ -190,8 +191,9 @@ def sim_iobus():
             yield from raster_sim(100, eight_bit_output = True)
             yield from set_frame_params(dut, x_res=5120, y_res=5120)
             yield configuration.eq(1)
-            for n in range(10):
-                yield
+            yield
+            # # for n in range(10):
+            # #     yield
             yield configuration.eq(0)
             yield from raster_sim(100, eight_bit_output = True)
             # yield scan_mode.eq(0)
