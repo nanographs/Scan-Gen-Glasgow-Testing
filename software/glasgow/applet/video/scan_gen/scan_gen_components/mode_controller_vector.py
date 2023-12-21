@@ -165,8 +165,8 @@ class VectorWriter(Elaboratable):
         self.write_happened = Signal()
         self.strobe_in_xy = Signal()
         self.strobe_in_dwell = Signal()
-        #self.strobe_out = Signal()
         self.data_valid = Signal()
+        self.data_complete = Signal()
 
         self.eight_bit_output = Signal()
 
@@ -218,6 +218,7 @@ class VectorWriter(Elaboratable):
                     m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data_c.D1)
                     with m.If(self.eight_bit_output):
+                        m.d.comb += self.data_complete.eq(1)
                         m.next = "Waiting"
                     with m.Else():
                         m.next = "D2"
@@ -231,6 +232,7 @@ class VectorWriter(Elaboratable):
                 m.d.comb += self.data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D2)
+                    m.d.comb += self.data_complete.eq(1)
                     m.next = "Waiting"
         return m
 

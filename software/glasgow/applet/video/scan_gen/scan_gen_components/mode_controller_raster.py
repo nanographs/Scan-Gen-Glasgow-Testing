@@ -205,6 +205,8 @@ class RasterWriter(Elaboratable):
         
         self.eight_bit_output = Signal()
 
+        self.data_complete = Signal()
+
     def elaborate(self, platform):
         m = Module()
 
@@ -260,12 +262,14 @@ class RasterWriter(Elaboratable):
                     with m.Elif(self.prev_strobe_in_line_sync):
                             m.next = "Line_Sync_B1"
                     with m.Else():
+                            m.d.comb += self.data_complete.eq(1)
                             m.next = "Dwell_Waiting"
             with m.State("Frame_Sync_B1"):
                 m.d.comb += self.data_valid.eq(1)
                 m.d.comb += self.in_fifo_w_data.eq(0)
                 with m.If(self.write_happened):
                     with m.If(self.eight_bit_output):
+                        m.d.comb += self.data_complete.eq(1)
                         m.next = "Dwell_Waiting"
                     with m.Else():
                         m.next = "Frame_Sync_B2"
@@ -273,12 +277,14 @@ class RasterWriter(Elaboratable):
                 m.d.comb += self.data_valid.eq(1)
                 m.d.comb += self.in_fifo_w_data.eq(0)
                 with m.If(self.write_happened):
+                    m.d.comb += self.data_complete.eq(1)
                     m.next = "Dwell_Waiting"
             with m.State("Line_Sync_B1"):
                 m.d.comb += self.data_valid.eq(1)
                 m.d.comb += self.in_fifo_w_data.eq(1)
                 with m.If(self.write_happened):
                     with m.If(self.eight_bit_output):
+                        m.d.comb += self.data_complete.eq(1)
                         m.next = "Dwell_Waiting"
                     with m.Else():
                         m.next = "Line_Sync_B2"
@@ -286,6 +292,7 @@ class RasterWriter(Elaboratable):
                 m.d.comb += self.data_valid.eq(1)
                 m.d.comb += self.in_fifo_w_data.eq(1)
                 with m.If(self.write_happened):
+                    m.d.comb += self.data_complete.eq(1)
                     m.next = "Dwell_Waiting"
         return m
 

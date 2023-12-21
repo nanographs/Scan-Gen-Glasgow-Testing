@@ -96,7 +96,6 @@ class ConfigHandler(Elaboratable):
 
         self.writing_config = Signal()
 
-    
 
     def elaborate(self, platform):
         m = Module()
@@ -106,18 +105,18 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.writing_config.eq(0)
                 m.d.comb += self.config_data_valid.eq(0)
                 with m.If(self.configuration_flag):
-                    m.d.comb += self.writing_config.eq(1)
+                    #m.d.comb += self.writing_config.eq(1)
                     m.d.sync += self.x_full_frame_resolution_locked.eq(Cat(self.x_full_frame_resolution_b2,
                                                                             self.x_full_frame_resolution_b1))
                     m.d.sync += self.y_full_frame_resolution_locked.eq(Cat(self.y_full_frame_resolution_b2,
                                                                             self.y_full_frame_resolution_b1))
                     m.d.sync += self.eight_bit_output_locked.eq(self.eight_bit_output)
-                    m.d.comb += self.config_data_valid.eq(1)
-                    m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
-                    with m.If(self.write_happened):
-                        m.next = "Insert_Start_B2"
-                    with m.Else():
-                        m.next = "Insert_Start"
+                    #m.d.comb += self.config_data_valid.eq(1)
+                    #m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
+                    # with m.If(self.write_happened):
+                    #     m.next = "Insert_Start_B2"
+                    #with m.Else():
+                    m.next = "Insert_Start"
             with m.State("Insert_Start"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
@@ -134,25 +133,25 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b2)
+                    m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b1)
                     m.next = "X2"
             with m.State("X2"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b1)
+                    m.d.comb += self.in_fifo_w_data.eq(self.x_full_frame_resolution_b2)
                     m.next = "Y1"
             with m.State("Y1"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b2)
+                    m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b1)
                     m.next = "Y2"
             with m.State("Y2"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b1)
+                    m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b2)
                     m.next = "SC"
             with m.State("SC"):
                 m.d.comb += self.writing_config.eq(1)

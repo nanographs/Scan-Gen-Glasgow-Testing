@@ -503,6 +503,7 @@ class SG_EndpointInterface(ScanGenInterface):
                 loop.create_task(self.recv_packet())
             data = await self.iface.read(16384)
             self._logger.info(f'got read data {n}')
+            self.text_file.write(str(data.tolist()))
             self.server_host.data_writer.write(data)
             await self.server_host.data_writer.drain()
             self._logger.info(f'wrote data to socket {n}')
@@ -525,20 +526,20 @@ class SG_EndpointInterface(ScanGenInterface):
         val = int(cmd[2:])
         if c == "ps":
             if val == 0:
-                print("pause")
                 await self.pause()
+                print("pause")
             if val == 1:
                 await self.unpause()
                 print("unpaused")
-                tasks = asyncio.all_tasks()
-                for task in tasks:
-                    print(task.get_name(), ":", task.get_coro())
-                if self.scan_mode == 3:
-                    await self.recv_packet()
-                    tasks = asyncio.all_tasks()
-                    for task in tasks:
-                        print(task.get_name(), ":", task.get_coro())
-                        task.print_stack()
+                #tasks = asyncio.all_tasks()
+                # for task in tasks:
+                #     print(task.get_name(), ":", task.get_coro())
+                # if self.scan_mode == 3:
+                #     await self.recv_packet()
+                #     tasks = asyncio.all_tasks()
+                #     for task in tasks:
+                #         print(task.get_name(), ":", task.get_coro())
+                #         task.print_stack()
         elif c == "sc":
             await self.set_scan_mode(val)
             print("set scan mode done")
@@ -930,7 +931,7 @@ class ScanGenApplet(GlasgowApplet):
             
         if args.buf == "endpoint":
             #scan_iface.launch_gui()
-            await scan_iface.set_8bit_output(0)
+            await scan_iface.set_8bit_output(1)
             loop = asyncio.get_event_loop()
             #loop.set_debug(True)
             close_future = loop.create_future()

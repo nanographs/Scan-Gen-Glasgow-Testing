@@ -75,8 +75,11 @@ class BeamController(Elaboratable):
         self.dwelling_changed = Signal()
         self.prev_dwelling_changed = Signal()
 
+        self.reset = Signal()
+
     def elaborate(self, platform):
         m = Module()
+
         with m.If(self.count_enable):
             m.d.comb += self.end_of_dwell.eq(self.counter == self.dwell_time)
             m.d.comb += self.start_dwell.eq(self.counter == 0)
@@ -94,11 +97,17 @@ class BeamController(Elaboratable):
                     m.d.sync += self.counter.eq(self.counter + 1)
         with m.Else():
             m.d.sync += self.counter.eq(0)
-                
-        with m.If(self.lock_new_point):
-            m.d.sync += self.x_position.eq(self.next_x_position)
-            m.d.sync += self.y_position.eq(self.next_y_position)
-            m.d.sync += self.dwell_time.eq(self.next_dwell)     
+
+
+        with m.If(self.reset): 
+            m.d.sync += self.x_position.eq(0)  
+            m.d.sync += self.y_position.eq(0)
+            m.d.sync += self.dwell_time.eq(0)  
+        with m.Else():
+            with m.If(self.lock_new_point):
+                m.d.sync += self.x_position.eq(self.next_x_position)
+                m.d.sync += self.y_position.eq(self.next_y_position)
+                m.d.sync += self.dwell_time.eq(self.next_dwell)     
         return m
     def ports(self):
         return [self.x_position, self.y_position, self.dwell_time,

@@ -98,6 +98,8 @@ class ModeController(Elaboratable):
         self.write_happened = Signal()
         self.writer_data_valid = Signal()
 
+        self.writer_data_complete = Signal()
+
         self.internal_fifo_ready = Signal()
         self.adc_data = Signal(16)
         self.adc_data_strobe = Signal()
@@ -159,6 +161,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.raster_writer.in_fifo_w_data)
             m.d.comb += self.ras_mode_ctrl.raster_writer.write_happened.eq(self.write_happened)
             m.d.comb += self.writer_data_valid.eq(self.ras_mode_ctrl.raster_writer.data_valid)
+            m.d.comb += self.writer_data_complete.eq(self.ras_mode_ctrl.raster_writer.data_complete)
             
             m.d.comb += self.ras_mode_ctrl.raster_writer.eight_bit_output.eq(self.eight_bit_output)
             m.d.comb += self.ras_mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
@@ -188,6 +191,7 @@ class ModeController(Elaboratable):
 
             
         with m.If(self.mode == ScanMode.Vector):
+            m.d.comb += self.writer_data_complete.eq(self.vec_mode_ctrl.vector_writer.data_complete)
             m.d.comb += self.reader_data_complete.eq((self.vec_mode_ctrl.vector_reader.data_complete))
             m.d.comb += self.vec_mode_ctrl.vector_reader.read_happened.eq(self.read_happened)
             with m.FSM() as fsm:
@@ -202,21 +206,11 @@ class ModeController(Elaboratable):
                         m.d.comb += self.vec_mode_ctrl.vector_reader.data_point_used.eq(self.beam_controller.end_of_dwell)
                         m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq((self.beam_controller.end_of_dwell))
 
-                    # 
-            # with m.If((~self.beam_controller.dwelling_changed) & (self.reader_data_complete)):
-            #     
-            # with m.If((~self.beam_controller.dwelling_changed)):
-            #     
-
-
-
 
             m.d.comb += self.vec_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
             m.d.comb += self.vec_mode_ctrl.beam_controller_start_dwell.eq(self.beam_controller.start_dwell)
 
             m.d.comb += self.vec_mode_ctrl.vector_point_output.eq(self.byte_replacer.processed_point_data)
-
-            #with m.If(~self.beam_controller.dwelling_changed & (self.reader_data_complete)):
 
             m.d.comb += self.vec_mode_ctrl.beam_controller_dwelling_changed.eq(self.beam_controller.dwelling_changed)
 

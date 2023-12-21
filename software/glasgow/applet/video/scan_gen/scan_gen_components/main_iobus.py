@@ -128,12 +128,42 @@ class IOBus(Elaboratable):
             m.d.comb += self.mode_ctrl.replace_0_to_1.eq(1)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(0)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(0)
-            m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
             m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
-            m.d.comb += self.handling_config.eq((self.configuration_flag) | (self.config_handler.writing_config))
+            m.d.comb += self.handling_config.eq((self.config_handler.writing_config))
+
+            l = Signal()
+
+            with m.If(self.scan_mode == 0):
+                m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
+            with m.Else():
+                with m.FSM() as fsm:
+                    with m.State("Waiting"):
+                        with m.If((self.configuration_flag) & (self.mode_ctrl.writer_data_complete)):
+                            m.next = "Configure"
+                        with m.If((self.configuration_flag) & (~self.mode_ctrl.writer_data_complete)):
+                            m.next = "Wait for write"
+                    with m.State("Wait for write"):
+                        m.d.comb += l.eq(1)
+                        with m.If(self.mode_ctrl.writer_data_complete):
+                            m.next = "Configure"
+                    with m.State("Configure"):
+                        m.d.comb += self.config_handler.configuration_flag.eq(1)
+                        with m.If((self.scan_mode == ScanMode.Raster)|(self.scan_mode == ScanMode.RasterPattern)):
+                            m.next = "Start Frame"
+                        with m.Else():
+                            m.next = "Waiting"
+                    with m.State("Start Frame"):
+                        with m.If(~(self.handling_config)):
+                            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.increment.eq(1)
+                            ## sneak in an extra increment to make up for the fact that we are already
+                            ## starting out on (0,0)
+                            ## or something like that
+                            m.next = "Waiting"
+
 
             ## Reset counters when configuration changes
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.reset.eq(self.handling_config)
+            m.d.comb += self.mode_ctrl.beam_controller.reset.eq(self.handling_config)
 
             with m.If(self.handling_config):
                 m.d.comb += self.mode_ctrl.mode.eq(0)
@@ -231,6 +261,7 @@ class IOBus(Elaboratable):
         m.d.comb += self.mode_ctrl.read_happened.eq((self.read_strobe))
 
         if self.use_config_handler:
+
             with m.If(self.handling_config):
                 m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.config_handler.config_data_valid))
                 m.d.comb += self.config_handler.write_happened.eq(self.write_strobe)

@@ -176,6 +176,7 @@ def sim_iobus():
         # yield eight_bit_output.eq(1)
         def config_test():
             yield
+            yield const_dwell_time.eq(2)
             yield from set_frame_params(dut, x_res=512, y_res=512)
             yield scan_mode.eq(1)
             yield
@@ -185,26 +186,37 @@ def sim_iobus():
                 yield
             yield configuration.eq(0)
             yield
+            yield unpause.eq(1)
             yield from raster_sim(100, eight_bit_output = True)
-            yield scan_mode.eq(0)
-            for n in range(100):
+            yield from set_frame_params(dut, x_res=5120, y_res=5120)
+            yield configuration.eq(1)
+            for n in range(10):
                 yield
+            yield configuration.eq(0)
+            yield from raster_sim(100, eight_bit_output = True)
+            # yield scan_mode.eq(0)
+            # for n in range(100):
+            #     yield
         #yield from raster_sim(100, eight_bit_output = True)
         
-        yield eight_bit_output.eq(1)
-        yield scan_mode.eq(3)
-        yield from set_frame_params(dut, x_res=512, y_res=512)
-        yield
-        yield configuration.eq(1)
-        yield
-        yield configuration.eq(0)
-        yield unpause.eq(1)
-        data = yield from sim_app_iface.read(10)
-        print(list(data))
-        for n in range(3):
-            yield from vector_pattern_sim(dut)
-            data = yield from sim_app_iface.read(9)
+        def vec_test():
+            yield eight_bit_output.eq(1)
+            yield scan_mode.eq(3)
+            yield from set_frame_params(dut, x_res=512, y_res=512)
+            yield
+            yield configuration.eq(1)
+            yield
+            yield configuration.eq(0)
+            yield unpause.eq(1)
+            data = yield from sim_app_iface.read(10)
             print(list(data))
+            for n in range(3):
+                yield from vector_pattern_sim(dut)
+                data = yield from sim_app_iface.read(9)
+                print(list(data))
+
+        yield from config_test()
+        #yield from vec_test()
 
         # for n in range(6):
         #     data = yield from sim_app_iface.read(6)
