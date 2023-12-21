@@ -131,8 +131,6 @@ class IOBus(Elaboratable):
             m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
             m.d.comb += self.handling_config.eq((self.config_handler.writing_config))
 
-            l = Signal()
-
             with m.If(self.scan_mode == 0):
                 m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
             with m.Else():
@@ -143,7 +141,6 @@ class IOBus(Elaboratable):
                         with m.If((self.configuration_flag) & (~self.mode_ctrl.writer_data_complete)):
                             m.next = "Wait for write"
                     with m.State("Wait for write"):
-                        m.d.comb += l.eq(1)
                         with m.If(self.mode_ctrl.writer_data_complete):
                             m.next = "Configure"
                     with m.State("Configure"):
@@ -158,6 +155,7 @@ class IOBus(Elaboratable):
                             ## sneak in an extra increment to make up for the fact that we are already
                             ## starting out on (0,0)
                             ## or something like that
+                            ### will need to review this again when we throw reduced areas into the mix...
                             m.next = "Waiting"
 
 
