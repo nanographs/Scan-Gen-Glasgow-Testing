@@ -1,20 +1,11 @@
-<<<<<<< HEAD
-=======
 import re
 import os
 import sys
 import traceback
->>>>>>> glasgow/main
 import importlib.metadata
 import packaging.requirements
 import pathlib
 import sysconfig
-<<<<<<< HEAD
-import textwrap
-
-
-__all__ = ["PluginRequirementsUnmet", "PluginMetadata"]
-=======
 import logging
 
 
@@ -51,7 +42,6 @@ def _entry_points(*, group, name=None):
                 if not hasattr(entry_point, "dist"):
                     entry_point.dist = distribution
                 yield entry_point
->>>>>>> glasgow/main
 
 
 def _requirements_for_optional_dependencies(distribution, depencencies):
@@ -61,11 +51,7 @@ def _requirements_for_optional_dependencies(distribution, depencencies):
         for requirement in requirements:
             if requirement.marker and requirement.marker.evaluate({"extra": dependency}):
                 requirement = packaging.requirements.Requirement(str(requirement))
-<<<<<<< HEAD
-                requirement.marker = ""
-=======
                 requirement.marker = None
->>>>>>> glasgow/main
                 selected_requirements.add(requirement)
     return selected_requirements
 
@@ -88,14 +74,6 @@ def _unmet_requirements_in(requirements):
 
 
 def _install_command_for_requirements(requirements):
-<<<<<<< HEAD
-    if (pathlib.Path(sysconfig.get_path("data")) / "pipx_metadata.json").exists():
-        return f"pipx inject glasgow {' '.join(str(r) for r in requirements)}"
-    if (pathlib.Path(sysconfig.get_path("data")) / "pyvenv.cfg").exists():
-        return f"pip install {' '.join(str(r) for r in requirements)}"
-    else:
-        return f"pip install --user {' '.join(str(r) for r in requirements)}"
-=======
     requirement_args = " ".join(f"'{r}'" for r in requirements)
     if (pathlib.Path(sysconfig.get_path("data")) / "pipx_metadata.json").exists():
         return f"pipx inject glasgow {requirement_args}"
@@ -103,7 +81,6 @@ def _install_command_for_requirements(requirements):
         return f"pip install {requirement_args}"
     else:
         return f"pip install --user {requirement_args}"
->>>>>>> glasgow/main
 
 
 class PluginRequirementsUnmet(Exception):
@@ -111,10 +88,6 @@ class PluginRequirementsUnmet(Exception):
         self.metadata = metadata
 
     def __str__(self):
-<<<<<<< HEAD
-        return (f"plugin {self.metadata.handle} has unmet requirements: "
-                f"{', '.join(str(r) for r in self.metadata.unmet_requirements)}")
-=======
         return (f"{self.metadata.GROUP_NAME} plugin {self.metadata.handle!r} has unmet "
                 f"requirements: {', '.join(str(r) for r in self.metadata.unmet_requirements)}")
 
@@ -126,7 +99,6 @@ class PluginLoadError(Exception):
     def __str__(self):
         return (f"{self.metadata.GROUP_NAME} plugin {self.metadata.handle!r} raised an exception "
                 f"while being loaded")
->>>>>>> glasgow/main
 
 
 class PluginMetadata:
@@ -136,19 +108,6 @@ class PluginMetadata:
     # `[project.entry-points."glasgow.applet"]`.
     GROUP_NAME = None
 
-<<<<<<< HEAD
-    @classmethod
-    def get(cls, handle):
-        return cls(list(importlib.metadata.entry_points(group=cls.GROUP_NAME, name=handle))[0])
-
-    @classmethod
-    def all(cls):
-        return {ep.name: cls(ep) for ep in importlib.metadata.entry_points(group=cls.GROUP_NAME)}
-
-    def __init__(self, entry_point):
-        if entry_point.dist.name != "glasgow":
-            raise Exception("Out-of-tree plugins are not supported yet")
-=======
     _out_of_tree_warning_printed_for = set()
 
     @classmethod
@@ -175,7 +134,6 @@ class PluginMetadata:
 
     def __init__(self, entry_point):
         assert self._loadable(entry_point)
->>>>>>> glasgow/main
 
         # Python-side metadata (how to load it, etc.)
         self.module = entry_point.module
@@ -186,21 +144,6 @@ class PluginMetadata:
 
         # Person-side metadata (how to display it, etc.)
         self.handle = entry_point.name
-<<<<<<< HEAD
-        if self.available:
-            self._cls = entry_point.load()
-            self.synopsis = self._cls.help
-            self.description = self._cls.description
-        else:
-            self.synopsis = (f"/!\\ unavailable due to unmet requirements: "
-                             f"{', '.join(str(r) for r in self.unmet_requirements)}")
-            self.description = textwrap.dedent(f"""
-            This plugin is unavailable because it requires additional packages that are
-            not installed. To install them, run:
-
-                {_install_command_for_requirements(self.unmet_requirements)}
-            """)
-=======
         if not self.unmet_requirements:
             try:
                 self._cls = entry_point.load()
@@ -227,7 +170,6 @@ class PluginMetadata:
                 f"that are not installed. To install them, run:\n\n    " +
                 _install_command_for_requirements(self.unmet_requirements) +
                 f"\n")
->>>>>>> glasgow/main
 
     @property
     def unmet_requirements(self):
@@ -237,11 +179,6 @@ class PluginMetadata:
     def available(self):
         return not self.unmet_requirements
 
-<<<<<<< HEAD
-    def load(self):
-        if not self.available:
-            raise PluginRequirementsUnmet(self)
-=======
     @property
     def loadable(self):
         return self._cls is not None
@@ -251,7 +188,6 @@ class PluginMetadata:
             raise PluginRequirementsUnmet(self)
         if self._cls is None:
             raise PluginLoadError(self)
->>>>>>> glasgow/main
         return self._cls
 
     def __repr__(self):

@@ -54,8 +54,6 @@ class _PollerThread(threading.Thread):
         self.context = context
 
     def run(self):
-<<<<<<< HEAD
-=======
         # The poller thread spends most of its life in blocking `handleEvents()` calls and this can
         # cause issues during interpreter shutdown. If it were a daemon thread (it isn't) then it
         # would be instantly killed on interpreter shutdown and any locks it took could block some
@@ -65,7 +63,6 @@ class _PollerThread(threading.Thread):
         # is not enough as those callbacks are called after threading shutdown, and past the point
         # where a deadlock would happen.
         threading._register_atexit(self.stop)
->>>>>>> glasgow/main
         while not self.done:
             self.context.handleEvents()
 

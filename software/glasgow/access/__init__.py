@@ -1,10 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from amaranth import *
 from amaranth.lib.io import Pin
-<<<<<<< HEAD
-=======
 import argparse
->>>>>>> glasgow/main
 
 from ..gateware.pads import Pads
 

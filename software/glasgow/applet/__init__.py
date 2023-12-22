@@ -44,11 +44,7 @@ class GlasgowApplet(metaclass=ABCMeta):
             if clock_name is None:
                 raise GlasgowAppletError(e)
             else:
-<<<<<<< HEAD
-                raise GlasgowAppletError("clock {}: {}".format(clock_name, e))
-=======
                 raise GlasgowAppletError(f"clock {clock_name}: {e}")
->>>>>>> glasgow/main
 
     @abstractmethod
     def build(self, target):
@@ -70,11 +66,7 @@ class GlasgowApplet(metaclass=ABCMeta):
         pass
 
     async def interact(self, device, args, iface):
-<<<<<<< HEAD
-        pass
-=======
         raise GlasgowAppletError("This applet can only be used in REPL mode.")
->>>>>>> glasgow/main
 
     @classmethod
     def add_repl_arguments(cls, parser):
@@ -82,11 +74,6 @@ class GlasgowApplet(metaclass=ABCMeta):
 
     async def repl(self, device, args, iface):
         self.logger.info("dropping to REPL; use 'help(iface)' to see available APIs")
-<<<<<<< HEAD
-        await AsyncInteractiveConsole(locals={"device":device, "iface":iface},
-            run_callback=device.demultiplexer.flush).interact()
-
-=======
         await AsyncInteractiveConsole(locals={"device":device, "iface":iface, "args":args},
             run_callback=device.demultiplexer.flush).interact()
 
@@ -94,7 +81,6 @@ class GlasgowApplet(metaclass=ABCMeta):
     def tests(cls):
         return None
 
->>>>>>> glasgow/main
 
 class GlasgowAppletTool:
     def __init_subclass__(cls, applet, **kwargs):
@@ -230,11 +216,7 @@ class GlasgowAppletTestCase(unittest.TestCase):
 
     def assertBuilds(self, access="direct", args=[]):
         if access == "direct":
-<<<<<<< HEAD
-            target = GlasgowHardwareTarget(revision="A0",
-=======
             target = GlasgowHardwareTarget(revision=self.applet_cls.required_revision,
->>>>>>> glasgow/main
                                            multiplexer_cls=DirectMultiplexer)
             access_args = DirectArguments(applet_name="applet",
                                           default_port="AB", pin_count=16)
@@ -336,11 +318,7 @@ def applet_simulation_test(setup, args=[]):
             sim = Simulator(self.target)
             sim.add_clock(1e-9)
             sim.add_sync_process(run)
-<<<<<<< HEAD
-            vcd_name = "{}.vcd".format(case.__name__)
-=======
             vcd_name = f"{case.__name__}.vcd"
->>>>>>> glasgow/main
             with sim.write_vcd(vcd_name):
                 sim.run()
             os.remove(vcd_name)
@@ -358,11 +336,7 @@ def applet_hardware_test(setup="run_hardware_applet", args=[]):
                                         case.__name__ + ".json")
             os.makedirs(os.path.dirname(fixture_path), exist_ok=True)
             if os.path.exists(fixture_path):
-<<<<<<< HEAD
-                fixture = open(fixture_path, "r")
-=======
                 fixture = open(fixture_path)
->>>>>>> glasgow/main
                 mode = "replay"
             else:
                 fixture = open(fixture_path, "w")

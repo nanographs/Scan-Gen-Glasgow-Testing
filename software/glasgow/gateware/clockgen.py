@@ -147,11 +147,7 @@ class ClockGen(Elaboratable):
             if clock_name is None:
                 clock = "clock"
             else:
-<<<<<<< HEAD
-                clock = "clock {}".format(clock_name)
-=======
                 clock = f"clock {clock_name}"
->>>>>>> glasgow/main
             if cyc in (0, 1):
                 duty = 50
             else:
