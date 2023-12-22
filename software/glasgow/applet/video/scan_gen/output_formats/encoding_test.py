@@ -81,6 +81,15 @@ class ScanStream:
         ## fill in solid middle rectangle
 
         if not full_lines == 0:
+            print(f'{full_lines} >= {self.y_height}?')
+            if full_lines >= self.y_height:
+                full_frames = full_lines//self.y_height
+                extra_lines = m_len%self.y_height
+                if print_debug:
+                    print(f'{full_frames} full frames')
+                    print(f'{extra_lines} extra lines')
+
+
             print(f'{self.current_y + full_lines} >= {self.y_height}?')
             if (self.current_y + full_lines) >= self.y_height:
                 bottom_rows = self.y_height - self.current_y
@@ -101,6 +110,8 @@ class ScanStream:
                         print(f'top rows: {top_rows}')
                         print(f'set to: {partial_start_points + self.x_width*bottom_rows} :\
                              {partial_start_points + self.x_width*bottom_rows+ self.x_width*top_rows}')
+                        print(f'buffer shape: 0:{top_rows}')
+                        print(f'cast shape: {top_rows},{self.x_width}')
                     self.buffer[0:top_rows] = \
                             m[(partial_start_points + self.x_width*bottom_rows):\
                                 (partial_start_points + self.x_width*bottom_rows+ self.x_width*top_rows)]\
@@ -136,10 +147,11 @@ class ScanStream:
 
         if print_debug:
             print(self.buffer)
-        try:
             assert (self.buffer[self.current_y][0] == 0)
-        except AssertionError:
-            print("****frame is out of sync****")
+        # try:
+        #     assert (self.buffer[self.current_y][0] == 0)
+        # except AssertionError:
+        #     print("****frame is out of sync****")
     
     def points_to_vector(self, m:memoryview):
         full_points = len(m)//6

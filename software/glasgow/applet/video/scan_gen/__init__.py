@@ -796,7 +796,7 @@ class ScanGenApplet(GlasgowApplet):
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
-            in_fifo = iface.get_in_fifo(auto_flush = False),
+            in_fifo = iface.get_in_fifo(auto_flush = True),
             out_fifo = iface.get_out_fifo(),
             scan_mode = scan_mode,
             x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
@@ -934,36 +934,36 @@ class ScanGenApplet(GlasgowApplet):
         #     scan_iface.launch_gui()
 
         # await scan_iface.set_8bit_output(1)
-        # await scan_iface.set_raster_mode()
         # await scan_iface.set_frame_resolution(512,512)
         # await scan_iface.set_config_flag(1)
         # await scan_iface.set_config_flag(0)
-        # await scan_iface.unpause()
-        # data = await scan_iface.iface.read(16384)
-        # scan_iface.text_file.write(str(data.tolist()))
+        await scan_iface.set_raster_mode()
+        await scan_iface.unpause()
+        data = await scan_iface.iface.read(16384)
+        scan_iface.text_file.write(str(data.tolist()))
         # await scan_iface.set_frame_resolution(5120,512)
         # await scan_iface.set_config_flag(1)
         # await scan_iface.set_config_flag(0)
         # data = await scan_iface.iface.read(16384)
         # scan_iface.text_file.write(str(data.tolist()))
-        # await scan_iface.pause()
+        # #await scan_iface.pause()
 
         
             
-        if args.buf == "endpoint":
-            #scan_iface.launch_gui()
-            await scan_iface.pause()
-            await scan_iface.set_8bit_output(1)
-            loop = asyncio.get_event_loop()
-            #loop.set_debug(True)
-            close_future = loop.create_future()
-            scan_iface.start_servers(close_future)
-            try:
-                await close_future
-            except Exception as err:
-                await scan_iface.pause()
-                print(f'close error: {err}')
-                #await iface.flush()
+        # if args.buf == "endpoint":
+        #     #scan_iface.launch_gui()
+        #     await scan_iface.pause()
+        #     await scan_iface.set_8bit_output(1)
+        #     loop = asyncio.get_event_loop()
+        #     #loop.set_debug(True)
+        #     close_future = loop.create_future()
+        #     scan_iface.start_servers(close_future)
+        #     try:
+        #         await close_future
+        #     except Exception as err:
+        #         await scan_iface.pause()
+        #         print(f'close error: {err}')
+        #         #await iface.flush()
 
 
 

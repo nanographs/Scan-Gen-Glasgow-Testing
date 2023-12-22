@@ -176,29 +176,36 @@ def sim_iobus():
         # yield do_line_sync.eq(0)
         # yield eight_bit_output.eq(1)
         def config_test():
-            yield
-            yield eight_bit_output.eq(1)
-            #yield const_dwell_time.eq(0)
-            yield scan_mode.eq(1)
-            yield from set_frame_params(dut, x_res=512, y_res=512)
-            yield
-            yield configuration.eq(1)
-            yield
-            for n in range(100):
-                yield
-            yield configuration.eq(0)
-            yield
-            yield unpause.eq(1)
-            yield
-            yield from raster_sim(100, eight_bit_output = True)
-            yield from set_frame_params(dut, x_res=5120, y_res=512)
-            yield configuration.eq(1)
-            yield from raster_sim(20, eight_bit_output = True)
-            yield
-            for n in range(10):
-                yield
-            yield configuration.eq(0)
-            yield from raster_sim(20, eight_bit_output = True)
+            yield from sim_scangen_iface.iface.read(10)
+            # yield scan_mode.eq(1)
+            # yield unpause.eq(1)
+            # for n in range(40):
+            #     yield
+            # yield unpause.eq(0)
+            # yield
+            # yield eight_bit_output.eq(1)
+            # #yield const_dwell_time.eq(0)
+            # #yield scan_mode.eq(1)
+            # #yield from set_frame_params(dut, x_res=512, y_res=512)
+            # yield from raster_sim(100, eight_bit_output = True)
+            # yield
+            # yield configuration.eq(1)
+            # yield
+            # for n in range(100):
+            #     yield
+            # yield configuration.eq(0)
+            # yield
+            # yield unpause.eq(1)
+            # yield
+            # yield from raster_sim(100, eight_bit_output = True)
+            # yield from set_frame_params(dut, x_res=5120, y_res=512)
+            # yield configuration.eq(1)
+            # yield from raster_sim(20, eight_bit_output = True)
+            # yield
+            # for n in range(10):
+            #     yield
+            # yield configuration.eq(0)
+            # yield from raster_sim(20, eight_bit_output = True)
             #yield unpause.eq(0)
             #yield from raster_sim(20, eight_bit_output = True)
             # yield scan_mode.eq(0)
