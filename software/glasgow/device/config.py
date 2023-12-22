@@ -29,6 +29,7 @@ class GlasgowConfig:
     :ivar int[2] voltage_limit:
         Maximum allowed I/O port voltage, in millivolts.
 
+<<<<<<< HEAD
     :ivar str[23] manufacturer:
         Manufacturer string
     """
@@ -37,12 +38,34 @@ class GlasgowConfig:
 
     def __init__(self, revision, serial, bitstream_size=0, bitstream_id=b"\x00"*16,
                  voltage_limit=None, manufacturer=""):
+=======
+    :ivar str[22] manufacturer:
+        Manufacturer string.
+
+    :ivar bool modified_design:
+        Modified from the original design files. This flag must be set if the PCBA has been modified
+        from the design files published in https://github.com/GlasgowEmbedded/glasgow/ in any way
+        except those exempted in https://glasgow-embedded.org/latest/build.html. It will be set when
+        running `glasgow factory --using-modified-design-files=yes`.
+    """
+    size = 64
+    _encoding = "<B16sI16s2H22sb"
+
+    _FLAG_MODIFIED_DESIGN = 0b00000001
+
+    def __init__(self, revision, serial, bitstream_size=0, bitstream_id=b"\x00"*16,
+                 voltage_limit=None, manufacturer="", modified_design=False):
+>>>>>>> glasgow/main
         self.revision = revision
         self.serial   = serial
         self.bitstream_size = bitstream_size
         self.bitstream_id   = bitstream_id
         self.voltage_limit  = [5500, 5500] if voltage_limit is None else voltage_limit
         self.manufacturer   = manufacturer
+<<<<<<< HEAD
+=======
+        self.modified_design = bool(modified_design)
+>>>>>>> glasgow/main
 
     @staticmethod
     def encode_revision(string):
@@ -57,7 +80,11 @@ class GlasgowConfig:
             major, minor = string
             return ((ord(major) - ord("A") + 1) << 4) | (ord(minor) - ord("0"))
         else:
+<<<<<<< HEAD
             raise ValueError("invalid revision string {!r}".format(string))
+=======
+            raise ValueError(f"invalid revision string {string!r}")
+>>>>>>> glasgow/main
 
     @staticmethod
     def decode_revision(value):
@@ -72,7 +99,11 @@ class GlasgowConfig:
         elif minor in range(10):
             return chr(ord("A") + major - 1) + chr(ord("0") + minor)
         else:
+<<<<<<< HEAD
             raise ValueError("invalid revision value {:#04x}".format(value))
+=======
+            raise ValueError(f"invalid revision value {value:#04x}")
+>>>>>>> glasgow/main
 
     def encode(self):
         """
@@ -85,7 +116,12 @@ class GlasgowConfig:
                            self.bitstream_id,
                            self.voltage_limit[0],
                            self.voltage_limit[1],
+<<<<<<< HEAD
                            self.manufacturer.encode("ascii"))
+=======
+                           self.manufacturer.encode("ascii"),
+                           (self._FLAG_MODIFIED_DESIGN if self.modified_design else 0))
+>>>>>>> glasgow/main
         return data.ljust(self.size, b"\x00")
 
     @classmethod
@@ -101,11 +137,20 @@ class GlasgowConfig:
 
         voltage_limit = [0, 0]
         revision, serial, bitstream_size, bitstream_id, \
+<<<<<<< HEAD
             voltage_limit[0], voltage_limit[1], manufacturer = \
+=======
+            voltage_limit[0], voltage_limit[1], manufacturer, flags = \
+>>>>>>> glasgow/main
             struct.unpack_from(cls._encoding, data, 0)
         return cls(cls.decode_revision(revision),
                    serial.decode("ascii"),
                    bitstream_size,
                    bitstream_id,
                    voltage_limit,
+<<<<<<< HEAD
                    manufacturer.decode("ascii"))
+=======
+                   manufacturer.decode("ascii"),
+                   flags & cls._FLAG_MODIFIED_DESIGN)
+>>>>>>> glasgow/main

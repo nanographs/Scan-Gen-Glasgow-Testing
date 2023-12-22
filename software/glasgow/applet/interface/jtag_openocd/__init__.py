@@ -139,9 +139,16 @@ class JTAGOpenOCDApplet(GlasgowApplet):
         await asyncio.wait([forward_out_fut, forward_in_fut],
                            return_when=asyncio.FIRST_EXCEPTION)
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 class JTAGOpenOCDAppletTestCase(GlasgowAppletTestCase, applet=JTAGOpenOCDApplet):
     @synthesis_test
     def test_build(self):
         self.assertBuilds()
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.JTAGOpenOCDAppletTestCase
+>>>>>>> glasgow/main

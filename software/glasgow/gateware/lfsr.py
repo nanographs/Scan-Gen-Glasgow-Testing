@@ -51,6 +51,7 @@ class LinearFeedbackShiftRegister(Elaboratable):
             value = ((value << 1) & mask) | feedback
             if value == self.reset:
                 break
+<<<<<<< HEAD
 
 # -------------------------------------------------------------------------------------------------
 
@@ -81,3 +82,5 @@ class LFSRTestCase(unittest.TestCase):
 
         self.assertEqual(len(soft_values), 65535)
         self.assertEqual(hard_values, soft_values)
+=======
+>>>>>>> glasgow/main

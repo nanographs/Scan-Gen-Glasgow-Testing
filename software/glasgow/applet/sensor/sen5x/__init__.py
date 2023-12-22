@@ -58,7 +58,11 @@ class SEN5xI2CInterface:
         data = bytearray()
         for index, (chunk, crc) in enumerate(struct.iter_unpack(">2sB", crc_data)):
             if self._crc(chunk) != crc:
+<<<<<<< HEAD
                 raise SEN5xError("CRC failed on word {}".format(index))
+=======
+                raise SEN5xError(f"CRC failed on word {index}")
+>>>>>>> glasgow/main
             data += chunk
         return data
 
@@ -143,7 +147,11 @@ class SensorSEN5xApplet(I2CInitiatorApplet):
                 value = conv(value)
                 if not (low <= value <= high):
                     raise argparse.ArgumentTypeError(
+<<<<<<< HEAD
                         "{} is not between {} and {}".format(value, low, high))
+=======
+                        f"{value} is not between {low} and {high}")
+>>>>>>> glasgow/main
                 return value
             return arg
 
@@ -180,6 +188,7 @@ class SensorSEN5xApplet(I2CInitiatorApplet):
                 await asyncio.sleep(1.0)
 
             sample = await sen5x.read_measurement()
+<<<<<<< HEAD
             print("PM1.0 concentration : {:.1f} µg/m³".format(sample.pm1_0))
             print("PM2.5 concentration : {:.1f} µg/m³".format(sample.pm2_5))
             print("PM4.0 concentration : {:.1f} µg/m³".format(sample.pm4_0))
@@ -188,6 +197,16 @@ class SensorSEN5xApplet(I2CInitiatorApplet):
             print("temperature         : {:.2f} °C".format(sample.temp_degC))
             print("VOC index           : {:.1f}".format(sample.voc_index))
             print("NOx index           : {:.1f}".format(sample.nox_index))
+=======
+            print(f"PM1.0 concentration : {sample.pm1_0:.1f} µg/m³")
+            print(f"PM2.5 concentration : {sample.pm2_5:.1f} µg/m³")
+            print(f"PM4.0 concentration : {sample.pm4_0:.1f} µg/m³")
+            print(f"PM10  concentration : {sample.pm10:.1f} µg/m³")
+            print(f"relative humidity   : {sample.rh_pct:.2f} %")
+            print(f"temperature         : {sample.temp_degC:.2f} °C")
+            print(f"VOC index           : {sample.voc_index:.1f}")
+            print(f"NOx index           : {sample.nox_index:.1f}")
+>>>>>>> glasgow/main
 
         if args.operation == "log":
             field_names = dict(

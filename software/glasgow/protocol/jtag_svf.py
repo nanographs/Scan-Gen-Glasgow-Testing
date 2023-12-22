@@ -190,7 +190,11 @@ class SVFParser:
         elif isinstance(self._token, bits):
             actual = "scan data"
         elif isinstance(self._token, tuple):
+<<<<<<< HEAD
             actual = "(%s)" % (*self._token,)
+=======
+            actual = "({})".format(*self._token)
+>>>>>>> glasgow/main
         elif self._token is None:
             actual = "end of file"
         else:
@@ -511,6 +515,7 @@ class SVFEventHandler(metaclass=ABCMeta):
     @abstractmethod
     def svf_pio(self, vector):
         """Called when the ``PIO`` command is encountered."""
+<<<<<<< HEAD
 
 # -------------------------------------------------------------------------------------------------
 
@@ -889,3 +894,5 @@ if __name__ == "__main__":
     import sys
     with open(sys.argv[1]) as f:
         SVFParser(f.read(), SVFPrintingEventHandler()).parse_file()
+=======
+>>>>>>> glasgow/main

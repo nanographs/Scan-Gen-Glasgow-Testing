@@ -38,7 +38,11 @@ class lazy:
             rep = repr(self._thunk_)
         else:
             rep = repr(self._object_)
+<<<<<<< HEAD
         return "<lazy {}>".format(rep)
+=======
+        return f"<lazy {rep}>"
+>>>>>>> glasgow/main
 
     @classmethod
     def _define_special_(cls, name):
@@ -65,6 +69,7 @@ _specials = [
 ]
 for special in _specials:
     lazy._define_special_(special)
+<<<<<<< HEAD
 
 # -------------------------------------------------------------------------------------------------
 
@@ -107,3 +112,5 @@ class LazyTestCase(unittest.TestCase):
         self.assertTrue(repr(x).startswith("<lazy <function"))
         str(x)
         self.assertTrue(repr(x).startswith("<lazy 'foo'"))
+=======
+>>>>>>> glasgow/main

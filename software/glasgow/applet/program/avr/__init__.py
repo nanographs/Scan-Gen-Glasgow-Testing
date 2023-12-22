@@ -242,6 +242,7 @@ class ProgramAVRApplet(GlasgowApplet):
                 fuses = await avr_iface.read_fuse_range(range(device.fuses_size))
                 if device.fuses_size > 2:
                     self.logger.info("fuses: low %s high %s extra %s",
+<<<<<<< HEAD
                                      "{:08b}".format(fuses[0]),
                                      "{:08b}".format(fuses[1]),
                                      "{:08b}".format(fuses[2]))
@@ -255,6 +256,21 @@ class ProgramAVRApplet(GlasgowApplet):
             if args.lock_bits:
                 lock_bits = await avr_iface.read_lock_bits()
                 self.logger.info("lock bits: %s", "{:08b}".format(lock_bits))
+=======
+                                     f"{fuses[0]:08b}",
+                                     f"{fuses[1]:08b}",
+                                     f"{fuses[2]:08b}")
+                elif device.fuses_size > 1:
+                    self.logger.info("fuses: low %s high %s",
+                                     f"{fuses[0]:08b}",
+                                     f"{fuses[1]:08b}")
+                else:
+                    self.logger.info("fuse: %s", f"{fuses[0]:08b}")
+
+            if args.lock_bits:
+                lock_bits = await avr_iface.read_lock_bits()
+                self.logger.info("lock bits: %s", f"{lock_bits:08b}")
+>>>>>>> glasgow/main
 
             if args.calibration:
                 calibration = \
@@ -284,7 +300,11 @@ class ProgramAVRApplet(GlasgowApplet):
                 written = await avr_iface.read_fuse(0)
                 if written != args.low:
                     raise ProgramAVRError("verification of low fuse failed: %s" %
+<<<<<<< HEAD
                                           "{:08b} != {:08b}".format(written, args.low))
+=======
+                                          f"{written:08b} != {args.low:08b}")
+>>>>>>> glasgow/main
 
             if args.high:
                 self.logger.info("writing high fuse")
@@ -292,7 +312,11 @@ class ProgramAVRApplet(GlasgowApplet):
                 written = await avr_iface.read_fuse(1)
                 if written != args.high:
                     raise ProgramAVRError("verification of high fuse failed: %s" %
+<<<<<<< HEAD
                                           "{:08b} != {:08b}".format(written, args.high))
+=======
+                                          f"{written:08b} != {args.high:08b}")
+>>>>>>> glasgow/main
 
             if args.extra:
                 self.logger.info("writing extra fuse")
@@ -300,7 +324,11 @@ class ProgramAVRApplet(GlasgowApplet):
                 written = await avr_iface.read_fuse(2)
                 if written != args.extra:
                     raise ProgramAVRError("verification of extra fuse failed: %s" %
+<<<<<<< HEAD
                                           "{:08b} != {:08b}".format(written, args.extra))
+=======
+                                          f"{written:08b} != {args.extra:08b}")
+>>>>>>> glasgow/main
 
         if args.operation == "write-lock":
             self.logger.info("writing lock bits")
@@ -308,7 +336,11 @@ class ProgramAVRApplet(GlasgowApplet):
             written = await avr_iface.read_lock_bits()
             if written != args.bits:
                 raise ProgramAVRError("verification of lock bits failed: %s" %
+<<<<<<< HEAD
                                       "{:08b} != {:08b}".format(written, args.bits))
+=======
+                                      f"{written:08b} != {args.bits:08b}")
+>>>>>>> glasgow/main
 
         if args.operation == "write-program":
             self.logger.info("erasing chip")

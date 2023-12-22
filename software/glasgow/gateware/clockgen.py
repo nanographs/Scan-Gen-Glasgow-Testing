@@ -147,7 +147,11 @@ class ClockGen(Elaboratable):
             if clock_name is None:
                 clock = "clock"
             else:
+<<<<<<< HEAD
                 clock = "clock {}".format(clock_name)
+=======
+                clock = f"clock {clock_name}"
+>>>>>>> glasgow/main
             if cyc in (0, 1):
                 duty = 50
             else:
@@ -157,6 +161,7 @@ class ClockGen(Elaboratable):
                          deviation_ppm, duty)
 
         return cyc
+<<<<<<< HEAD
 
 # -------------------------------------------------------------------------------------------------
 
@@ -187,3 +192,5 @@ class ClockGenTestCase(unittest.TestCase):
                 re.escape("output frequency 30000.000 kHz deviates from requested frequency "
                           "18000.000 kHz by 666666 ppm, which is higher than 50000 ppm")):
             ClockGen.calculate(input_hz=30e6, output_hz=18e6, max_deviation_ppm=50000)
+=======
+>>>>>>> glasgow/main

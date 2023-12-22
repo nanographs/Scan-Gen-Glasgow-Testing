@@ -126,6 +126,7 @@ class ProgramICE40SRAMApplet(SPIControllerApplet):
             else:
                 self.logger.warning("FPGA failed to configure after releasing reset")
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 class ProgramICE40SRAMAppletTestCase(GlasgowAppletTestCase, applet=ProgramICE40SRAMApplet):
@@ -134,3 +135,9 @@ class ProgramICE40SRAMAppletTestCase(GlasgowAppletTestCase, applet=ProgramICE40S
         self.assertBuilds(args=["--pin-reset", "0", "--pin-done", "1",
                                 "--pin-sck",   "2", "--pin-cs",   "3",
                                 "--pin-copi",  "4"])
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.ProgramICE40SRAMAppletTestCase
+>>>>>>> glasgow/main

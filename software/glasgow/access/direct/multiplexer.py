@@ -198,7 +198,11 @@ class DirectMultiplexerInterface(AccessMultiplexerInterface):
 
     def get_pin_name(self, pin_num):
         port, bit, req = self._pins[pin_num]
+<<<<<<< HEAD
         return "{}{}".format(port, bit)
+=======
+        return f"{port}{bit}"
+>>>>>>> glasgow/main
 
     def build_pin_tristate(self, pin_num, oe, o, i):
         port, bit, req = self._pins[pin_num]

@@ -92,6 +92,7 @@ class ChunkedFIFO:
     def total_written_bytes(self):
         """Determine the total amount of bytes written to the FIFO."""
         return self._wtotal
+<<<<<<< HEAD
 
 # -------------------------------------------------------------------------------------------------
 
@@ -169,3 +170,5 @@ class ChunkedFIFOTestCase(unittest.TestCase):
         self.fifo.write(bits("1010"))
         self.assertEqual(len(self.fifo), 1)
         self.assertEqual(self.fifo.read(1), b"\x0a")
+=======
+>>>>>>> glasgow/main

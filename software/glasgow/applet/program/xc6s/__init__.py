@@ -9,7 +9,10 @@
 
 import logging
 import argparse
+<<<<<<< HEAD
 from bitarray import bitarray
+=======
+>>>>>>> glasgow/main
 
 from ... import *
 from ....arch.jtag import *
@@ -54,6 +57,7 @@ class XC6SJTAGInterface:
         async for status in self._poll(IR_CFG_IN, limit=16):
             if status.INIT_B:
                 return
+<<<<<<< HEAD
         raise GlasgowAppletError("configuration reset failed: {}".format(status.bits_repr()))
 
     async def load_bitstream(self, bitstream, *, byte_reverse=True):
@@ -64,6 +68,14 @@ class XC6SJTAGInterface:
             bitstream = bits(ba.tobytes(), len(ba))
         else:
             bitstream = bits(bitstream)
+=======
+        raise GlasgowAppletError(f"configuration reset failed: {status.bits_repr()}")
+
+    async def load_bitstream(self, bitstream, *, byte_reverse=True):
+        bitstream = bits(bitstream)
+        if byte_reverse:
+            bitstream = bitstream.byte_reversed()
+>>>>>>> glasgow/main
         self._log("load size=%d [bits]", len(bitstream))
         await self.lower.lower.write_ir(IR_CFG_IN)
         await self.lower.write_dr(bitstream)
@@ -76,7 +88,11 @@ class XC6SJTAGInterface:
             await self.lower.run_test_idle(16)
             if status.ISC_DONE:
                 return
+<<<<<<< HEAD
         raise GlasgowAppletError("configuration start failed: {}".format(status.bits_repr()))
+=======
+        raise GlasgowAppletError(f"configuration start failed: {status.bits_repr()}")
+>>>>>>> glasgow/main
 
 
 class ProgramXC6SApplet(JTAGProbeApplet):

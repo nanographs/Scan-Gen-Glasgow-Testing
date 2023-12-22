@@ -21,6 +21,7 @@ class AnalyzerSubtarget(Elaboratable):
         m = Module()
         m.submodules += self.analyzer
 
+<<<<<<< HEAD
         a_enable = platform.request("A_ENABLE")
         a_latch = platform.request("A_LATCH")
         a_clock = platform.request("A_CLOCK")
@@ -41,6 +42,8 @@ class AnalyzerSubtarget(Elaboratable):
         m.d.comb += a_enable.eq(0)
         
 
+=======
+>>>>>>> glasgow/main
         pins_i = Signal.like(self.pads.i_t.i)
         pins_r = Signal.like(self.pads.i_t.i)
         m.submodules += FFSynchronizer(self.pads.i_t.i, pins_i)
@@ -120,7 +123,11 @@ class AnalyzerApplet(GlasgowApplet):
         vcd_writer = VCDWriter(args.file, timescale="1 ns", check_values=False)
         signals = []
         for index in range(self._event_sources[0].width):
+<<<<<<< HEAD
             signals.append(vcd_writer.register_var(scope="", name="pin[{}]".format(index),
+=======
+            signals.append(vcd_writer.register_var(scope="", name=f"pin[{index}]",
+>>>>>>> glasgow/main
                 var_type="wire", size=1, init=0))
 
         try:
@@ -145,9 +152,16 @@ class AnalyzerApplet(GlasgowApplet):
         finally:
             vcd_writer.close(timestamp)
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 class AnalyzerAppletTestCase(GlasgowAppletTestCase, applet=AnalyzerApplet):
     @synthesis_test
     def test_build(self):
         self.assertBuilds()
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.AnalyzerAppletTestCase
+>>>>>>> glasgow/main

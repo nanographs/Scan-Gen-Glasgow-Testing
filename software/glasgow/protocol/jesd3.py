@@ -2,10 +2,17 @@
 # Accession: G00029
 
 import re
+<<<<<<< HEAD
 from bitarray import bitarray
 
 
 __all__ = ["JESD3Parser", "JESD3ParsingError"]
+=======
+from glasgow.support.bits import bits, bitarray
+
+
+__all__ = ["JESD3Parser", "JESD3ParsingError", "JESD3Emitter"]
+>>>>>>> glasgow/main
 
 
 class JESD3ParsingError(Exception):
@@ -28,6 +35,7 @@ class JESD3Lexer:
     # This follows the JESD3-C grammar, with the exception that spaces are more permissive.
     # As described, only 0x0D is allowed in between fields, which is absurd.
     _fields = (
+<<<<<<< HEAD
         (r"N",  r"[ \t\r\n]*(.*?)"),
         (r"D",  r".*?"),
         (r"QF", r"([0-9]+)"),
@@ -59,6 +67,42 @@ class JESD3Lexer:
                      for ident, args in _fields}
 
     def __init__(self, buffer, quirk_no_design_spec=False):
+=======
+        (rb"N",  rb"[ \t\r\n]*(.*?)"),
+        (rb"D",  rb".*?"),
+        (rb"QF", rb"([0-9]+)"),
+        (rb"QP", rb"([0-9]+)"),
+        (rb"QV", rb"([0-9]+)"),
+        (rb"F",  rb"([01])"),
+        (rb"L",  rb"([0-9]+)[ \t\r\n]+([01 \t\r\n]+)"),
+        (rb"C",  rb"([0-9A-F]{4})"),
+        (rb"EH", rb"([0-9A-F]+)"),
+        (rb"E",  rb"([01]+)"),
+        (rb"UA", rb"([\t\r\n\x20-\x29\x2B-\x7E]+)"),
+        (rb"UH", rb"([0-9A-F]+)"),
+        (rb"U",  rb"([01]+)"),
+        (rb"J",  rb"([0-9]+)[ \t\r\n]+([0-9]+)"),
+        (rb"G",  rb"([01])"),
+        (rb"X",  rb"([01])"),
+        (rb"P",  rb"([ \t\r\n]*[0-9]+)+"),
+        (rb"V",  rb"([0-9]+)[ \t\r\n]+([0-9BCDFHTUXZ]+)"),
+        (rb"S",  rb"([01]+)"),
+        (rb"Rb",  rb"([0-9A-F]{8})"),
+        (rb"T",  rb"([0-9]+)"),
+        (rb"A",  rb"([\t\r\n\x20-\x29\x2B-\x7E]*)([0-9]+)"),
+    )
+    _stx_spec_re  = re.compile(rb"\x02(.*?)\*[ \t\r\n]*", re.A|re.S)
+    _stx_quirk_re = re.compile(rb"\x02()[ \t\r\n]*", re.A|re.S)
+    _etx_re       = re.compile(rb"\x03([0-9A-F]{4})", re.A|re.S)
+    _ident_re     = re.compile(rb"|".join(ident for ident, args in _fields), re.A|re.S)
+    _field_res    = {ident: re.compile(ident + args + rb"[ \t\r\n]*\*[ \t\r\n]*", re.A|re.S)
+                     for ident, args in _fields}
+
+    def __init__(self, buffer, quirk_no_design_spec=False):
+        if not isinstance(buffer, (bytes, bytearray)):
+            raise ValueError(f"JESD3 lexer requires bytes or bytearray as input, not {type(buffer)}")
+
+>>>>>>> glasgow/main
         self.buffer   = buffer
         self.position = 0
         self.checksum = 0
@@ -74,9 +118,15 @@ class JESD3Lexer:
 
         Both the line and the column start at 1.
         """
+<<<<<<< HEAD
         line = len(re.compile(r"\n").findall(self.buffer, endpos=self.position))
         if line > 1:
             column = self.position - self.buffer.rindex("\n", 0, self.position)
+=======
+        line = len(re.compile(rb"\n").findall(self.buffer, endpos=self.position))
+        if line > 1:
+            column = self.position - self.buffer.rindex(b"\n", 0, self.position)
+>>>>>>> glasgow/main
         else:
             column = self.position
         return line + 1, column + 1
@@ -91,9 +141,15 @@ class JESD3Lexer:
             if not match:
                 raise JESD3ParsingError("could not find STX marker")
             else:
+<<<<<<< HEAD
                 token = "start"
                 self._state = "fields"
                 self.checksum += sum(map(ord, match.group(0)))
+=======
+                token = b"start"
+                self._state = "fields"
+                self.checksum += sum(match.group(0))
+>>>>>>> glasgow/main
 
         elif self._state == "fields":
             match = self._ident_re.match(self.buffer, self.position)
@@ -104,7 +160,11 @@ class JESD3Lexer:
                     raise JESD3ParsingError("field %s has invalid format at line %d, column %d"
                                             % (token, *self.line_column()))
                 else:
+<<<<<<< HEAD
                     self.checksum += sum(map(ord, match.group(0)))
+=======
+                    self.checksum += sum(match.group(0))
+>>>>>>> glasgow/main
 
             else:
                 match = self._etx_re.match(self.buffer, self.position)
@@ -113,7 +173,11 @@ class JESD3Lexer:
                                             % (*self.line_column(),
                                                self.buffer[self.position:self.position + 16]))
                 else:
+<<<<<<< HEAD
                     token = "end"
+=======
+                    token = b"end"
+>>>>>>> glasgow/main
                     self._state = "end"
                     self.checksum += 0x03
 
@@ -121,7 +185,11 @@ class JESD3Lexer:
             raise StopIteration
 
         self.position = match.end()
+<<<<<<< HEAD
         return token, match.start(), match.groups()
+=======
+        return token.decode("ascii"), match.start(), match.groups()
+>>>>>>> glasgow/main
 
 
 class JESD3Parser:
@@ -164,7 +232,11 @@ class JESD3Parser:
         """Fuse count"""
         if self.fuse is not None:
             self._parse_error("fuse count specified more than once")
+<<<<<<< HEAD
         self.fuse = bitarray(int(count, 10), endian="little")
+=======
+        self.fuse = bitarray(0, int(count, 10))
+>>>>>>> glasgow/main
 
     def _on_QP(self, count):
         """Pin count (unsupported and ignored)"""
@@ -190,7 +262,11 @@ class JESD3Parser:
         if self.fuse is None:
             self._parse_error("fuse list specified before fuse count")
         index  = int(index, 10)
+<<<<<<< HEAD
         values = bitarray(re.sub(r"[ \r\n]", "", values), endian="little")
+=======
+        values = bits(values[::-1].decode("ascii"))
+>>>>>>> glasgow/main
         if index + len(values) > len(self.fuse):
             self._parse_error("fuse list specifies range [%d:%d] beyond last fuse %d"
                               % (index, index + len(values), len(self.fuse)))
@@ -200,7 +276,11 @@ class JESD3Parser:
     def _on_C(self, checksum):
         """Fuse checksum"""
         expected_checksum = int(checksum, 16)
+<<<<<<< HEAD
         actual_checksum   = sum(self.fuse.tobytes()) & 0xffff
+=======
+        actual_checksum   = sum(self.fuse.to_bytes()) & 0xffff
+>>>>>>> glasgow/main
         if expected_checksum != actual_checksum:
             self._parse_error("fuse checksum mismatch: expected %04X, actual %04X"
                               % (expected_checksum, actual_checksum))
@@ -283,12 +363,17 @@ class JESD3Parser:
             self._parse_error("transmission checksum mismatch: expected %04X, actual %04X"
                               % (expected_checksum, actual_checksum))
 
+<<<<<<< HEAD
         if self._fuse_default is not None and self._fuse_bit_count < len(self.fuse):
+=======
+        if self._fuse_default is None and self._fuse_bit_count < len(self.fuse):
+>>>>>>> glasgow/main
             self._parse_error("fuse default state is not specified, and only %d out of %d fuse "
                               "bits are explicitly defined"
                               % (self._fuse_bit_count, len(self.fuse)))
 
 
+<<<<<<< HEAD
 if __name__ == "__main__":
     import sys
     with open(sys.argv[1], "r") as f:
@@ -296,3 +381,46 @@ if __name__ == "__main__":
         parser.parse()
         for i in range(0, len(parser.fuse) + 63, 64):
             print("%08x: %s" % (i, parser.fuse[i:i + 64].to01()))
+=======
+class JESD3Emitter:
+    def __init__(self, fuses, *, quirk_no_design_spec=False):
+        if not isinstance(fuses, (bits, bitarray)):
+            raise TypeError("JESD3Emitter needs a bits or bitarray instance")
+        self.fuses = fuses
+        self.quirk_no_design_spec = quirk_no_design_spec
+        self.comments = []
+
+    def add_comment(self, comment):
+        self.comments.append(comment)
+
+    def emit(self):
+        buffer = bytearray()
+        if self.quirk_no_design_spec:
+            buffer += b"\x02"
+        else:
+            buffer += b"\x02*\n"
+        buffer += b"QF%d*\n" % len(self.fuses)
+        buffer += b"F0*\n"
+        for comment in self.comments:
+            buffer += b"N " + comment + b"*\n"
+        for pos in range(0, len(self.fuses), 64):
+            chunk = self.fuses[pos:pos+64]
+            buffer += b"L%07d " % pos
+            for bit in chunk:
+                buffer += b"%d" % bit
+            buffer += b"*\n"
+        buffer += b"C%04X*\n" % (sum(self.fuses.to_bytes()) & 0xffff)
+        buffer += b"\x03"
+        checksum = sum(buffer) & 0xffff
+        buffer += b"%04X" % checksum
+        return bytes(buffer)
+
+
+if __name__ == "__main__":
+    import sys
+    with open(sys.argv[1], "rb") as f:
+        parser = JESD3Parser(f.read(), quirk_no_design_spec=False)
+        parser.parse()
+        for i in range(0, len(parser.fuse) + 63, 64):
+            print(f"{i:08x}: {parser.fuse[i:i + 64]}")
+>>>>>>> glasgow/main

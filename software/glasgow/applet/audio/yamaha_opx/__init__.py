@@ -147,6 +147,10 @@ import io
 from amaranth import *
 from amaranth.lib import data
 from amaranth.lib.cdc import FFSynchronizer
+<<<<<<< HEAD
+=======
+from urllib.parse import urlparse
+>>>>>>> glasgow/main
 
 from ....gateware.pads import *
 from ....gateware.clockgen import *
@@ -814,18 +818,31 @@ class YamahaVGMStreamPlayer(VGMStreamPlayer):
 
 
 class YamahaOPxWebInterface:
+<<<<<<< HEAD
     def __init__(self, logger, opx_iface, set_voltage):
+=======
+    def __init__(self, logger, opx_iface, set_voltage, allow_urls):
+>>>>>>> glasgow/main
         self._logger    = logger
         self._opx_iface = opx_iface
         self._lock      = asyncio.Lock()
 
         self._set_voltage = set_voltage
+<<<<<<< HEAD
+=======
+        self._allow_urls = allow_urls
+>>>>>>> glasgow/main
 
     async def serve_index(self, request):
         with open(os.path.join(os.path.dirname(__file__), "index.html")) as f:
             index_html = f.read()
             index_html = index_html.replace("{{chip}}", self._opx_iface.chips[-1])
             index_html = index_html.replace("{{compat}}", ", ".join(self._opx_iface.chips))
+<<<<<<< HEAD
+=======
+            index_html = index_html.replace("{{url_display}}",
+                                            "block" if self._allow_urls else "none")
+>>>>>>> glasgow/main
             return aiohttp.web.Response(text=index_html, content_type="text/html")
 
     async def serve_vgm(self, request):
@@ -841,6 +858,14 @@ class YamahaOPxWebInterface:
             self._logger.info("web: URL %s submitted by %s",
                               vgm_msg.data, request.remote)
 
+<<<<<<< HEAD
+=======
+            if not self._allow_urls:
+                self._logger.warning("Received URL submission when disabled")
+                await sock.close(code=405, message="URL submissions not allowed")
+                return sock
+
+>>>>>>> glasgow/main
             async with aiohttp.ClientSession() as client_sess:
                 async with client_sess.get(vgm_msg.data) as client_resp:
                     if client_resp.status != 200:
@@ -1006,7 +1031,12 @@ class YamahaOPxWebInterface:
         runner = aiohttp.web.AppRunner(app,
             access_log_format='%a(%{X-Forwarded-For}i) "%r" %s "%{Referer}i" "%{User-Agent}i"')
         await runner.setup()
+<<<<<<< HEAD
         site = aiohttp.web.TCPSite(runner, *endpoint.split(":", 1))
+=======
+        parsed_endpoint = urlparse(f"//{endpoint}")
+        site = aiohttp.web.TCPSite(runner, parsed_endpoint.hostname, parsed_endpoint.port)
+>>>>>>> glasgow/main
         await site.start()
         await asyncio.Future()
 
@@ -1162,6 +1192,12 @@ class AudioYamahaOPxApplet(GlasgowApplet):
         p_web = p_operation.add_parser(
             "web", help="expose Yamaha hardware via a web interface")
         p_web.add_argument(
+<<<<<<< HEAD
+=======
+            "--allow-urls", action='store_true',
+            help="allow users to specify a URL to play a VGM/VGZ file from (use with caution)")
+        p_web.add_argument(
+>>>>>>> glasgow/main
             "endpoint", metavar="ENDPOINT", type=str, default="localhost:8080",
             help="listen for requests on ENDPOINT (default: %(default)s)")
 
@@ -1215,7 +1251,11 @@ class AudioYamahaOPxApplet(GlasgowApplet):
         if args.operation == "web":
             async def set_voltage(voltage):
                 await device.set_voltage(args.port_spec, voltage)
+<<<<<<< HEAD
             web_iface = YamahaOPxWebInterface(self.logger, opx_iface, set_voltage=set_voltage)
+=======
+            web_iface = YamahaOPxWebInterface(self.logger, opx_iface, set_voltage, args.allow_urls)
+>>>>>>> glasgow/main
             await web_iface.serve(args.endpoint)
 
         if args.operation == "run":
@@ -1236,6 +1276,7 @@ class AudioYamahaOPxApplet(GlasgowApplet):
                 await fut
             args.pcm_file.write(record_fut.result())
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 class AudioYamahaOPxAppletTestCase(GlasgowAppletTestCase, applet=AudioYamahaOPxApplet):
@@ -1250,3 +1291,9 @@ class AudioYamahaOPxAppletTestCase(GlasgowAppletTestCase, applet=AudioYamahaOPxA
     @synthesis_test
     def test_build_opm(self):
         self.assertBuilds(args=["--device", "OPM"])
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.AudioYamahaOPxAppletTestCase
+>>>>>>> glasgow/main

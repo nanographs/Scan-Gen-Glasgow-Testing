@@ -57,6 +57,7 @@ class I2CRegisters(Registers):
             latch_addr = Signal()
             reg_addr   = Signal(range(self.reg_count))
             reg_data   = Signal(max(len(s) for s in self.regs_r))
+<<<<<<< HEAD
 
             m.d.comb += self.i2c_target.data_o.eq(reg_data)
 
@@ -84,15 +85,39 @@ class I2CRegisters(Registers):
                 m.d.sync += reg_data.eq(reg_data >> 8)
 
         return m
+=======
+>>>>>>> glasgow/main
 
-# -------------------------------------------------------------------------------------------------
+            m.d.comb += self.i2c_target.data_o.eq(reg_data)
 
+<<<<<<< HEAD
 import unittest
 
 from . import simulation_test
 from .i2c import I2CTargetTestbench
+=======
+            with m.If(self.i2c_target.start):
+                m.d.sync += latch_addr.eq(1)
 
+            with m.If(self.i2c_target.write):
+                m.d.sync += latch_addr.eq(0)
+>>>>>>> glasgow/main
 
+                with m.If(latch_addr):
+                    with m.If(self.i2c_target.data_i < self.reg_count):
+                        m.d.comb += self.i2c_target.ack_o.eq(1)
+                    m.d.sync += [
+                        reg_addr.eq(self.i2c_target.data_i),
+                        reg_data.eq(self.regs_r[self.i2c_target.data_i]),
+                    ]
+                with m.Else():
+                    m.d.comb += self.i2c_target.ack_o.eq(1)
+                    m.d.sync += [
+                        reg_data.eq(Cat(self.i2c_target.data_i, reg_data)),
+                        self.regs_w[reg_addr].eq(Cat(self.i2c_target.data_i, reg_data)),
+                    ]
+
+<<<<<<< HEAD
 class I2CRegistersTestbench(Elaboratable):
     def __init__(self):
         self.i2c = I2CTargetTestbench()
@@ -224,3 +249,9 @@ class I2CRegistersTestCase(unittest.TestCase):
         self.assertEqual((yield from tb.i2c.read_octet()), 0b00001110)
         yield from tb.i2c.write_bit(1)
         yield from tb.i2c.stop()
+=======
+            with m.If(self.i2c_target.read):
+                m.d.sync += reg_data.eq(reg_data >> 8)
+
+        return m
+>>>>>>> glasgow/main

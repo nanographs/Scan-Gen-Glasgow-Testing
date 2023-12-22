@@ -257,6 +257,7 @@ class ProgramAVRSPIApplet(ProgramAVRApplet):
         avr_iface = ProgramAVRSPIInterface(spi_iface, self.logger, self.__addr_dut_reset)
         return avr_iface
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 from .....database.microchip.avr import *
@@ -345,3 +346,9 @@ class ProgramAVRSPIAppletTestCase(GlasgowAppletTestCase, applet=ProgramAVRSPIApp
         data = await avr_iface.read_eeprom_range(range(page * 2))
         self.assertEqual(data,
             b"\xff" * (page // 2) + bytes([n for n in range(page)]) + b"\xff" * (page // 2))
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.ProgramAVRSPIAppletTestCase
+>>>>>>> glasgow/main

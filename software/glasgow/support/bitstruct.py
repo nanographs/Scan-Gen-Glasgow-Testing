@@ -57,7 +57,11 @@ class _bitstruct:
             cls["_layout_"][name] = (offset, width)
             offset += width
 
+<<<<<<< HEAD
         cls["__slots__"] = tuple("_f_{}".format(field) for field in cls["_layout_"])
+=======
+        cls["__slots__"] = tuple(f"_f_{field}" for field in cls["_layout_"])
+>>>>>>> glasgow/main
 
         code = textwrap.dedent(f"""
         def __init__(self, {", ".join(f"{field}=0" for field in cls["_named_fields_"])}):
@@ -151,7 +155,11 @@ class _bitstruct:
         return " ".join(fields)
 
     def __repr__(self):
+<<<<<<< HEAD
         return "<{}.{} {}>".format(self.__module__, self.__class__.__name__, self.bits_repr())
+=======
+        return f"<{self.__module__}.{self.__class__.__name__} {self.bits_repr()}>"
+>>>>>>> glasgow/main
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.to_bits() == other.to_bits()
@@ -165,6 +173,7 @@ def bitstruct(name, size_bits, fields):
     cls.__module__ = mod
 
     return cls
+<<<<<<< HEAD
 
 # -------------------------------------------------------------------------------------------------
 
@@ -287,3 +296,5 @@ class BitstructTestCase(unittest.TestCase):
             x.b
         with self.assertRaises(AttributeError):
             x.b = 1
+=======
+>>>>>>> glasgow/main

@@ -1830,7 +1830,11 @@ _manufacturers = [
 ]
 
 def _jedec_update_mfg_from_pdf():
+<<<<<<< HEAD
     import fitz 
+=======
+    import fitz
+>>>>>>> glasgow/main
     import re
     import argparse
 
@@ -1843,6 +1847,7 @@ def _jedec_update_mfg_from_pdf():
     with fitz.open(args.pdf_filepath) as doc:
         for page in doc:
             pdf_text += page.get_text()
+<<<<<<< HEAD
     jep106_matches = re.findall('^(\d+) (.+(?:\n.+){0,1})(?:(?:\n\d ){8})(?:\n)([0-9A-F]{2})',pdf_text, re.MULTILINE)
 
     output_text = ""
@@ -1851,6 +1856,16 @@ def _jedec_update_mfg_from_pdf():
 
     # Update version string
     output_text = re.sub("^# Version.*", f"# Version: JEDEC {args.pdf_filepath}", output_text)
+=======
+    jep106_matches = re.findall(r'^(\d+) (.+(?:\n.+){0,1})(?:(?:\n\d ){8})(?:\n)([0-9A-F]{2})', pdf_text, re.MULTILINE)
+
+    output_text = ""
+    with open(__file__) as source_file:
+        output_text += source_file.read()
+
+    # Update version string
+    output_text = re.sub(r"^# Version.*", f"# Version: JEDEC {args.pdf_filepath}", output_text)
+>>>>>>> glasgow/main
 
     manufacturers_array = "_manufacturers = [\n"
     bank_no = 0
@@ -1863,9 +1878,15 @@ def _jedec_update_mfg_from_pdf():
             manufacturers_array += f"    [ # Bank {bank_no}\n"
         manufacturers_array += f"        ({int(entry[0])}, \"{entry[1]}\", 0x{int(entry[2], 16):02X}),\n"
     manufacturers_array += "    ]\n]"
+<<<<<<< HEAD
     
     # Update Manufacturers array
     output_text = re.sub("_manufacturers = \[(.|\n)*^\]", manufacturers_array, output_text, flags=re.MULTILINE)
+=======
+
+    # Update Manufacturers array
+    output_text = re.sub(r"_manufacturers = \[(.|\n)*^\]", manufacturers_array, output_text, flags=re.MULTILINE)
+>>>>>>> glasgow/main
 
     with open(args.output_filepath, 'w') as f:
         print(output_text, file=f, end='')

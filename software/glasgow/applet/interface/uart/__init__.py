@@ -136,11 +136,23 @@ class UARTApplet(GlasgowApplet):
     description = """
     Transmit and receive data via UART.
 
+<<<<<<< HEAD
     Any baud rate is supported. Only 8n1 mode is supported.
 
     NOTE: The automatic baud rate algorithm requires a burst of data, and will lock on to the
     shortest bit-times present in the stream... updates only occur on frame or parity errors, and
     and random data will help.
+=======
+    Any baud rate is supported. Only 8 start bits and 1 stop bits are supported, with configurable
+    parity.
+
+    The automatic baud rate determination algorithm works by locking onto the shortest bit time in
+    the receive stream. It will determine the baud rate incorrectly in presence of glitches as well
+    as insufficiently diverse data (e.g. when receiving data consisting only of the letter "a",
+    the baud rate that is determined will be one half of the actual baud rate). To reduce spurious
+    baud rate changes, the algorithm is only consulted when frame or (if enabled) parity errors
+    are present in received data.
+>>>>>>> glasgow/main
     """
 
     __pins = ("rx", "tx")
@@ -243,7 +255,11 @@ class UARTApplet(GlasgowApplet):
 
     @classmethod
     def add_interact_arguments(cls, parser):
+<<<<<<< HEAD
         p_operation = parser.add_subparsers(dest="operation", metavar="OPERATION", required=True)
+=======
+        p_operation = parser.add_subparsers(dest="operation", metavar="OPERATION")
+>>>>>>> glasgow/main
 
         p_tty = p_operation.add_parser(
             "tty", help="connect UART to stdin/stdout")
@@ -378,6 +394,11 @@ class UARTApplet(GlasgowApplet):
     async def interact(self, device, args, uart):
         asyncio.create_task(self._monitor_errors(device))
 
+<<<<<<< HEAD
+=======
+        if args.operation is None:
+            await self._interact_tty(uart, stream=False)
+>>>>>>> glasgow/main
         if args.operation == "tty":
             await self._interact_tty(uart, args.stream)
         if args.operation == "pty":
@@ -385,6 +406,7 @@ class UARTApplet(GlasgowApplet):
         if args.operation == "socket":
             await self._interact_socket(uart, args.endpoint)
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 class UARTAppletTestCase(GlasgowAppletTestCase, applet=UARTApplet):
@@ -404,3 +426,9 @@ class UARTAppletTestCase(GlasgowAppletTestCase, applet=UARTApplet):
         uart_iface = await self.run_simulated_applet()
         await uart_iface.write(bytes([0xAA, 0x55]))
         self.assertEqual(await uart_iface.read(2), bytes([0xAA, 0x55]))
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.UARTAppletTestCase
+>>>>>>> glasgow/main

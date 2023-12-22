@@ -1,6 +1,9 @@
 import struct
 import logging
+<<<<<<< HEAD
 import types
+=======
+>>>>>>> glasgow/main
 import math
 from amaranth import *
 from amaranth.lib.cdc import FFSynchronizer
@@ -372,6 +375,7 @@ class SPIControllerApplet(GlasgowApplet):
         data = await spi_iface.transfer(args.data)
         print(data.hex())
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 class SPIControllerAppletTestCase(GlasgowAppletTestCase, applet=SPIControllerApplet):
@@ -400,3 +404,9 @@ class SPIControllerAppletTestCase(GlasgowAppletTestCase, applet=SPIControllerApp
         result = yield from spi_iface.transfer([0xAA, 0x55, 0x12, 0x34])
         self.assertEqual(result, bytearray([0xAA, 0x55, 0x12, 0x34]))
         self.assertEqual((yield mux_iface.pads.cs_t.o), 1)
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.SPIControllerAppletTestCase
+>>>>>>> glasgow/main

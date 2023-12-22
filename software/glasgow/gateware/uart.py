@@ -266,6 +266,7 @@ class UART(Elaboratable):
                 with m.State("STOP"):
                     with m.If(tx_stb):
                         m.next = "IDLE"
+<<<<<<< HEAD
 
         return m
 
@@ -466,3 +467,7 @@ class UARTTXTestCase(unittest.TestCase):
     def test_tx_back_to_back(self, tb):
         yield from self.byte(tb, 0xAA, [0, 1, 0, 1, 0, 1, 0, 1])
         yield from self.byte(tb, 0x55, [1, 0, 1, 0, 1, 0, 1, 0])
+=======
+
+        return m
+>>>>>>> glasgow/main

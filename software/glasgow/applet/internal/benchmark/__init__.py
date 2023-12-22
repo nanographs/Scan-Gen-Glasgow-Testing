@@ -159,10 +159,14 @@ class BenchmarkApplet(GlasgowApplet):
                 begin  = time.time()
                 actual = await iface.read(len(golden))
                 end    = time.time()
+<<<<<<< HEAD
                 print(end - begin)
                 
                 length = len(golden)
                 print(length)
+=======
+                length = len(golden)
+>>>>>>> glasgow/main
                 counter_fut.cancel()
 
                 error = (actual != golden)
@@ -241,9 +245,16 @@ class BenchmarkApplet(GlasgowApplet):
                                  (length / (end - begin)) / (1 << 20),
                                  (length / (end - begin)) / (1 << 17))
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 class BenchmarkAppletTestCase(GlasgowAppletTestCase, applet=BenchmarkApplet):
     @synthesis_test
     def test_build(self):
         self.assertBuilds()
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.BenchmarkAppletTestCase
+>>>>>>> glasgow/main

@@ -131,29 +131,49 @@ class JTAGPinoutInterface:
         await self._cmd(CMD_W)
 
     async def set_oe(self, word):
+<<<<<<< HEAD
         self._log("set oe=%s", "{:016b}".format(word))
+=======
+        self._log("set oe=%s", f"{word:016b}")
+>>>>>>> glasgow/main
         await self._cmd(CMD_OE)
         await self._arg(word)
 
     async def set_o(self, word):
+<<<<<<< HEAD
         self._log("set o= %s", "{:016b}".format(word))
+=======
+        self._log("set o= %s", f"{word:016b}")
+>>>>>>> glasgow/main
         await self._cmd(CMD_O)
         await self._arg(word)
 
     async def set_o_1(self, word):
+<<<<<<< HEAD
         self._log("set h= %s", "{:016b}".format(word))
+=======
+        self._log("set h= %s", f"{word:016b}")
+>>>>>>> glasgow/main
         await self._cmd(CMD_H)
         await self._arg(word)
 
     async def set_o_0(self, word):
+<<<<<<< HEAD
         self._log("set l= %s", "{:016b}".format(word))
+=======
+        self._log("set l= %s", f"{word:016b}")
+>>>>>>> glasgow/main
         await self._cmd(CMD_L)
         await self._arg(word)
 
     async def get_i(self):
         await self._cmd(CMD_I)
         word = await self._ret()
+<<<<<<< HEAD
         self._log("get i= %s", "{:016b}".format(word))
+=======
+        self._log("get i= %s", f"{word:016b}")
+>>>>>>> glasgow/main
         return word
 
 
@@ -199,7 +219,11 @@ class JTAGPinoutApplet(GlasgowApplet):
 
     @staticmethod
     def _from_word(word):
+<<<<<<< HEAD
         return set(bit for bit in range(word.bit_length()) if word & (1 << bit))
+=======
+        return {bit for bit in range(word.bit_length()) if word & (1 << bit)}
+>>>>>>> glasgow/main
 
     async def _detect_pulls(self, iface):
         each = self._to_word(self.bits)
@@ -429,7 +453,11 @@ class JTAGPinoutApplet(GlasgowApplet):
             probe_args = ["jtag-probe"]
 
             if args.voltage is not None:
+<<<<<<< HEAD
                 probe_args += ["-V", "{:.1f}".format(args.voltage)]
+=======
+                probe_args += ["-V", f"{args.voltage:.1f}"]
+>>>>>>> glasgow/main
             elif args.mirror_voltage:
                 probe_args += ["-M"]
             elif args.keep_voltage:
@@ -448,9 +476,16 @@ class JTAGPinoutApplet(GlasgowApplet):
             self.logger.warning("more than one JTAG interface detected; this is likely a false "
                                 "positive")
 
+<<<<<<< HEAD
 # -------------------------------------------------------------------------------------------------
 
 class JTAGPinoutAppletTestCase(GlasgowAppletTestCase, applet=JTAGPinoutApplet):
     @synthesis_test
     def test_build(self):
         self.assertBuilds(args=["--pins-jtag", "0:3"])
+=======
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.JTAGPinoutAppletTestCase
+>>>>>>> glasgow/main

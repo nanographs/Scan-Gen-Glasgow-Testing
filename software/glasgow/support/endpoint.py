@@ -203,6 +203,7 @@ class ServerEndpoint(aobject, asyncio.Protocol):
         if self._transport:
             self._transport.close()
 
+<<<<<<< HEAD
 
 class ClientEndpoint(aobject, asyncio.Protocol):
     @classmethod
@@ -222,11 +223,25 @@ class ClientEndpoint(aobject, asyncio.Protocol):
     # FIXME: finish this
 
 # -------------------------------------------------------------------------------------------------
+=======
+>>>>>>> glasgow/main
 
-import unittest
-import tempfile
+class ClientEndpoint(aobject, asyncio.Protocol):
+    @classmethod
+    def add_argument(cls, parser, name, default=None):
+        metavar = name.upper().replace("_", "-")
+        help    = "connect to %s, either unix:PATH or tcp:HOST:PORT" % metavar
+        if default is None:
+            nargs = None
+        else:
+            nargs = "?"
+            help += " (default: %(default)s)"
 
+        parser.add_argument(
+            name, metavar=metavar, type=endpoint, nargs=nargs, default=default,
+            help=help)
 
+<<<<<<< HEAD
 class EndpointArgumentTestCase(unittest.TestCase):
     def test_unix(self):
         proto, path = endpoint("unix:/foo/bar")
@@ -327,3 +342,6 @@ class ServerEndpointTestCase(unittest.TestCase):
     def test_tcp(self):
         asyncio.get_event_loop().run_until_complete(
             self.do_test_lifecycle())
+=======
+    # FIXME: finish this
+>>>>>>> glasgow/main

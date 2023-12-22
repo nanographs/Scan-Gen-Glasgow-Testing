@@ -5,7 +5,11 @@ import tempfile
 import shutil
 import logging
 import hashlib
+<<<<<<< HEAD
 import appdirs
+=======
+import platformdirs
+>>>>>>> glasgow/main
 import pathlib
 from amaranth import *
 from amaranth.build import ResourceError
@@ -102,8 +106,14 @@ class GlasgowHardwareTarget(Elaboratable):
 
     def build_plan(self, **kwargs):
         overrides = {
+<<<<<<< HEAD
             "synth_opts": "-abc9",
             "nextpnr_opts": ["--placer heap","--routed-svg 'nextpnr_test.svg'"],
+=======
+            "emit_src": False,
+            "synth_opts": "-abc9",
+            "nextpnr_opts": "--placer heap",
+>>>>>>> glasgow/main
         }
         overrides.update(kwargs)
         return GlasgowBuildPlan(find_toolchain(), self.platform.prepare(self, **overrides))
@@ -152,8 +162,13 @@ class GlasgowBuildPlan:
         return bitstream
 
     def get_bitstream(self, *, debug=False):
+<<<<<<< HEAD
         cache_path = appdirs.user_cache_dir("GlasgowEmbedded", appauthor=False)
         cache_filename = pathlib.Path(cache_path) / "bitstreams" / self.bitstream_id.hex()
+=======
+        cache_path = platformdirs.user_cache_path("GlasgowEmbedded", appauthor=False)
+        cache_filename = cache_path / "bitstreams" / self.bitstream_id.hex()
+>>>>>>> glasgow/main
         cache_exists = False
         if cache_filename.exists():
             with cache_filename.open("rb") as cache_file:

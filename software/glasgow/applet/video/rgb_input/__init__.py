@@ -173,6 +173,7 @@ class VideoRGBInputApplet(GlasgowApplet):
             frame = (sync & 0x3e) >> 1
             row   = ((sync & 0x01) << 7) | (await iface.read(1))[0]
 
+<<<<<<< HEAD
             print("frame {} row {}".format(frame, row))
 
 # -------------------------------------------------------------------------------------------------
@@ -183,3 +184,11 @@ class VideoRGBInputAppletTestCase(GlasgowAppletTestCase, applet=VideoRGBInputApp
         self.assertBuilds(args=["--pins-r", "0:4", "--pins-g", "5:9", "--pins-b", "10:14",
                                 "--pin-dck", "15", "--columns", "160", "--rows", "144",
                                 "--vblank", "960e-6"])
+=======
+            print(f"frame {frame} row {row}")
+
+    @classmethod
+    def tests(cls):
+        from . import test
+        return test.VideoRGBInputAppletTestCase
+>>>>>>> glasgow/main

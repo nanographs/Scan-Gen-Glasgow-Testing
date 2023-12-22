@@ -2,7 +2,10 @@
 
 from amaranth import *
 from amaranth.lib.cdc import FFSynchronizer
+<<<<<<< HEAD
 from amaranth.lib.io import Pin
+=======
+>>>>>>> glasgow/main
 
 
 __all__ = ["I2CInitiator", "I2CTarget"]
@@ -433,6 +436,7 @@ class I2CTarget(Elaboratable):
                         m.next = "IDLE"
 
         return m
+<<<<<<< HEAD
 
 # -------------------------------------------------------------------------------------------------
 
@@ -921,3 +925,5 @@ class I2CTargetTestCase(I2CTestCase):
         self.assertEqual((yield from tb.read_octet()), 0b00110011)
         yield from tb.write_bit(0)
         yield from self.assertState(tb, "READ-SHIFT")
+=======
+>>>>>>> glasgow/main

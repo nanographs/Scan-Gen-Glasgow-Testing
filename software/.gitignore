@@ -1,11 +1,22 @@
 # Python
+<<<<<<< HEAD
 __pycache__/
 *.egg-info
 /dist
 /build
+=======
+*.pyc
+__pycache__/
+/dist
+>>>>>>> glasgow/main
 
 # pdm
 /.pdm-plugins
 /.pdm-python
+<<<<<<< HEAD
 /.venv
+=======
+/.pdm-build
+/.venv*
+>>>>>>> glasgow/main
 /pdm.lock

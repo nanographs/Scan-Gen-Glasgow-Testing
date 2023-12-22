@@ -3,6 +3,7 @@
 *.pyc
 *.gtkw
 *.log
+*.log
 /*.v
 /*.bin
 /*.zip
