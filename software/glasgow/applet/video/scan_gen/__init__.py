@@ -946,7 +946,7 @@ class ScanGenApplet(GlasgowApplet):
         # await scan_iface.set_config_flag(0)
         # data = await scan_iface.iface.read(16384)
         # scan_iface.text_file.write(str(data.tolist()))
-        # #await scan_iface.pause()
+        await scan_iface.pause()
 
         
             
