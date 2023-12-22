@@ -35,11 +35,7 @@ class Pads(Elaboratable):
         for name, pin in kwargs.items():
             assert isinstance(pin, Pin)
 
-<<<<<<< HEAD
-            pin_name = "{}_t".format(name)
-=======
             pin_name = f"{name}_t"
->>>>>>> glasgow/main
             if hasattr(self, pin_name):
                 raise ValueError("Cannot add {!r} as attribute {}; attribute already exists")
 

@@ -1,22 +1,12 @@
 import os
 import sys
-<<<<<<< HEAD
-=======
 import ast
->>>>>>> glasgow/main
 import codeop
 import signal
 import asyncio
 import builtins
 import traceback
 try:
-<<<<<<< HEAD
-    from ast import PyCF_ALLOW_TOP_LEVEL_AWAIT # Python 3.8+
-except ImportError:
-    PyCF_ALLOW_TOP_LEVEL_AWAIT = 0 # Python 3.7-
-try:
-=======
->>>>>>> glasgow/main
     import readline
     import rlcompleter
 except ModuleNotFoundError:
@@ -27,20 +17,12 @@ from .asignal import wait_for_signal
 
 class AsyncInteractiveConsole:
     def __init__(self, locals, *, run_callback=None):
-<<<<<<< HEAD
-        self.locals = {"__name__": "__console__", **locals}
-=======
         self.locals = {"__name__": "__console__", "sleep": asyncio.sleep, **locals}
->>>>>>> glasgow/main
         self.run_callback = run_callback
 
         self._buffer = []
         self._compile = codeop.CommandCompiler()
-<<<<<<< HEAD
-        self._compile.compiler.flags |= PyCF_ALLOW_TOP_LEVEL_AWAIT
-=======
         self._compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
->>>>>>> glasgow/main
 
         if readline is not None:
             self._init_readline()
@@ -49,12 +31,7 @@ class AsyncInteractiveConsole:
         self._history_filename = os.path.expanduser("~/.glasgow-history")
         try:
             readline.read_history_file(self._history_filename)
-<<<<<<< HEAD
-        #except FileNotFoundError:
-        except OSError:
-=======
         except FileNotFoundError:
->>>>>>> glasgow/main
             pass
 
         completer = rlcompleter.Completer(self.locals)
@@ -68,17 +45,7 @@ class AsyncInteractiveConsole:
     async def _run_code(self, code):
         try:
             future = eval(code, self.locals)
-<<<<<<< HEAD
-            if PyCF_ALLOW_TOP_LEVEL_AWAIT == 0: # compat shim
-                future = getattr(builtins, "_", None)
-                if asyncio.iscoroutine(future):
-                    result = await future
-                    builtins._ = result
-                    print(repr(result))
-            elif asyncio.iscoroutine(future):
-=======
             if asyncio.iscoroutine(future):
->>>>>>> glasgow/main
                 await future
             if self.run_callback is not None:
                 await self.run_callback()

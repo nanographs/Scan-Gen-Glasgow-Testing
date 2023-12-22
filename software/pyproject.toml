@@ -140,10 +140,6 @@ scan-gen = "glasgow.applet.video.scan_gen:ScanGenApplet"
 radio-nrf24l1 = "glasgow.applet.radio.nrf24l01:RadioNRF24L01Applet"
 
 [project.urls]
-# "Documentation" = "https://glasgow.readthedocs.io/"
-radio-nrf24l01 = "glasgow.applet.radio.nrf24l01:RadioNRF24L01Applet"
-
-[project.urls]
 "Documentation" = "https://glasgow-embedded.org/"
 "Source Code" = "https://github.com/GlasgowEmebedded/Glasgow"
 "Bug Tracker" = "https://github.com/GlasgowEmebedded/Glasgow/issues"

@@ -76,150 +76,6 @@ class _PollerThread(threading.Thread):
 
 
 class GlasgowHardwareDevice:
-<<<<<<< HEAD
-    @staticmethod
-    def firmware():
-        with importlib.resources.files(__package__).joinpath("firmware.ihex").open("r") as f:
-            return input_data(f, fmt="ihex")
-
-    @classmethod
-    def _enumerate_devices(cls, usb_context):
-        devices = []
-        devices_by_serial = {}
-
-        def hotplug_callback(usb_context, device, event):
-            if event == usb1.HOTPLUG_EVENT_DEVICE_ARRIVED:
-                if device.getVendorID() == VID_QIHW and device.getProductID() == PID_GLASGOW:
-                    devices.append(device)
-
-        if usb_context.hasCapability(usb1.CAP_HAS_HOTPLUG):
-            usb_context.hotplugRegisterCallback(hotplug_callback,
-                flags=usb1.HOTPLUG_ENUMERATE)
-        else:
-            devices.extend(list(usb_context.getDeviceIterator()))
-
-        while any(devices):
-            device = devices.pop()
-
-            if device.getVendorID() == VID_QIHW and device.getProductID() == PID_GLASGOW:
-                revision  = GlasgowConfig.decode_revision(device.getbcdDevice() & 0xFF)
-                api_level = device.getbcdDevice() >> 8
-            else:
-                continue
-
-            handle = device.open()
-            if api_level == 0:
-                logger.debug("found rev%s device without firmware", revision)
-            elif api_level != CUR_API_LEVEL:
-                for config in handle.getDevice().iterConfigurations():
-                    if config.getConfigurationValue() == handle.getConfiguration():
-                        break
-                try:
-                    # `handle` is getting closed either way, so explicit release isn't necessary.
-                    for intf_num in range(config.getNumInterfaces()):
-                        handle.claimInterface(intf_num)
-                    logger.info("found rev%s device with API level %d (supported API level is %d)",
-                                revision, api_level, CUR_API_LEVEL)
-                    # Updating the firmware is not strictly required. However, re-enumeration tends
-                    # to expose all kinds of issues related to hotplug (especially on Windows,
-                    # where libusb does not listen to hotplug events) and the more you do it,
-                    # the more likely it is to eventually cause misery.
-                    serial = handle.getASCIIStringDescriptor(
-                        device.getSerialNumberDescriptor())
-                    logger.warn(f"please run `glasgow flash` to update firmware of device "
-                                f"{serial}")
-                except usb1.USBErrorBusy:
-                    logger.debug("found busy rev%s device with unsupported API level %d",
-                                 revision, api_level)
-                    handle.close()
-                    continue
-            else: # api_level == CUR_API_LEVEL
-                serial = handle.getASCIIStringDescriptor(
-                    device.getSerialNumberDescriptor())
-                if serial not in devices_by_serial:
-                    logger.debug("found rev%s device with serial %s", revision, serial)
-                    devices_by_serial[serial] = (revision, device)
-                handle.close()
-                continue
-
-            # If the device has no firmware or the firmware is too old (or, potentially, too new),
-            # load the firmware that we know will work.
-            logger.debug("loading firmware to rev%s device", revision)
-            handle.controlWrite(usb1.REQUEST_TYPE_VENDOR, REQ_RAM, REG_CPUCS, 0, [1])
-            for address, data in cls.firmware():
-                while len(data) > 0:
-                    handle.controlWrite(usb1.REQUEST_TYPE_VENDOR, REQ_RAM,
-                                        address, 0, data[:4096])
-                    data = data[4096:]
-                    address += 4096
-            handle.controlWrite(usb1.REQUEST_TYPE_VENDOR, REQ_RAM, REG_CPUCS, 0, [0])
-            handle.close()
-
-            if usb_context.hasCapability(usb1.CAP_HAS_HOTPLUG):
-                # Hotplug is available; process hotplug events for a while looking for the device
-                # that re-enumerates after firmware upload. We expect two events (one detach and
-                # one attach event), but allow for a bit more than that. (It is not possible to
-                # wait for re-enumeration without some guesswork because USB lacks geographical
-                # addressing.)
-                devices_len = len(devices)
-                for event_count in range(5):
-                    usb_context.handleEventsTimeout(1.0)
-                    if devices_len < len(devices):
-                        # Found it!
-                        break
-                else:
-                    logger.warn("device %03d/%03d did not re-enumerate after firmware upload",
-                                device.getBusNumber(), device.getDeviceAddress())
-
-            else:
-                # No hotplug capability (most likely because we're running on Windows); give
-                # the device a bit of time to re-enumerate. (The device disconnects from the bus
-                # for ~1 second, so we should wait a few times that to allow for the variable
-                # OS and platform delays).
-                logger.debug("waiting for re-enumeration")
-                time.sleep(5.0)
-
-                devices.extend(list(usb_context.getDeviceIterator()))
-
-        return devices_by_serial
-
-    @classmethod
-    def enumerate_serials(cls):
-        with usb1.USBContext() as usb_context:
-            devices = cls._enumerate_devices(usb_context)
-            return list(devices.keys())
-
-    def __init__(self, serial=None):
-        usb_context = usb1.USBContext()
-        devices = self._enumerate_devices(usb_context)
-
-        if len(devices) == 0:
-            raise GlasgowDeviceError("device not found")
-        elif serial is None:
-            if len(devices) > 1:
-                raise GlasgowDeviceError("found {} devices (serial numbers {}), but a serial "
-                                         "number is not specified"
-                                         .format(len(devices), ", ".join(devices.keys())))
-            self.revision, usb_device = next(iter(devices.values()))
-        else:
-            if serial not in devices:
-                raise GlasgowDeviceError("device with serial number {} not found"
-                                         .format(serial))
-            self.revision, usb_device = devices[serial]
-
-        self.usb_context = usb_context
-        self.usb_poller = _PollerThread(self.usb_context)
-        self.usb_poller.start()
-        self.usb_handle = usb_device.open()
-        try:
-            self.usb_handle.setAutoDetachKernelDriver(True)
-        except usb1.USBErrorNotSupported:
-            pass
-
-    def close(self):
-        self.usb_poller.done = True
-        self.usb_handle.close()
-=======
     @classmethod
     def firmware_file(cls):
         return importlib.resources.files(__package__).joinpath("firmware.ihex")
@@ -391,7 +247,6 @@ class GlasgowHardwareDevice:
     def close(self):
         self.usb_handle.close()
         self.usb_poller.stop()
->>>>>>> glasgow/main
         self.usb_context.close()
 
     async def _do_transfer(self, is_read, setup):
@@ -435,25 +290,6 @@ class GlasgowHardwareDevice:
             elif status == usb1.TRANSFER_STALL:
                 result_future.set_exception(usb1.USBErrorPipe())
             elif status == usb1.TRANSFER_NO_DEVICE:
-<<<<<<< HEAD
-                result_future.set_exception(GlasgowDeviceError("device lost"))
-            else:
-                result_future.set_exception(GlasgowDeviceError(
-                    "transfer error: {}".format(usb1.libusb1.libusb_transfer_status(status))))
-
-        loop = asyncio.get_event_loop()
-        transfer.setCallback(lambda transfer: loop.call_soon_threadsafe(usb_callback, transfer))
-        transfer.submit()
-        try:
-            return await result_future
-        except asyncio.CancelledError:
-            try:
-                transfer.cancel()
-                await cancel_future
-            except usb1.USBErrorNotFound:
-                pass # already finished, one way or another
-            raise
-=======
                 result_future.set_exception(GlasgowDeviceError("device disconnected"))
             else:
                 result_future.set_exception(GlasgowDeviceError(
@@ -477,7 +313,6 @@ class GlasgowHardwareDevice:
                     await cancel_future
                 except usb1.USBErrorNotFound:
                     pass # already finished, one way or another
->>>>>>> glasgow/main
 
     async def control_read(self, request_type, request, value, index, length):
         logger.trace("USB: CONTROL IN type=%#04x request=%#04x "

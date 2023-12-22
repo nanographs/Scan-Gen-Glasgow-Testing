@@ -74,11 +74,7 @@ class STDOUTDataLogger(DataLogger, name="stdout"):
 
     async def setup(self, args):
         self.format = "[{timestamp}] " + ", ".join([
-<<<<<<< HEAD
-            "{}={{{}}}".format(name, key) for key, name in self.field_names.items()
-=======
             f"{name}={{{key}}}" for key, name in self.field_names.items()
->>>>>>> glasgow/main
         ]) + "\n"
         self.stream = sys.stdout
 
@@ -130,11 +126,7 @@ class InfluxDBDataLogger(DataLogger, name="influxdb"):
 
     @staticmethod
     def _escape_name(charset, value):
-<<<<<<< HEAD
-        return re.sub(r"([{}])".format(charset), r"\\\1", value)
-=======
         return re.sub(fr"([{charset}])", r"\\\1", value)
->>>>>>> glasgow/main
 
     @staticmethod
     def _escape_value(value):
@@ -182,11 +174,7 @@ class InfluxDBDataLogger(DataLogger, name="influxdb"):
             help="write to measurement SERIES")
         def tag(arg):
             if "=" not in arg:
-<<<<<<< HEAD
-                raise argparse.ArgumentTypeError("{} is not a valid tag".format(arg))
-=======
                 raise argparse.ArgumentTypeError(f"{arg} is not a valid tag")
->>>>>>> glasgow/main
             key, value = arg.split("=", 1)
             return key, value
         parser.add_argument(
@@ -289,11 +277,7 @@ class InfluxDB2DataLogger(DataLogger, name="influxdb2"):
             help="write to measurement SERIES")
         def tag(arg):
             if "=" not in arg:
-<<<<<<< HEAD
-                raise argparse.ArgumentTypeError("{} is not a valid tag".format(arg))
-=======
                 raise argparse.ArgumentTypeError(f"{arg} is not a valid tag")
->>>>>>> glasgow/main
             key, value = arg.split("=", 1)
             return key, value
         parser.add_argument(
