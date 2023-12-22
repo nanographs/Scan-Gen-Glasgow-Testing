@@ -40,7 +40,7 @@ class IOBus(Elaboratable):
         self.in_fifo = in_fifo
 
         ## Top level control of fifo data flow
-        self.write_strobe = Signal()
+        self.write_strobe = Signal(reset=0)
         self.read_strobe = Signal()
 
         #### Registers
@@ -125,7 +125,7 @@ class IOBus(Elaboratable):
 
         #### =========================== REGISTERS ====================================
         if self.use_config_handler:
-            m.d.comb += self.mode_ctrl.replace_0_to_1.eq(1)
+            m.d.comb += self.mode_ctrl.replace_FF_to_FE.eq(1)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(0)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(0)
             m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
