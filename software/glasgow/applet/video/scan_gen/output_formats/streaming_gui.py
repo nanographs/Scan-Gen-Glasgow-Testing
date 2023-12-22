@@ -224,6 +224,10 @@ class MainWindow(QWidget):
     async def set_scan_mode(self):
         mode = self.mode_select_dropdown.currentIndex() + 1
         await self.con.set_scan_mode(mode)
+        if mode == 1:
+            await self.con.set_8bit_output()
+        if mode == 3:
+            await self.con.set_16bit_output()
         await self.con.strobe_config()
 
         

@@ -171,6 +171,12 @@ class ScanInterface(ConnectionManager):
 
     async def set_scan_mode(self, mode):
         await self.cmd_client(self.scan_ctrl.set_scan_mode(mode))
+
+    async def set_8bit_output(self):
+        await self.cmd_client(self.scan_ctrl.set_8bit_output())
+    
+    async def set_16bit_output(self):
+        await self.cmd_client(self.scan_ctrl.set_16bit_output())
     
     async def pause(self):
         await self.cmd_client(self.scan_ctrl.pause())

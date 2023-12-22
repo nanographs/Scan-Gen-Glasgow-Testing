@@ -18,6 +18,7 @@ class ScanStream:
 
         self.scan_mode = 0
         self.eight_bit_output = 1
+        self.point_buffer = []
 
     def change_buffer(self, x_width, y_height):
         self.x_width = x_width
@@ -135,16 +136,20 @@ class ScanStream:
 
         if print_debug:
             print(self.buffer)
-        assert (self.buffer[self.current_y][0] == 0)
+        try:
+            assert (self.buffer[self.current_y][0] == 0)
+        except AssertionError:
+            print("****frame is out of sync****")
     
     def points_to_vector(self, m:memoryview):
         full_points = len(m)//6
-        extra = len(m)%6
-        extra_points = m[full_points*6:]
-        l = m[0:full_points*6].cast('H', shape=[full_points,3])
-        for n in l.tolist():
+        #extra = len(m)%6
+        points = m[0:full_points*6].cast('H', shape=[full_points,3])
+        points = points.append(self.point_buffer)
+        for n in p.tolist():
             x, y, a  = n
             self.buffer[y][x] = a
+        self.point.buffer = m[full_points*6:].tolist()
 
     def handle_data_with_config(self, data:memoryview, config = None):
         if not config == None:
@@ -158,20 +163,21 @@ class ScanStream:
         if self.scan_mode == 0:
             pass
 
-        if len(data) > 0:
-            if self.eight_bit_output == 0:
-                start = time.perf_counter()
-                data = data.cast('H')
-                end = time.perf_counter()
-                print(f'16 to 8 time {end-start}')
+        if len(data) > 0: 
             if self.scan_mode == 1:
-                start = time.perf_counter()
-                self.points_to_frame(data)
-                end = time.perf_counter()
+                if self.eight_bit_output == 0:
+                    start = time.perf_counter()
+                    data = data.cast('H')
+                    end = time.perf_counter()
+                    print(f'16 to 8 time {end-start}')
+                if self.eight_bit_output == 1:
+                    start = time.perf_counter()
+                    self.points_to_frame(data)
+                    end = time.perf_counter()
                 print(f'Time to stuff {end-start}')
             if self.scan_mode == 3:
                 start = time.perf_counter()
-                self.points_to_frame(data)
+                self.points_to_vector(data)
                 end = time.perf_counter()
                 print(f'Time to stuff {end-start}')
 

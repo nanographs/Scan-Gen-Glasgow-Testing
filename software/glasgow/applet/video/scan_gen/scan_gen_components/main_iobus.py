@@ -138,7 +138,7 @@ class IOBus(Elaboratable):
             d = Signal()
             e = Signal()
 
-            with m.If(self.scan_mode == 0):
+            with m.If(self.unpause == 0):
                 m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
             with m.Else():
                 with m.FSM() as fsm:
@@ -185,6 +185,9 @@ class IOBus(Elaboratable):
                     m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
                 with m.Else():
                     m.d.comb += self.mode_ctrl.mode.eq(0)
+
+            with m.If(~(self.unpause)):
+                m.d.comb += self.write_strobe.eq(0)
 
             m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
 
@@ -275,7 +278,7 @@ class IOBus(Elaboratable):
 
         if self.use_config_handler:
 
-            with m.If(self.handling_config):
+            with m.If((self.handling_config)):
                 m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.config_handler.config_data_valid))
                 m.d.comb += self.config_handler.write_happened.eq(self.write_strobe)
             with m.Else():

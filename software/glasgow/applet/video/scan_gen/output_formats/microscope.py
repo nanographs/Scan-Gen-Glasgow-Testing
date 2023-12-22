@@ -92,6 +92,14 @@ class ScanCtrl:
         msg = self.cmd.set_data_format(data_format.pause, 1)   
         return msg
 
+    def set_8bit_output(self):
+        msg = self.cmd.set_data_format(data_format.eight_bit, True)   
+        return msg
+    
+    def set_16bit_output(self):
+        msg = self.cmd.set_data_format(data_format.eight_bit, False)   
+        return msg
+
 
 
 class ScanStream:

@@ -35,6 +35,7 @@ sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app
 
 def raster_sim(n=16384, eight_bit_output=False):
     output = yield from sim_app_iface.read(n)
+    print("length:", len(output))
     if eight_bit_output:
         print(list(output))
     else:
@@ -178,8 +179,8 @@ def sim_iobus():
             yield
             yield eight_bit_output.eq(1)
             #yield const_dwell_time.eq(0)
-            yield from set_frame_params(dut, x_res=512, y_res=512)
             yield scan_mode.eq(1)
+            yield from set_frame_params(dut, x_res=512, y_res=512)
             yield
             yield configuration.eq(1)
             yield
@@ -198,6 +199,8 @@ def sim_iobus():
                 yield
             yield configuration.eq(0)
             yield from raster_sim(20, eight_bit_output = True)
+            #yield unpause.eq(0)
+            #yield from raster_sim(20, eight_bit_output = True)
             # yield scan_mode.eq(0)
             # for n in range(100):
             #     yield
