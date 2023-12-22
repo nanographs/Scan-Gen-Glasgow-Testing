@@ -89,6 +89,7 @@ class ConfigHandler(Elaboratable):
         self.eight_bit_output_locked = Signal()
 
         self.configuration_flag = Signal()
+        self.outer_configuration_flag = Signal()
 
         self.in_fifo_w_data = Signal(8)
         self.config_data_valid = Signal()
@@ -99,6 +100,8 @@ class ConfigHandler(Elaboratable):
 
     def elaborate(self, platform):
         m = Module()
+
+        l = Signal()
 
         with m.FSM() as fsm:
             with m.State("Latch"):
@@ -176,14 +179,15 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
-                    with m.If(~self.configuration_flag):
+                    with m.If(~self.outer_configuration_flag):
                         m.next = "Latch"
                     with m.Else():
                         m.next = "Wait_unlatch"
             with m.State("Wait_unlatch"):
                 m.d.comb += self.config_data_valid.eq(0)
                 m.d.comb += self.writing_config.eq(0)
-                with m.If(~self.configuration_flag):
+                m.d.comb += l.eq(1)
+                with m.If(~self.outer_configuration_flag):
                     m.next = "Latch"
 
 

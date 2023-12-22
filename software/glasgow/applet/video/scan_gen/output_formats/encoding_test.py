@@ -148,7 +148,7 @@ class ScanStream:
 
     def handle_data_with_config(self, data:memoryview, config = None):
         if not config == None:
-            print("New config")
+            print("using this: config")
             self.parse_config_packet(config)
         else:
             print("continue with existing config")

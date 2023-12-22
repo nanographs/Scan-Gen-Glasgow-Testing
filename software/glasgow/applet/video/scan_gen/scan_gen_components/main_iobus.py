@@ -130,32 +130,47 @@ class IOBus(Elaboratable):
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(0)
             m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
             m.d.comb += self.handling_config.eq((self.config_handler.writing_config))
+            m.d.comb += self.config_handler.outer_configuration_flag.eq(self.configuration_flag)
+
+            a = Signal()
+            b = Signal()
+            c = Signal()
+            d = Signal()
+            e = Signal()
 
             with m.If(self.scan_mode == 0):
                 m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
             with m.Else():
                 with m.FSM() as fsm:
                     with m.State("Waiting"):
+                        m.d.comb += a.eq(1)
                         with m.If((self.configuration_flag) & (self.mode_ctrl.writer_data_complete)):
                             m.next = "Configure"
                         with m.If((self.configuration_flag) & (~self.mode_ctrl.writer_data_complete)):
                             m.next = "Wait for write"
                     with m.State("Wait for write"):
+                        m.d.comb += b.eq(1)
                         with m.If(self.mode_ctrl.writer_data_complete):
                             m.next = "Configure"
                     with m.State("Configure"):
+                        m.d.comb += c.eq(1)
                         m.d.comb += self.config_handler.configuration_flag.eq(1)
                         with m.If((self.scan_mode == ScanMode.Raster)|(self.scan_mode == ScanMode.RasterPattern)):
                             m.next = "Start Frame"
                         with m.Else():
                             m.next = "Waiting"
                     with m.State("Start Frame"):
+                        m.d.comb += d.eq(1)
                         with m.If(~(self.handling_config)):
                             m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.increment.eq(1)
                             ## sneak in an extra increment to make up for the fact that we are already
                             ## starting out on (0,0)
                             ## or something like that
                             ### will need to review this again when we throw reduced areas into the mix...
+                            m.next = "Waiting to relatch"
+                    with m.State("Waiting to relatch"):
+                        m.d.comb += e.eq(1)
+                        with m.If(~(self.configuration_flag)):
                             m.next = "Waiting"
 
 

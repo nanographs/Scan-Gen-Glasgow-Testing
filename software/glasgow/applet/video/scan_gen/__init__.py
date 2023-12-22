@@ -929,19 +929,35 @@ class ScanGenApplet(GlasgowApplet):
         #     await scan_iface.set_frame_resolution(512,512)
         #     await scan_iface.set_raster_mode()
         #     scan_iface.launch_gui()
+
+        await scan_iface.set_8bit_output(1)
+        await scan_iface.set_raster_mode()
+        await scan_iface.set_frame_resolution(512,512)
+        await scan_iface.set_config_flag(1)
+        await scan_iface.set_config_flag(0)
+        await scan_iface.unpause()
+        data = await scan_iface.iface.read(16384)
+        scan_iface.text_file.write(str(data.tolist()))
+        await scan_iface.set_frame_resolution(5120,512)
+        await scan_iface.set_config_flag(1)
+        await scan_iface.set_config_flag(0)
+        data = await scan_iface.iface.read(16384)
+        scan_iface.text_file.write(str(data.tolist()))
+
+        
             
-        if args.buf == "endpoint":
-            #scan_iface.launch_gui()
-            await scan_iface.set_8bit_output(1)
-            loop = asyncio.get_event_loop()
-            #loop.set_debug(True)
-            close_future = loop.create_future()
-            scan_iface.start_servers(close_future)
-            try:
-                await close_future
-            except Exception as err:
-                print(f'close error: {err}')
-                #await iface.flush()
+        # if args.buf == "endpoint":
+        #     #scan_iface.launch_gui()
+        #     await scan_iface.set_8bit_output(1)
+        #     loop = asyncio.get_event_loop()
+        #     #loop.set_debug(True)
+        #     close_future = loop.create_future()
+        #     scan_iface.start_servers(close_future)
+        #     try:
+        #         await close_future
+        #     except Exception as err:
+        #         print(f'close error: {err}')
+        #         #await iface.flush()
 
 
 
