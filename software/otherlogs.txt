@@ -1,0 +1,9 @@
+DEBUG:matplotlib:matplotlib data path: /Users/adammccombs/.pyenv/versions/3.12.1/lib/python3.12/site-packages/matplotlib/mpl-data
+DEBUG:matplotlib:CONFIGDIR=/Users/adammccombs/.matplotlib
+DEBUG:matplotlib:interactive is False
+DEBUG:matplotlib:platform is darwin
+DEBUG:matplotlib:CACHEDIR=/Users/adammccombs/.matplotlib
+DEBUG:matplotlib.font_manager:Using fontManager instance from /Users/adammccombs/.matplotlib/fontlist-v330.json
+DEBUG:asyncio:Using selector: _Selector
+DEBUG:root:continous read error<StreamReader transport=<_SelectorSocketTransport fd=37 read=idle write=<idle, bufsize=0>>>
+DEBUG:qasync._unix._Selector:Closing

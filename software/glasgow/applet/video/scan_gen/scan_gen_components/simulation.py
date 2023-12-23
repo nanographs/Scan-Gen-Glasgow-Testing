@@ -6,8 +6,8 @@ from amaranth.build import *
 from amaranth.sim import Simulator
 
 from addresses import *
-#sys.path.append("/Users/adammcombs/glasgow/Scan-Gen-Glasgow-Testing/software")
-sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
+sys.path.append("/Users/adammccombs/glasgow/Scan-Gen-Glasgow-Testing/software")
+#sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
 from glasgow import *
 from glasgow.access.simulation import SimulationMultiplexerInterface, SimulationDemultiplexerInterface
 from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGenInterface
@@ -32,12 +32,13 @@ sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenA
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
                     2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, is_simulation = True)
 
-
+textfile = open('packets.txt','w')
 def raster_sim(n=16384, eight_bit_output=False):
     output = yield from sim_app_iface.read(n)
     print("length:", len(output))
     if eight_bit_output:
         print(list(output))
+        textfile.write(str(list(output)))
     else:
         print(sim_scangen_iface.decode_rdwell_packet(output))
     
@@ -90,14 +91,14 @@ def raster_pattern_sim(dut):
         yield
 
 def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
-    # b1, b2 = get_two_bytes(x_res)
-    # print("set x resolution:", x_res)
-    # print(b1, b2)
-    # b1 = int(bits(b1))
-    # b2 = int(bits(b2))
+    b1, b2 = get_two_bytes(x_res)
+    print("set x resolution:", x_res)
+    print(b1, b2)
+    b1 = int(bits(b1))
+    b2 = int(bits(b2))
 
-    # yield dut.x_full_resolution_b1.eq(b1)
-    # yield dut.x_full_resolution_b2.eq(b2)
+    yield dut.x_full_resolution_b1.eq(b1)
+    yield dut.x_full_resolution_b2.eq(b2)
 
     c1, c2 = get_two_bytes(y_res)
     print("set y resolution:", y_res)
@@ -199,12 +200,12 @@ def sim_iobus():
             yield unpause.eq(1)
             yield
             yield from raster_sim(50, eight_bit_output = True)
-            yield from set_frame_params(dut, x_res=200, y_res=150)
+            yield from set_frame_params(dut, x_res=520, y_res=512)
             yield configuration.eq(1)
             yield
             yield configuration.eq(0)
             yield
-            yield from raster_sim(50, eight_bit_output = True)
+            yield from raster_sim(2000, eight_bit_output = True)
 
 
 

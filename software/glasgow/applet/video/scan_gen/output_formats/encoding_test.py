@@ -40,11 +40,13 @@ class ScanStream:
             print("data length:", m_len)
             print("frame size (x, y):", self.x_width, self.y_height)
             print("current x, current y:", self.current_x, self.current_y)
+            assert (self.buffer[self.current_y][0] == 0)
         
         if self.current_x > 0:
             partial_start_points = self.x_width - self.current_x
             if print_debug:
                 print(f'partial start points: {partial_start_points}')
+                assert (self.buffer[self.current_y][0] == 0)
             if partial_start_points > m_len: ## the current line will not be completed
                 full_lines = 0
                 self.buffer[self.current_y][self.current_x:(self.current_x + m_len)] = \
@@ -52,6 +54,7 @@ class ScanStream:
                 partial_end_points = 0
                 if print_debug:
                     print(f'partial start points {partial_start_points} > data len {m_len}')
+                    assert (self.buffer[self.current_y][0] == 0)
             else: ## fill in to the end of current line
                 full_lines = ((m_len) - partial_start_points)//self.x_width
                 self.buffer[self.current_y][self.current_x:self.x_width] = \
@@ -60,7 +63,8 @@ class ScanStream:
 
             if print_debug:
                 print(f'full lines: {full_lines}')
-                print(f'top rollover index 0:{partial_start_points}')   
+                print(f'top rollover index 0:{partial_start_points}')  
+                assert (self.buffer[self.current_y][0] == 0) 
             
             def check_frame_rollover():
                 if self.current_y >= self.y_height - 1:
@@ -76,6 +80,7 @@ class ScanStream:
             if print_debug:
                 print("no top rollover")
                 print(f'full lines: {full_lines}')
+                assert (self.buffer[self.current_y][0] == 0)
 
         
         ## fill in solid middle rectangle
@@ -88,6 +93,7 @@ class ScanStream:
                 if print_debug:
                     print(f'{full_frames} full frames')
                     print(f'{extra_lines} extra lines')
+                    assert (self.buffer[self.current_y][0] == 0)
 
 
             print(f'{self.current_y + full_lines} >= {self.y_height}?')
@@ -98,6 +104,7 @@ class ScanStream:
                     print("rolled into next frame")
                     print(f'bottom rows: {bottom_rows}')
                     print(f'set to: {partial_start_points} : {partial_start_points + self.x_width*bottom_rows}')
+                    assert (self.buffer[self.current_y][0] == 0)
 
                 self.buffer[self.current_y:] = \
                         m[partial_start_points:(partial_start_points + self.x_width*bottom_rows)]\
@@ -112,6 +119,7 @@ class ScanStream:
                              {partial_start_points + self.x_width*bottom_rows+ self.x_width*top_rows}')
                         print(f'buffer shape: 0:{top_rows}')
                         print(f'cast shape: {top_rows},{self.x_width}')
+                        assert (self.buffer[self.current_y][0] == 0)
                     self.buffer[0:top_rows] = \
                             m[(partial_start_points + self.x_width*bottom_rows):\
                                 (partial_start_points + self.x_width*bottom_rows+ self.x_width*top_rows)]\
@@ -131,6 +139,7 @@ class ScanStream:
                 if print_debug:
                     print(f'buffer[{self.current_y}:{self.current_y+full_lines}]')
                     print(f'set to data [{partial_start_points}:{partial_start_points + self.x_width*full_lines}]')
+                    assert (self.buffer[self.current_y][0] == 0)
                 self.buffer[self.current_y:self.current_y+full_lines] = \
                         m[partial_start_points:(partial_start_points + self.x_width*full_lines)]\
                             .cast('B',shape=([full_lines,self.x_width]))
@@ -139,6 +148,7 @@ class ScanStream:
 
         if print_debug:
             print(f'partial end points: {partial_end_points}')
+            assert (self.buffer[self.current_y][0] == 0)
 
 
         self.buffer[self.current_y][0:partial_end_points] = m[m_len-partial_end_points:]

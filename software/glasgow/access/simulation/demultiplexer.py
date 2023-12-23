@@ -73,11 +73,11 @@ class SimulationDemultiplexerInterface(AccessDemultiplexerInterface):
         n = 0
         for byte in data:
             while not (yield self._out_fifo.w_rdy):
-                if n > 70:
-                    n+=1
-                    yield
-                else:
-                    break
+                # if n > 70:
+                #     n+=1
+                yield
+                # else:
+                #     break
 
             yield from _fifo_write(self._out_fifo, byte)
 
