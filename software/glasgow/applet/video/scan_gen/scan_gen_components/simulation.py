@@ -90,24 +90,28 @@ def raster_pattern_sim(dut):
         yield
 
 def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
-    b1, b2 = get_two_bytes(x_res)
-    print("set x resolution:", x_res)
-    b1 = int(bits(b1))
-    b2 = int(bits(b2))
+    # b1, b2 = get_two_bytes(x_res)
+    # print("set x resolution:", x_res)
+    # print(b1, b2)
+    # b1 = int(bits(b1))
+    # b2 = int(bits(b2))
 
-    yield dut.x_full_resolution_b1.eq(b1)
-    yield dut.x_full_resolution_b2.eq(b2)
+    # yield dut.x_full_resolution_b1.eq(b1)
+    # yield dut.x_full_resolution_b2.eq(b2)
 
-    b1, b2 = get_two_bytes(y_res)
-    b1 = int(bits(b1))
-    b2 = int(bits(b2))
+    c1, c2 = get_two_bytes(y_res)
+    print("set y resolution:", y_res)
+    print(c1, c2)
+    c1 = int(bits(c1))
+    c2 = int(bits(c2))
 
-    yield dut.y_full_resolution_b1.eq(b1)
-    yield dut.y_full_resolution_b2.eq(b2)
+    yield dut.y_full_resolution_b1.eq(c1)
+    yield dut.y_full_resolution_b2.eq(c2)
 
     b1, b2 = get_two_bytes(x_lower)
     b1 = int(bits(b1))
     b2 = int(bits(b2))
+    print(b1, b2)
 
     yield dut.x_lower_limit_b1.eq(b1)
     yield dut.x_lower_limit_b2.eq(b2)
@@ -161,7 +165,7 @@ def sim_iobus():
 
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
-    y_full_resolution_b1, x_full_resolution_b2, 
+    y_full_resolution_b1, y_full_resolution_b2, 
     x_upper_limit_b1, x_upper_limit_b2,
     x_lower_limit_b1, x_lower_limit_b2,
     y_upper_limit_b1, y_upper_limit_b2,
@@ -194,13 +198,13 @@ def sim_iobus():
             yield
             yield unpause.eq(1)
             yield
-            yield from raster_sim(100, eight_bit_output = True)
-            yield from set_frame_params(dut, x_res=512, y_res=512)
+            yield from raster_sim(50, eight_bit_output = True)
+            yield from set_frame_params(dut, x_res=200, y_res=150)
             yield configuration.eq(1)
             yield
             yield configuration.eq(0)
             yield
-            yield from raster_sim(100, eight_bit_output = True)
+            yield from raster_sim(50, eight_bit_output = True)
 
 
 
@@ -226,6 +230,18 @@ def sim_iobus():
         # for n in range(6):
         #     data = yield from sim_app_iface.read(6)
         #     print(sim_scangen_iface.decode_vpoint_packet(data))
+
+        # yield x_full_resolution_b1.eq(255)
+        # yield
+        # yield y_full_resolution_b1.eq(100)
+        # yield
+        # yield configuration.eq(1)
+        # yield
+        # yield configuration.eq(0)
+        # yield
+        # yield unpause.eq(1)
+        # data = yield from sim_app_iface.read(10)
+        # print(list(data))
 
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz
