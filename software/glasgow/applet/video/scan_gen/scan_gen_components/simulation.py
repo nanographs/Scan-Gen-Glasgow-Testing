@@ -6,7 +6,7 @@ from amaranth.build import *
 from amaranth.sim import Simulator
 
 from addresses import *
-
+#sys.path.append("/Users/adammcombs/glasgow/Scan-Gen-Glasgow-Testing/software")
 sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
 from glasgow import *
 from glasgow.access.simulation import SimulationMultiplexerInterface, SimulationDemultiplexerInterface
