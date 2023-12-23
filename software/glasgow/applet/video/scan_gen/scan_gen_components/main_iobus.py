@@ -277,10 +277,10 @@ class IOBus(Elaboratable):
 
             with m.If((self.handling_config)):
                 m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.config_handler.config_data_valid))
-                m.d.comb += self.config_handler.write_happened.eq(self.write_strobe)
+                m.d.comb += self.config_handler.write_happened.eq((self.write_strobe) & (self.unpause))
             with m.Else():
                 m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.mode_ctrl.writer_data_valid))
-                m.d.comb += self.mode_ctrl.write_happened.eq(self.write_strobe)
+                m.d.comb += self.mode_ctrl.write_happened.eq((self.write_strobe) & (self.unpause))
 
         else:
             m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.mode_ctrl.writer_data_valid))
@@ -313,7 +313,7 @@ class IOBus(Elaboratable):
                         m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
             else:
                 m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
-                
+
             with m.If((self.write_strobe)&(self.unpause)):
                 if self.test_mode == "disable output":
                     pass

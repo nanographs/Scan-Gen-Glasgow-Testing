@@ -115,11 +115,11 @@ class ConfigHandler(Elaboratable):
                                                                             self.y_full_frame_resolution_b1))
                     m.d.sync += self.eight_bit_output_locked.eq(self.eight_bit_output)
                     #m.d.comb += self.config_data_valid.eq(1)
-                    #m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
-                    # with m.If(self.write_happened):
-                    #     m.next = "Insert_Start_B2"
-                    #with m.Else():
-                    m.next = "Insert_Start"
+                    m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
+                    with m.If(self.write_happened):
+                        m.next = "Insert_Start_B2"
+                    with m.Else():
+                        m.next = "Insert_Start"
             with m.State("Insert_Start"):
                 m.d.comb += self.writing_config.eq(1)
                 m.d.comb += self.config_data_valid.eq(1)
