@@ -263,6 +263,7 @@ class ScanGenInterface:
         b1, b2 = get_two_bytes(val)
         b1 = int(bits(b1))
         b2 = int(bits(b2))
+        #print("writing", b1, b2)
         await self._device.write_register(addr_b1, b1)
         await self._device.write_register(addr_b2, b2)
 

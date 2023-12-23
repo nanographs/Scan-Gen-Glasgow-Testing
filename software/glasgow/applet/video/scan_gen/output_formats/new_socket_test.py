@@ -92,7 +92,7 @@ class ConnectionManager:
                     data = await reader.read(16384)
                     print("recieved data")
 
-                    #self.scan_stream.parse_config_from_data(data)
+                    self.scan_stream.parse_config_from_data(data)
                     self.text_file.write(str(list(data)))
 
                     if self.stream_pattern == True:
@@ -191,8 +191,8 @@ class ScanInterface(ConnectionManager):
 
 async def main():
     con = ScanInterface()
-    await con.set_x_resolution(400)
-    await con.set_y_resolution(400)
+    await con.set_x_resolution(10)
+    await con.set_y_resolution(10)
     await con.set_scan_mode(1)
     await con.strobe_config()
     await con.open_data_client()

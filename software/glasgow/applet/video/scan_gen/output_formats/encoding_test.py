@@ -115,8 +115,7 @@ class ScanStream:
                 else:
                     if print_debug:
                         print(f'top rows: {top_rows}')
-                        print(f'set to: {partial_start_points + self.x_width*bottom_rows} :\
-                             {partial_start_points + self.x_width*bottom_rows+ self.x_width*top_rows}')
+                        print(f'set to: {partial_start_points + self.x_width*bottom_rows} :{partial_start_points + self.x_width*bottom_rows+ self.x_width*top_rows}')
                         print(f'buffer shape: 0:{top_rows}')
                         print(f'cast shape: {top_rows},{self.x_width}')
                         self.check_sync()
