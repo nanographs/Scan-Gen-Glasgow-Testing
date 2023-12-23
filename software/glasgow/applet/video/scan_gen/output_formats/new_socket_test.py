@@ -35,6 +35,8 @@ class ConnectionManager:
         #self.pattern_loop = self.loop_pattern()
         self.pattern_loop = hilbert()
 
+        self.text_file = open("socket_packets.txt", "w")
+
     def looppattern(self):
         L = [255, 255, 10, 100, 100, 10, 250, 100, 10, 200, 200, 10, 150, 150, 10, 100, 150, 10,
             230, 220, 10, 50, 10, 10]
@@ -89,10 +91,10 @@ class ConnectionManager:
                     await asyncio.sleep(0)
                     data = await reader.read(16384)
                     print("recieved data")
-                    #self.scan_stream.stream_frame_to_buffer(data)
-                    self.scan_stream.parse_config_from_data(data)
-                    #self.scan_stream.stream_points_to_buffer(data)
-                    #print(f'Received: {data.decode()!r}')
+
+                    #self.scan_stream.parse_config_from_data(data)
+                    self.text_file.write(str(list(data)))
+
                     if self.stream_pattern == True:
                         await self.write_points()
 
@@ -187,8 +189,17 @@ class ScanInterface(ConnectionManager):
 
 
 
-def main():
-    print(get_two_bytes(511))
+async def main():
+    con = ScanInterface()
+    await con.set_x_resolution(400)
+    await con.set_y_resolution(400)
+    await con.set_scan_mode(1)
+    await con.strobe_config()
+    await con.open_data_client()
+    await con.unpause()
+
 
 if __name__ == "__main__":
-    main()
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+    loop.run_forever()

@@ -36,8 +36,8 @@ class FrameSettings(QHBoxLayout):
         self.boxType = boxType
         self.registers = []
 
-        self.rx = self.addRegister("X Resolution", 1, 16384, 512)
-        self.ry = self.addRegister("Y Resolution", 1, 16384, 512)
+        self.rx = self.addRegister("X Resolution", 1, 16384, 400)
+        self.ry = self.addRegister("Y Resolution", 1, 16384, 400)
 
     def addRegister(self, label, lower_limit, upper_limit, initial_val):
         register_box = self.boxType(label, lower_limit, upper_limit, initial_val)

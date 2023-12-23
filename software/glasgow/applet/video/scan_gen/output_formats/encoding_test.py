@@ -6,8 +6,8 @@ import time
 
 class ScanStream:
     def __init__(self):
-        self.y_height = 512
-        self.x_width = 512
+        self.y_height = 510
+        self.x_width = 510
 
         self.current_x = 0
         self.current_y = 0
@@ -40,13 +40,13 @@ class ScanStream:
             print("data length:", m_len)
             print("frame size (x, y):", self.x_width, self.y_height)
             print("current x, current y:", self.current_x, self.current_y)
-            assert (self.buffer[self.current_y][0] == 0)
+            self.check_sync()
         
         if self.current_x > 0:
             partial_start_points = self.x_width - self.current_x
             if print_debug:
                 print(f'partial start points: {partial_start_points}')
-                assert (self.buffer[self.current_y][0] == 0)
+                self.check_sync()
             if partial_start_points > m_len: ## the current line will not be completed
                 full_lines = 0
                 self.buffer[self.current_y][self.current_x:(self.current_x + m_len)] = \
@@ -54,7 +54,7 @@ class ScanStream:
                 partial_end_points = 0
                 if print_debug:
                     print(f'partial start points {partial_start_points} > data len {m_len}')
-                    assert (self.buffer[self.current_y][0] == 0)
+                    self.check_sync()
             else: ## fill in to the end of current line
                 full_lines = ((m_len) - partial_start_points)//self.x_width
                 self.buffer[self.current_y][self.current_x:self.x_width] = \
@@ -64,7 +64,7 @@ class ScanStream:
             if print_debug:
                 print(f'full lines: {full_lines}')
                 print(f'top rollover index 0:{partial_start_points}')  
-                assert (self.buffer[self.current_y][0] == 0) 
+                self.check_sync()
             
             def check_frame_rollover():
                 if self.current_y >= self.y_height - 1:
@@ -80,7 +80,7 @@ class ScanStream:
             if print_debug:
                 print("no top rollover")
                 print(f'full lines: {full_lines}')
-                assert (self.buffer[self.current_y][0] == 0)
+                self.check_sync()
 
         
         ## fill in solid middle rectangle
@@ -93,7 +93,7 @@ class ScanStream:
                 if print_debug:
                     print(f'{full_frames} full frames')
                     print(f'{extra_lines} extra lines')
-                    assert (self.buffer[self.current_y][0] == 0)
+                    self.check_sync()
 
 
             print(f'{self.current_y + full_lines} >= {self.y_height}?')
@@ -104,7 +104,7 @@ class ScanStream:
                     print("rolled into next frame")
                     print(f'bottom rows: {bottom_rows}')
                     print(f'set to: {partial_start_points} : {partial_start_points + self.x_width*bottom_rows}')
-                    assert (self.buffer[self.current_y][0] == 0)
+                    self.check_sync()
 
                 self.buffer[self.current_y:] = \
                         m[partial_start_points:(partial_start_points + self.x_width*bottom_rows)]\
@@ -119,7 +119,7 @@ class ScanStream:
                              {partial_start_points + self.x_width*bottom_rows+ self.x_width*top_rows}')
                         print(f'buffer shape: 0:{top_rows}')
                         print(f'cast shape: {top_rows},{self.x_width}')
-                        assert (self.buffer[self.current_y][0] == 0)
+                        self.check_sync()
                     self.buffer[0:top_rows] = \
                             m[(partial_start_points + self.x_width*bottom_rows):\
                                 (partial_start_points + self.x_width*bottom_rows+ self.x_width*top_rows)]\
@@ -139,7 +139,7 @@ class ScanStream:
                 if print_debug:
                     print(f'buffer[{self.current_y}:{self.current_y+full_lines}]')
                     print(f'set to data [{partial_start_points}:{partial_start_points + self.x_width*full_lines}]')
-                    assert (self.buffer[self.current_y][0] == 0)
+                    self.check_sync()
                 self.buffer[self.current_y:self.current_y+full_lines] = \
                         m[partial_start_points:(partial_start_points + self.x_width*full_lines)]\
                             .cast('B',shape=([full_lines,self.x_width]))
@@ -150,9 +150,9 @@ class ScanStream:
             print(f'partial end points: {partial_end_points}')
             print(f'buffer [{self.current_y}][0:{partial_end_points}]')
             print(f' = m[{m_len-partial_end_points}:]')
-            print(f'last line: {m[m_len-partial_end_points:]} ')
+            print(f'last line: {str(m[m_len-partial_end_points:].tolist())} ')
             print(f'length: {len(m[m_len-partial_end_points:])}')
-            assert (self.buffer[self.current_y][0] == 0)
+            self.check_sync()
 
 
         self.buffer[self.current_y][0:partial_end_points] = m[m_len-partial_end_points:]
@@ -161,12 +161,19 @@ class ScanStream:
 
         if print_debug:
             print(self.buffer)
-            assert (self.buffer[self.current_y][0] == 0)
-        # try:
-        #     assert (self.buffer[self.current_y][0] == 0)
-        # except AssertionError:
-        #     print("****frame is out of sync****")
+            self.check_sync()
+            
+
     
+    def check_sync(self):
+        try:
+            assert (self.buffer[self.current_y][0] == 0)
+        except AssertionError:
+            print("****frame is out of sync****")
+            print(self.buffer[self.current_y])
+            assert (self.buffer[self.current_y][0] == 0)
+
+
     def points_to_vector(self, m:memoryview):
         full_points = len(m)//6
         #extra = len(m)%6
@@ -289,13 +296,13 @@ class ScanStream:
 
 if __name__ == "__main__":
     def test_frame_stuffing():
-        data = [252, 253, 254] + [n for n in range(0,255)]*10 + [0, 1, 2]
+        data = [4, 5, 6] + [n for n in range(0,6)]*10 + [0, 1, 2]
         d = bytes(data)
         m = memoryview(d)
         s = ScanStream()
-        #s.change_buffer(255, 255)
-        s.current_x = 509
-        s.current_y = 510
+        s.change_buffer(6,6)
+        s.current_x = 3
+        s.current_y = 5
         s.points_to_frame(m)
 
     test_frame_stuffing()

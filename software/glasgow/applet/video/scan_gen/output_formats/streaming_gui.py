@@ -138,8 +138,8 @@ class MainWindow(QWidget):
         self.layout = QGridLayout()
         self.setLayout(self.layout)
 
-        self.image_display = ImageDisplay(512,512)
-        self.image_display.setRange(512,512)
+        self.image_display = ImageDisplay(510,510)
+        self.image_display.setRange(510,510)
         self.layout.addWidget(self.image_display, 1, 0)
 
         self.frame_settings = StreamFrameSettings(self.con)
