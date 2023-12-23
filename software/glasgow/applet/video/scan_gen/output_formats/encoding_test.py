@@ -148,6 +148,10 @@ class ScanStream:
 
         if print_debug:
             print(f'partial end points: {partial_end_points}')
+            print(f'buffer [{self.current_y}][0:{partial_end_points}]')
+            print(f' = m[{m_len-partial_end_points}:]')
+            print(f'last line: {m[m_len-partial_end_points:]} ')
+            print(f'length: {len(m[m_len-partial_end_points:])}')
             assert (self.buffer[self.current_y][0] == 0)
 
 
