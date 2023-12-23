@@ -138,6 +138,7 @@ class IOBus(Elaboratable):
             d = Signal()
             e = Signal()
 
+
             with m.If(self.unpause == 0):
                 m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
             with m.Else():
@@ -175,8 +176,8 @@ class IOBus(Elaboratable):
 
 
             ## Reset counters when configuration changes
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.reset.eq(self.handling_config)
-            m.d.comb += self.mode_ctrl.beam_controller.reset.eq(self.handling_config)
+            m.d.comb += self.mode_ctrl.reset.eq(self.handling_config)
+            m.d.comb += self.mode_ctrl.disable_dwell.eq(~(self.unpause))
 
             with m.If(self.handling_config):
                 m.d.comb += self.mode_ctrl.mode.eq(0)

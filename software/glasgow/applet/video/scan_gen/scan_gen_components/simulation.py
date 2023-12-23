@@ -187,6 +187,7 @@ def sim_iobus():
             #yield const_dwell_time.eq(0)
             yield scan_mode.eq(1)
             yield from set_frame_params(dut, x_res=512, y_res=512)
+            yield
             yield configuration.eq(1)
             yield
             yield configuration.eq(0)

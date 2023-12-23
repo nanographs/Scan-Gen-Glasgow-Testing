@@ -109,6 +109,9 @@ class ModeController(Elaboratable):
 
         self.replace_0_to_1 = Signal()
         self.replace_FF_to_FE = Signal()
+
+        self.reset = Signal()
+        self.disable_dwell = Signal()
         
     def elaborate(self, platform):
         m = Module()
@@ -137,6 +140,9 @@ class ModeController(Elaboratable):
         # with m.If(self.mode == 0): ### when in DO NOTHING mode, do nothing.
         #     m.d.comb += self.write_happened.eq(0)
         #     m.d.comb += self.beam_controller.dwelling.eq(0)
+
+        m.d.comb += self.ras_mode_ctrl.xy_scan_gen.reset.eq(self.reset)
+        m.d.comb += self.beam_controller.reset.eq(self.reset)
 
         with m.If((self.mode == ScanMode.Raster)|(self.mode == ScanMode.RasterPattern)):
             #### Interpolation 
@@ -170,7 +176,7 @@ class ModeController(Elaboratable):
 
             
             with m.If(self.mode == ScanMode.Raster):
-                m.d.comb += self.beam_controller.dwelling.eq(self.write_ready)
+                m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)))
                 m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
                 m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal 
                 
@@ -180,10 +186,10 @@ class ModeController(Elaboratable):
                 with m.FSM() as fsm:
                     with m.State("Wait for first USB"):
                         with m.If(self.ras_mode_ctrl.raster_fifo.r_rdy):
-                            m.d.comb += self.beam_controller.dwelling.eq(self.write_ready) 
+                            m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell))) 
                             m.next = "Patterning"
                     with m.State("Patterning"):
-                        m.d.comb += self.beam_controller.dwelling.eq(self.write_ready) 
+                        m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)) )
                 m.d.comb += self.ras_mode_ctrl.raster_reader.out_fifo_r_data.eq(self.out_fifo_r_data)
                 m.d.comb += self.ras_mode_ctrl.raster_reader.read_happened.eq(self.read_happened)
                 m.d.comb += self.internal_fifo_ready.eq(self.ras_mode_ctrl.raster_fifo.w_rdy)
@@ -198,10 +204,10 @@ class ModeController(Elaboratable):
                     with m.State("Wait for first USB"):
                         #with m.If(self.vec_mode_ctrl.vector_fifo.r_rdy):
                         with m.If(self.vec_mode_ctrl.vector_reader.data_complete):
-                            m.d.comb += self.beam_controller.dwelling.eq(self.write_ready)
+                            m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)))
                             m.next = "Patterning"
                     with m.State("Patterning"):
-                        m.d.comb += self.beam_controller.dwelling.eq(self.write_ready) 
+                        m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)) )
                         m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_xy.eq((self.beam_controller.end_of_dwell))
                         m.d.comb += self.vec_mode_ctrl.vector_reader.data_point_used.eq(self.beam_controller.end_of_dwell)
                         m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq((self.beam_controller.end_of_dwell))
