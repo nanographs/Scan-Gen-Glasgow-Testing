@@ -7,5 +7,4 @@ DEBUG:matplotlib:platform is darwin
 DEBUG:matplotlib:CACHEDIR=/Users/isabelburgos/.matplotlib
 DEBUG:matplotlib.font_manager:Using fontManager instance from /Users/isabelburgos/.matplotlib/fontlist-v330.json
 DEBUG:asyncio:Using selector: _Selector
-DEBUG:root:continous read error<StreamReader transport=<_SelectorSocketTransport fd=33 read=idle write=<idle, bufsize=0>>>
 DEBUG:qasync._unix._Selector:Closing

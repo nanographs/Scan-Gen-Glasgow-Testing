@@ -2,7 +2,6 @@ import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
 from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
-print(__name__)
 
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.beam_controller import BeamController
