@@ -36,7 +36,7 @@ class ScanStream:
                     dtype = np.uint8)
         print("cleared buffer")
 
-    def points_to_frame(self, m:memoryview, print_debug = True):
+    def points_to_frame(self, m:memoryview, print_debug = False):
         m_len = len(m)
         if print_debug:
             print("data length:", m_len)
@@ -199,7 +199,7 @@ class ScanStream:
 
     def handle_data_with_config(self, data:memoryview, config = None):
         if not config == None:
-            print("using this: config")
+            print(f'using this config: {config}')
             self.parse_config_packet(config)
         else:
             print("continue with existing config")
@@ -252,6 +252,7 @@ class ScanStream:
         n = re.finditer(self.config_match, d)
         prev_stop = 0
         prev_config = None
+        print(f'd start with...{list(d)[0:10]}')
         try: 
             match = next(n)
             start, stop = match.span()
@@ -261,37 +262,41 @@ class ScanStream:
                 print("Config packet detected")
                 print(f'start, stop: {start}, {stop}')
                 print(f'data: {prev_stop}:{start}')
+                print(f'data start with...{list(data)[0:10]}')
             prev_stop = stop
             prev_config = config
             self.handle_data_with_config(memoryview(data))
+
+            while True:
+                try:
+                    match = next(n)
+                    start, stop = match.span()
+                    config = match.group()
+                    data = d[prev_stop:start]
+                    if print_debug:
+                        print("Config packet detected")
+                        print(f'start, stop: {start}, {stop}')
+                        print(f'data: {prev_stop}:{start}')
+                    self.handle_data_with_config(memoryview(data), memoryview(prev_config[2:8]))
+                    prev_stop = stop
+                    prev_config = config
+                except StopIteration:
+                    data = d[prev_stop:]
+                    if print_debug:
+                        print("Stop")
+                        print(f'data: {prev_stop}:')
+                        print(f'data start with...{list(data)[0:10]}')
+                    if prev_config == None:
+                        self.handle_data_with_config(memoryview(data))
+                    else:
+                        self.handle_data_with_config(memoryview(data), memoryview(prev_config[2:8]))
+                    break
+
         except StopIteration:
             if print_debug:
                 print("No config packets in here")
             self.handle_data_with_config(memoryview(d))
 
-        while True:
-            try:
-                match = next(n)
-                start, stop = match.span()
-                config = match.group()
-                data = d[prev_stop:start]
-                if print_debug:
-                    print("Config packet detected")
-                    print(f'start, stop: {start}, {stop}')
-                    print(f'data: {prev_stop}:{start}')
-                self.handle_data_with_config(memoryview(data), memoryview(prev_config[2:8]))
-                prev_stop = stop
-                prev_config = config
-            except StopIteration:
-                data = d[prev_stop:]
-                if print_debug:
-                    print("Stop")
-                    print(f'data: {prev_stop}:')
-                if prev_config == None:
-                    self.handle_data_with_config(memoryview(data))
-                else:
-                    self.handle_data_with_config(memoryview(data), memoryview(prev_config[2:8]))
-                break
 
             
 
@@ -314,6 +319,7 @@ if __name__ == "__main__":
         s.change_buffer(400, 400)
         packet_generator = generate_packet_with_config(400,400)
         for n in range(3):
+            print("=====start new packet======")
             data = next(packet_generator)
             d = bytes(data)
             s.parse_config_from_data(d)

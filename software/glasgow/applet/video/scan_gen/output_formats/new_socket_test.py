@@ -94,8 +94,8 @@ class ConnectionManager:
                     n += 1
                     print(f'recieved data {n}')
                     logger.info(f'recieved data {n}, length {len(data)}')
-                    self.text_file.write(str(list(data)))
-                    logger.info(f'wrote data {n} to text file')
+                    #self.text_file.write(str(list(data)))
+                    #logger.info(f'wrote data {n} to text file')
                     self.scan_stream.parse_config_from_data(data)
 
 
