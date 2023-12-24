@@ -316,8 +316,8 @@ if __name__ == "__main__":
     def test_frame_stuffing():
         #data = [4, 5, 6] + [n for n in range(0,6)]*10 + [0, 1, 2]
         s = ScanStream()
-        s.change_buffer(400, 400)
-        packet_generator = generate_packet_with_config(400,400)
+        s.change_buffer(1547, 400)
+        packet_generator = generate_packet_with_config(1547,400)
         for n in range(3):
             print("=====start new packet======")
             data = next(packet_generator)

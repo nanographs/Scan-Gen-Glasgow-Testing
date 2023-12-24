@@ -52,9 +52,13 @@ def generate_packet_with_config(x_resolution, y_resolution):
         yield packet
         n = 0
 
-packet_generator = generate_packet_with_config(400,400)
-text_file = open("fakepackets.txt", "w")
 
-for n in range(3):
-    text_file.write(str(next(packet_generator)))
+
+
+if __name__ == "__main__":
+    print(bytes(generate_raster_config(400,400)))
+    # packet_generator = generate_packet_with_config(400,400)
+    # text_file = open("fakepackets.txt", "w")
+    # for n in range(3):
+    #     text_file.write(str(next(packet_generator)))
 
