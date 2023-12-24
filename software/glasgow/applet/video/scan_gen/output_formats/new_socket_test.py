@@ -84,16 +84,20 @@ class ConnectionManager:
     async def read_continously(self):
         reader = self.data_reader
         writer = self.data_writer
+        n = 0
         while True:
             try:
                 print("trying to read")
                 if not reader.at_eof():
                     await asyncio.sleep(0)
                     data = await reader.read(16384)
-                    print("recieved data")
-
-                    self.scan_stream.parse_config_from_data(data)
+                    n += 1
+                    print(f'recieved data {n}')
+                    logger.info(f'recieved data {n}, length {len(data)}')
                     self.text_file.write(str(list(data)))
+                    logger.info(f'wrote data {n} to text file')
+                    self.scan_stream.parse_config_from_data(data)
+
 
                     if self.stream_pattern == True:
                         await self.write_points()
@@ -191,8 +195,8 @@ class ScanInterface(ConnectionManager):
 
 async def main():
     con = ScanInterface()
-    await con.set_x_resolution(10)
-    await con.set_y_resolution(10)
+    await con.set_x_resolution(400)
+    await con.set_y_resolution(400)
     await con.set_scan_mode(1)
     await con.strobe_config()
     await con.open_data_client()

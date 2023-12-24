@@ -3,6 +3,8 @@ import array
 import numpy as np
 import time
 
+from tests import generate_packet_with_config
+
 
 class ScanStream:
     def __init__(self):
@@ -48,6 +50,7 @@ class ScanStream:
                 print(f'partial start points: {partial_start_points}')
                 self.check_sync()
             if partial_start_points > m_len: ## the current line will not be completed
+                
                 full_lines = 0
                 self.buffer[self.current_y][self.current_x:(self.current_x + m_len)] = \
                     m[0:partial_start_points]
@@ -56,6 +59,9 @@ class ScanStream:
                     print(f'partial start points {partial_start_points} > data len {m_len}')
                     self.check_sync()
             else: ## fill in to the end of current line
+                if print_debug:
+                    print(f'buffer [{self.current_y}][{self.current_x}:{self.x_width}]')
+                    print(f'set to m[0:{partial_start_points}]')
                 full_lines = ((m_len) - partial_start_points)//self.x_width
                 self.buffer[self.current_y][self.current_x:self.x_width] = \
                     m[0:partial_start_points]
@@ -70,7 +76,9 @@ class ScanStream:
                 if self.current_y >= self.y_height - 1:
                     self.current_y = 0
                 else:
-                    self.current_y + 1
+                    self.current_y += 1
+                if print_debug:
+                    print(f'current y: {self.current_y}')
             check_frame_rollover()
 
         else: 
@@ -142,7 +150,13 @@ class ScanStream:
                 self.buffer[self.current_y:self.current_y+full_lines] = \
                         m[partial_start_points:(partial_start_points + self.x_width*full_lines)]\
                             .cast('B',shape=([full_lines,self.x_width]))
+                if print_debug:
+                    print(f'beginning of block: {self.buffer[self.current_y]}')
                 self.current_y += full_lines
+                if print_debug:
+                    print(f'end of block: {self.buffer[self.current_y]}')
+                
+
 
 
         if print_debug:
@@ -234,7 +248,7 @@ class ScanStream:
         print(f'8bit mode: {self.eight_bit_output}')
         
 
-    def parse_config_from_data(self, d:bytes, print_debug=False):
+    def parse_config_from_data(self, d:bytes, print_debug=True):
         n = re.finditer(self.config_match, d)
         prev_stop = 0
         prev_config = None
@@ -295,13 +309,14 @@ class ScanStream:
 
 if __name__ == "__main__":
     def test_frame_stuffing():
-        data = [4, 5, 6] + [n for n in range(0,6)]*10 + [0, 1, 2]
-        d = bytes(data)
-        m = memoryview(d)
+        #data = [4, 5, 6] + [n for n in range(0,6)]*10 + [0, 1, 2]
         s = ScanStream()
-        s.change_buffer(6,6)
-        s.current_x = 3
-        s.current_y = 5
-        s.points_to_frame(m)
+        s.change_buffer(400, 400)
+        packet_generator = generate_packet_with_config(400,400)
+        for n in range(3):
+            data = next(packet_generator)
+            d = bytes(data)
+            s.parse_config_from_data(d)
+        
 
     test_frame_stuffing()

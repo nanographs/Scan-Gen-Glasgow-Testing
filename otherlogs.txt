@@ -5,4 +5,8 @@ DEBUG:matplotlib:platform is darwin
 DEBUG:matplotlib:CACHEDIR=/Users/isabelburgos/.matplotlib
 DEBUG:matplotlib.font_manager:Using fontManager instance from /Users/isabelburgos/.matplotlib/fontlist-v330.json
 DEBUG:asyncio:Using selector: KqueueSelector
+INFO:__main__:recieved data 1, length 16384
+INFO:__main__:wrote data 1 to text file
+INFO:__main__:recieved data 2, length 16384
+INFO:__main__:wrote data 2 to text file
 DEBUG:root:continous read error<StreamReader transport=<_SelectorSocketTransport fd=9 read=polling write=<idle, bufsize=0>>>
