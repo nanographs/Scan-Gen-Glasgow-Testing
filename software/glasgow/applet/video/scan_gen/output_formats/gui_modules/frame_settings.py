@@ -9,6 +9,17 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QSpinBox)
 
 
+class Setting:
+    def __init__(self, label, values):
+        self.label = label
+        self.values = values
+
+class SettingsArray:
+    def __init__(self, registers, values):
+        self.registers = registers ## list of RegisterUpdateBox
+        self.values = values ## array of values
+
+
 class RegisterUpdateBox(QGridLayout):
     def __init__(self, label, lower_limit, upper_limit, initial_val):
         super().__init__()
@@ -48,8 +59,8 @@ class FrameSettings(QHBoxLayout):
         self.addLayout(register_box)
         return register_box
 
-    def addButtonPanel(self):
-        self.buttons = ButtonPanel(self.rx)
+    def addButtonPanel(self, s: SettingsArray):
+        self.buttons = ButtonPanel(s)
         self.addLayout(self.buttons)
 
     def getframe(self):
@@ -59,24 +70,32 @@ class FrameSettings(QHBoxLayout):
 
 
 class SettingsButton(QPushButton):
-    def __init__(self, label:str, settings, register:RegisterUpdateBox):
+    def __init__(self, label:str, settings, registers):
         super().__init__(label)
         self.label = label
         self.settings = settings
-        self.register = register
+        self.registers = registers #RegisterUpdateBox
         self.clicked.connect(self.updateRegister)
 
     def updateRegister(self):
-        self.register.setval(self.settings)
+        for n in range(len(self.registers)):
+            self.registers[n].setval(self.settings[n])
 
 
 class ButtonPanel(QGridLayout):
-    def __init__(self, register):
+    def __init__(self, settings:SettingsArray):
         super().__init__()
         self.btns = []
-        self.addBtn("512", 512, register, 0, 0)
-        self.addBtn("1024", 1024, register, 0, 1)
-        self.addBtn("2048", 2048, register, 0, 2)
+        self.settings = settings
+        print(self.settings.values)
+        for row in range(len(self.settings.values)):
+            for column in range(len(self.settings.values[row])):
+                setting = self.settings.values[row][column]
+                self.addBtn(setting.label, setting.values, self.settings.registers, row, column)
+                print(row, column)
+        # self.addBtn("512", 512, register, 0, 0)
+        # self.addBtn("1024", 1024, register, 0, 1)
+        # self.addBtn("2048", 2048, register, 0, 2)
     
     def addBtn(self, label, settings, register, row, col):
         btn = SettingsButton(label, settings, register)
@@ -88,7 +107,14 @@ class ButtonPanel(QGridLayout):
 if __name__ == "__main__":
     app = pg.mkQApp()
     settings = FrameSettings()
-    settings.addButtonPanel()
+    s = SettingsArray(
+        [settings.rx, settings.ry],
+        [
+            [Setting("512", [512, 512]), Setting("1024", [1024, 1024])],
+            [Setting("2048", [2048, 2048]), Setting("4096", [4096, 4096])],
+        ]
+    )
+    settings.addButtonPanel(s)
     w = QWidget()
     w.setLayout(settings)
     w.show()
