@@ -28,6 +28,9 @@ class RegisterUpdateBox(QGridLayout):
 
     def getval(self):
         return int(self.spinbox.cleanText())
+    
+    def setval(self, val):
+        self.spinbox.setValue(val)
 
 
 class FrameSettings(QHBoxLayout):
@@ -45,10 +48,9 @@ class FrameSettings(QHBoxLayout):
         self.addLayout(register_box)
         return register_box
 
-    def addButton(self):
-        self.btn = QPushButton("->")
-        self.addWidget(self.btn) 
-        return self.btn
+    def addButtonPanel(self):
+        self.buttons = ButtonPanel(self.rx)
+        self.addLayout(self.buttons)
 
     def getframe(self):
         x_width = self.rx.getval()
@@ -56,11 +58,37 @@ class FrameSettings(QHBoxLayout):
         return x_width, y_height
 
 
+class SettingsButton(QPushButton):
+    def __init__(self, label:str, settings, register:RegisterUpdateBox):
+        super().__init__(label)
+        self.label = label
+        self.settings = settings
+        self.register = register
+        self.clicked.connect(self.updateRegister)
+
+    def updateRegister(self):
+        self.register.setval(self.settings)
+
+
+class ButtonPanel(QGridLayout):
+    def __init__(self, register):
+        super().__init__()
+        self.btns = []
+        self.addBtn("512", 512, register, 0, 0)
+        self.addBtn("1024", 1024, register, 0, 1)
+        self.addBtn("2048", 2048, register, 0, 2)
+    
+    def addBtn(self, label, settings, register, row, col):
+        btn = SettingsButton(label, settings, register)
+        self.addWidget(btn, row, col)
+        self.btns.append(btn)
+
+
 
 if __name__ == "__main__":
     app = pg.mkQApp()
     settings = FrameSettings()
-    settings.addButton()
+    settings.addButtonPanel()
     w = QWidget()
     w.setLayout(settings)
     w.show()

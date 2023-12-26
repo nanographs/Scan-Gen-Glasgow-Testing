@@ -20,10 +20,16 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         ## lock the aspect ratio so pixels are always square
         self.image_view.setAspectLocked(True)
         self.image_view.setRange(QtCore.QRectF(0, 0, y_height, x_width))
+        self.image_view.setLimits(xMin=0, xMax=16384, 
+             minXRange=1, maxXRange=16384, 
+             yMin=0, yMax=16384,
+             minYRange=1, maxYRange=16384)
         
         self.live_img = pg.ImageItem(border='w',axisOrder="row-major")
         self.live_img.setImage(np.full((y_height, x_width), 0, np.uint8), rect = (0,0,x_width, y_height))
         self.image_view.addItem(self.live_img)
+
+        self.data = np.zeros(shape = (y_height, x_width))
 
         # Contrast/color control
         self.hist = pg.HistogramLUTItem()
@@ -48,17 +54,29 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         #self.add_ROI()
 
     def add_ROI(self):
-        border = pg.mkPen(color = "#00ff00", width = 5)
+        border = pg.mkPen(color = "#00ff00", width = 2)
         # Custom ROI for selecting an image region
-        roi = pg.ROI([100, 100], [200, 400], pen = border)
-        roi.addScaleHandle([0.5, 1], [0.5, 0.5])
-        roi.addScaleHandle([0, 0.5], [0.5, 0.5])
-        self.image_view.addItem(roi)
-        roi.setZValue(10)  # make sure ROI is drawn above image
+        self.roi = pg.ROI([100, 100], [200, 400], pen = border,
+                        scaleSnap = True, translateSnap = True)
+        self.roi.addScaleHandle([1, 1], [0, 0])
+        self.roi.addScaleHandle([0, 0], [1, 1])
+        self.image_view.addItem(self.roi)
+        self.roi.setZValue(10)  # make sure ROI is drawn above image
+        self.roi.sigRegionChanged.connect(self.get_ROI)
+
+    def get_ROI(self):
+        x0, y0 = self.roi.pos() ## upper left corner
+        x1, y1 = self.roi.size()
+        x_lower = x0
+        y_lower = y0
+        x_upper = x0 + x1
+        y_upper = y0 + y1
+        
 
     def setImage(self, y_height, x_width, image):
         ## image must be 2D np.array of np.uint8
         self.live_img.setImage(image, rect = (0,0, x_width, y_height))
+        self.data = image
 
 
     def setRange(self, y_height, x_width):
@@ -70,7 +88,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         # array = np.array(bmp).astype(np.uint8)
         array = np.random.randint(0, 255,size = (512,512))
         array = array.astype(np.uint8)
-        self.live_img.setImage(array)
+        self.setImage(self.y_height, self.x_width, array)
 
     def saveImage(self):
         self.exporter.parameters()['height'] = self.dimension
@@ -83,5 +101,6 @@ if __name__ == "__main__":
     app = pg.mkQApp()
     image_display = ImageDisplay(512, 512)
     image_display.showTest()
+    image_display.add_ROI()
     image_display.show()
     pg.exec()
