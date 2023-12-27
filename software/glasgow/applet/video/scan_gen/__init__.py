@@ -154,6 +154,7 @@ class ScanGenInterface:
 
         self.__addr_configuration = __addr_configuration
         self.__addr_unpause = __addr_unpause
+        self.__addr_step_size = __addr_step_size
         ## ======= end registers =======
 
 
@@ -330,6 +331,11 @@ class ScanGenInterface:
     async def set_vector_mode(self):
         await self._device.write_register(self.__addr_scan_mode, 3)
         print("set vector mode")
+
+    async def set_step_size(self, val):
+        await self._device.write_register(self.__addr_step_size, val)
+        print("set step size", val)
+
 
     async def stream_video(self):
         print("getting data :3")
@@ -927,31 +933,28 @@ class ScanGenApplet(GlasgowApplet):
         # for n in range(3):
         #     await scan_iface.write_points()
 
-        # if args.buf == "local":
-        #     await scan_iface.set_8bit_output()
-        #     await scan_iface.set_frame_sync()
-        #     await scan_iface.set_frame_resolution(512,512)
-        #     await scan_iface.set_raster_mode()
-        #     scan_iface.launch_gui()
+        if args.buf == "local":
+            await scan_iface.set_8bit_output()
+            await scan_iface.set_frame_sync()
+            await scan_iface.set_frame_resolution(512,512)
+            await scan_iface.set_raster_mode()
+            scan_iface.launch_gui()
 
-        # await scan_iface.set_8bit_output(1)
-        # await scan_iface.set_raster_mode()
-        # await scan_iface.set_frame_resolution(25,25)
-        # await scan_iface.set_config_flag(1)
-        # await scan_iface.set_config_flag(0)
-        # await scan_iface.set_raster_mode()
-        # await scan_iface.unpause()
-        # await scan_iface.set_frame_resolution(15,15)
-        # await scan_iface.set_config_flag(1)
-        # await scan_iface.set_config_flag(0)
-        # data = await scan_iface.iface.read(16384)
-        # scan_iface.text_file.write(str(data.tolist()))
-        # await scan_iface.set_frame_resolution(5120,512)
-        # await scan_iface.set_config_flag(1)
-        # await scan_iface.set_config_flag(0)
-        # data = await scan_iface.iface.read(16384)
-        # scan_iface.text_file.write(str(data.tolist()))
-        #await scan_iface.pause()
+        if args.buf == "test":
+            await scan_iface.set_8bit_output(1)
+            await scan_iface.set_raster_mode()
+            await scan_iface.set_frame_resolution(25,25)
+            await scan_iface.set_step_size(25)
+            await scan_iface.set_config_flag(1)
+            await scan_iface.set_config_flag(0)
+            await scan_iface.set_raster_mode()
+            await scan_iface.unpause()
+            await scan_iface.set_frame_resolution(15,15)
+            await scan_iface.set_step_size(15)
+            await scan_iface.set_config_flag(1)
+            await scan_iface.set_config_flag(0)
+            data = await scan_iface.iface.read(16384)
+            scan_iface.text_file.write(str(data.tolist()))
 
         
             
