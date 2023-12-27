@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from hilbertcurve.hilbertcurve import HilbertCurve
 
 

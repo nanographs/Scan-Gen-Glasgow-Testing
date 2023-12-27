@@ -8,8 +8,6 @@ import asyncio
 import functools
 import sys
 
-import tifffile
-from tifffile import imwrite
 from PIL import Image
 
 import os, datetime
