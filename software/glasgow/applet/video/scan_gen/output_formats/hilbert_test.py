@@ -1,7 +1,7 @@
 from hilbertcurve.hilbertcurve import HilbertCurve
 
 
-def hilbert():
+def hilbert(dwell_time = 0):
     N = 2 # number of dimensions
 
     #text_file = open("hilbert.txt", "w")
@@ -29,27 +29,11 @@ def hilbert():
             y = pt[1]*side/sidep + offset
             yield int(x)
             yield int(y)
-            yield 1
+            yield dwell_time
 
         offset += dx
         dx *= 2
-        # pts = [
-        #     [(pt[0]*side/sidep) + offset,
-        #     (pt[1]*side/sidep) + offset]
-        #     for pt in pts]
 
-
-        # for i in pts:
-        #     print(i)
-        #     #text_file.write(str([int(i[0]*8), int(i[1]*8), 2])+",\n")
-        #     points.append([int(i[0]), int(i[1]), 2])
-
-
-        #yield points
-
-# def hilbert_generator():
-#     points = next(hilbert())
-#     yield points
 
     
 
