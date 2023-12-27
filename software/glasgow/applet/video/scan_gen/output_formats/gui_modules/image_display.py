@@ -114,7 +114,6 @@ if __name__ == "__main__":
     app = pg.mkQApp()
     image_display = ImageDisplay(512, 512)
     image_display.showTest()
-    # image_display.add_ROI()
+    image_display.add_ROI()
     image_display.show()
-    image_display.saveImage_PIL()
     pg.exec()
