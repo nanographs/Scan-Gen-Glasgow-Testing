@@ -53,6 +53,15 @@ class FrameSettings(QHBoxLayout):
         self.rx = self.addRegister("X Resolution", 1, 16384, 400)
         self.ry = self.addRegister("Y Resolution", 1, 16384, 400)
 
+        s = SettingsArray(
+        [self.rx, self.ry],
+        [
+            [Setting("512", [512, 512]), Setting("1024", [1024, 1024])],
+            [Setting("2048", [2048, 2048]), Setting("4096", [4096, 4096])],
+        ]
+        )
+        self.addButtonPanel(s)
+
     def addRegister(self, label, lower_limit, upper_limit, initial_val):
         register_box = self.boxType(label, lower_limit, upper_limit, initial_val)
         self.registers.append(register_box)
@@ -87,12 +96,10 @@ class ButtonPanel(QGridLayout):
         super().__init__()
         self.btns = []
         self.settings = settings
-        print(self.settings.values)
         for row in range(len(self.settings.values)):
             for column in range(len(self.settings.values[row])):
                 setting = self.settings.values[row][column]
                 self.addBtn(setting.label, setting.values, self.settings.registers, row, column)
-                print(row, column)
         # self.addBtn("512", 512, register, 0, 0)
         # self.addBtn("1024", 1024, register, 0, 1)
         # self.addBtn("2048", 2048, register, 0, 2)
@@ -107,14 +114,6 @@ class ButtonPanel(QGridLayout):
 if __name__ == "__main__":
     app = pg.mkQApp()
     settings = FrameSettings()
-    s = SettingsArray(
-        [settings.rx, settings.ry],
-        [
-            [Setting("512", [512, 512]), Setting("1024", [1024, 1024])],
-            [Setting("2048", [2048, 2048]), Setting("4096", [4096, 4096])],
-        ]
-    )
-    settings.addButtonPanel(s)
     w = QWidget()
     w.setLayout(settings)
     w.show()
