@@ -13,6 +13,20 @@ def generate_raster_config(x_resolution, y_resolution):
     return config_packet
 
 
+def generate_vector_config(x_resolution, y_resolution):
+    x1, x2 = get_two_bytes(x_resolution-1)
+    y1, y2 = get_two_bytes(y_resolution-1)
+    config_packet = [255, 255, x1, x2, y1, y2, 3, 0, 255, 255]
+    return config_packet
+
+def generate_vector_stream_singlepoint(point):
+    while True:
+        for n in point:
+            b1, b2 = get_two_bytes(n)
+            yield b2
+            yield b1
+
+
 def generate_frame(x_resolution, y_resolution):
     for y in range(0,y_resolution):
         for x in range(0, x_resolution):
@@ -52,13 +66,25 @@ def generate_packet_with_config(x_resolution, y_resolution):
         yield packet
         n = 0
 
+def generate_vector_packet():
+    vec_stream = generate_vector_stream_singlepoint([255, 255, 0])
+    packet = []
+    while True:
+        n = 0
+        while n <= 16383:
+            packet.append(next(vec_stream))
+            n += 1
+        yield packet
 
 
 
 if __name__ == "__main__":
-    print(bytes(generate_raster_config(400,400)))
+    #print(bytes(generate_raster_config(400,400)))
     # packet_generator = generate_packet_with_config(400,400)
     # text_file = open("fakepackets.txt", "w")
     # for n in range(3):
     #     text_file.write(str(next(packet_generator)))
+
+    packet_generator = generate_vector_packet()
+    print(next(packet_generator))
 
