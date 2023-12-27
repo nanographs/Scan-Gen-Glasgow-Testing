@@ -195,6 +195,9 @@ class ScanInterface(ConnectionManager):
     async def unpause(self):
         await self.cmd_client(self.scan_ctrl.unpause())
 
+    async def set_ROI(self, x_upper, x_lower, y_upper, y_lower):
+        await self.cmd_client(self.scan_ctrl.set_ROI(x_upper, x_lower, y_upper, y_lower))
+
 
 
 

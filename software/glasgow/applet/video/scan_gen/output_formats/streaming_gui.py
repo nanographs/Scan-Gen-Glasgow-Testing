@@ -163,6 +163,9 @@ class MainWindow(QWidget):
         self.reset_btn = QPushButton("Clear")
         self.reset_btn.clicked.connect(self.reset_display)
 
+        self.roi_btn = QPushButton("ROI")
+        self.roi_btn.clicked.connect(self.add_ROI)
+        
 
         self.info_btn = QPushButton('?')
         self.info_btn.clicked.connect(self.getinfo)
@@ -170,13 +173,15 @@ class MainWindow(QWidget):
         self.save_btn = QPushButton("Save")
         self.save_btn.clicked.connect(self.image_display.saveImage_PIL)
 
+
         mode_options = QGridLayout()
         mode_options.addWidget(self.conn_btn,0,0)
         mode_options.addWidget(self.mode_select_dropdown,0,1)
         mode_options.addWidget(self.start_btn,0,2)
         mode_options.addWidget(self.reset_btn,0,3)
+        mode_options.addWidget(self.roi_btn,0,4)
         #mode_options.addWidget(self.info_btn,0,4)
-        mode_options.addWidget(self.save_btn, 0, 4)
+        mode_options.addWidget(self.save_btn, 0, 5)
 
         self.layout.addLayout(mode_options,0,0)
 
@@ -202,6 +207,15 @@ class MainWindow(QWidget):
             print(task.get_name(), ":", task.get_coro())
             task.print_stack()
 
+    def add_ROI(self):
+        self.image_display.add_ROI()
+        self.image_display.roi.sigRegionChanged.connect(self.get_ROI)
+
+    @asyncSlot()
+    async def get_ROI(self):
+        x_lower, x_upper, y_lower, y_upper = self.image_display.get_ROI()
+        await self.con.set_ROI(x_lower, x_upper, y_lower, y_upper)
+        await self.con.strobe_config()
 
     @asyncSlot()
     async def connect(self):

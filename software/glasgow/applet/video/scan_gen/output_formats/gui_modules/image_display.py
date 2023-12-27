@@ -65,16 +65,17 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.roi.addScaleHandle([0, 0], [1, 1])
         self.image_view.addItem(self.roi)
         self.roi.setZValue(10)  # make sure ROI is drawn above image
-        self.roi.sigRegionChanged.connect(self.get_ROI)
+        #self.roi.sigRegionChanged.connect(self.get_ROI)
 
     def get_ROI(self):
         x0, y0 = self.roi.pos() ## upper left corner
         x1, y1 = self.roi.size()
-        x_lower = x0
-        y_lower = y0
-        x_upper = x0 + x1
-        y_upper = y0 + y1
-        print(x0, y0, x1, y1)
+        x_lower = int(x0)
+        y_lower = int(y0)
+        x_upper = int(x0 + x1)
+        y_upper = int(y0 + y1)
+        #print(x0, y0, x1, y1)
+        return x_upper, x_lower, y_upper, y_lower
         
 
     def setImage(self, y_height, x_width, image):

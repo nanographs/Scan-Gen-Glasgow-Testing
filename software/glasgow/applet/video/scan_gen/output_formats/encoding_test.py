@@ -8,8 +8,8 @@ from tests import generate_packet_with_config, generate_vector_packet
 
 class ScanStream:
     def __init__(self):
-        self.y_height = 510
-        self.x_width = 510
+        self.y_height = 400
+        self.x_width = 400
 
         self.current_x = 0
         self.current_y = 0
@@ -187,7 +187,7 @@ class ScanStream:
             assert (self.buffer[self.current_y][0] == 0)
 
 
-    def points_to_vector(self, m:memoryview, print_debug = True):
+    def points_to_vector(self, m:memoryview, print_debug = False):
         
         n_extra = len(self.point_buffer)
         full_points = (len(m)-n_extra)//6
@@ -290,7 +290,8 @@ class ScanStream:
         n = re.finditer(self.config_match, d)
         prev_stop = 0
         prev_config = None
-        print(f'd start with...{list(d)[0:10]}')
+        if print_debug:
+            print(f'd start with...{list(d)[0:10]}')
         try: 
             match = next(n)
             start, stop = match.span()
