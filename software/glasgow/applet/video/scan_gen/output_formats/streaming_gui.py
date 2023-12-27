@@ -215,7 +215,6 @@ class MainWindow(QWidget):
     async def change_dwell(self):
         dval = self.dwellselect.getval()
         await self.con.set_dwell_time(dval)
-        await self.con.strobe_config()
 
 
     def add_ROI(self):
