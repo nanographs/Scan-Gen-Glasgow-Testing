@@ -124,6 +124,13 @@ class ScanGenInterface:
         self._logger = logger
         self._level  = logging.DEBUG if self._logger.name == __name__ else logging.TRACE
         self._device = device
+
+        self.logging = False
+        self.text_file = open("packets.txt","w")
+        self.is_simulation = is_simulation
+        self.eight_bit_output = False
+
+        ### ======= Registers =========
         self.__addr_scan_mode = __addr_scan_mode
         self.scan_mode = 0
         self.__addr_x_full_resolution_b1 = __addr_x_full_resolution_b1
@@ -147,11 +154,9 @@ class ScanGenInterface:
 
         self.__addr_configuration = __addr_configuration
         self.__addr_unpause = __addr_unpause
+        ## ======= end registers =======
 
-        self.text_file = open("packets.txt","w")
-        self.is_simulation = is_simulation
 
-        self.eight_bit_output = False
 
 
     def fifostats(self):
@@ -353,9 +358,11 @@ class ScanGenInterface:
 
     async def rcv_future_data(self, future, n):
         print("waiting for iface read...")
-        self._logger.info(f'waiting for read {n}')
+        if self.logging:
+            self._logger.info(f'waiting for read {n}')
         data = await self.iface.read(16384)
-        self._logger.info(f'got future data {n}')
+        if self.logging:
+            self._logger.info(f'got future data {n}')
         print("got future data", data)
         future.set_result(data)
 
@@ -498,29 +505,21 @@ class SG_EndpointInterface(ScanGenInterface):
             n += 1
             # loop = asyncio.get_event_loop()
             # future_data = loop.create_future()
-            self._logger.info(f'awaiting read {n}')
+            if self.logging:
+                self._logger.info(f'awaiting read {n}')
             if self.scan_mode == 3:
-                self._logger.info("created recv_packet task")
+                if self.logging:
+                    self._logger.info("created recv_packet task")
                 loop.create_task(self.recv_packet())
             data = await self.iface.read(16384)
-            self._logger.info(f'got read data {n}')
-            self.text_file.write(str(data.tolist()))
+            if self.logging:
+                self._logger.info(f'got read data {n}')
+                self.text_file.write(str(data.tolist()))
             self.server_host.data_writer.write(data)
             await self.server_host.data_writer.drain()
-            self._logger.info(f'wrote data to socket {n}')
-            #await future_data
-            #loop.create_task(self.send_packet(future_data,n))
-            #n_fut = await future_data
-            #self._logger.info(f'future awaited {n}, future {n_fut}')
-            #await asyncio.sleep(0)
-            # print("awaiting read")
-            # self._logger.info("awaiting read")
-            # data = await self.iface.read(16384)
-            # print("writing", data)
-            # self.server_host.data_writer.write(data)
-            # await self.server_host.data_writer.drain()
-            # self.text_file.write(str(data.tolist()))
-            # print("send complete")
+            if self.logging:
+                self._logger.info(f'wrote data to socket {n}')
+
 
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])

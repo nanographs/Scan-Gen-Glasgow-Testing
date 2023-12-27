@@ -37,6 +37,8 @@ class ConnectionManager:
 
         self.text_file = open("socket_packets.txt", "w")
 
+        self.logging = False
+
     def looppattern(self):
         L = [255, 255, 10, 100, 100, 10, 250, 100, 10, 200, 200, 10, 150, 150, 10, 100, 150, 10,
             230, 220, 10, 50, 10, 10]
@@ -94,10 +96,10 @@ class ConnectionManager:
                     n += 1
                     print(f'recieved data {n}')
                     logger.info(f'recieved data {n}, length {len(data)}')
-                    #self.text_file.write(str(list(data)))
-                    #logger.info(f'wrote data {n} to text file')
+                    if self.logging:
+                        self.text_file.write(str(list(data)))
+                        logger.info(f'wrote data {n} to text file')
                     self.scan_stream.parse_config_from_data(data)
-
 
                     if self.stream_pattern == True:
                         await self.write_points()
@@ -109,7 +111,8 @@ class ConnectionManager:
             except Exception as e:
                 print("error:", e, type(e), vars(e))
                 print(reader)
-                logging.debug("continous read error" + repr(reader))
+                if self.logging:
+                    logging.debug("continous read error" + repr(reader))
                 break
 
     async def open_data_client(self):
