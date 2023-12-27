@@ -32,6 +32,7 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen.scan_gen_components.main_iobus import IOBus
     from ..scan_gen.scan_gen_components.addresses import *
     from ..scan_gen.scan_gen_components.test_streams import *
+    from ..scan_gen.output_formats.hilbert_test import hilbert
 
 
 class IOBusSubtarget(Elaboratable):
@@ -421,30 +422,22 @@ class ScanGenInterface:
         data = await self.read_r_packet()
         print(data)
 
-    async def hilbert(self):
-        await self.set_frame_resolution(16384,16384)
-        await self.set_vector_mode()
-        stream = open("hilbert.txt")
-        while True:
-            for n in stream:
-                data = n.strip(",\n")
-                #await asyncio.sleep(0)
-                #try:
-                await self.write_vpoint(eval(data))
-                #except:
-                    #await asyncio.sleep(10)
 
     async def hilbert_loop(self):
-        await self.set_frame_resolution(16384,16384)
+        pattern_loop = hilbert()
+        await self.set_frame_resolution(1024, 1024)
         await self.set_vector_mode()
-        stream = open("hilbert.txt")
-        while i < 16384:
-            for n in stream:
-                data = n.strip(",\n")
-                i += 6
-                await self.write_vpoint(eval(data))
-            data = await self.iface.read()
-            print(self.decode_vpoint_packet(data))
+        await self.set_config_flag(1)
+        await self.set_config_flag(0)
+        await self.unpause()
+        i = 0
+        while True:
+            while i < 16384:
+                i += 2
+                point = next(pattern_loop)
+                await self.write_2bytes(point)
+            data = await self.iface.read(16384)
+            print(data)
             i = 0
 
 
@@ -957,6 +950,9 @@ class ScanGenApplet(GlasgowApplet):
             await scan_iface.set_config_flag(0)
             data = await scan_iface.iface.read(16384)
             scan_iface.text_file.write(str(data.tolist()))
+
+        if args.buf == "hilbert":
+            await scan_iface.hilbert_loop()
 
         
             
