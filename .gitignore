@@ -36,4 +36,6 @@ frames.txt
 frames.txt
 packetlogs.txt
 logs.txt
+*logs.txt
+otherlogs.txt
 *packets.txt
