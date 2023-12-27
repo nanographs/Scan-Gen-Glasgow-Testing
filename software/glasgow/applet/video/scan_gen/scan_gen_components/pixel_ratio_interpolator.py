@@ -28,6 +28,7 @@ class PixelRatioInterpolator(Elaboratable):
         self.output = Signal(16) ## Current pixel number converted to DAC value
 
         self.product = Signal(32)
+        self.step_size = Signal(8)
 
 
     def elaborate(self, platform):
@@ -36,7 +37,7 @@ class PixelRatioInterpolator(Elaboratable):
         #m.d.comb += self.output.eq((self.input * self.output_width) // self.frame_size)
         #m.d.comb += self.product.eq(self.input * self.output_width)
         #m.d.comb += self.output.eq(self.product // self.frame_size)
-        m.d.comb += self.output.eq(self.input)
+        m.d.comb += self.output.eq(self.input*self.step_size)
 
 
         return m

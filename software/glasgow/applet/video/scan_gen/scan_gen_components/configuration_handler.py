@@ -84,6 +84,8 @@ class ConfigHandler(Elaboratable):
         self.y_upper_limit_locked = Signal(16)
         
         self.scan_mode = Signal(2)
+        self.step_size = Signal(8)
+        self.step_size_locked = Signal(8)
 
         self.eight_bit_output = Signal()
         self.eight_bit_output_locked = Signal()
@@ -114,6 +116,7 @@ class ConfigHandler(Elaboratable):
                     m.d.sync += self.y_full_frame_resolution_locked.eq(Cat(self.y_full_frame_resolution_b2,
                                                                             self.y_full_frame_resolution_b1))
                     m.d.sync += self.eight_bit_output_locked.eq(self.eight_bit_output)
+                    m.d.sync += self.step_size_locked.eq(self.step_size)
                     #m.d.comb += self.config_data_valid.eq(1)
                     m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     with m.If(self.write_happened):

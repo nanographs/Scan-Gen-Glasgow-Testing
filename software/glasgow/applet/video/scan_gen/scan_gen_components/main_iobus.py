@@ -24,7 +24,7 @@ class IOBus(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
-                const_dwell_time, configuration, unpause,
+                const_dwell_time, configuration, unpause, step_size,
                 is_simulation = True, test_mode = None,
                 use_config_handler = False):
         ### Build arguments
@@ -50,6 +50,8 @@ class IOBus(Elaboratable):
         self.do_line_sync = do_line_sync
         self.const_dwell_time = const_dwell_time
         self.unpause = unpause
+
+        self.step_size = step_size
         
         self.x_full_resolution_b1 = x_full_resolution_b1
         self.x_full_resolution_b2 = x_full_resolution_b2
@@ -129,8 +131,14 @@ class IOBus(Elaboratable):
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(0)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(0)
             m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
+
+            m.d.comb += self.config_handler.step_size.eq(self.step_size)
+            m.d.comb += self.mode_ctrl.x_interpolator.step_size.eq(self.config_handler.step_size_locked)
+            m.d.comb += self.mode_ctrl.y_interpolator.step_size.eq(self.config_handler.step_size_locked)
+            
             m.d.comb += self.handling_config.eq((self.config_handler.writing_config))
             m.d.comb += self.config_handler.outer_configuration_flag.eq(self.configuration_flag)
+
 
             a = Signal()
             b = Signal()

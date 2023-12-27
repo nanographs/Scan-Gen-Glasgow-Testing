@@ -6,8 +6,8 @@ from amaranth.build import *
 from amaranth.sim import Simulator
 
 from addresses import *
-sys.path.append("/Users/adammccombs/glasgow/Scan-Gen-Glasgow-Testing/software")
-#sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
+#sys.path.append("/Users/adammccombs/glasgow/Scan-Gen-Glasgow-Testing/software")
+sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
 from glasgow import *
 from glasgow.access.simulation import SimulationMultiplexerInterface, SimulationDemultiplexerInterface
 from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGenInterface
@@ -30,7 +30,7 @@ sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 5)
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
-                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, is_simulation = True)
+                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, is_simulation = True)
 
 textfile = open('packets.txt','w')
 def raster_sim(n=16384, eight_bit_output=False):
@@ -163,6 +163,7 @@ def sim_iobus():
     const_dwell_time = Signal()
     configuration = Signal()
     unpause = Signal()
+    step_size = Signal(8)
 
     dut = IOBus(sim_iface.in_fifo, sim_iface.out_fifo, scan_mode, 
     x_full_resolution_b1, x_full_resolution_b2,
@@ -172,7 +173,7 @@ def sim_iobus():
     y_upper_limit_b1, y_upper_limit_b2,
     y_lower_limit_b1, y_lower_limit_b2,
     eight_bit_output, do_frame_sync, do_line_sync,
-    const_dwell_time, configuration, unpause,
+    const_dwell_time, configuration, unpause, step_size,
     is_simulation = True,
     test_mode = "data loopback", use_config_handler = True
     )
@@ -189,6 +190,7 @@ def sim_iobus():
             # yield unpause.eq(0)
             # yield
             yield eight_bit_output.eq(1)
+            yield step_size.eq(5)
             #yield const_dwell_time.eq(0)
             yield scan_mode.eq(1)
             yield from set_frame_params(dut, x_res=512, y_res=512)
@@ -205,7 +207,7 @@ def sim_iobus():
             yield
             yield configuration.eq(0)
             yield
-            yield from raster_sim(2000, eight_bit_output = True)
+            yield from raster_sim(100, eight_bit_output = True)
 
 
 

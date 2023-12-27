@@ -43,7 +43,7 @@ class IOBusSubtarget(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
-                const_dwell_time, configuration, unpause):
+                const_dwell_time, configuration, unpause, step_size):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
@@ -58,7 +58,7 @@ class IOBusSubtarget(Elaboratable):
                             y_upper_limit_b1, y_upper_limit_b2,
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
-                            const_dwell_time, configuration, unpause,
+                            const_dwell_time, configuration, unpause, step_size,
                             test_mode = "data loopback", use_config_handler = True, 
                             is_simulation = False)
 
@@ -118,7 +118,7 @@ class ScanGenInterface:
                 __addr_y_upper_limit_b1, __addr_y_upper_limit_b2,
                 __addr_y_lower_limit_b1, __addr_y_lower_limit_b2,
                 __addr_8_bit_output, __addr_do_frame_sync, __addr_do_line_sync,
-                __addr_configuration, __addr_unpause,
+                __addr_configuration, __addr_unpause, __addr_step_size,
                 is_simulation = False):
         self.iface = iface
         self._logger = logger
@@ -792,6 +792,7 @@ class ScanGenApplet(GlasgowApplet):
         print("configuration register:", self.__addr_configuration)
 
         unpause,                 self.__addr_unpause = target.registers.add_rw(1, reset = 0)
+        step_size,              self.__addr_step_size = target.registers.add_rw(8, reset = 1)
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -806,7 +807,7 @@ class ScanGenApplet(GlasgowApplet):
             y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
             y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
             eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync,
-            const_dwell_time = const_dwell_time, configuration = configuration, unpause = unpause
+            const_dwell_time = const_dwell_time, configuration = configuration, unpause = unpause, step_size = step_size
         ))
         
     @classmethod
@@ -825,7 +826,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration, self.__addr_unpause
+            self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
             )
         if args.buf == "local":
             scan_iface = SG_LocalBufferInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -836,7 +837,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration, self.__addr_unpause
+            self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
             )
         if args.buf == "endpoint":
             scan_iface = SG_EndpointInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -847,7 +848,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration, self.__addr_unpause
+            self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
             )
         else:
             scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -858,7 +859,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration, self.__addr_unpause
+            self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
             )
 
         return scan_iface
