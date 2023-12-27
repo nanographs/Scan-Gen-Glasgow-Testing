@@ -1,4 +1,0 @@
-INFO:OpenGL.acceleratesupport:No OpenGL_accelerate module loaded: No module named 'OpenGL_accelerate'
-INFO:qasync:Using Qt Implementation: PyQt6
-DEBUG:asyncio:Using selector: _Selector
-DEBUG:qasync._unix._Selector:Closing
