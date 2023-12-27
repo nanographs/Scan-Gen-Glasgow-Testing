@@ -1,3 +1,4 @@
+import datetime
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.exporters import Exporter
@@ -7,6 +8,8 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QMessageBox, QPushButton,
                              QVBoxLayout, QWidget, QLabel, QGridLayout,
                              QSpinBox)
+
+from PIL import Image
 
 
 
@@ -91,16 +94,27 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.setImage(self.y_height, self.x_width, array)
 
     def saveImage(self):
-        self.exporter.parameters()['height'] = self.dimension
-        self.exporter.parameters()['width'] = self.dimension
+        self.exporter.parameters()['height'] = self.y_height
+        self.exporter.parameters()['width'] = self.x_width
         img_name = "saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif"
         self.exporter.export(img_name)
         print(img_name)
+
+    def saveImage_PIL(self):
+        image = Image.fromarray(self.live_img.image)
+        img_name = "saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif"
+        image.save(img_name)
+        print(img_name)
+
+        
+
+
 
 if __name__ == "__main__":
     app = pg.mkQApp()
     image_display = ImageDisplay(512, 512)
     image_display.showTest()
-    image_display.add_ROI()
+    # image_display.add_ROI()
     image_display.show()
+    image_display.saveImage_PIL()
     pg.exec()

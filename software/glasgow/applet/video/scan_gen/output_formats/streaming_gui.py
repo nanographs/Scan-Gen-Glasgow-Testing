@@ -162,23 +162,23 @@ class MainWindow(QWidget):
         self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
         self.start_btn.clicked.connect(self.toggle_scan)
 
-        self.reset_btn = QPushButton("clear")
+        self.reset_btn = QPushButton("Clear")
         self.reset_btn.clicked.connect(self.reset_display)
 
 
         self.info_btn = QPushButton('?')
         self.info_btn.clicked.connect(self.getinfo)
 
+        self.save_btn = QPushButton("Save")
+        self.save_btn.clicked.connect(self.image_display.saveImage_PIL)
+
         mode_options = QGridLayout()
         mode_options.addWidget(self.conn_btn,0,0)
         mode_options.addWidget(self.mode_select_dropdown,0,1)
-        # mode_options.addWidget(self.loopback_btn,0,3)
         mode_options.addWidget(self.start_btn,0,2)
         mode_options.addWidget(self.reset_btn,0,3)
-        mode_options.addWidget(self.info_btn,0,4)
-        # mode_options.addWidget(self.new_scan_btn,0,5)
-        # # mode_options.addWidget(self.save_btn, 0, 6)
-
+        #mode_options.addWidget(self.info_btn,0,4)
+        mode_options.addWidget(self.save_btn, 0, 4)
 
         self.layout.addLayout(mode_options,0,0)
 
