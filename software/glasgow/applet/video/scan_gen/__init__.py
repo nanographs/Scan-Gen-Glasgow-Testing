@@ -120,6 +120,7 @@ class ScanGenInterface:
                 __addr_y_lower_limit_b1, __addr_y_lower_limit_b2,
                 __addr_8_bit_output, __addr_do_frame_sync, __addr_do_line_sync,
                 __addr_configuration, __addr_unpause, __addr_step_size,
+                __addr_const_dwell_time,
                 is_simulation = False):
         self.iface = iface
         self._logger = logger
@@ -156,6 +157,7 @@ class ScanGenInterface:
         self.__addr_configuration = __addr_configuration
         self.__addr_unpause = __addr_unpause
         self.__addr_step_size = __addr_step_size
+        self.__addr_const_dwell_time = __addr_const_dwell_time
         ## ======= end registers =======
 
         self.x_width = 0
@@ -321,6 +323,10 @@ class ScanGenInterface:
     async def set_config_flag(self, val):
         await self._device.write_register(self.__addr_configuration, val)
         print("set config flag", val)
+
+    async def set_dwell_time(self, val):
+        await self._device.write_register(self.__addr_const_dwell_time, val)
+        print("set dwell time", val)
 
     async def pause(self):
         await self._device.write_register(self.__addr_unpause, 0)
@@ -555,6 +561,8 @@ class SG_EndpointInterface(ScanGenInterface):
             # tasks = asyncio.all_tasks()
             # for task in tasks:
             #     print(task.get_name(), ":", task.get_coro())
+        elif c == "dw":
+            await self.set_dwell_time(val)
         elif c == "rx":
             await self.set_x_resolution(val)
         elif c == "ry":
@@ -829,6 +837,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
             self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
+            self.__addr_const_dwell_time
             )
         if args.buf == "local":
             scan_iface = SG_LocalBufferInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -840,6 +849,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
             self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
+            self.__addr_const_dwell_time
             )
         if args.buf == "endpoint":
             scan_iface = SG_EndpointInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -851,6 +861,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
             self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
+            self.__addr_const_dwell_time
             )
         else:
             scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -862,6 +873,7 @@ class ScanGenApplet(GlasgowApplet):
             self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
             self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
             self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
+            self.__addr_const_dwell_time
             )
 
         return scan_iface

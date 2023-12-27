@@ -143,6 +143,10 @@ class MainWindow(QWidget):
         self.frame_settings = StreamFrameSettings(self.con)
         self.layout.addLayout(self.frame_settings, 2, 0)
 
+        self.dwellselect = RegisterUpdateBox("Dwell Time", 1, 255, 1)
+        self.frame_settings.addLayout(self.dwellselect)
+        self.dwellselect.spinbox.valueChanged.connect(self.change_dwell)
+
         self.conn_btn = QPushButton("Click to Connect")
         self.conn_btn.setCheckable(True) 
         self.conn_btn.clicked.connect(self.connect)
@@ -206,6 +210,13 @@ class MainWindow(QWidget):
         for task in tasks:
             print(task.get_name(), ":", task.get_coro())
             task.print_stack()
+
+    @asyncSlot()
+    async def change_dwell(self):
+        dval = self.dwellselect.getval()
+        await self.con.set_dwell_time(dval)
+        await self.con.strobe_config()
+
 
     def add_ROI(self):
         self.image_display.add_ROI()

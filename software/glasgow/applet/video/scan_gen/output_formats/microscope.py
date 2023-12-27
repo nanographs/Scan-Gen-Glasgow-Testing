@@ -25,6 +25,7 @@ class frame_vars:
     x_upper_limit = "ux"
     y_lower_limit = "ly"
     y_upper_limit = "uy"
+    dwell_time = "dw"
 
 class cmd_encoder:
     def set_scan_mode(self, scan_mode):
@@ -66,6 +67,10 @@ class ScanCtrl:
 
     def set_y_resolution(self, y_resolution_val):
         msg = self.cmd.set_frame(frame_vars.y_full_frame_resolution, y_resolution_val)
+        return msg
+
+    def set_dwell_time(self, dwell_val):
+        msg = self.cmd.set_frame(frame_vars.dwell_time, dwell_val)
         return msg
 
     def set_ROI(self, x_upper, x_lower, y_upper, y_lower):

@@ -179,6 +179,9 @@ class ScanInterface(ConnectionManager):
     async def set_y_resolution(self, yval):
         await self.cmd_client(self.scan_ctrl.set_y_resolution(yval))
 
+    async def set_dwell_time(self, dval):
+        await self.cmd_client(self.scan_ctrl.set_dwell_time(dval))
+
     async def set_scan_mode(self, mode):
         self.scan_mode = mode
         await self.cmd_client(self.scan_ctrl.set_scan_mode(mode))
