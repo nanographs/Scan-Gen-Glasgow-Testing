@@ -91,6 +91,8 @@ class ConnectionManager:
             try:
                 print("trying to read")
                 if not reader.at_eof():
+                    if self.stream_pattern == True:
+                        await self.write_points()
                     await asyncio.sleep(0)
                     data = await reader.read(16384)
                     n += 1
@@ -101,8 +103,7 @@ class ConnectionManager:
                         logger.info(f'wrote data {n} to text file')
                     self.scan_stream.parse_config_from_data(data)
 
-                    if self.stream_pattern == True:
-                        await self.write_points()
+                    
 
                 else:
                     print("at eof?")
@@ -179,6 +180,7 @@ class ScanInterface(ConnectionManager):
         await self.cmd_client(self.scan_ctrl.set_y_resolution(yval))
 
     async def set_scan_mode(self, mode):
+        self.scan_mode = mode
         await self.cmd_client(self.scan_ctrl.set_scan_mode(mode))
 
     async def set_8bit_output(self):
@@ -198,13 +200,28 @@ class ScanInterface(ConnectionManager):
 
 async def main():
     con = ScanInterface()
-    await con.set_x_resolution(400)
-    await con.set_y_resolution(400)
-    await con.set_scan_mode(1)
-    await con.strobe_config()
-    await con.open_data_client()
-    await con.unpause()
+    con.logging = True
 
+    async def raster_test():
+        await con.set_x_resolution(400)
+        await con.set_y_resolution(400)
+        await con.set_scan_mode(1)
+        await con.strobe_config()
+        await con.open_data_client()
+        await con.unpause()
+
+    async def vector_test():
+        await con.set_x_resolution(1024)
+        await con.set_y_resolution(1024)
+        await con.set_scan_mode(3)
+        await con.strobe_config()
+        con.stream_pattern = True
+        await con.open_data_client()
+        await con.unpause()
+        
+        #await con.write_points()
+
+    await vector_test()
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

@@ -39,7 +39,8 @@ def hilbert(dwell_time = 0):
 
 if __name__ == "__main__":
     hil = hilbert()
-    for n in range(100):
+    for n in range(16384):
+        print(f'n:{n}')
         print(next(hil))
         
         

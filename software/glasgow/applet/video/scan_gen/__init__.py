@@ -488,18 +488,16 @@ class SG_EndpointInterface(ScanGenInterface):
         print("reading from server")
         self._logger.info("reading from server")
         print(self.server_host.data_reader)
-        while True:
-            try:
-                data = await self.server_host.data_reader.readexactly(16384)
-                print(type(data))
-                print("recieved points!", len(data))
-                self._logger.info("recieved points from server")
-                await self.iface.write(list(data))
-                print("wrote data to iface")
-                self._logger.info("wrote data to iface")
-            except:
-                print("err")
-                break
+        try:
+            data = await self.server_host.data_reader.readexactly(16384)
+            print(type(data))
+            print("recieved points!", len(data))
+            self._logger.info("recieved points from server")
+            await self.iface.write(list(data))
+            print("wrote data to iface")
+            self._logger.info("wrote data to iface")
+        except Exception as err:
+            print(f'error: {err}')
 
 
     async def stream_data(self):
@@ -511,9 +509,10 @@ class SG_EndpointInterface(ScanGenInterface):
             if self.logging:
                 self._logger.info(f'awaiting read {n}')
             if self.scan_mode == 3:
-                if self.logging:
-                    self._logger.info("created recv_packet task")
-                loop.create_task(self.recv_packet())
+                #if self.logging:
+                    #self._logger.info("created recv_packet task")
+                #loop.create_task(self.recv_packet())
+                await self.recv_packet()
             data = await self.iface.read(16384)
             if self.logging:
                 self._logger.info(f'got read data {n}')
