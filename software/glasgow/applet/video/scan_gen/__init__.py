@@ -957,7 +957,8 @@ class ScanGenApplet(GlasgowApplet):
         
             
         if args.buf == "endpoint":
-            #scan_iface.launch_gui()
+            if args.gui:
+                scan_iface.launch_gui()
             await scan_iface.pause()
             await scan_iface.set_8bit_output(1)
             loop = asyncio.get_event_loop()
