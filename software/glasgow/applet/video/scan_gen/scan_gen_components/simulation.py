@@ -13,7 +13,7 @@ from glasgow.access.simulation import SimulationMultiplexerInterface, Simulation
 from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGenInterface
 from glasgow.applet.video.scan_gen.scan_gen_components.main_iobus import IOBus
 from glasgow.applet.video.scan_gen.scan_gen_components.test_streams import *
-#from glasgow.applet.video.scan_gen.output_formats.even_newer_gui import run_gui
+#from glasgow.applet.video.scan_gen.output_formats.hilbert_test import hilbert
 from glasgow.device.hardware import GlasgowHardwareDevice
 from glasgow.device.simulation import GlasgowSimulationDevice
 from glasgow.target.simulation import GlasgowSimulationTarget
@@ -21,11 +21,47 @@ from glasgow.support.bits import bits
 
 from test_streams import *
 
+from hilbertcurve.hilbertcurve import HilbertCurve
+
+
+def hilbert(dwell_time = 0):
+    N = 2 # number of dimensions
+
+    #text_file = open("hilbert.txt", "w")
+    points = []
+
+    pmax = 10
+    side = 2**pmax
+    min_coord = 0
+    max_coord = side - 1
+    cmin = min_coord - 0.5
+    cmax = max_coord + 0.5
+
+    offset = 0
+    dx = 0.5
+
+    for p in range(pmax, 0, -1):
+        hc = HilbertCurve(p, N)
+        sidep = 2**p
+
+        npts = 2**(N*p)
+        pts = []
+        for i in range(npts):
+            pt = hc.point_from_distance(i)
+            x = pt[0]*side/sidep + offset
+            y = pt[1]*side/sidep + offset
+            yield int(x)
+            yield int(y)
+            yield dwell_time
+
+        offset += dx
+        dx *= 2
+
 
 
 sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
-sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=True, depth = 5)
-sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 5)
+sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=False, depth = 10)
+sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 10)
 # print(vars(ScanGenApplet))
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
@@ -227,7 +263,26 @@ def sim_iobus():
                 data = yield from sim_app_iface.read(9)
                 print(list(data))
 
-        yield from config_test()
+        def hilbert_test():
+            pattern_next = hilbert()
+            yield scan_mode.eq(3)
+            yield eight_bit_output.eq(0)
+            yield from set_frame_params(dut, x_res=1024, y_res=1024)
+            yield
+            yield configuration.eq(1)
+            yield
+            yield configuration.eq(0)
+            yield unpause.eq(1)
+            data = yield from sim_app_iface.read(10)
+            print(list(data))
+            for n in range(16384):
+                for n in range(5):
+                    yield from sim_scangen_iface.sim_write_2bytes(next(pattern_next))
+                data = yield from sim_app_iface.read(10)
+                print(list(data))
+
+        yield from hilbert_test()
+        #yield from config_test()
         #yield from vec_test()
 
         # for n in range(6):

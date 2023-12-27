@@ -219,14 +219,16 @@ class ScanStream:
             self.buffer[y][x] = a
         
         points = m[start_offset:(full_points*6 + start_offset)].cast('H', shape=[full_points,3]).tolist()
+    
         for n in points:
             x, y, a  = n
             self.buffer[y][x] = a
 
+        if print_debug:
+            print(f'end points: [{full_points*6 + start_offset}:]')
         end_incomplete_points = m[(full_points*6 + start_offset):].cast('H')
         if print_debug:
             print(f'end points: {end_incomplete_points.tolist()}')
-            print(f'points: {points}')
         
 
         self.point_buffer = end_incomplete_points
