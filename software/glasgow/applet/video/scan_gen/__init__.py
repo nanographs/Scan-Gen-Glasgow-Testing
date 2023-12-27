@@ -157,7 +157,8 @@ class ScanGenInterface:
         self.__addr_step_size = __addr_step_size
         ## ======= end registers =======
 
-
+        self.x_width = 0
+        self.y_height = 0
 
 
     def fifostats(self):
@@ -278,6 +279,7 @@ class ScanGenInterface:
         self.x_width = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
+        await self.set_step_size()
         #self.buffer = self.init_buffer()
 
     async def set_y_resolution(self,val):
@@ -285,6 +287,7 @@ class ScanGenInterface:
         self.y_height = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
+        await self.set_step_size()
         #self.buffer = self.init_buffer()
 
     async def set_x_upper_limit(self, val):
@@ -332,9 +335,10 @@ class ScanGenInterface:
         await self._device.write_register(self.__addr_scan_mode, 3)
         print("set vector mode")
 
-    async def set_step_size(self, val):
-        await self._device.write_register(self.__addr_step_size, val)
-        print("set step size", val)
+    async def set_step_size(self):
+        step_size = (16384//(max(self.x_width, self.y_height)))
+        await self._device.write_register(self.__addr_step_size, step_size)
+        print("set step size", step_size)
 
 
     async def stream_video(self):
@@ -943,14 +947,12 @@ class ScanGenApplet(GlasgowApplet):
         if args.buf == "test":
             await scan_iface.set_8bit_output(1)
             await scan_iface.set_raster_mode()
-            await scan_iface.set_frame_resolution(25,25)
-            await scan_iface.set_step_size(25)
+            await scan_iface.set_frame_resolution(255,255)
             await scan_iface.set_config_flag(1)
             await scan_iface.set_config_flag(0)
             await scan_iface.set_raster_mode()
             await scan_iface.unpause()
-            await scan_iface.set_frame_resolution(15,15)
-            await scan_iface.set_step_size(15)
+            await scan_iface.set_frame_resolution(512,512)
             await scan_iface.set_config_flag(1)
             await scan_iface.set_config_flag(0)
             data = await scan_iface.iface.read(16384)
