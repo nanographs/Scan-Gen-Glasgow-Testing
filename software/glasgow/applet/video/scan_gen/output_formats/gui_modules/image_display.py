@@ -74,6 +74,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         y_lower = y0
         x_upper = x0 + x1
         y_upper = y0 + y1
+        print(x0, y0, x1, y1)
         
 
     def setImage(self, y_height, x_width, image):
