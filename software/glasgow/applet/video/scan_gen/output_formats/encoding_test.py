@@ -193,7 +193,7 @@ class ScanStream:
         full_points = (len(m)-n_extra)//6
 
         if n_extra != 0:
-            start_offset = 6-(2*n_extra)
+            start_offset = 6-(n_extra)
         else:
             start_offset = 0
 
@@ -207,15 +207,16 @@ class ScanStream:
         #extra = len(m)%6
                 
         if n_extra != 0:
-            start_incomplete_points = m[0:start_offset].cast('H')
-            overflow_points = self.point_buffer.tolist() + start_incomplete_points.tolist()
+            start_incomplete_points = m[0:start_offset]
+            overflow_points = self.point_buffer.tobytes() + start_incomplete_points.tobytes()
 
             if print_debug:
-                print(f'point buffer: {self.point_buffer.tolist()}')
+                print(f'point buffer: {self.point_buffer.tolist()}, {self.point_buffer.tobytes()}')
                 print(f'start points: {start_incomplete_points.tolist()}')
                 print(f'first point completed: {overflow_points}')
+                #print(memoryview(overflow_points).cast('H').tolist())
 
-            x, y, a  = overflow_points
+            x, y, a  = memoryview(overflow_points).cast('H').tolist()
             self.buffer[y][x] = a
         
         points = m[start_offset:(full_points*6 + start_offset)].cast('H', shape=[full_points,3]).tolist()
@@ -226,7 +227,7 @@ class ScanStream:
 
         if print_debug:
             print(f'end points: [{full_points*6 + start_offset}:]')
-        end_incomplete_points = m[(full_points*6 + start_offset):].cast('H')
+        end_incomplete_points = m[(full_points*6 + start_offset):]
         if print_debug:
             print(f'end points: {end_incomplete_points.tolist()}')
         
