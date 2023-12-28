@@ -168,8 +168,8 @@ class MainWindow(QWidget):
         self.reset_btn.clicked.connect(self.reset_display)
 
         self.roi_btn = QPushButton("ROI")
-        self.roi_btn.clicked.connect(self.add_ROI)
-        
+        self.roi_btn.setCheckable(True) 
+        self.roi_btn.clicked.connect(self.toggle_ROI)
 
         self.info_btn = QPushButton('?')
         self.info_btn.clicked.connect(self.getinfo)
@@ -216,6 +216,11 @@ class MainWindow(QWidget):
         dval = self.dwellselect.getval()
         await self.con.set_dwell_time(dval)
 
+    def toggle_ROI(self):
+        if self.roi_btn.isChecked():
+            self.add_ROI()
+        else:
+            self.image_display.remove_ROI()
 
     def add_ROI(self):
         self.image_display.add_ROI()

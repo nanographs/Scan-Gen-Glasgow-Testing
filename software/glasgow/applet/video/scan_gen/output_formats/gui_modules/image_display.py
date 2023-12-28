@@ -42,6 +42,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
 
         self.hist.setLevels(min=0,max=255)
 
+        self.roi = None
 
         ### reverse the default LUT
         # lut = []
@@ -59,13 +60,17 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
     def add_ROI(self):
         border = pg.mkPen(color = "#00ff00", width = 2)
         # Custom ROI for selecting an image region
-        self.roi = pg.ROI([100, 100], [200, 400], pen = border,
+        self.roi = pg.ROI([.25*self.x_width, .25*self.y_height], [.5*self.x_width, .5*self.y_height], pen = border,
                         scaleSnap = True, translateSnap = True)
         self.roi.addScaleHandle([1, 1], [0, 0])
         self.roi.addScaleHandle([0, 0], [1, 1])
         self.image_view.addItem(self.roi)
         self.roi.setZValue(10)  # make sure ROI is drawn above image
         #self.roi.sigRegionChanged.connect(self.get_ROI)
+
+    def remove_ROI(self):
+        if not self.roi == None:
+            self.image_view.removeItem(self.roi)
 
     def get_ROI(self):
         x0, y0 = self.roi.pos() ## upper left corner
@@ -81,6 +86,8 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
     def setImage(self, y_height, x_width, image):
         ## image must be 2D np.array of np.uint8
         self.live_img.setImage(image, rect = (0,0, x_width, y_height))
+        if not self.roi == None:
+            self.roi.maxBounds = QtCore.QRectF(0, 0, x_width, y_height)
         self.data = image
 
 
@@ -117,5 +124,6 @@ if __name__ == "__main__":
     image_display = ImageDisplay(512, 512)
     image_display.showTest()
     image_display.add_ROI()
+    image_display.remove_ROI()
     image_display.show()
     pg.exec()

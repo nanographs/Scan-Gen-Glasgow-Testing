@@ -115,6 +115,14 @@ class ConfigHandler(Elaboratable):
                                                                             self.x_full_frame_resolution_b1))
                     m.d.sync += self.y_full_frame_resolution_locked.eq(Cat(self.y_full_frame_resolution_b2,
                                                                             self.y_full_frame_resolution_b1))
+                    m.d.sync += self.x_upper_limit_locked.eq(Cat(self.x_upper_limit_b2,
+                                                                self.x_upper_limit_b1))
+                    m.d.sync += self.x_lower_limit_locked.eq(Cat(self.x_lower_limit_b2,
+                                                                self.x_lower_limit_b1))
+                    m.d.sync += self.y_upper_limit_locked.eq(Cat(self.y_upper_limit_b2,
+                                                                self.y_upper_limit_b1))
+                    m.d.sync += self.y_lower_limit_locked.eq(Cat(self.y_lower_limit_b2,
+                                                                self.y_lower_limit_b1))                  
                     m.d.sync += self.eight_bit_output_locked.eq(self.eight_bit_output)
                     m.d.sync += self.step_size_locked.eq(self.step_size)
                     #m.d.comb += self.config_data_valid.eq(1)
@@ -158,6 +166,54 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.config_data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.y_full_frame_resolution_b2)
+                    m.next = "UX1"
+            with m.State("UX1"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.x_upper_limit_b1)
+                    m.next = "UX2"
+            with m.State("UX2"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.x_upper_limit_b2)
+                    m.next = "LX1"
+            with m.State("LX1"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.x_lower_limit_b1)
+                    m.next = "LX2"
+            with m.State("LX2"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.x_lower_limit_b2)
+                    m.next = "UY1"  
+            with m.State("UY1"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.y_upper_limit_b1)
+                    m.next = "UY2"
+            with m.State("UY2"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.y_upper_limit_b2)
+                    m.next = "LY1"
+            with m.State("LY1"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.y_lower_limit_b1)
+                    m.next = "LY2"
+            with m.State("LY2"):
+                m.d.comb += self.writing_config.eq(1)
+                m.d.comb += self.config_data_valid.eq(1)
+                with m.If(self.write_happened):
+                    m.d.comb += self.in_fifo_w_data.eq(self.y_lower_limit_b2)
                     m.next = "SC"
             with m.State("SC"):
                 m.d.comb += self.writing_config.eq(1)
