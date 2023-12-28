@@ -141,6 +141,9 @@ class ModeController(Elaboratable):
         #     m.d.comb += self.write_happened.eq(0)
         #     m.d.comb += self.beam_controller.dwelling.eq(0)
 
+        m.d.comb += self.beam_controller.next_x_position.eq(self.x_interpolator.output)
+        m.d.comb += self.beam_controller.next_y_position.eq(self.y_interpolator.output)
+
         m.d.comb += self.ras_mode_ctrl.xy_scan_gen.reset.eq(self.reset)
         m.d.comb += self.beam_controller.reset.eq(self.reset)
 
@@ -152,8 +155,7 @@ class ModeController(Elaboratable):
             # m.d.comb += self.beam_controller.next_y_position.eq(self.ras_mode_ctrl.beam_controller_next_y_position)
             m.d.comb += self.x_interpolator.input.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
             m.d.comb += self.y_interpolator.input.eq(self.ras_mode_ctrl.beam_controller_next_y_position)
-            m.d.comb += self.beam_controller.next_x_position.eq(self.x_interpolator.output)
-            m.d.comb += self.beam_controller.next_y_position.eq(self.y_interpolator.output)
+
 
             
             m.d.comb += self.ras_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
@@ -220,8 +222,10 @@ class ModeController(Elaboratable):
 
             m.d.comb += self.vec_mode_ctrl.beam_controller_dwelling_changed.eq(self.beam_controller.dwelling_changed)
 
-            m.d.comb += self.beam_controller.next_x_position.eq(self.vec_mode_ctrl.beam_controller_next_x_position)
-            m.d.comb += self.beam_controller.next_y_position.eq(self.vec_mode_ctrl.beam_controller_next_y_position)
+            m.d.comb += self.x_interpolator.input.eq(self.vec_mode_ctrl.beam_controller_next_x_position)
+            m.d.comb += self.y_interpolator.input.eq(self.vec_mode_ctrl.beam_controller_next_y_position)
+            m.d.comb += self.beam_controller.next_x_position.eq(self.x_interpolator.output)
+            m.d.comb += self.beam_controller.next_y_position.eq(self.y_interpolator.output)
             m.d.comb += self.beam_controller.next_dwell.eq(self.vec_mode_ctrl.beam_controller_next_dwell)
 
             m.d.comb += self.in_fifo_w_data.eq(self.vec_mode_ctrl.vector_writer.in_fifo_w_data)
