@@ -5,7 +5,7 @@ from amaranth.sim import Simulator
 
 class PixelRatioInterpolator(Elaboratable):
     '''
-    Takes the output of a counter and convertes it to a value for the DAC
+    Takes the output of a counter and converts it to a value for the DAC
 
     Parameters:
     - output_width: Full scale DAC Value
@@ -43,5 +43,53 @@ class PixelRatioInterpolator(Elaboratable):
         return m
 
 
+    
+
+class Division(Elaboratable):
+    '''
+    reference: https://projectf.io/posts/division-in-verilog/
+    '''
+    def __init__(self, width):
+        self.divisor = Signal(width)
+        self.dividend = Signal(width)
+        self.remainder = Signal(width)
+        self.quotient = Signal(width)
+        self.width = width
+
+    def elaborate(self, platform):
+        m = Module()
+        i = Signal(self.width.bit_length())
+
+        with m.If(~((self.divisor) == 0)):
+            with m.If(~(i == self.width)):
+                with m.If(self.remainder < self.divisor):
+                    m.d.sync += i.eq(i + 1)
+                    m.d.sync += self.quotient.eq(self.quotient.shift_left(1))
+                    m.d.sync += self.dividend.eq(self.dividend.shift_left(1))
+                    m.d.sync += self.remainder.eq(Cat(self.dividend[self.width-1], self.remainder[0:(self.width-1)]))
+                with m.Elif(self.remainder >= self.divisor):
+                    m.d.sync += self.quotient[0].eq(1)
+                    m.d.sync += self.remainder.eq(self.remainder - self.divisor)
+
+        return m
 
 
+
+
+if __name__ == "__main__":
+    def test_division():
+        dut = Division(4) 
+        def bench():
+            yield dut.divisor.eq(3)
+            yield dut.dividend.eq(14)
+            yield
+            for n in range(6):
+                yield
+        
+        sim = Simulator(dut)
+        sim.add_clock(1e-6) # 1 MHz
+        sim.add_sync_process(bench)
+        with sim.write_vcd("div_sim.vcd"):
+            sim.run()
+
+    test_division()
