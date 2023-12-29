@@ -54,16 +54,19 @@ class Division(Elaboratable):
         self.dividend = Signal(width)
         self.remainder = Signal(width)
         self.quotient = Signal(width)
+        self.i = Signal(width.bit_length())
+        self.done = Signal()
         self.width = width
 
     def elaborate(self, platform):
         m = Module()
-        i = Signal(self.width.bit_length())
+
+        m.d.comb += self.done.eq(self.i == self.width)
 
         with m.If(~((self.divisor) == 0)):
-            with m.If(~(i == self.width)):
+            with m.If(~(self.i == self.width)):
                 with m.If(self.remainder < self.divisor):
-                    m.d.sync += i.eq(i + 1)
+                    m.d.sync += self.i.eq(self.i + 1)
                     m.d.sync += self.quotient.eq(self.quotient.shift_left(1))
                     m.d.sync += self.dividend.eq(self.dividend.shift_left(1))
                     m.d.sync += self.remainder.eq(Cat(self.dividend[self.width-1], self.remainder[0:(self.width-1)]))
@@ -77,14 +80,16 @@ class Division(Elaboratable):
 
 
 if __name__ == "__main__":
-    def test_division():
-        dut = Division(4) 
+    def test_division(dividend:int, divisor:int):
+        width = dividend.bit_length()
+        dut = Division(width) 
         def bench():
-            yield dut.divisor.eq(3)
-            yield dut.dividend.eq(14)
-            yield
-            for n in range(6):
+            yield dut.divisor.eq(divisor)
+            yield dut.dividend.eq(dividend)
+            while not (yield dut.done):
                 yield
+            assert (yield dut.quotient == dividend//divisor)
+            assert (yield dut.remainder == dividend%divisor)
         
         sim = Simulator(dut)
         sim.add_clock(1e-6) # 1 MHz
@@ -92,4 +97,4 @@ if __name__ == "__main__":
         with sim.write_vcd("div_sim.vcd"):
             sim.run()
 
-    test_division()
+    test_division(14, 3)
