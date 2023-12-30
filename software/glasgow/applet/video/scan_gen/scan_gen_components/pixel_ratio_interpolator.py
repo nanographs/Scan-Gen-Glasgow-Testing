@@ -89,10 +89,15 @@ if __name__ == "__main__":
         def bench():
             yield dut.divisor.eq(divisor)
             yield dut.dividend.eq(dividend)
+            i = 0
             while not (yield dut.done):
                 yield
+                i += 1
             assert (yield dut.quotient == dividend//divisor)
             assert (yield dut.remainder == dividend%divisor)
+            print(f'Quotient: {dividend}//{divisor} = {dividend//divisor}')
+            print(f'Remainder {dividend}%{divisor} = {dividend%divisor}')
+            print(f'{i} cycles')
         
         sim = Simulator(dut)
         sim.add_clock(1e-6) # 1 MHz
@@ -100,5 +105,6 @@ if __name__ == "__main__":
         with sim.write_vcd("div_sim.vcd"):
             sim.run()
 
-    #test_division(14, 3)
+    test_division(14, 3)
     test_division(500, 21)
+    test_division(16384,500)
