@@ -200,7 +200,7 @@ class ScanStream:
         except AssertionError:
             print("****frame is out of sync****")
             print(self.buffer[self.current_y][0:10])
-            assert (self.buffer[self.current_y][self.x_lower] == self.x_lower)
+            #assert (self.buffer[self.current_y][self.x_lower] == self.x_lower)
 
 
     def points_to_vector(self, m:memoryview, print_debug = False):

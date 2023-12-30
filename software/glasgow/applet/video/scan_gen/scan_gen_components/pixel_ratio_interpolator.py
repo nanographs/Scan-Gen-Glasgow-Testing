@@ -61,7 +61,7 @@ class Division(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += self.done.eq(self.i == self.width)
+        
 
         with m.If(~((self.divisor) == 0)):
             with m.If(~(self.i == self.width)):
@@ -69,10 +69,13 @@ class Division(Elaboratable):
                     m.d.sync += self.i.eq(self.i + 1)
                     m.d.sync += self.quotient.eq(self.quotient.shift_left(1))
                     m.d.sync += self.dividend.eq(self.dividend.shift_left(1))
-                    m.d.sync += self.remainder.eq(Cat(self.dividend[self.width-1], self.remainder[0:(self.width-1)]))
-                with m.Elif(self.remainder >= self.divisor):
-                    m.d.sync += self.quotient[0].eq(1)
-                    m.d.sync += self.remainder.eq(self.remainder - self.divisor)
+                    m.d.sync += self.remainder.eq(Cat(self.dividend[self.width-1], self.remainder[0:(self.width-1)])) 
+            with m.If(self.remainder >= self.divisor):
+                m.d.sync += self.quotient[0].eq(1)
+                m.d.sync += self.remainder.eq(self.remainder - self.divisor)
+            with m.If((self.i == self.width)):
+                with m.If(self.remainder < self.divisor):
+                    m.d.comb += self.done.eq(self.i == self.width)
 
         return m
 
@@ -97,4 +100,5 @@ if __name__ == "__main__":
         with sim.write_vcd("div_sim.vcd"):
             sim.run()
 
-    test_division(14, 3)
+    #test_division(14, 3)
+    test_division(500, 21)
