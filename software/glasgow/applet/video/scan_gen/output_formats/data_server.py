@@ -166,14 +166,10 @@ class DataServer:
         return result
 
     def _out_slice(self):
-        # Fast path: read as much contiguous data as possible, up to our transfer size.
         size = self._out_packet_size * _packets_per_xfer
         data = self._out_buffer.read(size)
 
         if len(data) < self._out_packet_size:
-            # Slow path: USB is very inefficient with small packets, so if we only got a few
-            # bytes from the FIFO, and there is more in it, spend CPU time to aggregate that
-            # into a larger transfer, as this is likely to result in overall speedup.
             data = bytearray(data)
             while len(data) < self._out_packet_size and self._out_buffer:
                 data += self._out_buffer.read(self._out_packet_size - len(data))
