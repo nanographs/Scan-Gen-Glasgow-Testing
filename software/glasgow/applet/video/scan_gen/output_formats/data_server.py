@@ -70,13 +70,19 @@ class DataServer:
         print(f"addr: {addr!r}")
         #self.connect_future.set_result("done")
 
-        print("reading data")
-        data = await self.read(16384)
-        print("writing to socket", data)
-        self.writer.write(data.tobytes())
+        print("reading data from iface")
+        in_data = await self.read(16384)
+        print("writing to socket", list(in_data)[0:10])
+        self.writer.write(in_data.tobytes())
         print(f'writer: {vars(self.writer)}')
         await self.writer.drain()
         print("drained")
+
+        print("reading data from socket")
+        out_data = await self.reader.read(16384)
+        print(f'read from socket', list(out_data)[0:10])
+        await self.write(out_data)
+
 
     async def cancel(self):
         if self._in_tasks or self._out_tasks:

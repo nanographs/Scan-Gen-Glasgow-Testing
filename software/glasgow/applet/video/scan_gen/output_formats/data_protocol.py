@@ -29,7 +29,13 @@ class DataClient(asyncio.Protocol):
 
     def data_received(self, data):
         print("received", len(data))
-        print(data)
+        print(list(data)[0:10])
+        self.write_pattern()
+
+    def write_pattern(self):
+        data = bytes([6]*16384)
+        self._transport.write(data)
+
 
 
 if __name__ == "__main__":
@@ -40,7 +46,7 @@ if __name__ == "__main__":
         transport, protocol = await loop.create_connection(
             lambda: DataClient(on_con_lost), 
             "127.0.0.1",1238)
-        
+
         try:
             await on_con_lost
         finally:

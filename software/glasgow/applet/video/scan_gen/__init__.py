@@ -961,6 +961,22 @@ class ScanGenApplet(GlasgowApplet):
             await scan_iface.set_config_flag(0)
             data = await scan_iface.iface.read(16384)
             scan_iface.text_file.write(str(data.tolist()))
+            await scan_iface.pause()
+            await scan_iface.set_vector_mode()
+            await scan_iface.set_config_flag(1)
+            await scan_iface.set_config_flag(0)
+            await scan_iface.unpause()
+            n = 0
+            while n < 16384:
+                n += 2
+                await scan_iface.write_2bytes(255)
+                n += 2
+                await scan_iface.write_2bytes(200)
+                n += 2
+                await scan_iface.write_2bytes(0)
+            data = await scan_iface.iface.read(16384)
+            scan_iface.text_file.write(str(data.tolist()))
+
 
         if args.buf == "hilbert":
             await scan_iface.hilbert_loop()
