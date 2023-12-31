@@ -108,3 +108,4 @@ if __name__ == "__main__":
     test_division(14, 3)
     test_division(500, 21)
     test_division(16384,500)
+    test_division(16384,1024)
