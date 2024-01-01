@@ -23,7 +23,7 @@ from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
 
 from ..scan_gen.output_formats.control_gui import run_gui
-from ..scan_gen.output_formats.new_server_test import ServerHost
+from ..scan_gen.output_formats.data_server import ScanServers
 
 from ... import *
 
@@ -278,19 +278,19 @@ class ScanGenInterface:
         await self._device.write_register(addr_b2, b2)
 
     async def set_x_resolution(self,val):
-        print("set x resolution:", val)
         self.x_width = val
         ## subtract 1 to account for 0-indexing
-        await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
         await self.set_step_size()
+        await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
         #self.buffer = self.init_buffer()
+        print("set x resolution:", val)
 
     async def set_y_resolution(self,val):
-        print("set y resolution:", val)
         self.y_height = val
         ## subtract 1 to account for 0-indexing
-        await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
         await self.set_step_size()
+        await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
+        print("set y resolution:", val)
         #self.buffer = self.init_buffer()
 
     async def set_x_upper_limit(self, val):
@@ -450,83 +450,14 @@ class ScanGenInterface:
 class SG_EndpointInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.task_queue = TaskQueue()
-        self.server_host = ServerHost(self.task_queue, self.process_cmd)
-        self.streaming = None
+        self.servers = ScanServers(self.iface, self.process_cmd)
         
-
-    def start_servers(self, close_future):
-        self.close_future = close_future
-        loop = asyncio.get_event_loop()
-        self.data_server_future = loop.create_future()
-        self.server_host.start_servers(self.data_server_future)
-        self.streaming = asyncio.ensure_future(self.stream_data())
-
-    def close(self):
-        self.close_future.set_result("Closed")
-
     def launch_gui(self):
         ## using sys.prefix instead of "python3" results in a PermissionError
         ## because pipx isn't supposed to be used that way
         ## would be nice to stay in the same environment though
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
                         start_new_session = True)
-
-
-    async def send_packet(self, future_data,n):
-        loop = asyncio.get_event_loop()
-        future_future_data = loop.create_future()
-        await self.rcv_future_data(future_future_data,n)
-        data = future_future_data.result()
-        self._logger.info(f'recieved future data {n}, length: {str(len(data))}' )
-        print("writing", data)
-        if data is not None:
-            self.server_host.data_writer.write(data)
-            await self.server_host.data_writer.drain()
-            self._logger.info(f'wrote future data to socket {n}, length: {str(len(data))}')
-            self.text_file.write(str(data.tolist()))
-            print("send complete")
-        future_data.set_result(n)
-
-    async def recv_packet(self):
-        print("standing by to recieve packet...")
-        await self.data_server_future
-        print("reading from server")
-        self._logger.info("reading from server")
-        print(self.server_host.data_reader)
-        try:
-            data = await self.server_host.data_reader.readexactly(16384)
-            print(type(data))
-            print("recieved points!", len(data))
-            self._logger.info("recieved points from server")
-            await self.iface.write(list(data))
-            print("wrote data to iface")
-            self._logger.info("wrote data to iface")
-        except Exception as err:
-            print(f'error: {err}')
-
-
-    async def stream_data(self):
-        n = 0
-        while True:
-            n += 1
-            # loop = asyncio.get_event_loop()
-            # future_data = loop.create_future()
-            if self.logging:
-                self._logger.info(f'awaiting read {n}')
-            if self.scan_mode == 3:
-                #if self.logging:
-                    #self._logger.info("created recv_packet task")
-                #loop.create_task(self.recv_packet())
-                await self.recv_packet()
-            data = await self.iface.read(16384)
-            if self.logging:
-                self._logger.info(f'got read data {n}')
-                self.text_file.write(str(data.tolist()))
-            self.server_host.data_writer.write(data)
-            await self.server_host.data_writer.drain()
-            if self.logging:
-                self._logger.info(f'wrote data to socket {n}')
 
 
     async def process_cmd(self, cmd):
@@ -540,9 +471,6 @@ class SG_EndpointInterface(ScanGenInterface):
             if val == 1:
                 await self.unpause()
                 print("unpaused")
-                if self.scan_mode == 3:
-                    self._logger.info("created recv_packet task")
-                    await self.recv_packet()
                 #tasks = asyncio.all_tasks()
                 # for task in tasks:
                 #     print(task.get_name(), ":", task.get_coro())
@@ -554,6 +482,11 @@ class SG_EndpointInterface(ScanGenInterface):
                 #         task.print_stack()
         elif c == "sc":
             await self.set_scan_mode(val)
+            self.servers.data_server.scan_mode = val
+            if val == 3:
+                print(vars(self.servers.data_server._out_tasks))
+                await self.servers.data_server.write(16384)
+                await self.servers.data_server.flush()
             print("set scan mode done")
             
             # print("streaming?", self.stream_data)
@@ -584,99 +517,6 @@ class SG_EndpointInterface(ScanGenInterface):
         elif c == "cf":
             await self.set_config_flag(val)
 
-
-class SG_2DBufferInterface(ScanGenInterface):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.y_height = 2048
-        self.x_width = 2048
-
-        self.x_lower_limit = 0
-        self.x_upper_limit = self.x_width
-
-        self.y_lower_limit = 0
-        self.y_upper_limit = self.y_height
-
-        self.current_x = 0
-        self.current_y = 0
-
-        self.buffer = self.init_buffer()
-
-        self.a = self.testpattern()
-
-    def testpattern(self):
-        L = [255, 255, 0]
-        def gentr_fn(alist):
-            while 1:
-                for j in alist:
-                    yield j
-        a = gentr_fn(L)
-        return a
-
-    def init_buffer(self):
-        if self.eight_bit_output:
-            return np.zeros(shape=(self.y_height, self.x_width),
-                    dtype = np.uint8)
-
-        else:
-            return np.zeros(shape=(self.y_height, self.x_width),
-                                dtype = np.uint16)
-    
-    def stream_to_buffer(self, raw_data):
-        data = self.decode_rdwell_packet(raw_data)
-        #print("cur x,y", self.current_x, self.current_y)
-        
-        if self.current_x > 0:
-            
-            partial_start_points = self.x_width - self.current_x
-            #print("psp", partial_start_points)
-            full_lines = ((len(data) - partial_start_points)//self.x_width)
-            partial_end_points = ((len(data) - partial_start_points)%self.x_width)
-
-            self.buffer[self.current_y][self.current_x:self.x_width] = data[0:partial_start_points]
-            # print("rollover index", 0, ":", partial_start_points)
-            # print("rollover data", data[0:partial_start_points])
-            # print("top rollover")
-            # print("top row", self.buffer[self.current_y])
-            #print(self.buffer[self.current_y][self.current_x:self.x_width] )
-            if self.current_y >= self.y_height - 1:
-                self.current_y = 0
-                #print("cy 0")
-            else:
-                self.current_y += 1
-                #print("cy+1")
-        else:
-            #print("no top rollover")
-            partial_start_points = 0
-            partial_end_points = ((len(data))%self.x_width)
-            full_lines = ((len(data))//self.x_width)
-            
-        for i in range(0,full_lines):
-            
-            #print("cy", self.current_y)
-            #print("mid index", partial_start_points + i*self.x_width, ":",partial_start_points + (i+1)*self.x_width)
-            self.buffer[self.current_y] = data[partial_start_points + i*self.x_width:partial_start_points + (i+1)*self.x_width]
-            #print("midline", data[partial_start_points + i*self.x_width:partial_start_points + (i+1)*self.x_width])
-            if self.current_y >= self.y_height - 1:
-                self.current_y = 0
-                #print("cy 0")
-            else:
-                self.current_y += 1
-                #print("cy+1")
-        
-        self.buffer[self.current_y][0:partial_end_points] = data[self.x_width*full_lines + partial_start_points:self.x_width*full_lines + partial_start_points + partial_end_points]
-        #print("bottom rollover", partial_end_points)
-        #print("rollover index", self.x_width*full_lines + partial_start_points,":",self.x_width*full_lines + partial_start_points + partial_end_points)
-        #print(self.buffer[self.current_y][0:partial_end_points])
-        #print("last row")
-        #print(self.buffer[self.current_y])
-        
-        self.current_x = partial_end_points
-        #assert (self.buffer[self.current_y][0] == 0)
-
-        print(self.buffer.shape)
-        #print("=====")
 
 class SG_LocalBufferInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
@@ -991,7 +831,7 @@ class ScanGenApplet(GlasgowApplet):
             loop = asyncio.get_event_loop()
             #loop.set_debug(True)
             close_future = loop.create_future()
-            scan_iface.start_servers(close_future)
+            scan_iface.servers.start(close_future)
             try:
                 await close_future
             except Exception as err:
