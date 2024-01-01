@@ -57,6 +57,10 @@ class DataServer:
 
         self._in_stalls  = 0
         self._out_stalls = 0
+
+        self.streaming = True
+        self.stream_task = None
+        self.patterning = True
     
     async def start(self):
         self.data_server = await asyncio.start_server(self.connect, self.host, self.port)
@@ -69,7 +73,13 @@ class DataServer:
         addr = writer.get_extra_info('peername')
         print(f"addr: {addr!r}")
         #self.connect_future.set_result("done")
+        self.stream_task = asyncio.ensure_future(self.stream_continously())
+    
+    async def stream_continously(self):
+        while self.streaming:
+            await self.exchange_packets()
 
+    async def exchange_packets(self):
         print("reading data from iface")
         in_data = await self.read(16384)
         print("writing to socket", list(in_data)[0:10])
@@ -139,19 +149,16 @@ class DataServer:
             await self._in_tasks.wait_one()
             length = len(self._in_buffer)
         else:
-            print("return exactly")
             # Return exactly the requested length.
             self._in_stalls += 1
             while len(self._in_buffer) < length:
                 print("data_server: need %d bytes", length - len(self._in_buffer))
-                print(f'in tasks: {self._in_tasks}')
                 logger.trace("data_server: need %d bytes", length - len(self._in_buffer))
                 await self._in_tasks.wait_one()
         print("in pushback?")
         async with self._in_pushback:
-            print(f'in pushback:{vars(self._in_pushback)}')
             result = self._in_buffer.read(length)
-            print(f'result: {result}')
+            print(f'read result from in buffer')
             self._in_pushback.notify_all()
         print(f'len(result): {len(result)} < length: {length}?')
         if len(result) < length:
@@ -204,22 +211,27 @@ class DataServer:
 
     async def write(self, data):
         if self._write_buffer_size is not None:
+            print("write buffer size is not none")
             # If write buffer is bounded, and we have more inflight requests than the configured
             # write buffer size, then wait until the inflight requests arrive before continuing.
             if self._out_inflight >= self._write_buffer_size:
                 self._out_stalls += 1
             while self._out_inflight >= self._write_buffer_size:
                 logger.trace("data_server: write pushback")
+                print("write pushback")
                 await self._out_tasks.wait_one()
 
         # Eagerly check if any of our previous queued writes errored out.
+        print("polling out tasks")
         await self._out_tasks.poll()
 
-        self.logger.trace("data_server: write <%s>", dump_hex(data))
+        #self.logger.trace("data_server: write <%s>", dump_hex(data))
+        print("write to out buffer")
         self._out_buffer.write(data)
 
         while len(self._out_tasks) < _xfers_per_queue and \
                     len(self._out_buffer) >= self._out_threshold:
+            print("submitting out task")
             self._out_tasks.submit(self._out_task(self._out_slice()))
     
 
@@ -247,14 +259,64 @@ class DataServer:
                 await self._out_tasks.wait_all()
 
 
+class CmdServer:
+    def __init__(self, host, port, process_cmd = None):
+        self.HOST = host
+        self.PORT = port
+        self.queue = TaskQueue()
+        if process_cmd == None:
+            self.process_cmd = self.i_process_cmd
+        else:
+            self.process_cmd = process_cmd
+
+    async def start(self):
+        self.server = await asyncio.start_server(self.handle_cmd, self.HOST, self.PORT)
+        await self.server.serve_forever()
+
+    async def handle_cmd(self, reader, writer):
+        self.cmd_reader = reader
+        self.cmd_writer = writer
+        # self.cmd_reader_future.set_result(reader)
+        print("cmd server made connection")
+        loop = asyncio.get_running_loop()
+        try:
+            print("awaiting cmd read")
+            data = await self.cmd_reader.readexactly(7)
+            message = data.decode()
+            print("cmd:", message)
+            self.queue.submit(self.process_cmd(message))
+            await self.queue.poll()
+        except asyncio.IncompleteReadError:
+            print("err")
+    
+    async def i_process_cmd(self, cmd):
+        print("run cmd:",cmd)
+        c = str(cmd[0:2])
+        val = int(cmd[2:])
+
+
+class ScanServers:
+    def __init__(self, close_future):
+        self.close_future = close_future
+        self.cmd_server = CmdServer("127.0.0.1", 1237)
+        self.data_server = DataServer("127.0.0.1", 1238)
+    
+    async def start(self):
+        loop = asyncio.get_event_loop()
+        await self.data_server.reset()
+        loop.create_task(self.cmd_server.start())
+        loop.create_task(self.data_server.start())
+        #await data_server.connect_future
+
 
 if __name__ == "__main__":
     async def main():
         loop = asyncio.get_event_loop()
-        data_server = DataServer("127.0.0.1", 1238)
-        await data_server.reset()
-        loop.create_task(data_server.start())
-        await data_server.connect_future
+        close_future = loop.create_future()
+        servers = ScanServers(close_future)
+        await servers.start()
+        await close_future
+
         #print("done")
         #loop.run_forever()
 
