@@ -122,7 +122,7 @@ class DataServer:
             self._in_tasks.submit(self._in_task())
         # Give the IN tasks a chance to submit their transfers
         await asyncio.sleep(0)
-        print(f'in tasks: {vars(self._in_tasks)}')
+        #print(f'in tasks: {vars(self._in_tasks)}')
         logger.trace("data_server: deasserting reset")
 
     async def _in_task(self):
@@ -169,7 +169,6 @@ class DataServer:
             self._in_pushback.notify_all()
         print(f'len(result): {len(result)} < length: {length}?')
         if len(result) < length:
-            print("yes")
             chunks  = [result]
             length -= len(result)
             while length > 0:
@@ -181,13 +180,9 @@ class DataServer:
             # Always return a memoryview object, to avoid hard to detect edge cases downstream.
             result = memoryview(b"".join(chunks))
 
-        print("returning result")
-        #logger.trace("data_server: read <%s>", dump_hex(result))
         print("writing to socket", result.tolist()[0:10])
         self.writer.write(result)
-        print(f'writer: {vars(self.writer)}')
         await self.writer.drain()
-        print("drained")
         return result
 
     def _out_slice(self):

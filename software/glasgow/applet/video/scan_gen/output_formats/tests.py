@@ -1,3 +1,4 @@
+import struct
 
 def get_two_bytes(n: int):
     bits = "{0:016b}".format(n)
@@ -77,14 +78,32 @@ def generate_vector_packet():
         yield packet
 
 
+from hilbert_test import hilbert
+
+def generate_hilbert_packet():
+    vec_stream = hilbert()
+    packet = bytearray()
+    while True:
+        n = 0
+        while n <= 16383:
+            val = next(vec_stream)
+            packet.extend(struct.pack( "<H", val ))
+            n += 1
+        yield packet
+
+
+
+
 
 if __name__ == "__main__":
+    h = generate_hilbert_packet()
+    print(next(h))
     #print(bytes(generate_raster_config(400,400)))
     # packet_generator = generate_packet_with_config(400,400)
     # text_file = open("fakepackets.txt", "w")
     # for n in range(3):
     #     text_file.write(str(next(packet_generator)))
 
-    packet_generator = generate_vector_packet()
-    print(next(packet_generator))
+    #packet_generator = generate_vector_packet()
+    #print(next(packet_generator))
 

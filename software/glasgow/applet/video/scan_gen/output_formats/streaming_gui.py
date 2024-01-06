@@ -4,6 +4,8 @@ logger.setLevel(logging.DEBUG)
 
 logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
 
+from threading import Thread
+
 import asyncio
 import functools
 import sys
@@ -27,7 +29,7 @@ import qasync
 from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 
 #from microscope import ScanCtrl, ScanStream
-from new_socket_test import ScanInterface
+from data_protocol import ScanInterface
 from gui_modules.image_display import ImageDisplay
 from gui_modules.frame_settings import FrameSettings, RegisterUpdateBox
 
@@ -113,24 +115,24 @@ class StreamFrameSettings(FrameSettings):
         self.ry.spinbox.valueChanged.connect(self.set_y)
 
     
-    @asyncSlot()
-    async def set_x(self):
+    def set_x(self):
         xval = self.rx.getval()
-        await self.con.set_x_resolution(xval)
-        await self.con.strobe_config()
+        self.con.set_x_resolution(xval)
+        self.con.strobe_config()
 
-    @asyncSlot()
-    async def set_y(self):
+    def set_y(self):
         yval = self.ry.getval()
-        await self.con.set_y_resolution(yval)
-        await self.con.strobe_config()
+        self.con.set_y_resolution(yval)
+        self.con.strobe_config()
 
 
 class MainWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.con = ScanInterface()
+        loop = asyncio.get_event_loop()
+        close_future = loop.create_future()
+        self.con = ScanInterface(close_future)
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
@@ -234,43 +236,38 @@ class MainWindow(QWidget):
 
     @asyncSlot()
     async def connect(self):
-        await self.transmit_current_settings()
-        await self.con.strobe_config()
-        await self.con.open_data_client()
+        await self.con.start()
+        self.transmit_current_settings()
+        self.con.strobe_config()
 
-    @asyncSlot()
-    async def transmit_current_settings(self):
+    def transmit_current_settings(self):
         x_width, y_height = self.frame_settings.getframe()
-        await self.con.set_x_resolution(x_width)
-        await self.con.set_y_resolution(y_height)
+        self.con.set_x_resolution(x_width)
+        self.con.set_y_resolution(y_height)
         mode = self.mode_select_dropdown.currentIndex() + 1
-        await self.con.set_scan_mode(mode)
+        self.con.set_scan_mode(mode)
 
 
-    @asyncSlot()
-    async def set_scan_mode(self):
+    def set_scan_mode(self):
         mode = self.mode_select_dropdown.currentIndex() + 1
-        await self.con.set_scan_mode(mode)
+        self.con.set_scan_mode(mode)
         if mode == 1:
-            await self.con.set_8bit_output()
+            self.con.set_8bit_output()
         if mode == 3:
-            await self.con.set_16bit_output()
-        await self.con.strobe_config()
+            self.con.set_16bit_output()
+        self.con.strobe_config()
 
-        
-    @asyncSlot()
+    @asyncSlot()   
     async def toggle_scan(self):
         if self.start_btn.isChecked():
             print("starting scan")
             self.start_btn.setText('🔄')
-            await self.con.unpause()
-            mode = self.mode_select_dropdown.currentIndex() + 1
-            if mode == 3:
-                self.con.stream_pattern = True
-                await self.con.write_points()
-            #loop = asyncio.get_event_loop()
-            #oop.create_task(self.con.start_reading())
+            #await self.updateData()
+            self.con.unpause()
             self.update_continously = asyncio.ensure_future(self.keepUpdating())
+            
+            # loop = asyncio.get_event_loop()
+            # loop.create_task(self.keepUpdating())
             # self.setState("scanning")
             self.start_btn.setText('⏸️')
 
@@ -278,23 +275,25 @@ class MainWindow(QWidget):
             print("Stopped scanning now")
             self.start_btn.setText('🔄')
             self.con.stream_pattern = False
-            await self.con.pause()
+            self.con.pause()
             #self.update_continously.cancel()
             self.start_btn.setText('▶️')
 
     async def keepUpdating(self):
         while True:   
-            await asyncio.sleep(0)
-            try:
-                await self.updateData()
-            except RuntimeError:
-                print("error")
-                break
+            #print("keep updating")
+            #await asyncio.sleep(0)
+            await self.updateData()
+                
+            # except RuntimeError:
+            #     print("error")
+            #     break
 
     async def updateData(self):
-        self.image_display.setImage(self.con.scan_stream.y_height, self.con.scan_stream.x_width, self.con.scan_stream.buffer)
-        
-        
+        async with self.con.data_client._buffer.data_processed:
+            await self.con.data_client._buffer.data_processed.wait()
+            self.image_display.setImage(self.con.data_client._buffer.scan_stream.y_height, self.con.data_client._buffer.scan_stream.x_width, self.con.data_client._buffer.scan_stream.buffer)
+
     def setState(self, state):
         if state == "disconnected":
             self.start_btn.setEnabled(False)

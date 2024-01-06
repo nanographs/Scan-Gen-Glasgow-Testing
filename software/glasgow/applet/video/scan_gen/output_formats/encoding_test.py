@@ -8,8 +8,8 @@ from tests import generate_packet_with_config, generate_vector_packet
 
 class ScanStream:
     def __init__(self):
-        self.y_height = 400
-        self.x_width = 400
+        self.y_height = 512
+        self.x_width = 512
 
         self.current_x = 0
         self.current_y = 0
@@ -41,7 +41,7 @@ class ScanStream:
                     dtype = np.uint8)
         print("cleared buffer")
 
-    def points_to_frame(self, m:memoryview, print_debug = True):
+    def points_to_frame(self, m:memoryview, print_debug = False):
         m_len = len(m)
         if print_debug:
             print("data length:", m_len)
@@ -107,7 +107,8 @@ class ScanStream:
         ## fill in solid middle rectangle
 
         if not full_lines == 0:
-            print(f'{full_lines} >= {y_height}?')
+            if print_debug:
+                print(f'{full_lines} >= {y_height}?')
             if full_lines >= y_height:
                 full_frames = full_lines//y_height
                 extra_lines = m_len%y_height
@@ -116,8 +117,8 @@ class ScanStream:
                     print(f'{extra_lines} extra lines')
                     self.check_sync()
 
-
-            print(f'{current_y + full_lines} >= {y_height}?')
+            if print_debug:
+                print(f'{current_y + full_lines} >= {y_height}?')
             if (current_y + full_lines) >= y_height:
                 bottom_rows = y_height - current_y
                 top_rows =  full_lines - bottom_rows
@@ -251,14 +252,17 @@ class ScanStream:
         self.point_buffer = end_incomplete_points
         # self.point.buffer = m[full_points*6:].tolist()
 
-    def handle_data_with_config(self, data:memoryview, config = None):
+    def handle_data_with_config(self, data:memoryview, config = None, print_debug = False):
         if not config == None:
-            print(f'using this config: {config}')
+            if print_debug:
+                print(f'using this config: {config}')
             self.parse_config_packet(config)
         else:
-            print("continue with existing config")
+            if print_debug:
+                print("continue with existing config")
 
-        print("data start with", data.tolist()[0:10])
+        if print_debug:
+            print("data start with", data.tolist()[0:10])
 
         if self.scan_mode == 0:
             pass
@@ -269,21 +273,25 @@ class ScanStream:
                     start = time.perf_counter()
                     data = data.cast('H')
                     end = time.perf_counter()
-                    print(f'16 to 8 time {end-start}')
+                    if print_debug:
+                        print(f'16 to 8 time {end-start}')
                 start = time.perf_counter()
                 self.points_to_frame(data)
                 end = time.perf_counter()
-                print(f'Time to stuff {end-start}')
+                if print_debug:
+                    print(f'Time to stuff {end-start}')
             if self.scan_mode == 3:
                 start = time.perf_counter()
                 self.points_to_vector(data)
                 end = time.perf_counter()
-                print(f'Time to stuff {end-start}')
+                if print_debug:
+                    print(f'Time to stuff {end-start}')
 
 
-    def parse_config_packet(self, d:memoryview):
+    def parse_config_packet(self, d:memoryview, print_debug = False):
         f = d[0:12].tolist()
-        print("decoded config packet", f)
+        if print_debug:
+            print("decoded config packet", f)
         new_x = f[0]*256  + f[1] + 1
         new_y = f[2]*256 + f[3] + 1
 
@@ -312,15 +320,18 @@ class ScanStream:
                 self.y_upper = self.y_height
             self.y_lower = new_y_lower
 
-        print(f'x width, y height: {self.x_width}, {self.y_height}')
-        print(f'x lower, x upper: {self.x_lower}, {self.x_upper}')
-        print(f'y lower, y upper: {self.y_lower}, {self.y_upper}')
+        if print_debug:
+            print(f'x width, y height: {self.x_width}, {self.y_height}')
+            print(f'x lower, x upper: {self.x_lower}, {self.x_upper}')
+            print(f'y lower, y upper: {self.y_lower}, {self.y_upper}')
 
         s = d[12:14].tolist()
         self.scan_mode = s[0]
         self.eight_bit_output = s[1]
-        print(f'scan mode: {self.scan_mode}')
-        print(f'8bit mode: {self.eight_bit_output}')
+
+        if print_debug:
+            print(f'scan mode: {self.scan_mode}')
+            print(f'8bit mode: {self.eight_bit_output}')
         
 
     def parse_config_from_data(self, d:bytes, print_debug=False):

@@ -13,7 +13,9 @@ logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
 
 
 class ConnectionClient:
-    async def open_connection(self, host, port, future):
+    async def open_connection(self, future):
+        host = self.host
+        port = self.port
         print("trying to open connection at", host, port)
         while True:
             try:
@@ -35,9 +37,10 @@ _xfers_per_queue = min(16, _max_packets_per_ep // _packets_per_xfer)
 
 
 class DataClient(ConnectionClient):
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
+    def __init__(self):
+        self.host = "127.0.0.1"
+        self.port = 1238
+
 
         self._write_buffer_size = _max_packets_per_ep * 16384
         self._read_buffer_size  = _max_packets_per_ep * 16384
@@ -55,15 +58,18 @@ class DataClient(ConnectionClient):
         self._in_stalls  = 0
         self._out_stalls = 0
 
-    async def open(self):
+    async def open(self, future_con):
         print("opening data client")
         loop = asyncio.get_event_loop()
-        future_con = loop.create_future()
-        loop.create_task(self.open_connection(self.host, self.port, future_con))
+        loop.create_task(self.open_connection(future_con))
         await asyncio.sleep(0)
         reader, writer = await future_con
         self.writer = writer
         self.reader = reader
+        print(reader)
+        print(vars(reader))
+        print(writer)
+        print(vars(writer))
 
 
     async def cancel(self):
@@ -102,6 +108,12 @@ class DataClient(ConnectionClient):
         self._in_buffer.write(data)
 
         self._in_tasks.submit(self._in_task())
+
+    async def read_continously(self):
+        while True:
+            print("reading")
+            data = await self.read()
+            print(f'read {len(data)}')
     
     async def read(self, length=None, *, flush=True):
         print("reading")
