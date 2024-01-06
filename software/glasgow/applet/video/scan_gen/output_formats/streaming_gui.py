@@ -29,7 +29,7 @@ import qasync
 from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 
 #from microscope import ScanCtrl, ScanStream
-from data_protocol import ScanInterface
+from threading_test import ScanInterface
 from gui_modules.image_display import ImageDisplay
 from gui_modules.frame_settings import FrameSettings, RegisterUpdateBox
 
@@ -130,9 +130,7 @@ class MainWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        loop = asyncio.get_event_loop()
-        close_future = loop.create_future()
-        self.con = ScanInterface(close_future)
+        self.con = ScanInterface()
 
         self.setWindowTitle("Scan Control")
         self.layout = QGridLayout()
@@ -236,7 +234,7 @@ class MainWindow(QWidget):
 
     @asyncSlot()
     async def connect(self):
-        await self.con.start()
+        self.con.start()
         self.transmit_current_settings()
         self.con.strobe_config()
 
@@ -290,11 +288,11 @@ class MainWindow(QWidget):
             #     break
 
     async def updateData(self):
-        print("*", self.con.data_client._buffer.data_processed)
-        async with self.con.data_client._buffer.data_processed:
-            await self.con.data_client._buffer.data_processed.wait()
-            print("updating display")
-            self.image_display.setImage(self.con.data_client._buffer.scan_stream.y_height, self.con.data_client._buffer.scan_stream.x_width, self.con.data_client._buffer.scan_stream.buffer)
+        # print("*", self.con.data_client._buffer.data_processed)
+        # async with self.con.data_client._buffer.data_processed:
+        #     await self.con.data_client._buffer.data_processed.wait()
+        print("updating display")
+        self.image_display.setImage(self.con.buffer.scan_stream.y_height, self.con.buffer.scan_stream.x_width, self.con.buffer.scan_stream.buffer)
 
     def setState(self, state):
         if state == "disconnected":
