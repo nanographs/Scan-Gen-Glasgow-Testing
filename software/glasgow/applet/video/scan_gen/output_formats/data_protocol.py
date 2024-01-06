@@ -292,7 +292,7 @@ class ScanDataClient(ScanClient):
         self.scan_mode = 0
         self.patterngen = generate_hilbert_packet()
         
-        self.scan_stream = ScanStream()
+        #self.scan_stream = ScanStream()
         self.buffer = bytearray()
         loop = asyncio.get_event_loop()
         self._waiter = loop.create_future()
@@ -320,8 +320,8 @@ class ScanDataClient(ScanClient):
     #     #print(list(data)[0:10])
     #     #self._transport.pause_reading()
     #     #self._transport.resume_reading()
-    #     if self.scan_mode == 3:
-    #         self.write_pattern()
+        if self.scan_mode == 3:
+            self.write_pattern()
         
     # def buffer_updated(self, nbytes:int):
     #     print("got data",nbytes)
@@ -337,6 +337,7 @@ class ScanDataClient(ScanClient):
 
 
     def write_pattern(self):
+        print("writing pattern data")
         data = next(self.patterngen)
         self._transport.write(data)
         #print("wrote data")

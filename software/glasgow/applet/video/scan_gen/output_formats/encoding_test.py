@@ -334,7 +334,7 @@ class ScanStream:
             print(f'8bit mode: {self.eight_bit_output}')
         
 
-    def parse_config_from_data(self, d:bytes, print_debug=False):
+    def parse_config_from_data(self, d:bytes, print_debug=True):
         n = re.finditer(self.config_match, d)
         prev_stop = 0
         prev_config = None

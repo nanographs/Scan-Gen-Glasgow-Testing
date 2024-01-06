@@ -276,7 +276,7 @@ class MainWindow(QWidget):
             self.start_btn.setText('🔄')
             self.con.stream_pattern = False
             self.con.pause()
-            #self.update_continously.cancel()
+            self.update_continously.cancel()
             self.start_btn.setText('▶️')
 
     async def keepUpdating(self):
@@ -290,8 +290,10 @@ class MainWindow(QWidget):
             #     break
 
     async def updateData(self):
+        print("*", self.con.data_client._buffer.data_processed)
         async with self.con.data_client._buffer.data_processed:
             await self.con.data_client._buffer.data_processed.wait()
+            print("updating display")
             self.image_display.setImage(self.con.data_client._buffer.scan_stream.y_height, self.con.data_client._buffer.scan_stream.x_width, self.con.data_client._buffer.scan_stream.buffer)
 
     def setState(self, state):
