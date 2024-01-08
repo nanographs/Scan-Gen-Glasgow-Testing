@@ -16,6 +16,7 @@ _packets_per_xfer = 32
 _xfers_per_queue = min(16, _max_packets_per_ep // _packets_per_xfer)
 
 buffer_size = _max_packets_per_ep*16384
+#buffer_size = 16384
 
 class fake_iface:
     def __init__(self):
