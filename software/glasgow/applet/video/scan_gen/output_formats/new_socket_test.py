@@ -77,7 +77,7 @@ class ConnectionManager:
         writer = self.data_writer
         print("writing points")
         n = 0
-        while n <= 16384:
+        while n < 16384:
             n += 1
             point = next(self.pattern_loop)
             await self.write_2bytes(point)
@@ -101,7 +101,7 @@ class ConnectionManager:
                     if self.logging:
                         self.text_file.write(str(list(data)))
                         logger.info(f'wrote data {n} to text file')
-                    self.scan_stream.parse_config_from_data(data)
+                    self.scan_stream.writeto(data)
 
                     
 

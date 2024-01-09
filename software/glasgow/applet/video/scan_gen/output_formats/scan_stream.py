@@ -27,6 +27,23 @@ class ScanStream:
         self.eight_bit_output = 1
         self.point_buffer = memoryview(bytes([]))
 
+        self._buffer = bytearray()
+    
+    def writeto(self, d:bytes):
+        print(f'extend {len(d)} bytes')
+        self._buffer.extend(d)
+        print(f'length: {len(self._buffer)}')
+        self.readfrom()
+    
+    def readfrom(self):
+        print(f'buffer len: {len(self._buffer)}')
+        while len(self._buffer) >= 16384:
+            d = self._buffer[:16384]
+            self._buffer = self._buffer[16384:]
+            self.parse_config_from_data(d)
+        
+
+
     def change_buffer(self, x_width, y_height):
         self.x_width = x_width
         self.y_height = y_height
@@ -203,7 +220,7 @@ class ScanStream:
             #assert (self.buffer[self.current_y][self.x_lower] == self.x_lower)
 
 
-    def points_to_vector(self, m:memoryview, print_debug = False):
+    def points_to_vector(self, m:memoryview, print_debug = True):
         
         n_extra = len(self.point_buffer)
         full_points = (len(m)-n_extra)//6
@@ -392,13 +409,14 @@ if __name__ == "__main__":
     def test_frame_stuffing():
         #data = [4, 5, 6] + [n for n in range(0,6)]*10 + [0, 1, 2]
         s = ScanStream()
-        s.change_buffer(1547, 400)
-        packet_generator = generate_packet_with_config(1547,400)
+        s.change_buffer(400, 400)
+        packet_generator = generate_packet_with_config(400,400)
         for n in range(3):
             print("=====start new packet======")
             data = next(packet_generator)
             d = bytes(data)
-            s.parse_config_from_data(d)
+            #s.parse_config_from_data(d)
+            s.writeto(d)
 
     def test_vector_stuffing():
         s = ScanStream()
@@ -408,5 +426,5 @@ if __name__ == "__main__":
             d = memoryview(bytes(data))
             s.points_to_vector(d)
         
-    test_vector_stuffing()
-    #test_frame_stuffing()
+    #test_vector_stuffing()
+    test_frame_stuffing()
