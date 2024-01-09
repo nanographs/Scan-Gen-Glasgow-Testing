@@ -1,7 +1,7 @@
 import asyncio
 
-from microscope import ScanCtrl
-from encoding_test import ScanStream
+from scan_ctrl import ScanCtrl
+from scan_stream import ScanStream
 
 import logging
 logger = logging.getLogger(__name__)
