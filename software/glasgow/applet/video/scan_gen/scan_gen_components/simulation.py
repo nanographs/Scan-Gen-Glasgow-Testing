@@ -66,7 +66,7 @@ sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 10)
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
-                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, is_simulation = True)
+                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, is_simulation = True)
 
 textfile = open('packets.txt','w')
 def raster_sim(n=16384, eight_bit_output=False):
@@ -144,6 +144,9 @@ def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper 
 
     yield dut.y_full_resolution_b1.eq(c1)
     yield dut.y_full_resolution_b2.eq(c2)
+
+    step = 16384//max(x_res,y_res)
+    yield dut.step_size.eq(step)
 
     b1, b2 = get_two_bytes(x_lower)
     b1 = int(bits(b1))
@@ -263,8 +266,18 @@ def sim_iobus():
                 data = yield from sim_app_iface.read(9)
                 print(list(data))
 
+        def count():
+            n = 0
+            while True:
+                n += 1
+                yield n
+                yield n
+                yield 1
+
+
         def hilbert_test():
-            pattern_next = hilbert()
+            #pattern_next = hilbert()
+            pattern_next = count()
             yield scan_mode.eq(3)
             yield eight_bit_output.eq(0)
             yield from set_frame_params(dut, x_res=1024, y_res=1024)
@@ -275,9 +288,13 @@ def sim_iobus():
             yield unpause.eq(1)
             data = yield from sim_app_iface.read(10)
             print(list(data))
-            for n in range(16384):
+            for n in range(16):
                 for n in range(5):
                     yield from sim_scangen_iface.sim_write_2bytes(next(pattern_next))
+                data = yield from sim_app_iface.read(10)
+                print(list(data))
+            print("===keep reading...===")
+            for n in range(10):
                 data = yield from sim_app_iface.read(10)
                 print(list(data))
 

@@ -42,7 +42,7 @@ class ScanStream:
             d = bytes(self._buffer[:16384])
             self._buffer = self._buffer[16384:]
             print(f'new buffer length: {len(self._buffer)}')
-            self.parse_config_from_data(d, print_debug = True)
+            self.parse_config_from_data(d)
         
 
 
@@ -60,7 +60,7 @@ class ScanStream:
                     dtype = np.uint8)
         print("cleared buffer")
 
-    def points_to_frame(self, m:memoryview, print_debug = True):
+    def points_to_frame(self, m:memoryview, print_debug = False):
         m_len = len(m)
         if print_debug:
             print("data length:", m_len)
@@ -222,59 +222,13 @@ class ScanStream:
             #assert (self.buffer[self.current_y][self.x_lower] == self.x_lower)
 
 
-    def points_to_vector(self, m:memoryview, print_debug = True):
+    def points_to_vector(self, m:memoryview, print_debug = False):
         self.point_buffer.extend(m)
         while len(self.point_buffer) >= 6:
             point = self.point_buffer[:6]
             self.point_buffer = self.point_buffer[6:]
             x, y, a = memoryview(point).cast('H').tolist()
             self.buffer[y][x] = a
-        
-        # n_extra = len(self.point_buffer)
-        # full_points = (len(m)-n_extra)//6
-
-        # if n_extra != 0:
-        #     start_offset = 6-(n_extra)
-        # else:
-        #     start_offset = 0
-
-        # if print_debug:
-        #     print(f'm len: {len(m)}')
-        #     print(f'extra points from prev packet: {n_extra}')
-        #     print(f'full points: {full_points}')
-        #     print(f'start offset: {start_offset}')
-        #     print(f'start incomplete points: [0:{start_offset}]')
-            
-        # #extra = len(m)%6
-                
-        # if n_extra != 0:
-        #     start_incomplete_points = m[0:start_offset]
-        #     overflow_points = self.point_buffer.tobytes() + start_incomplete_points.tobytes()
-
-        #     if print_debug:
-        #         print(f'point buffer: {self.point_buffer.tolist()}, {self.point_buffer.tobytes()}')
-        #         print(f'start points: {start_incomplete_points.tolist()}')
-        #         print(f'first point completed: {overflow_points}')
-        #         #print(memoryview(overflow_points).cast('H').tolist())
-
-        #     x, y, a  = memoryview(overflow_points).cast('H').tolist()
-        #     self.buffer[y][x] = a
-        
-        # points = m[start_offset:(full_points*6 + start_offset)].cast('H', shape=[full_points,3]).tolist()
-    
-        # for n in points:
-        #     x, y, a  = n
-        #     self.buffer[y][x] = a
-
-        # if print_debug:
-        #     print(f'end points: [{full_points*6 + start_offset}:]')
-        # end_incomplete_points = m[(full_points*6 + start_offset):]
-        # if print_debug:
-        #     print(f'end points: {end_incomplete_points.tolist()}')
-        
-
-        # self.point_buffer = end_incomplete_points
-        # # self.point.buffer = m[full_points*6:].tolist()
 
     def handle_data_with_config(self, data:memoryview, config = None):
         if not config == None:

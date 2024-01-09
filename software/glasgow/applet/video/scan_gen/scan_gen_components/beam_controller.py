@@ -76,6 +76,7 @@ class BeamController(Elaboratable):
         self.prev_dwelling_changed = Signal()
 
         self.reset = Signal()
+        self.freeze = Signal()
 
     def elaborate(self, platform):
         m = Module()
@@ -104,7 +105,7 @@ class BeamController(Elaboratable):
             m.d.sync += self.y_position.eq(0)
             m.d.sync += self.dwell_time.eq(0)  
         with m.Else():
-            with m.If(self.lock_new_point):
+            with m.If((self.lock_new_point) & (~(self.freeze))):
                 m.d.sync += self.x_position.eq(self.next_x_position)
                 m.d.sync += self.y_position.eq(self.next_y_position)
                 m.d.sync += self.dwell_time.eq(self.next_dwell)     

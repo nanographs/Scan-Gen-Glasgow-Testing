@@ -267,7 +267,7 @@ class MainWindow(QWidget):
             mode = self.mode_select_dropdown.currentIndex() + 1
             if mode == 3:
                 self.con.stream_pattern = True
-                await self.con.write_points()
+                await self.con.write_points("*")
             #loop = asyncio.get_event_loop()
             #oop.create_task(self.con.start_reading())
             self.update_continously = asyncio.ensure_future(self.keepUpdating())

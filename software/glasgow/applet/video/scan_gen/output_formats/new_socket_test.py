@@ -73,15 +73,16 @@ class ConnectionManager:
         writer.write(b1.to_bytes())
         await writer.drain()
 
-    async def write_points(self):
+    async def write_points(self,nth):
         writer = self.data_writer
-        print("writing points")
+        print(f'writing points {nth}')
         n = 0
         while n < 16384:
-            n += 1
+            n += 2
             point = next(self.pattern_loop)
             await self.write_2bytes(point)
-        print("wrote", n)
+        print(f'wrote {nth}, {n} points')
+        logger.info(f'wrote {nth}, {n} points')
 
     async def read_continously(self):
         reader = self.data_reader
@@ -92,7 +93,7 @@ class ConnectionManager:
                 print("trying to read")
                 if not reader.at_eof():
                     if self.stream_pattern == True:
-                        await self.write_points()
+                        await self.write_points(n)
                     await asyncio.sleep(0)
                     data = await reader.readexactly(16384)
                     n += 1
