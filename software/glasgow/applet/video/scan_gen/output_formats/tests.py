@@ -9,14 +9,26 @@ def get_two_bytes(n: int):
 def generate_raster_config(x_resolution, y_resolution):
     x1, x2 = get_two_bytes(x_resolution-1)
     y1, y2 = get_two_bytes(y_resolution-1)
-    config_packet = [255, 255, x1, x2, y1, y2, 1, 1, 255, 255]
+    lx1 = 0
+    lx2 = 0
+    ly1 = 0
+    ly2 = 0
+    ux1, ux2 = x1, x2
+    uy1, uy2 = y1, y2
+    config_packet = [255, 255, x1, x2, y1, y2, ux1, ux2, lx1, lx2, uy1, uy2, ly1, ly2, 1, 1, 255, 255]
     return config_packet
 
 
 def generate_vector_config(x_resolution, y_resolution):
     x1, x2 = get_two_bytes(x_resolution-1)
     y1, y2 = get_two_bytes(y_resolution-1)
-    config_packet = [255, 255, x1, x2, y1, y2, 3, 0, 255, 255]
+    lx1 = 0
+    lx2 = 0
+    ly1 = 0
+    ly2 = 0
+    ux1, ux2 = x1, x2
+    uy1, uy2 = y1, y2
+    config_packet = [255, 255, x1, x2, y1, y2, ux1, ux2, lx1, lx2, uy1, uy2, ly1, ly2, 3, 0, 255, 255]
     return config_packet
 
 def generate_vector_stream_singlepoint(point):
@@ -67,9 +79,16 @@ def generate_packet_with_config(x_resolution, y_resolution):
         n = 0
 
 def generate_vector_packet():
+    config = generate_vector_config(400,400)
     vec_stream = generate_vector_stream_singlepoint([255, 255, 0])
-    packet = []
+    packet = config
+    n = 10
+    while n <= 16383:
+        packet.append(next(vec_stream))
+        n += 1
+    yield packet
     while True:
+        packet = []
         n = 0
         while n <= 16383:
             packet.append(next(vec_stream))

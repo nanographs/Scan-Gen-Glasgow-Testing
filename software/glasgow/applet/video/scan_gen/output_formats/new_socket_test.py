@@ -94,7 +94,7 @@ class ConnectionManager:
                     if self.stream_pattern == True:
                         await self.write_points()
                     await asyncio.sleep(0)
-                    data = await reader.read(16384)
+                    data = await reader.readexactly(16384)
                     n += 1
                     print(f'recieved data {n}')
                     logger.info(f'recieved data {n}, length {len(data)}')
