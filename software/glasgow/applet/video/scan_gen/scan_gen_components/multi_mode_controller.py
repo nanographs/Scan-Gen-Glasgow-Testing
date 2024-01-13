@@ -112,6 +112,7 @@ class ModeController(Elaboratable):
 
         self.reset = Signal()
         self.disable_dwell = Signal()
+        self.complete_one_point = Signal()
         
     def elaborate(self, platform):
         m = Module()
@@ -210,10 +211,14 @@ class ModeController(Elaboratable):
                             m.next = "Patterning"
                     with m.State("Patterning"):
                         m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)) )
-                        with m.If(self.vec_mode_ctrl.vector_reader.data_fresh):
-                            m.d.comb += self.vec_mode_ctrl.vector_reader.data_point_used.eq(self.beam_controller.end_of_dwell)
-                            m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_xy.eq((self.beam_controller.end_of_dwell))
-                            m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq((self.beam_controller.end_of_dwell))
+            with m.If((self.vec_mode_ctrl.vector_reader.data_fresh) & (self.beam_controller.end_of_dwell)):
+                m.d.comb += self.vec_mode_ctrl.vector_reader.data_point_used.eq(1)
+                m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_xy.eq(1)
+                m.d.sync += self.complete_one_point.eq(1)
+            with m.If(~(self.vec_mode_ctrl.vector_reader.data_fresh) & (self.beam_controller.end_of_dwell)):
+                m.d.sync += self.complete_one_point.eq(0)
+            with m.If(self.complete_one_point):
+                m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_dwell.eq((self.beam_controller.end_of_dwell))
             with m.If(self.beam_controller.end_of_dwell):
                 m.d.comb += self.beam_controller.freeze.eq(~(self.vec_mode_ctrl.vector_reader.data_fresh))
             m.d.comb += self.vec_mode_ctrl.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)

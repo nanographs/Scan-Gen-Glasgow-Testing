@@ -60,8 +60,8 @@ def hilbert(dwell_time = 0):
 
 
 sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
-sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=False, depth = 10)
-sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 10)
+sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=False, depth = 4)
+sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 4)
 # print(vars(ScanGenApplet))
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
@@ -270,9 +270,14 @@ def sim_iobus():
             n = 0
             while True:
                 n += 1
-                yield n
-                yield n
-                yield 1
+                n1, n2 = get_two_bytes(n)
+                yield n2
+                yield n1
+                yield n2
+                yield n1
+                d1, d2 = get_two_bytes(1)
+                yield d2
+                yield d1
 
 
         def hilbert_test():
@@ -286,13 +291,17 @@ def sim_iobus():
             yield
             yield configuration.eq(0)
             yield unpause.eq(1)
-            data = yield from sim_app_iface.read(10)
+            data = yield from sim_app_iface.read(18)
             print(list(data))
+            for n in range(6):
+                yield from sim_app_iface.write(bits(next(pattern_next)))
             for n in range(16):
-                for n in range(5):
-                    yield from sim_scangen_iface.sim_write_2bytes(next(pattern_next))
-                data = yield from sim_app_iface.read(10)
+                for n in range(6):
+                    yield from sim_app_iface.write(bits(next(pattern_next)))
+                data = yield from sim_app_iface.read(6)
                 print(list(data))
+            data = yield from sim_app_iface.read(6)
+            print(list(data))
             print("===keep reading...===")
             for n in range(10):
                 data = yield from sim_app_iface.read(10)

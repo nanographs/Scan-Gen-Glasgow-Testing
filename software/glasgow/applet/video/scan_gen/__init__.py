@@ -741,9 +741,9 @@ class ScanGenApplet(GlasgowApplet):
         super().add_run_arguments(parser, access)
 
     async def run(self, device, args):
-        iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args,
-                                    read_buffer_size = 2*16384,
-                                    write_buffer_size = 2*16384)
+        iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
+                                    # read_buffer_size = 10*16384,
+                                    # write_buffer_size = 10*16384)
 
         if args.buf == "local":
             scan_iface = SG_LocalBufferInterface(iface, self.logger, device, self.__addr_scan_mode,
@@ -867,6 +867,33 @@ class ScanGenApplet(GlasgowApplet):
             await scan_iface.set_config_flag(0)
             data = await scan_iface.iface.read(16384)
             scan_iface.text_file.write(str(data.tolist()))
+
+        if args.buf == "test_vector":
+            def sequential_points():
+                n = 0
+                while True:
+                    n += 1
+                    n1, n2 = get_two_bytes(n)
+                    yield n2
+                    yield n1
+                    yield n2
+                    yield n1
+                    d1, d2 = get_two_bytes(1)
+                    yield d2
+                    yield d1
+            patterngen = sequential_points()
+            await scan_iface.set_vector_mode()
+            await scan_iface.set_frame_resolution(255,255)
+            await scan_iface.set_config_flag(1)
+            await scan_iface.set_config_flag(0)
+            await scan_iface.unpause()
+            for x in range(3):
+                for n in range(16384):
+                    await scan_iface.iface.write(bits(next(patterngen)))
+                data = await scan_iface.iface.read(16384)
+                scan_iface.text_file.write(str(data.tolist()))
+
+            
 
         if args.buf == "hilbert":
             await scan_iface.hilbert_loop()
