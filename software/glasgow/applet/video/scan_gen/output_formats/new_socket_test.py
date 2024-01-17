@@ -3,13 +3,14 @@ import asyncio
 from scan_ctrl import ScanCtrl
 from scan_stream import ScanStream
 
+from gui_modules.pattern_generators.patterngen_utils import packet_from_generator
+
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
 
-from hilbert_test import hilbert
 import time
 
 
@@ -32,23 +33,11 @@ class ConnectionManager:
 
         self.scan_mode = 0
 
-        #self.pattern_loop = self.loop_pattern()
-        self.pattern_loop = hilbert()
+        self.pattern_loop = None
 
         self.text_file = open("socket_packets.txt", "w")
 
         self.logging = False
-
-    def looppattern(self):
-        L = [255, 255, 10, 100, 100, 10, 250, 100, 10, 200, 200, 10, 150, 150, 10, 100, 150, 10,
-            230, 220, 10, 50, 10, 10]
-        def gentr_fn(alist):
-            while 1:
-                for j in alist:
-                    yield j
-
-        a = gentr_fn(L)
-        return a
 
     async def open_connection(self, host, port, future):
         print("trying to open connection at", host, port)
@@ -64,25 +53,37 @@ class ConnectionManager:
             except ConnectionError:
                 #print("connection error")
                 pass
+    
+    def set_patterngen(self, gen):
+        self.pattern_loop = packet_from_generator(gen)
 
-    async def write_2bytes(self, val):
-        writer = self.data_writer
-        b1, b2 = get_two_bytes(val)
-        writer.write(b2.to_bytes())
-        await writer.drain()
-        writer.write(b1.to_bytes())
-        await writer.drain()
+
+    # async def write_2bytes(self, val):
+    #     writer = self.data_writer
+    #     b1, b2 = get_two_bytes(val)
+    #     writer.write(b2.to_bytes())
+    #     await writer.drain()
+    #     writer.write(b1.to_bytes())
+    #     await writer.drain()
+
+    # async def write_points(self,nth):
+    #     writer = self.data_writer
+    #     print(f'writing points {nth}')
+    #     n = 0
+    #     while n < 16384:
+    #         n += 2
+    #         point = next(self.pattern_loop)
+    #         await self.write_2bytes(point)
+    #     print(f'wrote {nth}, {n} points')
+    #     logger.info(f'wrote {nth}, {n} points')
 
     async def write_points(self,nth):
         writer = self.data_writer
         print(f'writing points {nth}')
-        n = 0
-        while n < 16384:
-            n += 2
-            point = next(self.pattern_loop)
-            await self.write_2bytes(point)
-        print(f'wrote {nth}, {n} points')
-        logger.info(f'wrote {nth}, {n} points')
+        writer.write(next(self.pattern_loop))
+        await writer.drain()
+        print(f'wrote points {nth}')
+        logger.info(f'wrote points {nth}')
 
     async def read_continously(self):
         reader = self.data_reader

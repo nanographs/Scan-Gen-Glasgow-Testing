@@ -9,6 +9,7 @@ def hilbert(dwell_time = 0):
 
     pmax = 10
     side = 2**pmax
+    print(side)
     min_coord = 0
     max_coord = side - 1
     cmin = min_coord - 0.5
@@ -39,7 +40,7 @@ def hilbert(dwell_time = 0):
 
 if __name__ == "__main__":
     hil = hilbert()
-    for n in range(16384):
+    for n in range(3):
         print(f'n:{n}')
         print(next(hil))
         

@@ -8,6 +8,14 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QVBoxLayout, QWidget, QLabel, QGridLayout,
                              QSpinBox)
 
+if __name__ == "__main__":
+    from pattern_settings import PatternSettings
+else:
+    from gui_modules.pattern_generators.hilbert import hilbert
+    from gui_modules.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
+    from gui_modules.pattern_settings import PatternSettings    
+
+
 
 class Setting:
     def __init__(self, label, values):
@@ -50,8 +58,8 @@ class FrameSettings(QHBoxLayout):
         self.boxType = boxType
         self.registers = []
 
-        self.rx = self.addRegister("X Resolution", 1, 16384, 400)
-        self.ry = self.addRegister("Y Resolution", 1, 16384, 400)
+        self.rx = self.addRegister("X Resolution", 1, 16384, 512)
+        self.ry = self.addRegister("Y Resolution", 1, 16384, 512)
 
         s = SettingsArray(
         [self.rx, self.ry],
@@ -61,6 +69,18 @@ class FrameSettings(QHBoxLayout):
         ]
         )
         self.addButtonPanel(s)
+
+        self.dwell = self.addRegister("Dwell Time", 1, 255, 1)
+        self.pattern_settings = PatternSettings()
+        self.addLayout(self.pattern_settings)
+
+    def scale_pattern(self):
+        index = self.pattern_settings.dropdown.currentIndex()
+        x_width, y_height = self.getframe()
+        dwell = self.dwell.getval()
+        gen = self.pattern_settings.patterns[index]
+        return gen.create(x_width, y_height, dwell)
+
 
     def addRegister(self, label, lower_limit, upper_limit, initial_val):
         register_box = self.boxType(label, lower_limit, upper_limit, initial_val)
@@ -76,6 +96,12 @@ class FrameSettings(QHBoxLayout):
         x_width = self.rx.getval()
         y_height = self.ry.getval()
         return x_width, y_height
+    
+    def setEnabled(self, enable): ## enable = True or False
+        self.rx.spinbox.setEnabled(enable)
+        self.ry.spinbox.setEnabled(enable)
+        for button in self.buttons.btns:
+            button.setEnabled(enable)
 
 
 class SettingsButton(QPushButton):
@@ -116,5 +142,6 @@ if __name__ == "__main__":
     settings = FrameSettings()
     w = QWidget()
     w.setLayout(settings)
+    settings.setEnabled(True)
     w.show()
     pg.exec()

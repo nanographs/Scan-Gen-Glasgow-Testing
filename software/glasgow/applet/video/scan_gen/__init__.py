@@ -22,18 +22,20 @@ from asyncio.exceptions import TimeoutError
 from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
 
+from ..scan_gen.scan_gen_components.main_iobus import IOBus
+from ..scan_gen.scan_gen_components.addresses import *
+from ..scan_gen.scan_gen_components.test_streams import *
 from ..scan_gen.output_formats.control_gui import run_gui
 from ..scan_gen.output_formats.new_server_test import ServerHost
+from ..scan_gen.output_formats.gui_modules.pattern_generators.hilbert import hilbert
+from ..scan_gen.output_formats.gui_modules.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
+from ..scan_gen.output_formats.gui_modules.pattern_generators.patterngen_utils import packet_from_generator, in2_out1_byte_stream
+from ..scan_gen.output_formats.scan_stream import ScanStream
 
 from ... import *
 
-## dealing with relative imports
-if "glasgow" in __name__: ## running as applet
-    from ..scan_gen.scan_gen_components.main_iobus import IOBus
-    from ..scan_gen.scan_gen_components.addresses import *
-    from ..scan_gen.scan_gen_components.test_streams import *
-    from ..scan_gen.output_formats.hilbert_test import hilbert
 
+import pyqtgraph as pg
 
 class IOBusSubtarget(Elaboratable):
     def __init__(self, data, power_ok, in_fifo, out_fifo, scan_mode,
@@ -869,29 +871,33 @@ class ScanGenApplet(GlasgowApplet):
             scan_iface.text_file.write(str(data.tolist()))
 
         if args.buf == "test_vector":
-            def sequential_points():
-                n = 0
-                while True:
-                    n += 1
-                    n1, n2 = get_two_bytes(n)
-                    yield n2
-                    yield n1
-                    yield n2
-                    yield n1
-                    d1, d2 = get_two_bytes(1)
-                    yield d2
-                    yield d1
-            patterngen = sequential_points()
+            scan_stream = ScanStream()
+            scan_stream.change_buffer(1024, 1024)
+            r = vector_gradient_rectangle(1024, 512 ,1)
+            patterngen = packet_from_generator(r)
+            r2 = vector_gradient_rectangle(1024, 512 ,1)
+            patterngen_check_against = in2_out1_byte_stream(r2)
             await scan_iface.set_vector_mode()
-            await scan_iface.set_frame_resolution(255,255)
+            await scan_iface.set_frame_resolution(1024,1024)
             await scan_iface.set_config_flag(1)
             await scan_iface.set_config_flag(0)
             await scan_iface.unpause()
-            for x in range(3):
-                for n in range(16384):
-                    await scan_iface.iface.write(bits(next(patterngen)))
+            for n in range(1):
+                await scan_iface.iface.write(next(patterngen))
                 data = await scan_iface.iface.read(16384)
+                config = data[0:18]
+                print(f'config: {config.tolist()}')
+                data = data[18:]
+                for d in data:
+                    check_against = next(patterngen_check_against)
+                    print(f'{bytes([d])} == {check_against}?')
+                    print(f'{d} == {int.from_bytes(check_against)}?')
+                    assert(bytes([d]) == check_against)
                 scan_iface.text_file.write(str(data.tolist()))
+            #     scan_stream.parse_config_from_data(bytes(data))
+            # pg.image(scan_stream.buffer)
+            # pg.exec()
+            #scan_iface.text_file.write(scan_stream.buffer)
 
             
 

@@ -111,6 +111,7 @@ class StreamFrameSettings(FrameSettings):
 
         self.rx.spinbox.valueChanged.connect(self.set_x)
         self.ry.spinbox.valueChanged.connect(self.set_y)
+        self.dwell.spinbox.valueChanged.connect(self.set_dwell)
 
     
     @asyncSlot()
@@ -124,6 +125,11 @@ class StreamFrameSettings(FrameSettings):
         yval = self.ry.getval()
         await self.con.set_y_resolution(yval)
         await self.con.strobe_config()
+
+    @asyncSlot()
+    async def set_dwell(self):
+        dval = self.dwell.getval()
+        await self.con.set_dwell_time(dval)
 
 
 class MainWindow(QWidget):
@@ -143,14 +149,11 @@ class MainWindow(QWidget):
         self.frame_settings = StreamFrameSettings(self.con)
         self.layout.addLayout(self.frame_settings, 2, 0)
 
-        self.dwellselect = RegisterUpdateBox("Dwell Time", 1, 255, 1)
-        self.frame_settings.addLayout(self.dwellselect)
-        self.dwellselect.spinbox.valueChanged.connect(self.change_dwell)
-
         self.conn_btn = QPushButton("Click to Connect")
         self.conn_btn.setCheckable(True) 
         self.conn_btn.clicked.connect(self.connect)
 
+        self.frame_settings.pattern_settings.dropdown.currentIndexChanged.connect(self.set_pattern)
 
         self.mode_select_dropdown = QComboBox()
         self.mode_select_dropdown.addItem("Imaging")
@@ -189,6 +192,8 @@ class MainWindow(QWidget):
 
         self.layout.addLayout(mode_options,0,0)
 
+        self.setState("disconnected")
+
     def file_select(self):
         self.file_dialog = ImportPatternFileWindow()
         self.file_path = self.file_dialog.show_and_get_file()
@@ -198,6 +203,7 @@ class MainWindow(QWidget):
         # self.image_display.image_view.addItem(self.file_dialog.image_display.live_img) #oof
         # self.image_display.image_view.autoRange()
         # print(self.image_display.image_view.allChildren())
+
 
     @asyncSlot()
     async def reset_display(self):
@@ -210,11 +216,9 @@ class MainWindow(QWidget):
         for task in tasks:
             print(task.get_name(), ":", task.get_coro())
             task.print_stack()
-
-    @asyncSlot()
-    async def change_dwell(self):
-        dval = self.dwellselect.getval()
-        await self.con.set_dwell_time(dval)
+    
+    def set_pattern(self):
+        self.con.set_patterngen(self.frame_settings.scale_pattern())
 
     def toggle_ROI(self):
         if self.roi_btn.isChecked():
@@ -237,6 +241,7 @@ class MainWindow(QWidget):
         await self.transmit_current_settings()
         await self.con.strobe_config()
         await self.con.open_data_client()
+        self.setState("scan_not_started")
 
     @asyncSlot()
     async def transmit_current_settings(self):
@@ -254,6 +259,7 @@ class MainWindow(QWidget):
         if mode == 1:
             await self.con.set_8bit_output()
         if mode == 3:
+            self.set_pattern()
             await self.con.set_16bit_output()
         await self.con.strobe_config()
 
@@ -268,10 +274,8 @@ class MainWindow(QWidget):
             if mode == 3:
                 self.con.stream_pattern = True
                 await self.con.write_points("*")
-            #loop = asyncio.get_event_loop()
-            #oop.create_task(self.con.start_reading())
             self.update_continously = asyncio.ensure_future(self.keepUpdating())
-            # self.setState("scanning")
+            self.setState("scanning")
             self.start_btn.setText('⏸️')
 
         else:
@@ -279,7 +283,8 @@ class MainWindow(QWidget):
             self.start_btn.setText('🔄')
             self.con.stream_pattern = False
             await self.con.pause()
-            #self.update_continously.cancel()
+            self.update_continously.cancel()
+            self.setState("scan_paused")
             self.start_btn.setText('▶️')
 
     async def keepUpdating(self):
@@ -298,27 +303,23 @@ class MainWindow(QWidget):
     def setState(self, state):
         if state == "disconnected":
             self.start_btn.setEnabled(False)
-            self.new_scan_btn.setEnabled(False)
-            self.loopback_btn.setEnabled(False)
-            self.resolution_options.menu.setEnabled(False)
-            self.dwell_options.spinbox.setEnabled(False)
-            self.mode_select_dropdown.setEnabled(False)
+            self.reset_btn.setEnabled(False)
+            self.frame_settings.setEnabled(False)
+            #self.mode_select_dropdown.setEnabled(False)
+            self.roi_btn.setEnabled(False)
+            self.save_btn.setEnabled(False)
         if state == "scan_not_started":
             self.start_btn.setEnabled(True)
-            self.loopback_btn.setEnabled(True)
-            self.resolution_options.menu.setEnabled(True)
-            self.dwell_options.spinbox.setEnabled(True)
+            self.frame_settings.setEnabled(True)
             self.mode_select_dropdown.setEnabled(True)
+            self.roi_btn.setEnabled(True)
+            self.save_btn.setEnabled(True)
         if state == "scanning":
-            self.new_scan_btn.setEnabled(False)
-            self.loopback_btn.setEnabled(False)
-            self.resolution_options.menu.setEnabled(False)
-            self.dwell_options.spinbox.setEnabled(False)
+            self.reset_btn.setEnabled(False)
+            self.mode_select_dropdown.setEnabled(False)
         if state == "scan_paused":
-            self.new_scan_btn.setEnabled(True)
-            self.loopback_btn.setEnabled(True)
-            self.resolution_options.menu.setEnabled(True)
-            self.dwell_options.spinbox.setEnabled(True)
+            self.reset_btn.setEnabled(True)
+            self.mode_select_dropdown.setEnabled(True)
 
 
 

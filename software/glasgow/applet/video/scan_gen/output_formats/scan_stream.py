@@ -3,7 +3,6 @@ import array
 import numpy as np
 import time
 
-from tests import generate_packet_with_config, generate_vector_packet
 
 
 class ScanStream:
@@ -222,12 +221,14 @@ class ScanStream:
             #assert (self.buffer[self.current_y][self.x_lower] == self.x_lower)
 
 
-    def points_to_vector(self, m:memoryview, print_debug = False):
+    def points_to_vector(self, m:memoryview, print_debug = True):
         self.point_buffer.extend(m)
         while len(self.point_buffer) >= 6:
             point = self.point_buffer[:6]
             self.point_buffer = self.point_buffer[6:]
             x, y, a = memoryview(point).cast('H').tolist()
+            if print_debug:
+                print(f' x: {x}, y: {y}, a: {a}')
             self.buffer[y][x] = a
 
     def handle_data_with_config(self, data:memoryview, config = None):
@@ -255,7 +256,7 @@ class ScanStream:
                 print(f'Time to stuff {end-start}')
             if self.scan_mode == 3:
                 start = time.perf_counter()
-                self.points_to_vector(data)
+                self.points_to_vector(data, print_debug = True)
                 end = time.perf_counter()
                 print(f'Time to stuff {end-start}')
 
@@ -369,6 +370,7 @@ class ScanStream:
 
 
 if __name__ == "__main__":
+    from test_streams import generate_packet_with_config, generate_vector_packet
     def test_frame_stuffing():
         #data = [4, 5, 6] + [n for n in range(0,6)]*10 + [0, 1, 2]
         s = ScanStream()
