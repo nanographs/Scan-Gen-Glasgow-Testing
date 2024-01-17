@@ -30,6 +30,7 @@ from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 from new_socket_test import ScanInterface
 from gui_modules.image_display import ImageDisplay
 from gui_modules.frame_settings import FrameSettings, RegisterUpdateBox
+from generic_gui import ScanMainWindow
 
 
 from bmp_utils import *
@@ -132,103 +133,40 @@ class StreamFrameSettings(FrameSettings):
         await self.con.set_dwell_time(dval)
 
 
-class MainWindow(QWidget):
+class MainWindow(ScanMainWindow):
 
-    def __init__(self):
-        super().__init__()
-        self.con = ScanInterface()
-
-        self.setWindowTitle("Scan Control")
-        self.layout = QGridLayout()
-        self.setLayout(self.layout)
-
-        self.image_display = ImageDisplay(510,510)
-        self.image_display.setRange(510,510)
-        self.layout.addWidget(self.image_display, 1, 0)
-
-        self.frame_settings = StreamFrameSettings(self.con)
-        self.layout.addLayout(self.frame_settings, 2, 0)
-
-        self.conn_btn = QPushButton("Click to Connect")
-        self.conn_btn.setCheckable(True) 
+    def __init__(self, con, frame_settings):
+        super().__init__(frame_settings)
         self.conn_btn.clicked.connect(self.connect)
 
         self.frame_settings.pattern_settings.dropdown.currentIndexChanged.connect(self.set_pattern)
 
-        self.mode_select_dropdown = QComboBox()
-        self.mode_select_dropdown.addItem("Imaging")
-        self.mode_select_dropdown.addItem("Raster Patterning")
-        self.mode_select_dropdown.addItem("Vector Patterning")
-
         self.mode_select_dropdown.currentIndexChanged.connect(self.set_scan_mode)
 
-
-        self.start_btn = QPushButton('▶️')
-        self.start_btn.setCheckable(True) #when clicked, button.isChecked() = True until clicked again
         self.start_btn.clicked.connect(self.toggle_scan)
 
-        self.reset_btn = QPushButton("Clear")
         self.reset_btn.clicked.connect(self.reset_display)
-
-        self.roi_btn = QPushButton("ROI")
-        self.roi_btn.setCheckable(True) 
-        self.roi_btn.clicked.connect(self.toggle_ROI)
-
-        self.info_btn = QPushButton('?')
-        self.info_btn.clicked.connect(self.getinfo)
-
-        self.save_btn = QPushButton("Save")
-        self.save_btn.clicked.connect(self.image_display.saveImage_PIL)
-
-
-        mode_options = QGridLayout()
-        mode_options.addWidget(self.conn_btn,0,0)
-        mode_options.addWidget(self.mode_select_dropdown,0,1)
-        mode_options.addWidget(self.start_btn,0,2)
-        mode_options.addWidget(self.reset_btn,0,3)
-        mode_options.addWidget(self.roi_btn,0,4)
-        #mode_options.addWidget(self.info_btn,0,4)
-        mode_options.addWidget(self.save_btn, 0, 5)
-
-        self.layout.addLayout(mode_options,0,0)
-
+        
         self.setState("disconnected")
 
-    def file_select(self):
-        self.file_dialog = ImportPatternFileWindow()
-        self.file_path = self.file_dialog.show_and_get_file()
-        print(self.file_path)
-        pattern_stream = bmp_to_bitstream(self.file_path, self.dimension)
-        self.pattern = pattern_loop(self.dimension, pattern_stream)
-        # self.image_display.image_view.addItem(self.file_dialog.image_display.live_img) #oof
-        # self.image_display.image_view.autoRange()
-        # print(self.image_display.image_view.allChildren())
+    # def file_select(self):
+    #     self.file_dialog = ImportPatternFileWindow()
+    #     self.file_path = self.file_dialog.show_and_get_file()
+    #     print(self.file_path)
+    #     pattern_stream = bmp_to_bitstream(self.file_path, self.dimension)
+    #     self.pattern = pattern_loop(self.dimension, pattern_stream)
+    #     # self.image_display.image_view.addItem(self.file_dialog.image_display.live_img) #oof
+    #     # self.image_display.image_view.autoRange()
+    #     # print(self.image_display.image_view.allChildren())
 
 
     @asyncSlot()
     async def reset_display(self):
         self.con.scan_stream.clear_buffer()
         await self.updateData()
-
-    @asyncSlot()
-    async def getinfo(self):
-        tasks = asyncio.all_tasks()
-        for task in tasks:
-            print(task.get_name(), ":", task.get_coro())
-            task.print_stack()
     
     def set_pattern(self):
         self.con.set_patterngen(self.frame_settings.scale_pattern())
-
-    def toggle_ROI(self):
-        if self.roi_btn.isChecked():
-            self.add_ROI()
-        else:
-            self.image_display.remove_ROI()
-
-    def add_ROI(self):
-        self.image_display.add_ROI()
-        self.image_display.roi.sigRegionChanged.connect(self.get_ROI)
 
     @asyncSlot()
     async def get_ROI(self):
@@ -300,26 +238,7 @@ class MainWindow(QWidget):
         self.image_display.setImage(self.con.scan_stream.y_height, self.con.scan_stream.x_width, self.con.scan_stream.buffer)
         
         
-    def setState(self, state):
-        if state == "disconnected":
-            self.start_btn.setEnabled(False)
-            self.reset_btn.setEnabled(False)
-            self.frame_settings.setEnabled(False)
-            #self.mode_select_dropdown.setEnabled(False)
-            self.roi_btn.setEnabled(False)
-            self.save_btn.setEnabled(False)
-        if state == "scan_not_started":
-            self.start_btn.setEnabled(True)
-            self.frame_settings.setEnabled(True)
-            self.mode_select_dropdown.setEnabled(True)
-            self.roi_btn.setEnabled(True)
-            self.save_btn.setEnabled(True)
-        if state == "scanning":
-            self.reset_btn.setEnabled(False)
-            self.mode_select_dropdown.setEnabled(False)
-        if state == "scan_paused":
-            self.reset_btn.setEnabled(True)
-            self.mode_select_dropdown.setEnabled(True)
+
 
 
 
@@ -332,7 +251,9 @@ def run_gui():
     app_close_event = asyncio.Event()
     app.aboutToQuit.connect(app_close_event.set)
 
-    main_window = MainWindow()
+    con = ScanInterface()
+    frame_settings = StreamFrameSettings(con)
+    main_window = MainWindow(con, frame_settings)
     main_window.show()
 
     with event_loop:

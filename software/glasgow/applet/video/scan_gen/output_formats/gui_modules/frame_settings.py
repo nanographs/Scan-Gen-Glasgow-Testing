@@ -100,6 +100,7 @@ class FrameSettings(QHBoxLayout):
     def setEnabled(self, enable): ## enable = True or False
         self.rx.spinbox.setEnabled(enable)
         self.ry.spinbox.setEnabled(enable)
+        self.dwell.spinbox.setEnabled(enable)
         for button in self.buttons.btns:
             button.setEnabled(enable)
 
