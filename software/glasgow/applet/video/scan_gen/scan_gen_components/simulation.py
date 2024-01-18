@@ -292,13 +292,11 @@ def sim_iobus():
                 print(list(data))
             data = yield from sim_app_iface.read(6)
             print(list(data))
-            print("===keep reading...===")
-            for n in range(10):
-                data = yield from sim_app_iface.read(10)
-                print(list(data))
+            # print("===keep reading...===")
+            # for n in range(10):
+            #     data = yield from sim_app_iface.read(10)
+            #     print(list(data))
 
-        #yield from hilbert_test()
-        
 
         def raster_pattern_test():
             yield from set_frame_params(dut, x_res=512, y_res=512)
@@ -317,6 +315,20 @@ def sim_iobus():
 
                 
         yield from raster_pattern_test()
+
+        #yield from hilbert_test()
+        # yield unpause.eq(0)
+        # yield
+        # yield from set_frame_params(dut, x_res=1024, y_res=1024)
+        # yield scan_mode.eq(ScanMode.Raster)
+        # yield configuration.eq(1)
+        # yield
+        # yield configuration.eq(0)
+        # yield
+        # yield unpause.eq(1)
+        # yield
+        # data = yield from sim_app_iface.read(100)
+        # print(data)
 
 
     sim = Simulator(dut)

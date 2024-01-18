@@ -180,11 +180,14 @@ class ModeController(Elaboratable):
             m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal fifo
             
             with m.If(self.mode == ScanMode.Raster):
+                m.d.comb += self.ras_mode_ctrl.patterning.eq(0)
                 m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)))
                 m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
+                m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_xy.eq(self.beam_controller.end_of_dwell)
                 
 
             with m.If(self.mode == ScanMode.RasterPattern):
+                m.d.comb += self.ras_mode_ctrl.patterning.eq(1)
                 ## pattern pixels must be in sync with frame pixels, or else pattern gets garbled
                 with m.FSM() as fsm:
                     with m.State("Wait for first USB"):
@@ -201,6 +204,7 @@ class ModeController(Elaboratable):
 
                 with m.If((self.ras_mode_ctrl.raster_reader.data_fresh) & (self.beam_controller.end_of_dwell)):
                     m.d.comb += self.ras_mode_ctrl.raster_reader.data_point_used.eq(1)
+                    m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_xy.eq(1)
                     m.d.sync += self.complete_one_point.eq(1)
                 with m.If(~(self.ras_mode_ctrl.raster_reader.data_fresh) & (self.beam_controller.end_of_dwell)):
                     m.d.sync += self.complete_one_point.eq(0)

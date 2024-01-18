@@ -216,6 +216,7 @@ class RasterWriter(Elaboratable):
 
         self.data_complete = Signal()
 
+
     def elaborate(self, platform):
         m = Module()
 
@@ -367,6 +368,7 @@ class RasterModeController(Elaboratable):
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
 
+        self.patterning = Signal()
         #self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
 
     def elaborate(self, platform):
@@ -384,8 +386,7 @@ class RasterModeController(Elaboratable):
 
         m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
 
-        with m.If((self.beam_controller_end_of_dwell) &
-        ((self.raster_reader.data_fresh))):
+        with m.If((self.beam_controller_end_of_dwell) & ((self.raster_reader.data_fresh)|(~(self.patterning)))):
             with m.If(self.do_frame_sync):
                 m.d.sync += self.raster_writer.strobe_in_frame_sync.eq(self.xy_scan_gen.frame_sync) ### one cycle delay
             with m.If(self.do_line_sync):
