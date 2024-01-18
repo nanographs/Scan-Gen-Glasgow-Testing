@@ -171,7 +171,7 @@ class IOBus(Elaboratable):
                     with m.State("Start Frame"):
                         m.d.comb += d.eq(1)
                         with m.If(~(self.handling_config)):
-                            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.increment.eq(1)
+                            m.d.comb += self.mode_ctrl.xy_scan_gen_increment.eq(1)
                             ## sneak in an extra increment to make up for the fact that we are already
                             ## starting out on (0,0)
                             ## or something like that

@@ -113,6 +113,10 @@ class ModeController(Elaboratable):
         self.reset = Signal()
         self.disable_dwell = Signal()
         self.complete_one_point = Signal()
+
+        self.strobe_new_point = Signal()
+
+        self.xy_scan_gen_increment = Signal()
         
     def elaborate(self, platform):
         m = Module()
@@ -146,14 +150,13 @@ class ModeController(Elaboratable):
         m.d.comb += self.beam_controller.next_y_position.eq(self.y_interpolator.output)
 
         m.d.comb += self.ras_mode_ctrl.xy_scan_gen.reset.eq(self.reset)
+        m.d.comb += self.ras_mode_ctrl.xy_scan_gen_increment.eq(self.xy_scan_gen_increment)
         m.d.comb += self.beam_controller.reset.eq(self.reset)
 
         with m.If((self.mode == ScanMode.Raster)|(self.mode == ScanMode.RasterPattern)):
             #### Interpolation 
             m.d.comb += self.ras_mode_ctrl.xy_scan_gen.x_full_frame_resolution.eq(self.x_full_frame_resolution)
             m.d.comb += self.ras_mode_ctrl.xy_scan_gen.y_full_frame_resolution.eq(self.y_full_frame_resolution)
-            # m.d.comb += self.beam_controller.next_x_position.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
-            # m.d.comb += self.beam_controller.next_y_position.eq(self.ras_mode_ctrl.beam_controller_next_y_position)
             m.d.comb += self.x_interpolator.input.eq(self.ras_mode_ctrl.beam_controller_next_x_position)
             m.d.comb += self.y_interpolator.input.eq(self.ras_mode_ctrl.beam_controller_next_y_position)
 
@@ -180,14 +183,15 @@ class ModeController(Elaboratable):
             m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal fifo
             
             with m.If(self.mode == ScanMode.Raster):
-                m.d.comb += self.ras_mode_ctrl.patterning.eq(0)
+                m.d.comb += self.ras_mode_ctrl.load_next_point.eq(self.beam_controller.end_of_dwell)
                 m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)))
                 m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
                 m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_xy.eq(self.beam_controller.end_of_dwell)
                 
 
             with m.If(self.mode == ScanMode.RasterPattern):
-                m.d.comb += self.ras_mode_ctrl.patterning.eq(1)
+                m.d.comb += self.ras_mode_ctrl.load_next_point.eq((self.beam_controller.end_of_dwell)
+                &(self.ras_mode_ctrl.raster_reader.data_fresh))
                 ## pattern pixels must be in sync with frame pixels, or else pattern gets garbled
                 with m.FSM() as fsm:
                     with m.State("Wait for first USB"):

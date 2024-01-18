@@ -314,21 +314,21 @@ def sim_iobus():
                 print(data)
 
                 
-        yield from raster_pattern_test()
+        #yield from raster_pattern_test()
 
-        #yield from hilbert_test()
-        # yield unpause.eq(0)
-        # yield
-        # yield from set_frame_params(dut, x_res=1024, y_res=1024)
-        # yield scan_mode.eq(ScanMode.Raster)
-        # yield configuration.eq(1)
-        # yield
-        # yield configuration.eq(0)
-        # yield
-        # yield unpause.eq(1)
-        # yield
-        # data = yield from sim_app_iface.read(100)
-        # print(data)
+        yield from hilbert_test()
+        yield unpause.eq(0)
+        yield
+        yield from set_frame_params(dut, x_res=1024, y_res=1024)
+        yield scan_mode.eq(ScanMode.Raster)
+        yield configuration.eq(1)
+        yield
+        yield configuration.eq(0)
+        yield
+        yield unpause.eq(1)
+        yield
+        data = yield from sim_app_iface.read(100)
+        print(data)
 
 
     sim = Simulator(dut)

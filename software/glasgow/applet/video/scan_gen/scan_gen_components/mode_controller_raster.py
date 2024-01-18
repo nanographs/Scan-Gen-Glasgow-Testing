@@ -370,6 +370,8 @@ class RasterModeController(Elaboratable):
 
         self.patterning = Signal()
         #self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
+        self.xy_scan_gen_increment = Signal()
+        self.load_next_point = Signal()
 
     def elaborate(self, platform):
         m = Module()
@@ -383,10 +385,12 @@ class RasterModeController(Elaboratable):
         #     m.d.comb += self.raster_fifo.w_en.eq(1)
         #     m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.raster_dwell_data_c)
 
+        m.d.comb += self.xy_scan_gen.increment.eq(self.xy_scan_gen_increment)
 
         m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
 
-        with m.If((self.beam_controller_end_of_dwell) & ((self.raster_reader.data_fresh)|(~(self.patterning)))):
+        #with m.If((self.beam_controller_end_of_dwell) & ((self.raster_reader.data_fresh)|(~(self.patterning)))):
+        with m.If(self.load_next_point):
             with m.If(self.do_frame_sync):
                 m.d.sync += self.raster_writer.strobe_in_frame_sync.eq(self.xy_scan_gen.frame_sync) ### one cycle delay
             with m.If(self.do_line_sync):
