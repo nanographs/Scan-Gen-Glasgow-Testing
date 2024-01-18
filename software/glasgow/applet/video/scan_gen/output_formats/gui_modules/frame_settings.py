@@ -74,13 +74,6 @@ class FrameSettings(QHBoxLayout):
         self.pattern_settings = PatternSettings()
         self.addLayout(self.pattern_settings)
 
-    def scale_pattern(self):
-        index = self.pattern_settings.dropdown.currentIndex()
-        x_width, y_height = self.getframe()
-        dwell = self.dwell.getval()
-        gen = self.pattern_settings.patterns[index]
-        return gen.create(x_width, y_height, dwell)
-
 
     def addRegister(self, label, lower_limit, upper_limit, initial_val):
         register_box = self.boxType(label, lower_limit, upper_limit, initial_val)

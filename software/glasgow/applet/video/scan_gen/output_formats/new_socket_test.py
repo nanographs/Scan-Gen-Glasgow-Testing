@@ -55,50 +55,40 @@ class ConnectionManager:
                 pass
     
     def set_patterngen(self, gen):
+        print(f'gen: {gen}')
         self.pattern_loop = packet_from_generator(gen)
+        print(f'pattern loop: {self.pattern_loop}')
 
 
-    # async def write_2bytes(self, val):
-    #     writer = self.data_writer
-    #     b1, b2 = get_two_bytes(val)
-    #     writer.write(b2.to_bytes())
-    #     await writer.drain()
-    #     writer.write(b1.to_bytes())
-    #     await writer.drain()
-
-    # async def write_points(self,nth):
-    #     writer = self.data_writer
-    #     print(f'writing points {nth}')
-    #     n = 0
-    #     while n < 16384:
-    #         n += 2
-    #         point = next(self.pattern_loop)
-    #         await self.write_2bytes(point)
-    #     print(f'wrote {nth}, {n} points')
-    #     logger.info(f'wrote {nth}, {n} points')
-
-    async def write_points(self,nth):
+    async def write_points(self,nth, print_debug = False):
         writer = self.data_writer
-        print(f'writing points {nth}')
-        writer.write(next(self.pattern_loop))
-        await writer.drain()
-        print(f'wrote points {nth}')
-        logger.info(f'wrote points {nth}')
+        if print_debug:
+            print(f'writing points {nth}')
+        try:
+            writer.write(next(self.pattern_loop))
+            await writer.drain()
+            if print_debug:
+                print(f'wrote points {nth}')
+            logger.info(f'wrote points {nth}')
+        except StopIteration:
+            print(f'Pattern complete')
 
-    async def read_continously(self):
+    async def read_continously(self, print_debug = False):
         reader = self.data_reader
         writer = self.data_writer
         n = 0
         while True:
             try:
-                print("trying to read")
+                if print_debug:
+                    print("trying to read")
                 if not reader.at_eof():
                     if self.stream_pattern == True:
                         await self.write_points(n)
                     await asyncio.sleep(0)
                     data = await reader.readexactly(16384)
                     n += 1
-                    print(f'recieved data {n}')
+                    if print_debug:
+                        print(f'recieved data {n}')
                     logger.info(f'recieved data {n}, length {len(data)}')
                     if self.logging:
                         self.text_file.write(str(list(data)))
@@ -131,19 +121,22 @@ class ConnectionManager:
         self.data_reader = reader
         await self.start_reading()
 
-    async def cmd_client(self, message):
+    async def cmd_client(self, message, print_debug = False):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
-        print("opening cmd client")
+        if print_debug:
+            print("opening cmd client")
         loop = asyncio.get_event_loop()
         future_con = loop.create_future()
         loop.create_task(self.open_connection(HOST, PORT, future_con))
         await asyncio.sleep(0)
         reader, writer = await future_con
-        print(f'Send: {message!r}')
+        if print_debug:
+            print(f'Send: {message!r}')
         writer.write(message.encode())
         await writer.drain()
-        print("sent")
+        if print_debug:
+            print("sent")
 
         # print('Close tcp_msg_client')
         # writer.close()

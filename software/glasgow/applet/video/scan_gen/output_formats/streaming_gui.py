@@ -135,7 +135,9 @@ class StreamFrameSettings(FrameSettings):
 
 class MainWindow(ScanMainWindow):
 
-    def __init__(self, con, frame_settings):
+    def __init__(self, con):
+        self.con = con
+        frame_settings = StreamFrameSettings(con)
         super().__init__(frame_settings)
         self.conn_btn.clicked.connect(self.connect)
 
@@ -159,17 +161,17 @@ class MainWindow(ScanMainWindow):
     #     # self.image_display.image_view.autoRange()
     #     # print(self.image_display.image_view.allChildren())
 
+    def set_pattern(self):
+        self.con.set_patterngen(self.scale_pattern())
 
     @asyncSlot()
     async def reset_display(self):
         self.con.scan_stream.clear_buffer()
         await self.updateData()
     
-    def set_pattern(self):
-        self.con.set_patterngen(self.frame_settings.scale_pattern())
 
     @asyncSlot()
-    async def get_ROI(self):
+    async def set_ROI(self):
         x_lower, x_upper, y_lower, y_upper = self.image_display.get_ROI()
         await self.con.set_ROI(x_lower, x_upper, y_lower, y_upper)
         await self.con.strobe_config()
@@ -186,8 +188,8 @@ class MainWindow(ScanMainWindow):
         x_width, y_height = self.frame_settings.getframe()
         await self.con.set_x_resolution(x_width)
         await self.con.set_y_resolution(y_height)
-        mode = self.mode_select_dropdown.currentIndex() + 1
-        await self.con.set_scan_mode(mode)
+        await self.set_scan_mode()
+        await self.con.strobe_config()
 
 
     @asyncSlot()
@@ -199,7 +201,7 @@ class MainWindow(ScanMainWindow):
         if mode == 3:
             self.set_pattern()
             await self.con.set_16bit_output()
-        await self.con.strobe_config()
+        
 
         
     @asyncSlot()
@@ -252,8 +254,7 @@ def run_gui():
     app.aboutToQuit.connect(app_close_event.set)
 
     con = ScanInterface()
-    frame_settings = StreamFrameSettings(con)
-    main_window = MainWindow(con, frame_settings)
+    main_window = MainWindow(con)
     main_window.show()
 
     with event_loop:

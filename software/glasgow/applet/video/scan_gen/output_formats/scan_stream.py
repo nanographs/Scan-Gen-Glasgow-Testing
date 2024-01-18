@@ -28,19 +28,24 @@ class ScanStream:
 
         self._buffer = bytearray()
     
-    def writeto(self, d:bytes):
-        print(f'extend {len(d)} bytes')
+    def writeto(self, d:bytes, print_debug = False):
+        if print_debug:
+            print(f'extend {len(d)} bytes')
         self._buffer.extend(d)
-        print(f'length: {len(self._buffer)}')
+        if print_debug:
+            print(f'length: {len(self._buffer)}')
         self.readfrom()
     
-    def readfrom(self):
-        print(f'buffer len: {len(self._buffer)}')
+    def readfrom(self, print_debug = False):
+        if print_debug:
+            print(f'buffer len: {len(self._buffer)}')
         while len(self._buffer) >= 16384:
-            print("chunk 16384")
+            if print_debug:
+                print("chunk 16384")
             d = bytes(self._buffer[:16384])
             self._buffer = self._buffer[16384:]
-            print(f'new buffer length: {len(self._buffer)}')
+            if print_debug:
+                print(f'new buffer length: {len(self._buffer)}')
             self.parse_config_from_data(d)
         
 
@@ -221,7 +226,7 @@ class ScanStream:
             #assert (self.buffer[self.current_y][self.x_lower] == self.x_lower)
 
 
-    def points_to_vector(self, m:memoryview, print_debug = True):
+    def points_to_vector(self, m:memoryview, print_debug = False):
         self.point_buffer.extend(m)
         while len(self.point_buffer) >= 6:
             point = self.point_buffer[:6]
@@ -231,14 +236,17 @@ class ScanStream:
                 print(f' x: {x}, y: {y}, a: {a}')
             self.buffer[y][x] = a
 
-    def handle_data_with_config(self, data:memoryview, config = None):
+    def handle_data_with_config(self, data:memoryview, config = None, print_debug = None):
         if not config == None:
-            print(f'using this config: {config}')
+            if print_debug:
+                print(f'using this config: {config}')
             self.parse_config_packet(config)
         else:
-            print("continue with existing config")
+            if print_debug:
+                print("continue with existing config")
 
-        print("data start with", data.tolist()[0:10])
+        if print_debug:
+            print("data start with", data.tolist()[0:10])
 
         if self.scan_mode == 0:
             pass
@@ -249,21 +257,25 @@ class ScanStream:
                     start = time.perf_counter()
                     data = data.cast('H')
                     end = time.perf_counter()
-                    print(f'16 to 8 time {end-start}')
+                    if print_debug:
+                        print(f'16 to 8 time {end-start}')
                 start = time.perf_counter()
                 self.points_to_frame(data)
                 end = time.perf_counter()
-                print(f'Time to stuff {end-start}')
+                if print_debug:
+                    print(f'Time to stuff {end-start}')
             if self.scan_mode == 3:
                 start = time.perf_counter()
-                self.points_to_vector(data, print_debug = True)
+                self.points_to_vector(data)
                 end = time.perf_counter()
-                print(f'Time to stuff {end-start}')
+                if print_debug:
+                    print(f'Time to stuff {end-start}')
 
 
-    def parse_config_packet(self, d:memoryview):
+    def parse_config_packet(self, d:memoryview, print_debug = False):
         f = d[0:12].tolist()
-        print("decoded config packet", f)
+        if print_debug:
+            print("decoded config packet", f)
         new_x = f[0]*256  + f[1] + 1
         new_y = f[2]*256 + f[3] + 1
 
@@ -303,7 +315,7 @@ class ScanStream:
         print(f'8bit mode: {self.eight_bit_output}')
         
 
-    def parse_config_from_data(self, d:bytes, print_debug=True):
+    def parse_config_from_data(self, d:bytes, print_debug=False):
         n = re.finditer(self.config_match, d)
         prev_stop = 0
         prev_config = None

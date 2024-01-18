@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
 
 from gui_modules.frame_settings import FrameSettings
 from gui_modules.image_display import ImageDisplay
+from scan_stream import ScanStream
 
 class ScanMainWindow(QWidget):
 
@@ -30,7 +31,7 @@ class ScanMainWindow(QWidget):
         self.conn_btn = QPushButton("Click to Connect")
         self.conn_btn.setCheckable(True) 
 
-        #self.frame_settings.pattern_settings.dropdown.currentIndexChanged.connect(self.set_pattern)
+        self.frame_settings.pattern_settings.dropdown.currentIndexChanged.connect(self.set_pattern)
 
         self.mode_select_dropdown = QComboBox()
         self.mode_select_dropdown.addItem("Imaging")
@@ -65,6 +66,7 @@ class ScanMainWindow(QWidget):
         #self.setState("disconnected")
 
     def toggle_ROI(self):
+        print(f'roi mode? {self.roi_btn.isChecked()}')
         if self.roi_btn.isChecked():
             self.add_ROI()
         else:
@@ -72,11 +74,37 @@ class ScanMainWindow(QWidget):
 
     def add_ROI(self):
         self.image_display.add_ROI()
-        self.image_display.roi.sigRegionChanged.connect(self.get_ROI)
+        self.image_display.roi.sigRegionChanged.connect(self.set_ROI)
 
     def get_ROI(self):
+        #return self.image_display.get_ROI()
         x_lower, x_upper, y_lower, y_upper = self.image_display.get_ROI()
         print(f'x: {x_lower} - {x_upper}; y: {y_lower} - {y_upper}')
+        return x_lower, x_upper, y_lower, y_upper
+    
+    def getframe(self):
+        return self.frame_settings.getframe()
+
+
+    def scale_pattern(self):
+        index = self.frame_settings.pattern_settings.dropdown.currentIndex()
+        gen = self.frame_settings.pattern_settings.patterns[index]
+        x_width, y_height = self.getframe()
+        dwell = self.frame_settings.dwell.getval()
+        
+        print(f'roi mode? {self.roi_btn.isChecked()}')
+        if self.roi_btn.isChecked():
+            print("scaling pattern to ROI")
+            x_lower, x_upper, y_lower, y_upper = self.get_ROI()
+            
+        else:
+            print("no ROI")
+            x_lower, x_upper, y_lower, y_upper = None, None, None, None
+            
+            
+            
+        
+        return gen.create(x_width, y_height, dwell, x_lower, x_upper, y_lower, y_upper)
 
     def setState(self, state):
         if state == "disconnected":
@@ -91,6 +119,7 @@ class ScanMainWindow(QWidget):
             self.start_btn.setEnabled(True)
             self.frame_settings.setEnabled(True)
             self.mode_select_dropdown.setEnabled(True)
+            self.frame_settings.pattern_settings.dropdown.setEnabled(True)
             self.roi_btn.setEnabled(True)
             self.save_btn.setEnabled(True)
         if state == "scanning":
@@ -100,11 +129,37 @@ class ScanMainWindow(QWidget):
             self.reset_btn.setEnabled(True)
             self.mode_select_dropdown.setEnabled(True)
 
+    
+
+class Mockup(ScanMainWindow):
+    def __init__(self):
+        frame_settings = FrameSettings()
+        super().__init__(frame_settings)
+        self.stream = ScanStream()
+    
+    def set_pattern(self):
+        x_width, y_height = self.getframe()
+        self.stream.change_buffer(x_width, y_height)
+        pattern = self.scale_pattern()
+        print(f'got pattern: {pattern}')
+        while True:
+            try:
+                x = next(pattern)
+                y = next(pattern)
+                a = next(pattern)
+                self.stream.buffer[y][x] = a
+                print(x,y,a)
+            except StopIteration:
+                break
+        self.image_display.setImage(y_height, x_width, self.stream.buffer)
+    
+    def set_ROI(self):
+        print (self.get_ROI())
 
 
 
 if __name__ == "__main__":
     app = pg.mkQApp()
-    w = MainWindow()
+    w = Mockup()
     w.show()
     pg.exec()

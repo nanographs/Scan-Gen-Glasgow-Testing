@@ -75,10 +75,10 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
     def get_ROI(self):
         x0, y0 = self.roi.pos() ## upper left corner
         x1, y1 = self.roi.size()
-        x_lower = int(x0)
-        y_lower = int(y0)
-        x_upper = int(x0 + x1)
-        y_upper = int(y0 + y1)
+        x_upper = int(x0)
+        y_upper = int(y0)
+        x_lower = int(x0 + x1)
+        y_lower = int(y0 + y1)
         #print(x0, y0, x1, y1)
         return x_upper, x_lower, y_upper, y_lower
         
