@@ -130,7 +130,8 @@ class ScanStream:
         ## fill in solid middle rectangle
 
         if not full_lines == 0:
-            print(f'{full_lines} >= {y_height}?')
+            if print_debug:
+                print(f'{full_lines} >= {y_height}?')
             if full_lines >= y_height:
                 full_frames = full_lines//y_height
                 extra_lines = m_len%y_height
@@ -139,8 +140,8 @@ class ScanStream:
                     print(f'{extra_lines} extra lines')
                     self.check_sync()
 
-
-            print(f'{current_y + full_lines} >= {y_height}?')
+            if print_debug:
+                print(f'{current_y + full_lines} >= {y_height}?')
             if (current_y + full_lines) >= y_height:
                 bottom_rows = y_height - current_y
                 top_rows =  full_lines - bottom_rows
