@@ -116,16 +116,6 @@ def vector_pattern_sim(dut):
     # for n in range(200):
     #     yield
 
-def raster_pattern_sim(dut):
-    pattern = test_raster_pattern_checkerboard(5,5)
-    print(pattern)
-    yield dut.scan_mode.eq(ScanMode.RasterPattern)
-    for n in pattern:
-        yield from sim_scangen_iface.sim_write_2bytes(n)
-    
-    for n in range(1500):
-        yield
-
 def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
     b1, b2 = get_two_bytes(x_res)
     print("set x resolution:", x_res)
@@ -307,25 +297,27 @@ def sim_iobus():
                 data = yield from sim_app_iface.read(10)
                 print(list(data))
 
-        yield from hilbert_test()
-        #yield from config_test()
-        #yield from vec_test()
+        #yield from hilbert_test()
+        
 
-        # for n in range(6):
-        #     data = yield from sim_app_iface.read(6)
-        #     print(sim_scangen_iface.decode_vpoint_packet(data))
+        def raster_pattern_test():
+            yield from set_frame_params(dut, x_res=512, y_res=512)
+            yield dut.scan_mode.eq(ScanMode.RasterPattern)
+            yield configuration.eq(1)
+            yield
+            yield configuration.eq(0)
+            yield unpause.eq(1)
+            data = yield from sim_app_iface.read(18)
+            print(list(data))
+            pattern = test_raster_pattern_checkerboard(5,5)
+            for n in pattern:
+                yield from sim_scangen_iface.sim_write_2bytes(n)
+                data = yield from sim_app_iface.read(2)
+                print(data)
 
-        # yield x_full_resolution_b1.eq(255)
-        # yield
-        # yield y_full_resolution_b1.eq(100)
-        # yield
-        # yield configuration.eq(1)
-        # yield
-        # yield configuration.eq(0)
-        # yield
-        # yield unpause.eq(1)
-        # data = yield from sim_app_iface.read(10)
-        # print(list(data))
+                
+        yield from raster_pattern_test()
+
 
     sim = Simulator(dut)
     sim.add_clock(1e-6) # 1 MHz

@@ -67,8 +67,16 @@ class RasterReader(Elaboratable):
 
         self.eight_bit_output = Signal()
 
+        self.data_used_count = Signal(3)
+        self.data_fresh = Signal()
+
     def elaborate(self, platform):
         m = Module()
+
+        with m.If(self.data_point_used):
+            m.d.sync += self.data_used_count.eq(self.data_used_count - 1)
+        with m.If(self.data_used_count == 1):
+            m.d.comb += self.data_fresh.eq(1)
 
         with m.FSM() as fsm:
             with m.State("D1"):    
@@ -80,6 +88,7 @@ class RasterReader(Elaboratable):
                         m.next = "D2"
             with m.State("D2"):    
                 with m.If(self.read_happened):
+                    m.d.sync += self.data_used_count.eq(self.data_used_count + 1)
                     m.d.comb += self.data_complete.eq(1)
                     m.d.comb += self.raster_dwell_data_c.eq(Cat(self.raster_dwell_data.D1, 
                                                                 self.out_fifo_r_data))
@@ -358,25 +367,25 @@ class RasterModeController(Elaboratable):
         self.do_frame_sync = Signal()
         self.do_line_sync = Signal()
 
-        self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
+        #self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
 
     def elaborate(self, platform):
         m = Module()
         m.submodules["RasterWriter"] = self.raster_writer
         m.submodules["RasterReader"] = self.raster_reader
-        m.submodules["RasterFIFO"] = self.raster_fifo
+        #m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
-        # m.submodules["ByteReplace"] = self.byte_replacer
 
-        with m.If((self.raster_reader.data_complete) & (self.raster_fifo.w_rdy)):
-            m.d.comb += self.raster_reader.data_point_used.eq(1)
-            m.d.comb += self.raster_fifo.w_en.eq(1)
-            m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.raster_dwell_data_c)
+        # with m.If((self.raster_reader.data_complete) & (self.raster_fifo.w_rdy)):
+        #     m.d.comb += self.raster_reader.data_point_used.eq(1)
+        #     m.d.comb += self.raster_fifo.w_en.eq(1)
+        #     m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.raster_dwell_data_c)
 
 
         m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
 
-        with m.If(self.beam_controller_end_of_dwell):
+        with m.If((self.beam_controller_end_of_dwell) &
+        ((self.raster_reader.data_fresh))):
             with m.If(self.do_frame_sync):
                 m.d.sync += self.raster_writer.strobe_in_frame_sync.eq(self.xy_scan_gen.frame_sync) ### one cycle delay
             with m.If(self.do_line_sync):
@@ -393,9 +402,10 @@ class RasterModeController(Elaboratable):
                                                                     self.raster_point_data.X2))
             m.d.comb += self.beam_controller_next_y_position.eq(Cat(self.raster_point_data.Y1, 
                                                                     self.raster_point_data.Y2))
-            with m.If(self.raster_fifo.r_rdy):
-                m.d.comb += self.beam_controller_next_dwell.eq(self.raster_fifo.r_data)
-                m.d.comb += self.raster_fifo.r_en.eq(1)
+            m.d.comb += self.beam_controller_next_dwell.eq(self.raster_reader.raster_dwell_data)
+            # with m.If(self.raster_fifo.r_rdy):
+            #     m.d.comb += self.beam_controller_next_dwell.eq(self.raster_fifo.r_data)
+            #     m.d.comb += self.raster_fifo.r_en.eq(1)
 
 
         

@@ -177,26 +177,37 @@ class ModeController(Elaboratable):
             m.d.comb += self.byte_replacer.replace_0_to_1.eq(self.ras_mode_ctrl.do_frame_sync)
             m.d.comb += self.byte_replacer.replace_0_to_2.eq(self.ras_mode_ctrl.do_line_sync)
 
+            m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal fifo
             
             with m.If(self.mode == ScanMode.Raster):
                 m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)))
                 m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
-                m.d.comb += self.internal_fifo_ready.eq(1) ## there is no internal 
                 
 
             with m.If(self.mode == ScanMode.RasterPattern):
                 ## pattern pixels must be in sync with frame pixels, or else pattern gets garbled
                 with m.FSM() as fsm:
                     with m.State("Wait for first USB"):
-                        with m.If(self.ras_mode_ctrl.raster_fifo.r_rdy):
+                        #with m.If(self.ras_mode_ctrl.raster_fifo.r_rdy):
+                        with m.If(self.ras_mode_ctrl.raster_reader.data_complete):
                             m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell))) 
                             m.next = "Patterning"
                     with m.State("Patterning"):
                         m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)) )
                 m.d.comb += self.ras_mode_ctrl.raster_reader.out_fifo_r_data.eq(self.out_fifo_r_data)
                 m.d.comb += self.ras_mode_ctrl.raster_reader.read_happened.eq(self.read_happened)
-                m.d.comb += self.internal_fifo_ready.eq(self.ras_mode_ctrl.raster_fifo.w_rdy)
+                #m.d.comb += self.internal_fifo_ready.eq(self.ras_mode_ctrl.raster_fifo.w_rdy)
                 m.d.comb += self.beam_controller.next_dwell.eq(self.ras_mode_ctrl.beam_controller_next_dwell)
+
+                with m.If((self.ras_mode_ctrl.raster_reader.data_fresh) & (self.beam_controller.end_of_dwell)):
+                    m.d.comb += self.ras_mode_ctrl.raster_reader.data_point_used.eq(1)
+                    m.d.sync += self.complete_one_point.eq(1)
+                with m.If(~(self.ras_mode_ctrl.raster_reader.data_fresh) & (self.beam_controller.end_of_dwell)):
+                    m.d.sync += self.complete_one_point.eq(0)
+                with m.If(self.complete_one_point):
+                    m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_dwell.eq((self.beam_controller.end_of_dwell))
+                with m.If(self.beam_controller.end_of_dwell):
+                    m.d.comb += self.beam_controller.freeze.eq(~(self.ras_mode_ctrl.raster_reader.data_fresh))
 
             
         with m.If(self.mode == ScanMode.Vector):
@@ -239,7 +250,8 @@ class ModeController(Elaboratable):
             m.d.comb += self.vec_mode_ctrl.vector_reader.read_happened.eq(self.read_happened)
             m.d.comb += self.writer_data_valid.eq(self.vec_mode_ctrl.vector_writer.data_valid)
             m.d.comb += self.vec_mode_ctrl.vector_reader.out_fifo_r_data.eq(self.out_fifo_r_data)
-            m.d.comb += self.internal_fifo_ready.eq((self.vec_mode_ctrl.vector_fifo.w_rdy))
+            #m.d.comb += self.internal_fifo_ready.eq((self.vec_mode_ctrl.vector_fifo.w_rdy))
+            m.d.comb += self.internal_fifo_ready.eq(1)
 
             m.d.comb += self.vec_mode_ctrl.vector_writer.eight_bit_output.eq(self.eight_bit_output)
 
