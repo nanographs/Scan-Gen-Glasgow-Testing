@@ -189,7 +189,6 @@ class MainWindow(ScanMainWindow):
         await self.con.set_x_resolution(x_width)
         await self.con.set_y_resolution(y_height)
         await self.set_scan_mode()
-        await self.con.strobe_config()
 
 
     @asyncSlot()
@@ -201,6 +200,7 @@ class MainWindow(ScanMainWindow):
         if mode == 3:
             self.set_pattern()
             await self.con.set_16bit_output()
+        await self.con.strobe_config()
         
 
         
