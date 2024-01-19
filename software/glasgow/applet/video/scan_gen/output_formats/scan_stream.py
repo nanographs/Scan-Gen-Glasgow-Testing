@@ -18,15 +18,23 @@ class ScanStream:
         self.y_upper = self.y_height
         self.y_lower = 0
 
-        self.buffer = np.zeros(shape = (self.y_height,self.x_width),dtype = np.uint8)
+        ## frame-shaped buffer
+        self.buffer = np.zeros(shape = (self.y_height,self.x_width),dtype = np.uint8) 
 
         self.config_match = re.compile(b'\xff{2}.{14}\xff{2}')
 
         self.scan_mode = 0
         self.eight_bit_output = 1
+        self.patterngen = None
+
+        ## place to stash <6 bytes of an incomplete vector point
+        ## until the point is completed in the next packet
         self.point_buffer = bytearray()
 
+        ## stream-shaped buffer
         self._buffer = bytearray()
+
+        self.totalbytes = 0
     
     def writeto(self, d:bytes, print_debug = False):
         if print_debug:
@@ -227,7 +235,7 @@ class ScanStream:
             #assert (self.buffer[self.current_y][self.x_lower] == self.x_lower)
 
 
-    def points_to_vector(self, m:memoryview, print_debug = False):
+    def points_to_vector(self, m:memoryview, print_debug = True):
         self.point_buffer.extend(m)
         while len(self.point_buffer) >= 6:
             point = self.point_buffer[:6]
@@ -236,6 +244,17 @@ class ScanStream:
             if print_debug:
                 print(f' x: {x}, y: {y}, a: {a}')
             self.buffer[y][x] = a
+            x2 = next(self.patterngen)
+            y2 = next(self.patterngen)
+            a2 = next(self.patterngen)
+            if print_debug:
+                print(f' x2: {x2}, y2: {y2}, a2: {a2}')
+            self.buffer[y2][x2] = a
+            self.totalbytes += 6
+            print(f'total bytes: {self.totalbytes}')
+            assert(x == x2)
+            assert(y == y2)
+            assert(a == a2)
 
     def handle_data_with_config(self, data:memoryview, config = None, print_debug = None):
         if not config == None:
@@ -316,7 +335,7 @@ class ScanStream:
         print(f'8bit mode: {self.eight_bit_output}')
         
 
-    def parse_config_from_data(self, d:bytes, print_debug=True):
+    def parse_config_from_data(self, d:bytes, print_debug=False):
         n = re.finditer(self.config_match, d)
         prev_stop = 0
         prev_config = None
