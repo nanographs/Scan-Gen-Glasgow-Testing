@@ -21,7 +21,7 @@ class PatternGen:
         self.label = label
         self.gen = gen
     def create(self, *args):
-        return self.gen(*args)
+        return self.gen(*args), self.gen(*args)
 
 
 class PatternSettings(QVBoxLayout):
