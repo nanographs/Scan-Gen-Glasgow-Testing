@@ -77,11 +77,8 @@ class ScanMainWindow(QWidget):
         self.image_display.roi.sigRegionChanged.connect(self.set_ROI)
 
     def get_ROI(self):
-        #return self.image_display.get_ROI()
-        x_lower, x_upper, y_lower, y_upper = self.image_display.get_ROI()
-        print(f'x: {x_lower} - {x_upper}; y: {y_lower} - {y_upper}')
-        return x_lower, x_upper, y_lower, y_upper
-    
+        return self.image_display.get_ROI()
+
     def getframe(self):
         return self.frame_settings.getframe()
 
@@ -96,14 +93,13 @@ class ScanMainWindow(QWidget):
         if self.roi_btn.isChecked():
             print("scaling pattern to ROI")
             x_lower, x_upper, y_lower, y_upper = self.get_ROI()
+            print(f'x: {x_lower} - {x_upper}; y: {y_lower} - {y_upper}')
             
         else:
             print("no ROI")
             x_lower, x_upper, y_lower, y_upper = None, None, None, None
-            
-            
-            
-        
+        print(f'using dwell: {dwell}')
+
         return gen.create(x_width, y_height, dwell, x_lower, x_upper, y_lower, y_upper)
 
     def setState(self, state):
@@ -136,22 +132,44 @@ class Mockup(ScanMainWindow):
         frame_settings = FrameSettings()
         super().__init__(frame_settings)
         self.stream = ScanStream()
+        self.pattern = None
+
+        self.start_btn.clicked.connect(self.toggle_scan)
+        self.mode_select_dropdown.currentIndexChanged.connect(self.set_scan_mode)
+
+    def set_scan_mode(self, index):
+        mode = index + 1
+        if mode == 3:
+            self.set_pattern()
+
     
     def set_pattern(self):
         x_width, y_height = self.getframe()
         self.stream.change_buffer(x_width, y_height)
-        pattern = self.scale_pattern()
-        print(f'got pattern: {pattern}')
-        while True:
-            try:
-                x = next(pattern)
-                y = next(pattern)
-                a = next(pattern)
-                self.stream.buffer[y][x] = a
-                print(x,y,a)
-            except StopIteration:
-                break
-        self.image_display.setImage(y_height, x_width, self.stream.buffer)
+        self.pattern, self.stream.patterngen = self.scale_pattern()
+        print(f'got pattern: {self.pattern}')
+
+    def toggle_scan(self):
+        if self.start_btn.isChecked():
+            self.setState("scanning")
+            self.start_btn.setText('⏸️')
+            i = self.mode_select_dropdown.currentIndex()
+            self.set_scan_mode(i)
+            mode = i + 1
+            if mode == 3:
+                while True:
+                    try:
+                        x = next(self.pattern)
+                        y = next(self.pattern)
+                        a = next(self.pattern)
+                        self.stream.buffer[y][x] = a
+                        print(x,y,a)
+                    except StopIteration:
+                        break
+                self.image_display.setImage(self.stream.y_height, self.stream.x_width, self.stream.buffer)
+        else:
+            self.setState("scan_paused")
+            self.start_btn.setText('▶️')
     
     def set_ROI(self):
         print (self.get_ROI())
