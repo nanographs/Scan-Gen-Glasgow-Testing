@@ -23,30 +23,13 @@ class DwellTimeAverager(Elaboratable):
         self.strobe = Signal()
     def elaborate(self, platform):
         m = Module()
-        
 
-
-        with m.FSM() as fsm:
-            with m.State("Waiting"):
-                with m.If(self.start_new_average):
-                    m.next = "Start New Average"
-
-            with m.State("Start New Average"):
-                with m.If(self.strobe):
-                    m.d.sync += self.prev_pixel.eq(self.pixel_in)
-                    m.next = "Averaging"
-                
-            with m.State("Averaging"):
-                m.d.sync += self.prev_pixel.eq(self.running_average)
-                with m.If(self.strobe):
-                    m.d.comb += self.running_average.eq((self.pixel_in+self.prev_pixel)//2)
-                with m.Else():
-                    m.d.comb += self.running_average.eq((self.prev_pixel))
-                with m.If((self.start_new_average) & (~self.strobe)):
-                    m.next = "Start New Average"
-                with m.If((self.start_new_average) & (self.strobe)):
-                    m.d.sync += self.prev_pixel.eq(self.pixel_in)
-                    m.next = "Averaging"
+        with m.If(self.strobe):
+            m.d.sync += self.prev_pixel.eq(self.running_average)
+            m.d.comb += self.running_average.eq((self.pixel_in+self.prev_pixel)//2)
+        with m.If((self.strobe) & (self.start_new_average)):
+            m.d.sync += self.prev_pixel.eq(self.pixel_in)
+            m.d.comb += self.running_average.eq((self.pixel_in))
 
         return m
 
@@ -66,7 +49,7 @@ if __name__ == "__main__":
         500,
         1600
     ]
-    
+
     def test_dwelltimeaverager():
         dut = DwellTimeAverager()
         def bench():
