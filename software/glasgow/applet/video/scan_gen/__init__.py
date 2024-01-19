@@ -46,7 +46,7 @@ class IOBusSubtarget(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
-                const_dwell_time, configuration, unpause, step_size):
+                const_dwell_time, configuration, unpause, step_size, test_mode):
         self.data = data
         self.power_ok = power_ok
         self.in_fifo = in_fifo
@@ -62,7 +62,7 @@ class IOBusSubtarget(Elaboratable):
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
                             const_dwell_time, configuration, unpause, step_size,
-                            test_mode = "data loopback", use_config_handler = True, 
+                            test_mode = test_mode, use_config_handler = True, 
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -130,7 +130,7 @@ class ScanGenInterface:
         self._level  = logging.DEBUG if self._logger.name == __name__ else logging.TRACE
         self._device = device
 
-        self.logging = False
+        self.logging = True
         self.text_file = open("packets.txt","w")
         self.is_simulation = is_simulation
         self.eight_bit_output = False
@@ -180,51 +180,6 @@ class ScanGenInterface:
         self._logger.debug(f'write buffer size: {iface._write_buffer_size}')
         self._logger.debug(f'read buffer size: {iface._read_buffer_size}')
 
-    def set_endpoint(self, endpoint):
-        self.endpoint = endpoint
-
-    def decode_vpoint(self, n):
-        try:
-            x2, x1, y2, y1, a2, a1 = n
-            x = int("{0:08b}".format(x1) + "{0:08b}".format(x2),2)
-            y = int("{0:08b}".format(y1) + "{0:08b}".format(y2),2)
-            a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
-            return [x, y, a]
-        except ValueError:
-            pass ## 16384 isn't divisible by 3...
-            #ignore those pesky extra values.... just for new
-
-    def decode_vpoint_packet(self, raw_data):
-        if isinstance(raw_data, bytes):
-            data = list(raw_data)
-        else:
-            data = raw_data.tolist()
-        packet = []
-        for n in range(0,len(data),6):
-            point = self.decode_vpoint(data[n:n+6])
-            print("point", point)
-            packet.append(point)
-        return packet
-    
-    def decode_rdwell(self, n):
-        a2, a1 = n
-        a = int("{0:08b}".format(a1) + "{0:08b}".format(a2),2)
-        return a
-    
-    def decode_rdwell_packet(self, raw_data):
-        if isinstance(raw_data, bytes):
-            data = list(raw_data)
-        else:
-            data = raw_data.tolist()
-        if self.eight_bit_output:
-            return data
-        else:
-            packet = []
-            for n in range(0,len(data),2):
-                dwell = self.decode_rdwell(data[n:n+2])
-                packet.append(dwell)
-            return packet
-
     @types.coroutine
     def sim_write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
@@ -238,34 +193,6 @@ class ScanGenInterface:
         await self.iface.write(bits(b2))
         await self.iface.write(bits(b1))
 
-    @types.coroutine
-    def sim_write_vpoint(self, point):
-        x, y, d = point
-        yield from self.sim_write_2bytes(x)
-        yield from self.sim_write_2bytes(y)
-        yield from self.sim_write_2bytes(d)
-
-    async def write_vpoint(self, point):
-        x, y, d = point
-        print("x:", x, "y:", y, "d:", d)
-        await self.write_2bytes(x)
-        await self.write_2bytes(y)
-        await self.write_2bytes(d)
-
-    async def set_8bit_output(self, val=1):
-        await self._device.write_register(self.__addr_8_bit_output, val)
-        if val == 1:
-            self.eight_bit_output = True
-        else:
-            self.eight_bit_output = False
-        #self.buffer = self.init_buffer()
-    
-    async def set_frame_sync(self, val=1):
-        await self._device.write_register(self.__addr_do_frame_sync, val)
-
-    async def set_line_sync(self,val):
-        await self._device.write_register(self.__addr_do_line_sync, val)
-
     async def set_2byte_register(self,val,addr_b1, addr_b2):
         b1, b2 = get_two_bytes(val)
         b1 = int(bits(b1))
@@ -273,6 +200,19 @@ class ScanGenInterface:
         #print("writing", b1, b2)
         await self._device.write_register(addr_b1, b1)
         await self._device.write_register(addr_b2, b2)
+
+    async def set_8bit_output(self, val=1):
+        await self._device.write_register(self.__addr_8_bit_output, val)
+        if val == 1:
+            self.eight_bit_output = True
+        else:
+            self.eight_bit_output = False
+    
+    async def set_frame_sync(self, val=1):
+        await self._device.write_register(self.__addr_do_frame_sync, val)
+
+    async def set_line_sync(self,val):
+        await self._device.write_register(self.__addr_do_line_sync, val)
 
     async def set_x_resolution(self,val):
         print("set x resolution:", val)
@@ -328,9 +268,11 @@ class ScanGenInterface:
 
     async def pause(self):
         await self._device.write_register(self.__addr_unpause, 0)
+        print("paused")
 
     async def unpause(self):
         await self._device.write_register(self.__addr_unpause, 1)
+        print("unpaused")
 
     async def set_raster_mode(self):
         await self._device.write_register(self.__addr_scan_mode, 1)
@@ -345,71 +287,6 @@ class ScanGenInterface:
         await self._device.write_register(self.__addr_step_size, step_size)
         print("set step size", step_size)
 
-
-    async def stream_video(self):
-        print("getting data :3")
-        data = await self.iface.read(16384)
-        self.stream_to_buffer(data)
-        # print("sending")
-        # await self.endpoint.send(data)
-
-    async def future_packet(self, fut):
-        print("getting data")
-        data = await self.iface.read()
-        print("got data")
-        output = self.decode_vpoint_packet(data)
-        print(output)
-        self.text_file.write(output)
-        fut.set_result(data)
-
-    async def future_vpoint(self, fut):
-        print("getting data")
-        data = await self.iface.read(6)
-        print("got data")
-        output = self.decode_vpoint_packet(data)
-        print(output)
-        self.text_file.write(output)
-        fut.set_result(data)
-
-    async def rcv_future_data(self, future, n):
-        print("waiting for iface read...")
-        if self.logging:
-            self._logger.info(f'waiting for read {n}')
-        data = await self.iface.read(16384)
-        if self.logging:
-            self._logger.info(f'got future data {n}')
-        print("got future data", data)
-        future.set_result(data)
-
-    async def read_r_packet(self, length = 16384):
-        loop = asyncio.get_running_loop()
-        logger.debug("Loop:"+ repr(loop))
-        output = await self.iface.read(length)
-        return self.decode_rdwell_packet(output)
-
-    async def try_read_vpoint(self, n_points):
-        try:
-            output = await asyncio.wait_for(self.iface.read(6*n_points), timeout = 1)
-            print("got data")
-            return self.decode_vpoint_packet(output)
-        except TimeoutError:
-            return "timeout"
-
-    async def send_vec_stream_and_recieve_data(self):
-        i = 0
-        while i < 16384:
-            for n in test_vector_points[0:3]:
-                i+=6
-                await self.write_vpoint(n)
-                asyncio.sleep(0)
-        loop = asyncio.get_running_loop()
-        fut = loop.create_future()
-        loop.create_task(
-            self.future_packet(fut)
-        )
-        data = await fut
-        print(data)
-
     async def benchmark(self):
         await self.set_frame_resolution(2048,2048)
         await self.set_raster_mode()
@@ -419,30 +296,6 @@ class ScanGenInterface:
         await self.iface.read(length)
         end_time = time.time()
         print(((length/(1000000))/(end_time-start_time)), "MB/s")
-
-    async def scan_frame(self):
-        await self.set_frame_resolution(2048,2048)
-        await self.set_raster_mode()
-        data = await self.read_r_packet()
-        print(data)
-
-
-    async def hilbert_loop(self):
-        pattern_loop = hilbert()
-        await self.set_frame_resolution(1024, 1024)
-        await self.set_vector_mode()
-        await self.set_config_flag(1)
-        await self.set_config_flag(0)
-        await self.unpause()
-        i = 0
-        while True:
-            while i < 16384:
-                i += 2
-                point = next(pattern_loop)
-                await self.write_2bytes(point)
-            data = await self.iface.read(16384)
-            print(data)
-            i = 0
 
 
 class SG_EndpointInterface(ScanGenInterface):
@@ -514,16 +367,10 @@ class SG_EndpointInterface(ScanGenInterface):
     async def stream_data(self):
         n = 0
         while True:
-            #self.fifostats()
             try:
-                # loop = asyncio.get_event_loop()
-                # future_data = loop.create_future()
                 if self.logging:
                     self._logger.info(f'awaiting read {n}')
                 if self.scan_mode == 3:
-                    #if self.logging:
-                        #self._logger.info("created recv_packet task")
-                    #loop.create_task(self.recv_packet())
                     await self.recv_packet(n)
                 data = await self.iface.read(16384)
                 n += 1
@@ -554,24 +401,9 @@ class SG_EndpointInterface(ScanGenInterface):
                     if self.logging:
                         self._logger.info("created recv_packet task")
                     await self.recv_packet("*")
-                #tasks = asyncio.all_tasks()
-                # for task in tasks:
-                #     print(task.get_name(), ":", task.get_coro())
-                # if self.scan_mode == 3:
-                #     await self.recv_packet()
-                #     tasks = asyncio.all_tasks()
-                #     for task in tasks:
-                #         print(task.get_name(), ":", task.get_coro())
-                #         task.print_stack()
         elif c == "sc":
             await self.set_scan_mode(val)
             print("set scan mode done")
-            
-            # print("streaming?", self.stream_data)
-            # print("current task:", asyncio.current_task())
-            # tasks = asyncio.all_tasks()
-            # for task in tasks:
-            #     print(task.get_name(), ":", task.get_coro())
         elif c == "dw":
             await self.set_dwell_time(val)
         elif c == "rx":
@@ -675,8 +507,11 @@ class ScanGenApplet(GlasgowApplet):
         access.add_pin_set_argument(parser, "data", width=14, default=range(0,14))
         access.add_pin_argument(parser, "power_ok", default=15)
         parser.add_argument(
+        "-T", "--test_mode", type=str,
+        help="gateware build configuration: loopback, data loopback", default = "2D")
+        parser.add_argument(
         "-B", "--buf", type=str,
-        help="local, streaming, 2D", default = "2D")
+        help="local, streaming", default = "local")
 
     def build(self, target, args):
         ### LVDS Header (Not used as LVDS)
@@ -694,6 +529,7 @@ class ScanGenApplet(GlasgowApplet):
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args, throttle = "none")
 
+        #==================Registers=================
         scan_mode,             self.__addr_scan_mode  = target.registers.add_rw(2, reset=0)
         x_full_resolution_b1,  self.__addr_x_full_resolution_b1  = target.registers.add_rw(8, reset=0)
         x_full_resolution_b2,  self.__addr_x_full_resolution_b2  = target.registers.add_rw(8, reset=0)
@@ -717,10 +553,10 @@ class ScanGenApplet(GlasgowApplet):
         const_dwell_time,      self.__addr_const_dwell_time = target.registers.add_rw(8, reset=0)
 
         configuration,         self.__addr_configuration = target.registers.add_rw(1, reset=0)
-        print("configuration register:", self.__addr_configuration)
 
         unpause,                 self.__addr_unpause = target.registers.add_rw(1, reset = 0)
         step_size,              self.__addr_step_size = target.registers.add_rw(8, reset = 1)
+        #===============================================
 
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
@@ -735,7 +571,8 @@ class ScanGenApplet(GlasgowApplet):
             y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
             y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
             eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync,
-            const_dwell_time = const_dwell_time, configuration = configuration, unpause = unpause, step_size = step_size
+            const_dwell_time = const_dwell_time, configuration = configuration, unpause = unpause, step_size = step_size,
+            test_mode = args.test_mode
         ))
         
     @classmethod
@@ -873,9 +710,9 @@ class ScanGenApplet(GlasgowApplet):
         if args.buf == "test_vector":
             scan_stream = ScanStream()
             scan_stream.change_buffer(1024, 1024)
-            r = vector_gradient_rectangle(1024, 512 ,1)
+            r = vector_rectangle(1024, 512 ,3)
             patterngen = packet_from_generator(r)
-            r2 = vector_gradient_rectangle(1024, 512 ,1)
+            r2 = vector_rectangle(1024, 512 ,3)
             patterngen_check_against = in2_out1_byte_stream(r2)
             await scan_iface.set_vector_mode()
             await scan_iface.set_frame_resolution(1024,1024)
@@ -893,7 +730,9 @@ class ScanGenApplet(GlasgowApplet):
                     print(f'{bytes([d])} == {check_against}?')
                     print(f'{d} == {int.from_bytes(check_against)}?')
                     assert(bytes([d]) == check_against)
+                scan_iface.text_file.write("=====Received=====\n")
                 scan_iface.text_file.write(str(data.tolist()))
+                print("wrote data to text file")
             #     scan_stream.parse_config_from_data(bytes(data))
             # pg.image(scan_stream.buffer)
             # pg.exec()
