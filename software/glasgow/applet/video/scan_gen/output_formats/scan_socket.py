@@ -14,13 +14,6 @@ logging.basicConfig(filename='otherlogs.txt', filemode='w', level=logging.DEBUG)
 import time
 
 
-def get_two_bytes(n: int):
-    bits = "{0:016b}".format(n)
-    b1 = int(bits[0:8], 2)
-    b2 = int(bits[8:16], 2)
-    return b1, b2
-
-
 class ConnectionManager:
     def __init__(self):
         self.scan_stream = ScanStream()
