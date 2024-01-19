@@ -54,13 +54,12 @@ class ConnectionManager:
 
 
     async def write_points(self,nth, print_debug = False):
-        writer = self.data_writer
         if print_debug:
             print(f'writing points {nth}')
         try:
             points = next(self.pattern_loop)
-            writer.write(points)
-            await writer.drain()
+            self.data_writer.write(points)
+            await self.data_writer.drain()
             if self.logging:
                 print(f'wrote points {nth}')
                 self.text_file.write("=====Sent=====\n")
@@ -92,8 +91,6 @@ class ConnectionManager:
                         logger.info(f'wrote data {n} to text file')
                     self.scan_stream.writeto(data)
 
-                    
-
                 else:
                     print("at eof?")
                     print(reader)
@@ -113,9 +110,7 @@ class ConnectionManager:
         future_con = loop.create_future()
         loop.create_task(self.open_connection(host, port, future_con))
         await asyncio.sleep(0)
-        reader, writer = await future_con
-        self.data_writer = writer
-        self.data_reader = reader
+        self.data_reader, self.data_writer = await future_con
         await self.start_reading()
 
     async def cmd_client(self, message, print_debug = False):
