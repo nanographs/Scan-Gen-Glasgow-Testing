@@ -37,7 +37,7 @@ class ConnectionManager:
 
         self.text_file = open("socket_packets.txt", "w")
 
-        self.logging = False
+        self.logging = True
 
     async def open_connection(self, host, port, future):
         print("trying to open connection at", host, port)
@@ -65,10 +65,13 @@ class ConnectionManager:
         if print_debug:
             print(f'writing points {nth}')
         try:
-            writer.write(next(self.pattern_loop))
+            points = next(self.pattern_loop)
+            writer.write(points)
             await writer.drain()
-            if print_debug:
+            if self.logging:
                 print(f'wrote points {nth}')
+                self.text_file.write("=====Sent=====\n")
+                self.text_file.write(str(list(points)))
             logger.info(f'wrote points {nth}')
         except StopIteration:
             print(f'Pattern complete')
@@ -91,6 +94,7 @@ class ConnectionManager:
                         print(f'recieved data {n}')
                     logger.info(f'recieved data {n}, length {len(data)}')
                     if self.logging:
+                        self.text_file.write("=====Received=====\n")
                         self.text_file.write(str(list(data)))
                         logger.info(f'wrote data {n} to text file')
                     self.scan_stream.writeto(data)
@@ -137,27 +141,6 @@ class ConnectionManager:
         await writer.drain()
         if print_debug:
             print("sent")
-
-        # print('Close tcp_msg_client')
-        # writer.close()
-        # await writer.wait_closed()
-
-    async def wait_stop(self):
-        await asyncio.sleep(10)
-        await self.stop_reading()
-        await asyncio.sleep(1)
-        await self.start_reading()
-        await asyncio.sleep(10)
-        await self.stop_reading()
-
-    async def start_reading(self):
-        print("start reading")
-        self.streaming = asyncio.ensure_future(self.read_continously())
-    
-    async def close_data_stream(self):
-        print('Close data stream')
-        self.data_writer.close()
-        await self.data_writer.wait_closed()
 
 
 class ScanInterface(ConnectionManager):
