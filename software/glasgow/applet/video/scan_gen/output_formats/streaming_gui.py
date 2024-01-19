@@ -162,7 +162,11 @@ class MainWindow(ScanMainWindow):
     #     # print(self.image_display.image_view.allChildren())
 
     def set_pattern(self):
-        self.con.set_patterngen(self.scale_pattern())
+        print("setting pattern...")
+        gen1, gen2 = self.scale_pattern()
+        print(f'g1: {gen2}, g2: {gen2}')
+        self.con.set_patterngen(gen1)
+        self.con.scan_stream.patterngen = gen2
 
     @asyncSlot()
     async def reset_display(self):
