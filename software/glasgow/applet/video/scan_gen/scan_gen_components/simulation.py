@@ -60,8 +60,8 @@ def hilbert(dwell_time = 0):
 
 
 sim_iface = SimulationMultiplexerInterface(ScanGenApplet)
-sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=False, depth = 4)
-sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 4)
+sim_iface.in_fifo = sim_iface.get_in_fifo(auto_flush=False, depth = 8)
+sim_iface.out_fifo = sim_iface.get_out_fifo(depth = 8)
 # print(vars(ScanGenApplet))
 # print(vars(GlasgowSimulationTarget))
 sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenApplet, sim_iface)
@@ -265,7 +265,7 @@ def sim_iobus():
                 yield n1
                 yield n2
                 yield n1
-                d1, d2 = get_two_bytes(1)
+                d1, d2 = get_two_bytes(2)
                 yield d2
                 yield d1
 
@@ -283,15 +283,15 @@ def sim_iobus():
             yield unpause.eq(1)
             data = yield from sim_app_iface.read(18)
             print(list(data))
-            for n in range(6):
-                yield from sim_app_iface.write(bits(next(pattern_next)))
-            for n in range(16):
-                for n in range(6):
+            # for n in range(6):
+            #     yield from sim_app_iface.write(bits(next(pattern_next)))
+            for n in range(8):
+                for n in range(12):
                     yield from sim_app_iface.write(bits(next(pattern_next)))
-                data = yield from sim_app_iface.read(6)
+                data = yield from sim_app_iface.read(12)
                 print(list(data))
-            data = yield from sim_app_iface.read(6)
-            print(list(data))
+            #data = yield from sim_app_iface.read(6)
+            #print(list(data))
             # print("===keep reading...===")
             # for n in range(10):
             #     data = yield from sim_app_iface.read(10)
@@ -313,22 +313,41 @@ def sim_iobus():
                 data = yield from sim_app_iface.read(2)
                 print(data)
 
+
+        # yield scan_mode.eq(3)
+        # yield eight_bit_output.eq(0)
+        # yield from set_frame_params(dut, x_res=1024, y_res=1024)
+        # yield
+        # yield configuration.eq(1)
+        # yield
+        # yield configuration.eq(0)
+        # yield unpause.eq(1)
+        # data = yield from sim_app_iface.read(18)
+        # print(list(data))
+        # yield from sim_scangen_iface.sim_write_2bytes(1024)
+        # yield from sim_scangen_iface.sim_write_2bytes(1024)
+        # yield from sim_scangen_iface.sim_write_2bytes(1)
+        # data = yield from sim_app_iface.read(6)
+        # print(data)
+
                 
         #yield from raster_pattern_test()
 
         yield from hilbert_test()
-        yield unpause.eq(0)
-        yield
-        yield from set_frame_params(dut, x_res=1024, y_res=1024)
-        yield scan_mode.eq(ScanMode.Raster)
-        yield configuration.eq(1)
-        yield
-        yield configuration.eq(0)
-        yield
-        yield unpause.eq(1)
-        yield
-        data = yield from sim_app_iface.read(100)
-        print(data)
+        # yield unpause.eq(0)
+        # yield
+        # yield from set_frame_params(dut, x_res=1024, y_res=1024)
+        # yield scan_mode.eq(ScanMode.Raster)
+        # yield configuration.eq(1)
+        # yield
+        # yield configuration.eq(0)
+        # yield
+        # yield unpause.eq(1)
+        # yield
+        # data = yield from sim_app_iface.read(100)
+        # print(data)
+
+
 
 
     sim = Simulator(dut)

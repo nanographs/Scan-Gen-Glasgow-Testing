@@ -325,7 +325,6 @@ class SG_EndpointInterface(ScanGenInterface):
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
                         start_new_session = True)
 
-
     async def send_packet(self, future_data,n):
         loop = asyncio.get_event_loop()
         future_future_data = loop.create_future()
@@ -363,7 +362,6 @@ class SG_EndpointInterface(ScanGenInterface):
         except Exception as err:
             print(f'error: {err}')
 
-
     async def stream_data(self):
         n = 0
         while True:
@@ -383,7 +381,6 @@ class SG_EndpointInterface(ScanGenInterface):
                     self._logger.info(f'wrote data to socket {n}')
             except Exception as exc:
                 print(f'error streaming: {exc}')
-
 
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
