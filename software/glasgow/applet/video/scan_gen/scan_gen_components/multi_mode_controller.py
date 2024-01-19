@@ -11,7 +11,7 @@ if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.mode_controller_vector import VectorModeController
     from ..scan_gen_components.addresses import *
     from ..scan_gen_components.pixel_ratio_interpolator import PixelRatioInterpolator
-    from ..scan_gen_components.output_handling import DwellTimeAverager
+    from ..scan_gen_components.dwell_time_averager import DwellTimeAverager
     from ..scan_gen_components.byte_replacer import ByteReplacer
 # if __name__ == "__main__":
 else:
