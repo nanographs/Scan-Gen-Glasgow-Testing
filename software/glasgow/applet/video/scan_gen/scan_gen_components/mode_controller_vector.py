@@ -172,6 +172,7 @@ class VectorWriter(Elaboratable):
         
         self.write_happened = Signal()
         self.strobe_in_xy = Signal()
+        self.strobe_in_xy_happened = Signal()
         self.strobe_in_dwell = Signal()
         self.data_valid = Signal()
         self.data_complete = Signal()
@@ -195,7 +196,7 @@ class VectorWriter(Elaboratable):
 
         with m.FSM() as fsm:
             with m.State("Waiting"):
-                #m.d.comb += w.eq(1)
+                m.d.comb += w.eq(1)
                 m.d.comb += self.data_valid.eq(self.strobe_in_xy)
                 with m.If((self.strobe_in_xy) & ~(self.write_happened)):
                     m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
@@ -205,32 +206,35 @@ class VectorWriter(Elaboratable):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data_c.X1)
                     m.next = "X2"
             with m.State("X1"):   
-                #m.d.comb += x1.eq(1)
+                m.d.comb += x1.eq(1)
                 m.d.comb += self.data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.X1)
                     m.next = "X2"
             with m.State("X2"):  
-                #m.d.comb += x2.eq(1)
+                m.d.comb += x2.eq(1)
                 m.d.comb += self.data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.X2)
                     m.next = "Y1"
             with m.State("Y1"): 
-                #m.d.comb += y1.eq(1)
+                m.d.comb += y1.eq(1)
                 m.d.comb += self.data_valid.eq(1)   
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.Y1)
                     m.next = "Y2"
             with m.State("Y2"):  
-                #m.d.comb += y2.eq(1)
+                m.d.comb += y2.eq(1)
                 m.d.comb += self.data_valid.eq(1)  
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.Y2)
                     m.next = "Dwell_Waiting"
             with m.State("Dwell_Waiting"):
-                #m.d.comb += dw.eq(1)
+                m.d.comb += dw.eq(1)
                 m.d.comb += self.data_valid.eq(0)
+                with m.If(self.strobe_in_xy):
+                    m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
+                    m.d.sync += self.strobe_in_xy_happened.eq(1)
                 with m.If((self.strobe_in_dwell) & ~(self.write_happened)):
                     m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
                     m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
@@ -238,7 +242,6 @@ class VectorWriter(Elaboratable):
                 with m.If((self.strobe_in_dwell) & (self.write_happened)):
                     m.d.comb += self.data_valid.eq(0)
                     m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
-                    m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data_c.D1)
                     with m.If(self.eight_bit_output):
                         m.d.comb += self.data_complete.eq(1)
@@ -246,18 +249,22 @@ class VectorWriter(Elaboratable):
                     with m.Else():
                         m.next = "D2"
             with m.State("D1"):   
-                #m.d.comb += d1.eq(1)
+                m.d.comb += d1.eq(1)
                 m.d.comb += self.data_valid.eq(1) 
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D1)
                     m.next = "D2"
             with m.State("D2"):  
-                #m.d.comb += d2.eq(1)
+                m.d.comb += d2.eq(1)
                 m.d.comb += self.data_valid.eq(1)
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D2)
                     m.d.comb += self.data_complete.eq(1)
-                    m.next = "X1"
+                    with m.If(self.strobe_in_xy_happened):
+                        m.d.sync += self.strobe_in_xy_happened.eq(0)
+                        m.next = "X1"
+                    with m.Else():
+                        m.next = "Waiting"
 
                 # with m.If((self.write_happened) & (~(self.strobe_in_xy))):
                 #     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D2)
@@ -329,6 +336,11 @@ class VectorModeController(Elaboratable):
         self.beam_controller_next_dwell = Signal(16)
         self.beam_controller_dwelling_changed = Signal()
         self.reader_data_used = Signal()
+        self.reader_data_complete = Signal()
+        self.writer_data_complete = Signal()
+        self.reader_data_fresh = Signal()
+
+        self.load_next_point = Signal()
 
     def elaborate(self, platform):
         m = Module()
@@ -336,6 +348,9 @@ class VectorModeController(Elaboratable):
         m.submodules["VectorWriter"] = self.vector_writer
         m.submodules["VectorFIFO"] = self.vector_fifo
 
+        m.d.comb += self.reader_data_fresh.eq(self.vector_reader.data_fresh)
+        m.d.comb += self.reader_data_complete.eq(self.vector_reader.data_complete)
+        m.d.comb += self.writer_data_complete.eq(self.vector_writer.data_complete)
         #m.d.comb += self.vector_reader.strobe_out.eq(self.vector_fifo.w_rdy)
 
         # with m.If((self.vector_reader.data_complete) & (self.vector_fifo.w_rdy)):
@@ -349,8 +364,9 @@ class VectorModeController(Elaboratable):
         m.d.comb += self.vector_writer.vector_dwell_data_c.eq(self.vector_point_output)
         #with m.If(self.vector_fifo.r_rdy & self.beam_controller_end_of_dwell):
         #with m.If((self.beam_controller_end_of_dwell) &(~(self.beam_controller_dwelling_changed))
-        with m.If((self.beam_controller_end_of_dwell)
-                & (self.vector_reader.data_fresh)):
+        # with m.If((self.beam_controller_end_of_dwell)
+        #         & (self.vector_reader.data_fresh)):
+        with m.If(self.load_next_point):
             #m.d.comb += self.vector_fifo.r_en.eq(1)
             #m.d.comb += self.vector_point_data.eq(self.vector_fifo.r_data)
             m.d.comb += self.vector_point_data.eq(self.vector_reader.vector_point_data_c)

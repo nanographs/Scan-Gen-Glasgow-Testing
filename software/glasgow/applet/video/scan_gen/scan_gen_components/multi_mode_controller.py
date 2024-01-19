@@ -219,18 +219,19 @@ class ModeController(Elaboratable):
 
             
         with m.If(self.mode == ScanMode.Vector):
-            m.d.comb += self.writer_data_complete.eq(self.vec_mode_ctrl.vector_writer.data_complete)
-            m.d.comb += self.reader_data_complete.eq((self.vec_mode_ctrl.vector_reader.data_complete))
+            m.d.comb += self.vec_mode_ctrl.load_next_point.eq((self.beam_controller.end_of_dwell)&(self.vec_mode_ctrl.reader_data_fresh))
+            m.d.comb += self.writer_data_complete.eq(self.vec_mode_ctrl.writer_data_complete)
+            m.d.comb += self.reader_data_complete.eq((self.vec_mode_ctrl.reader_data_complete))
             m.d.comb += self.vec_mode_ctrl.vector_reader.read_happened.eq(self.read_happened)
             with m.FSM() as fsm:
                     with m.State("Wait for first USB"):
                         #with m.If(self.vec_mode_ctrl.vector_fifo.r_rdy):
-                        with m.If(self.vec_mode_ctrl.vector_reader.data_complete):
+                        with m.If(self.vec_mode_ctrl.reader_data_complete):
                             m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)))
                             m.next = "Patterning"
                     with m.State("Patterning"):
                         m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)) )
-            with m.If((self.vec_mode_ctrl.vector_reader.data_fresh) & (self.beam_controller.end_of_dwell)):
+            with m.If((self.vec_mode_ctrl.reader_data_fresh) & (self.beam_controller.end_of_dwell)):
                 m.d.comb += self.vec_mode_ctrl.vector_reader.data_point_used.eq(1)
                 m.d.comb += self.vec_mode_ctrl.vector_writer.strobe_in_xy.eq(1)
                 m.d.sync += self.complete_one_point.eq(1)
