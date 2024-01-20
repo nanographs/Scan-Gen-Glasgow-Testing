@@ -3,7 +3,7 @@ from amaranth import *
 from amaranth.sim import Simulator
 
 
-class DwellTimeAverager(Elaboratable):
+class TrueDwellTimeAverager(Elaboratable):
     '''
     Inputs:
         pixel_in: Next value read from ADC
@@ -21,6 +21,44 @@ class DwellTimeAverager(Elaboratable):
         self.start_new_average = Signal()
         self.averaging = Signal()
         self.strobe = Signal()
+        self.dwell_time = Signal(16)
+    def elaborate(self, platform):
+        m = Module()
+        q = Signal(16)
+
+        m.d.comb += self.dwell_time.eq(200)
+
+        m.d.comb += q.eq(len(self.dwell_time))
+
+        with m.If(self.strobe):
+            m.d.sync += self.prev_pixel.eq(self.running_average)
+            m.d.comb += self.running_average.eq((self.pixel_in+self.prev_pixel)//2)
+        with m.If((self.strobe) & (self.start_new_average)):
+            m.d.sync += self.prev_pixel.eq(self.pixel_in)
+            m.d.comb += self.running_average.eq((self.pixel_in))
+
+        return m
+
+
+class DwellTimeAverager(Elaboratable):
+    '''
+    Inputs:
+        pixel_in: Next value read from ADC
+        start_new_average: If high, running_average is set to pixel_in, and
+        prev_pixel is not used.
+
+    Outputs:
+        running_average: The current running average. Average of pixel_in and prev_pixel
+        prev_pixel: Running average or pixel value from the previous cycle
+    '''
+    def __init__(self):
+        self.pixel_in = Signal(16)
+        self.running_average = Signal(16)
+        self.prev_pixel = Signal(16)
+        self.start_new_average = Signal()
+        self.averaging = Signal()
+        self.strobe = Signal()
+
     def elaborate(self, platform):
         m = Module()
 
@@ -37,6 +75,15 @@ if __name__ == "__main__":
     def average(val1, val2):
         return int((val1 + val2)/2)
 
+    def multi_average(list):
+        total_count = 0
+        total_n = 0
+        for n in list:
+            total_count += n
+            total_n += 1
+            average = total_count/total_n
+            yield average
+
 
     test_pixel_stream = [
         1000,
@@ -49,6 +96,29 @@ if __name__ == "__main__":
         500,
         1600
     ]
+
+    def test_truedwelltimeaverager():
+        dut = TrueDwellTimeAverager()
+        def bench():
+            yield dut.start_new_average.eq(1)
+            yield dut.averaging.eq(1)
+            yield dut.strobe.eq(1)
+            yield dut.pixel_in.eq(Const(test_pixel_stream[0],shape=14))
+            print("Pixel in:", test_pixel_stream[0])
+            yield
+            print("-")
+            assert(yield dut.running_average == Const(test_pixel_stream[0],shape=14))
+            print("Running average:", test_pixel_stream[0])
+            running_average = test_pixel_stream[0]
+            
+            yield dut.start_new_average.eq(0)
+
+        sim = Simulator(dut)
+        sim.add_clock(1e-6) # 1 MHz
+        sim.add_sync_process(bench)
+        with sim.write_vcd("running_avg_sim.vcd"):
+            sim.run()
+
 
     def test_dwelltimeaverager():
         dut = DwellTimeAverager()
@@ -106,4 +176,4 @@ if __name__ == "__main__":
         with sim.write_vcd("running_avg_sim.vcd"):
             sim.run()
 
-    test_dwelltimeaverager()
+    test_truedwelltimeaverager()
