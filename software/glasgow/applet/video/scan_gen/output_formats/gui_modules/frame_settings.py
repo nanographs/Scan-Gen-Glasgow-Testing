@@ -8,14 +8,7 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QVBoxLayout, QWidget, QLabel, QGridLayout,
                              QSpinBox)
 
-if __name__ == "__main__":
-    from pattern_settings import PatternSettings
-else:
-    from gui_modules.pattern_generators.hilbert import hilbert
-    from gui_modules.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
-    from gui_modules.pattern_settings import PatternSettings    
-
-
+from .pattern_settings import PatternSettings
 
 class Setting:
     def __init__(self, label, values):

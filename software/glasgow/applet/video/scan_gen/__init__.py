@@ -25,8 +25,7 @@ from amaranth.lib.fifo import SyncFIFO
 from ..scan_gen.scan_gen_components.main_iobus import IOBus
 from ..scan_gen.scan_gen_components.addresses import *
 from ..scan_gen.scan_gen_components.test_streams import *
-from ..scan_gen.output_formats.control_gui import run_gui
-from ..scan_gen.output_formats.new_server_test import ServerHost
+from ..scan_gen.output_formats.scan_server import ServerHost
 from ..scan_gen.output_formats.gui_modules.pattern_generators.hilbert import hilbert
 from ..scan_gen.output_formats.gui_modules.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
 from ..scan_gen.output_formats.gui_modules.pattern_generators.patterngen_utils import packet_from_generator, in2_out1_byte_stream
@@ -219,6 +218,12 @@ class ScanGenInterface(MicroscopeInterface):
 
     async def set_line_sync(self,val):
         await self._device.write_register(self.__addr_do_line_sync, val)
+
+    async def set_ROI(self, x_lower, x_upper, y_lower, y_upper):
+        await self.set_x_lower_limit(x_lower)
+        await self.set_x_upper_limit(x_upper)
+        await self.set_y_lower_limit(y_lower)
+        await self.set_y_upper_limit(y_upper)
 
     async def set_x_resolution(self,val):
         assert(val > 0)
