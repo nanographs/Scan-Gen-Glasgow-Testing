@@ -130,6 +130,10 @@ class ConnectionManager:
         if print_debug:
             print("sent")
 
+    async def start_reading(self):
+        print("start reading")
+        self.streaming = asyncio.ensure_future(self.read_continously())
+
 
 class ScanInterface(ConnectionManager):
     def __init__(self):
