@@ -31,6 +31,7 @@ from ..scan_gen.output_formats.gui_modules.pattern_generators.hilbert import hil
 from ..scan_gen.output_formats.gui_modules.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
 from ..scan_gen.output_formats.gui_modules.pattern_generators.patterngen_utils import packet_from_generator, in2_out1_byte_stream
 from ..scan_gen.output_formats.scan_stream import ScanStream
+from ..scan_gen.output_formats.microscope import MicroscopeInterface
 
 from ... import *
 
@@ -112,7 +113,7 @@ class IOBusSubtarget(Elaboratable):
 
         return m
 
-class ScanGenInterface:
+class ScanGenInterface(MicroscopeInterface):
     def __init__(self, iface, logger, device, __addr_scan_mode,
                 __addr_x_full_resolution_b1, __addr_x_full_resolution_b2,
                 __addr_y_full_resolution_b1,__addr_y_full_resolution_b2,
