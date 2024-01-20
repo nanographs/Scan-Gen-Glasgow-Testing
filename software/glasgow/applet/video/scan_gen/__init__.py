@@ -166,7 +166,12 @@ class ScanGenInterface(MicroscopeInterface):
 
         self.x_width = 0
         self.y_height = 0
-
+    
+    async def write(self, *args, **kwargs):
+        return await self.iface.write(*args, **kwargs)
+    
+    async def read(self, *args, **kwargs):
+        return await self.iface.read(*args, **kwargs)
 
     def fifostats(self):
         iface = self.iface
