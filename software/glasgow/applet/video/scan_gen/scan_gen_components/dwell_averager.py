@@ -53,21 +53,30 @@ class DwellTimeAverager(Elaboratable):
     '''
     def __init__(self):
         self.pixel_in = Signal(16)
+        self.pixel_in_s = Signal(16)
         self.running_average = Signal(16)
         self.prev_pixel = Signal(16)
         self.start_new_average = Signal()
+        self.start_new_average_s = Signal()
         self.averaging = Signal()
         self.strobe = Signal()
 
     def elaborate(self, platform):
         m = Module()
 
+        m.d.comb += self.running_average.eq((self.pixel_in_s+self.prev_pixel)//2)
+
         with m.If(self.strobe):
-            m.d.sync += self.prev_pixel.eq(self.running_average)
+            m.d.sync += self.pixel_in_s.eq(self.pixel_in)
             m.d.comb += self.running_average.eq((self.pixel_in+self.prev_pixel)//2)
-        with m.If((self.strobe) & (self.start_new_average)):
+            m.d.sync += self.prev_pixel.eq(self.running_average)
+        with m.If((self.strobe) & ((self.start_new_average)|(self.start_new_average_s))):
+            m.d.sync += self.start_new_average_s.eq(0)
             m.d.sync += self.prev_pixel.eq(self.pixel_in)
             m.d.comb += self.running_average.eq((self.pixel_in))
+        with m.If((~(self.strobe)) & (self.start_new_average)):
+            m.d.sync += self.start_new_average_s.eq(1)
+            #m.d.sync += self.prev_pixel.eq(self.pixel_in)
 
         return m
 
@@ -176,4 +185,4 @@ if __name__ == "__main__":
         with sim.write_vcd("running_avg_sim.vcd"):
             sim.run()
 
-    test_truedwelltimeaverager()
+    test_dwelltimeaverager()

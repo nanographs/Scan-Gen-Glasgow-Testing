@@ -34,7 +34,8 @@ class ByteReplacer(Elaboratable):
             because we are using 14 bit DACs and ADCs, so our
             range is already limited.
     '''
-    def __init__(self, dac_bits = 14):
+    def __init__(self, test_mode, dac_bits = 14):
+        self.test_mode = test_mode
         self.dac_bits = dac_bits
         self.point_data = Signal(vector_dwell)
         self.processed_point_data = Signal(vector_dwell)
@@ -46,9 +47,10 @@ class ByteReplacer(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        ## TODO: test with actual ADC readout
-        #m.d.comb += self.most_significant_8_bits.eq(self.point_data.as_value()[(self.dac_bits - 8):self.dac_bits])
-        m.d.comb += self.most_significant_8_bits.eq(self.point_data.D1)
+        if self.test_mode == None:
+            m.d.comb += self.most_significant_8_bits.eq(self.point_data.as_value()[(self.dac_bits - 8):self.dac_bits])
+        else:
+            m.d.comb += self.most_significant_8_bits.eq(self.point_data.D1)
 
         with m.If(self.eight_bit_output):
             m.d.comb += self.processed_point_data.D1.eq(self.most_significant_8_bits)

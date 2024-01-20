@@ -33,7 +33,7 @@ class IOBus(Elaboratable):
         self.use_config_handler = use_config_handler
         
         ### Modules
-        self.mode_ctrl = ModeController()
+        self.mode_ctrl = ModeController(self.test_mode)
         self.bus_multiplexer = BusMultiplexer()
         #### FIFOs
         self.out_fifo = out_fifo

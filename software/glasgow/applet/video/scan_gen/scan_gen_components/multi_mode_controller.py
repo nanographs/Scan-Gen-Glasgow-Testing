@@ -67,7 +67,9 @@ class ModeController(Elaboratable):
     adc_data_strobe: Signal, in, 1
         Asserted when adc_data is valid
     '''
-    def __init__(self):
+    def __init__(self, test_mode):
+        self.test_mode = test_mode
+
         self.beam_controller = BeamController()
         self.vec_mode_ctrl = VectorModeController()
         self.ras_mode_ctrl = RasterModeController()
@@ -75,7 +77,7 @@ class ModeController(Elaboratable):
         self.x_interpolator = PixelRatioInterpolator()
         self.y_interpolator = PixelRatioInterpolator()
 
-        self.byte_replacer = ByteReplacer()
+        self.byte_replacer = ByteReplacer(self.test_mode)
 
         self.dwell_avgr = DwellTimeAverager()
 
@@ -186,7 +188,7 @@ class ModeController(Elaboratable):
                 m.d.comb += self.ras_mode_ctrl.load_next_point.eq(self.beam_controller.end_of_dwell)
                 m.d.comb += self.beam_controller.dwelling.eq((self.write_ready) & (~(self.disable_dwell)))
                 m.d.comb += self.beam_controller.next_dwell.eq(self.const_dwell_time)
-                m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_xy.eq(self.beam_controller.end_of_dwell)
+                #m.d.comb += self.ras_mode_ctrl.raster_writer.strobe_in_xy.eq(self.beam_controller.end_of_dwell)
                 
 
             with m.If(self.mode == ScanMode.RasterPattern):

@@ -243,6 +243,8 @@ class ScanGenInterface(MicroscopeInterface):
 
     async def set_x_upper_limit(self, val):
         assert(val >= 0)
+        if val == 0:
+            val = self.x_width
         self.x_upper_limit = val
         await self.set_2byte_register(val,self.__addr_x_upper_limit_b1,self.__addr_x_upper_limit_b2)
 
@@ -253,6 +255,8 @@ class ScanGenInterface(MicroscopeInterface):
 
     async def set_y_upper_limit(self, val):
         assert(val >= 0)
+        if val == 0:
+            val = self.y_height
         self.y_upper_limit = val
         await self.set_2byte_register(val,self.__addr_y_upper_limit_b1,self.__addr_y_upper_limit_b2)
 
@@ -400,6 +404,7 @@ class SG_EndpointInterface(ScanGenInterface):
                     self._logger.info(f'wrote data to socket {n}')
             except Exception as exc:
                 print(f'error streaming: {exc}')
+                break
 
     async def process_cmd(self, cmd):
         c = str(cmd[0:2])
