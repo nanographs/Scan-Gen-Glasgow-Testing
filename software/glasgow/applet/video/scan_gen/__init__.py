@@ -221,7 +221,7 @@ class ScanGenInterface(MicroscopeInterface):
         await self._device.write_register(self.__addr_do_line_sync, val)
 
     async def set_x_resolution(self,val):
-        assert(val < 0)
+        assert(val > 0)
         self.x_width = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
@@ -229,7 +229,7 @@ class ScanGenInterface(MicroscopeInterface):
         print("set x resolution:", val)
 
     async def set_y_resolution(self,val):
-        assert(val < 0)
+        assert(val > 0)
         self.y_height = val
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
@@ -237,22 +237,22 @@ class ScanGenInterface(MicroscopeInterface):
         print("set y resolution:", val)
 
     async def set_x_upper_limit(self, val):
-        assert(val < 0)
+        assert(val >= 0)
         self.x_upper_limit = val
         await self.set_2byte_register(val,self.__addr_x_upper_limit_b1,self.__addr_x_upper_limit_b2)
 
     async def set_x_lower_limit(self, val):
-        assert(val < 0)
+        assert(val >= 0)
         self.x_lower_limit = val
         await self.set_2byte_register(val,self.__addr_x_lower_limit_b1,self.__addr_x_lower_limit_b2)
 
     async def set_y_upper_limit(self, val):
-        assert(val < 0)
+        assert(val >= 0)
         self.y_upper_limit = val
         await self.set_2byte_register(val,self.__addr_y_upper_limit_b1,self.__addr_y_upper_limit_b2)
 
     async def set_y_lower_limit(self, val):
-        assert(val < 0)
+        assert(val >= 0)
         self.y_lower_limit = val
         await self.set_2byte_register(val,self.__addr_y_lower_limit_b1,self.__addr_y_lower_limit_b2)
 
@@ -262,7 +262,7 @@ class ScanGenInterface(MicroscopeInterface):
         print("set frame resolution x:", xval, "y:", yval)
 
     async def set_scan_mode(self, val):
-        assert(3 <= val < 0)
+        assert(3 >= val > 0)
         await self._device.write_register(self.__addr_scan_mode, val)
         self.scan_mode = val
         if self.logging:
@@ -270,7 +270,7 @@ class ScanGenInterface(MicroscopeInterface):
         print("set scan mode", val)
 
     async def set_config_flag(self, val):
-        assert(1 <= val < 0)
+        assert(1 >= val >= 0)
         await self._device.write_register(self.__addr_configuration, val)
         print("set config flag", val)
 
