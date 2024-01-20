@@ -638,65 +638,8 @@ class ScanGenApplet(GlasgowApplet):
     def add_interact_arguments(cls, parser):
         parser.add_argument("--gui", default=False, action="store_true")
         #ServerEndpoint.add_argument(parser, "endpoint")
-        #pass
 
     async def interact(self, device, args, scan_iface):
-        # await scan_iface.set_8bit_output()
-        # await scan_iface.set_frame_resolution(512,512)
-        # await scan_iface.set_config_flag(1)
-        # await scan_iface.set_raster_mode()
-        # await scan_iface.set_config_flag(0)
-        # for n in range(10):
-        #     data = await scan_iface.iface.read(16384)
-        #     scan_iface.text_file.write(str(data.tolist()))
-
-        # await scan_iface.set_8bit_output(0)
-        # await scan_iface.set_vector_mode()
-        # n = 0
-
-        # #https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
-
-
-
-
-        # futures = []
-
-        # for i in range(5):
-        #     n = 0
-        #     while True:
-        #         #print("writing")
-        #         n += 2
-        #         await scan_iface.write_2bytes(next(a))
-                
-        #         if n >= 16384:
-        #             break
-        #     print("wrote", n)
-        #     #print("reading")
-        #     try:
-        #         #print(scan_iface.iface._in_buffer._wtotal)
-        #         #await scan_iface.iface.flush()
-        #         loop = asyncio.get_event_loop()
-        #         future = loop.create_future()
-        #         futures.append(future)
-        #         loop.create_task(rcv_future_data(future))
-        #         #data = await asyncio.wait_for(scan_iface.iface.read(16384),timeout=10)
-        #         #print("read", len(data.tolist()))
-        #         #print(data.tolist())
-        #         #scan_iface.text_file.write(str(data.tolist()))
-        #     except:
-        #         #print("timeout")
-        #         pass
-        
-        # for future in futures:
-        #     data = await future
-        #     print("recieved", len(data.tolist()))
-        #     scan_iface.text_file.write(str(data.tolist()))
-        #     #print(data.tolist())
-
-        # await scan_iface.set_vector_mode()
-        # for n in range(3):
-        #     await scan_iface.write_points()
-
         if args.buf == "local":
             await scan_iface.set_8bit_output()
             await scan_iface.set_frame_sync()
