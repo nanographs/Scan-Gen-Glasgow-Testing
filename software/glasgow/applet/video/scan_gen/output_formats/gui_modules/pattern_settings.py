@@ -11,6 +11,10 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
 if __name__ == "__main__":
     from pattern_generators.hilbert import hilbert
     from pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
+elif "glasgow" in __name__:
+    from .pattern_generators.hilbert import hilbert
+    from .pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
+
 else:
     from gui_modules.pattern_generators.hilbert import hilbert
     from gui_modules.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
