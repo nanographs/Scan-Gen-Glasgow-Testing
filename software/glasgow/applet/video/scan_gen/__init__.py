@@ -15,6 +15,7 @@ from amaranth import *
 from amaranth.build import *
 from ....support.endpoint import *
 from ....support.task_queue import *
+from ....support.chunked_fifo import *
 from ....support.bits import *
 from amaranth.sim import Simulator
 
@@ -329,6 +330,9 @@ class SG_EndpointInterface(ScanGenInterface):
         self.streaming = None
         self.logging = True
         print(f'logging? {self.logging}')
+
+        self.write_buffer = ChunkedFIFO()
+        self.in_tasks = TaskQueue()
         
 
     def start_servers(self, close_future):
@@ -371,8 +375,11 @@ class SG_EndpointInterface(ScanGenInterface):
         if self.logging:
             self._logger.info(f'reading from server {n}')
         print(self.server_host.data_reader)
+        print("at eof?", self.server_host.data_reader.at_eof())
+        print(len(self.server_host.data_reader._buffer))
         try:
-            data = await self.server_host.data_reader.readexactly(16384)
+            data = await self.server_host.data_reader.readexactly(16384*2)
+            #data = await self.server_host.data_reader.read()
             print(type(data))
             print(f'recieved {len(data)} points, {n}')
             if self.logging:
@@ -389,10 +396,10 @@ class SG_EndpointInterface(ScanGenInterface):
         n = 0
         while True:
             try:
-                if self.logging:
-                    self._logger.info(f'awaiting read {n}')
                 if self.scan_mode == 3:
                     await self.recv_packet(n)
+                if self.logging:
+                    self._logger.info(f'awaiting read {n}')
                 data = await self.iface.read(16384)
                 n += 1
                 if self.logging:
@@ -529,7 +536,7 @@ class ScanGenApplet(GlasgowApplet):
         access.add_pin_argument(parser, "power_ok", default=15)
         parser.add_argument(
         "-T", "--test_mode", type=str,
-        help="gateware build configuration: loopback, data loopback", default = "2D")
+        help="gateware build configuration: loopback, data loopback", default = None)
         parser.add_argument(
         "-B", "--buf", type=str,
         help="local, streaming", default = "local")

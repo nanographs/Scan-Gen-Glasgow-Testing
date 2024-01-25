@@ -24,3 +24,7 @@ class MicroscopeInterface(metaclass=ABCMeta):
     @abstractmethod
     async def set_scan_mode(self, mode):
         pass 
+
+
+
+
