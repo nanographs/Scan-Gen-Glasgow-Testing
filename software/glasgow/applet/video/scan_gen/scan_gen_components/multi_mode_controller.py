@@ -84,6 +84,11 @@ class ModeController(Elaboratable):
         self.x_full_frame_resolution = Signal(16)
         self.y_full_frame_resolution = Signal(16)
 
+        self.x_lower_limit = Signal(16)
+        self.x_upper_limit = Signal(16)
+        self.y_lower_limit = Signal(16)
+        self.y_upper_limit = Signal(16)
+
         self.mode = Signal(2)
 
         self.in_fifo_w_data = Signal(8)
