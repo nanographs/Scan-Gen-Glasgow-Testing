@@ -22,22 +22,24 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.image_view = self.addViewBox(invertY = True)
         ## lock the aspect ratio so pixels are always square
         self.image_view.setAspectLocked(True)
-        self.image_view.setRange(QtCore.QRectF(0, 0, y_height, x_width))
+        # self.image_view.setRange(QtCore.QRectF(0, 0, y_height, x_width))
+        
         self.image_view.setLimits(xMin=0, xMax=16384, 
              minXRange=1, maxXRange=16384, 
              yMin=0, yMax=16384,
              minYRange=1, maxYRange=16384)
         
         self.live_img = pg.ImageItem(border='w',axisOrder="row-major")
-        self.live_img.setImage(np.full((y_height, x_width), 0, np.uint8), rect = (0,0,x_width, y_height))
+        self.live_img.setImage(np.full((y_height, x_width), 0, np.uint8), rect = (0,0,x_width, y_height), autoLevels=False, autoHistogramRange=True)
         self.image_view.addItem(self.live_img)
+        
 
         self.data = np.zeros(shape = (y_height, x_width))
 
         # Contrast/color control
         self.hist = pg.HistogramLUTItem()
         self.hist.setImageItem(self.live_img)
-        self.hist.disableAutoHistogramRange()
+        #self.hist.disableAutoHistogramRange()
         self.addItem(self.hist)
 
         self.hist.setLevels(min=0,max=255)
@@ -85,10 +87,11 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
 
     def setImage(self, y_height, x_width, image):
         ## image must be 2D np.array of np.uint8
-        self.live_img.setImage(image, rect = (0,0, x_width, y_height))
+        self.live_img.setImage(image, rect = (0,0, x_width, y_height), autoLevels=False)
         if not self.roi == None:
             self.roi.maxBounds = QtCore.QRectF(0, 0, x_width, y_height)
         self.data = image
+        self.image_view.autoRange()
 
 
     def setRange(self, y_height, x_width):
