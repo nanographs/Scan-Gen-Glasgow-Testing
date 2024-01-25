@@ -72,7 +72,7 @@ class ScanStream:
                     dtype = np.uint8)
         print("cleared buffer")
 
-    def points_to_frame(self, m:memoryview, print_debug = False):
+    def points_to_frame(self, m:memoryview, print_debug = True):
         m_len = len(m)
         if print_debug:
             print("data length:", m_len)
@@ -156,23 +156,28 @@ class ScanStream:
                 if print_debug:
                     print("rolled into next frame")
                     print(f'bottom rows: {bottom_rows}')
-                    print(f'set to: {partial_start_points} : {partial_start_points + x_width*bottom_rows}')
+                    print(f'buffer [{current_y}:{current_y + bottom_rows},{self.x_lower}:{self.x_lower+x_width}]')
+                    print(f'with shape {self.buffer[current_y:(current_y + bottom_rows),self.x_lower:self.x_lower+x_width].shape}')
+                    print(f'set to data [{partial_start_points} : {partial_start_points + x_width*bottom_rows}]')
+                    print(f'with m shape {m[partial_start_points:(partial_start_points + x_width*bottom_rows)].shape}')
+                    print(f'with shape [{bottom_rows}, {x_width}]')
                     self.check_sync()
 
-                self.buffer[current_y:] = \
+                self.buffer[current_y:(current_y + bottom_rows),self.x_lower:self.x_lower+x_width] = \
                         m[partial_start_points:(partial_start_points + x_width*bottom_rows)]\
-                            .cast('B',shape=([bottom_rows,self.x_width]))
+                            .cast('B',shape=([bottom_rows,x_width]))
 
                 if top_rows == 0:
                     current_y = top_rows
                 else:
                     if print_debug:
                         print(f'top rows: {top_rows}')
+                        print(f'buffer [0:{top_rows},{self.x_lower}:{self.x_lower+x_width}]')
+                        print(f'with shape {self.buffer[0:top_rows, self.x_lower:self.x_lower+x_width].shape}')
                         print(f'set to: {partial_start_points + x_width*bottom_rows} :{partial_start_points + x_width*bottom_rows+ x_width*top_rows}')
-                        print(f'buffer shape: 0:{top_rows}')
                         print(f'cast shape: {top_rows},{self.x_width}')
                         self.check_sync()
-                    self.buffer[0:top_rows] = \
+                    self.buffer[0:top_rows, self.x_lower:self.x_lower+x_width] = \
                             m[(partial_start_points + x_width*bottom_rows):\
                                 (partial_start_points + x_width*bottom_rows+ x_width*top_rows)]\
                                 .cast('B',shape=([top_rows,x_width]))
@@ -189,12 +194,14 @@ class ScanStream:
             
             else:
                 if print_debug:
-                    print(f'buffer[{current_y}:{current_y+full_lines}]')
+                    print(f'buffer[{current_y}:{current_y+full_lines}][{self.x_lower}:{self.x_lower + x_width}]')
+                    print(f'with shape {self.buffer[current_y:current_y+full_lines, self.x_lower:self.x_lower+x_width].shape}')
                     print(f'set to data [{partial_start_points}:{partial_start_points + x_width*full_lines}]')
+                    print(f'with shape [{full_lines},{x_width - self.x_lower}]')
                     self.check_sync()
-                self.buffer[current_y:current_y+full_lines] = \
+                self.buffer[current_y:current_y+full_lines,self.x_lower:self.x_lower+x_width] = \
                         m[partial_start_points:(partial_start_points + x_width*full_lines)]\
-                            .cast('B',shape=([full_lines,x_width]))
+                            .cast('B',shape=([full_lines,x_width - self.x_lower]))
                 if print_debug:
                     print(f'beginning of block: {self.buffer[current_y]}')
                 current_y += full_lines

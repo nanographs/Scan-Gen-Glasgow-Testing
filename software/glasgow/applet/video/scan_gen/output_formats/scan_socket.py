@@ -34,14 +34,13 @@ class ConnectionManager:
         self.logging = False
 
     async def open_connection(self, host, port, future):
-        print("trying to open connection at", host, port)
+        #print("trying to open connection at", host, port)
         while True:
             try:
                 reader, writer = await asyncio.open_connection(
                     host, port)
-                print("connection made")
                 addr = writer.get_extra_info('peername')
-                print(f"addr: {addr!r}")
+                #print(f"addr: {addr!r}")
                 future.set_result([reader,writer])
                 break
             except ConnectionError:
@@ -129,11 +128,9 @@ class ConnectionManager:
         self.data_reader, self.data_writer = await future_con
         await self.start_reading()
 
-    async def cmd_client(self, message, print_debug = False):
+    async def cmd_client(self, message, print_debug = True):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
-        if print_debug:
-            print("opening cmd client")
         loop = asyncio.get_event_loop()
         future_con = loop.create_future()
         loop.create_task(self.open_connection(HOST, PORT, future_con))

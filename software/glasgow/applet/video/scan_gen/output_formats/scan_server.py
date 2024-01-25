@@ -47,16 +47,21 @@ class ServerHost:
     async def handle_cmd(self, reader, writer):
         self.cmd_reader = reader
         self.cmd_writer = writer
-        # self.cmd_reader_future.set_result(reader)
-        print("cmd server made connection")
         loop = asyncio.get_running_loop()
-        try:
+        
+        async def read_cmd():
             print("awaiting cmd read")
             data = await self.cmd_reader.readexactly(7)
             message = data.decode()
             print("cmd:", message)
             self.queue.submit(self.process_cmd(message))
             await self.queue.poll()
+
+        try:
+            await read_cmd()
+            while len(self.cmd_reader._buffer) >= 7:
+                print("reading additional cmds")
+                await read_cmd()
         except asyncio.IncompleteReadError:
             print("err")
 
