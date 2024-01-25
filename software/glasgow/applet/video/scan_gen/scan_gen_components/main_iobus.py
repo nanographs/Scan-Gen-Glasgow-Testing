@@ -73,6 +73,8 @@ class IOBus(Elaboratable):
         self.y_upper_limit = Signal(16)
         self.y_lower_limit = Signal(16)
 
+        self.roi_registers = Signal(reduced_area_8)
+
         if self.use_config_handler:
             print("building with config handler")
             self.config_handler = ConfigHandler()
@@ -126,7 +128,20 @@ class IOBus(Elaboratable):
         #### =============================================================================
 
         #### =========================== REGISTERS ====================================
+        m.d.comb += self.roi_registers.LX1.eq(self.x_lower_limit_b2)
+        m.d.comb += self.roi_registers.LX2.eq(self.x_lower_limit_b1)
+        m.d.comb += self.roi_registers.UX1.eq(self.x_upper_limit_b2)
+        m.d.comb += self.roi_registers.UX2.eq(self.x_upper_limit_b1)
+        m.d.comb += self.roi_registers.LY1.eq(self.y_lower_limit_b2)
+        m.d.comb += self.roi_registers.LY2.eq(self.y_lower_limit_b1)
+        m.d.comb += self.roi_registers.UY1.eq(self.y_upper_limit_b2)
+        m.d.comb += self.roi_registers.UY2.eq(self.y_upper_limit_b1)
+
+
+
         if self.use_config_handler:
+            m.d.comb += self.config_handler.roi_registers.eq(self.roi_registers)
+
             m.d.comb += self.mode_ctrl.replace_FF_to_FE.eq(1)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(0)
             m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(0)
@@ -205,8 +220,24 @@ class IOBus(Elaboratable):
             m.d.comb += self.config_handler.y_full_frame_resolution_b1.eq(self.y_full_resolution_b1)
             m.d.comb += self.config_handler.y_full_frame_resolution_b2.eq(self.y_full_resolution_b2)
 
+            m.d.comb += self.config_handler.x_upper_limit_b1.eq(self.x_upper_limit_b1)
+            m.d.comb += self.config_handler.x_upper_limit_b2.eq(self.x_upper_limit_b2)
+            m.d.comb += self.config_handler.x_lower_limit_b1.eq(self.x_lower_limit_b1)
+            m.d.comb += self.config_handler.x_lower_limit_b2.eq(self.x_lower_limit_b2)
+
+            m.d.comb += self.config_handler.y_upper_limit_b1.eq(self.y_upper_limit_b1)
+            m.d.comb += self.config_handler.y_upper_limit_b2.eq(self.y_upper_limit_b2)
+            m.d.comb += self.config_handler.y_lower_limit_b1.eq(self.y_lower_limit_b1)
+            m.d.comb += self.config_handler.y_lower_limit_b2.eq(self.y_lower_limit_b2)
+
+
             m.d.comb += self.mode_ctrl.x_full_frame_resolution.eq(self.config_handler.x_full_frame_resolution_locked)
-            m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked) 
+            m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked)
+
+            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(self.config_handler.roi_registers_locked.UX)
+            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.config_handler.roi_registers_locked.LX)
+            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.config_handler.roi_registers_locked.UY)
+            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.config_handler.roi_registers_locked.LY) 
 
             
 

@@ -30,6 +30,24 @@ vector_dwell = data.StructLayout({
     "D2": 8,
 })
 
+reduced_area_8 = data.StructLayout({
+    "LX1": 8,
+    "LX2": 8,
+    "UX1": 8,
+    "UX2": 8,
+    "LY1": 8,
+    "LY2": 8,
+    "UY1": 8,
+    "UY2": 8,
+})
+
+reduced_area_16 = data.StructLayout({
+    "LX": 16,
+    "UX": 16,
+    "LY": 16,
+    "UY": 16
+})
+
 
 def get_two_bytes(n: int):
     bits = "{0:016b}".format(n)

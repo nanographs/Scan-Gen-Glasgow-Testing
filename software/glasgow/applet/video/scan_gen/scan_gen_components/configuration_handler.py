@@ -1,6 +1,11 @@
 from amaranth import *
 from amaranth.sim import Simulator
 
+if "glasgow" in __name__: ## running as applet
+    from ..scan_gen_components.addresses import *
+else:
+    from addresses import *
+
 
 class ConfigHandler(Elaboratable):
     '''
@@ -67,6 +72,9 @@ class ConfigHandler(Elaboratable):
         self.x_full_frame_resolution_locked = Signal(16)
         self.y_full_frame_resolution_locked = Signal(16)
 
+        self.roi_registers = Signal(reduced_area_8)
+        self.roi_registers_locked = Signal(reduced_area_16)
+
         self.x_lower_limit_b1 = Signal(8)
         self.x_lower_limit_b2 = Signal(8)
         self.x_upper_limit_b1 = Signal(8)
@@ -111,18 +119,11 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.config_data_valid.eq(0)
                 with m.If(self.configuration_flag):
                     #m.d.comb += self.writing_config.eq(1)
+                    m.d.sync += self.roi_registers_locked.eq(self.roi_registers)
                     m.d.sync += self.x_full_frame_resolution_locked.eq(Cat(self.x_full_frame_resolution_b2,
                                                                             self.x_full_frame_resolution_b1))
                     m.d.sync += self.y_full_frame_resolution_locked.eq(Cat(self.y_full_frame_resolution_b2,
-                                                                            self.y_full_frame_resolution_b1))
-                    m.d.sync += self.x_upper_limit_locked.eq(Cat(self.x_upper_limit_b2,
-                                                                self.x_upper_limit_b1))
-                    m.d.sync += self.x_lower_limit_locked.eq(Cat(self.x_lower_limit_b2,
-                                                                self.x_lower_limit_b1))
-                    m.d.sync += self.y_upper_limit_locked.eq(Cat(self.y_upper_limit_b2,
-                                                                self.y_upper_limit_b1))
-                    m.d.sync += self.y_lower_limit_locked.eq(Cat(self.y_lower_limit_b2,
-                                                                self.y_lower_limit_b1))                  
+                                                                            self.y_full_frame_resolution_b1))                 
                     m.d.sync += self.eight_bit_output_locked.eq(self.eight_bit_output)
                     m.d.sync += self.step_size_locked.eq(self.step_size)
                     #m.d.comb += self.config_data_valid.eq(1)

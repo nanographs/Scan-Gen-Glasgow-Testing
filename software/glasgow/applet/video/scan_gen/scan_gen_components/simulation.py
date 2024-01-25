@@ -143,6 +143,7 @@ def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper 
     b2 = int(bits(b2))
     print(b1, b2)
 
+    print(f'set x lower limit: {x_lower}')
     yield dut.x_lower_limit_b1.eq(b1)
     yield dut.x_lower_limit_b2.eq(b2)
 
@@ -150,6 +151,7 @@ def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper 
     b1 = int(bits(b1))
     b2 = int(bits(b2))
 
+    print(f'set y lower limit: {y_lower}')
     yield dut.y_lower_limit_b1.eq(b1)
     yield dut.y_lower_limit_b2.eq(b2)
 
@@ -157,6 +159,7 @@ def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper 
     b1 = int(bits(b1))
     b2 = int(bits(b2))
 
+    print(f'set x upper limit: {x_upper}')
     yield dut.x_upper_limit_b1.eq(b1)
     yield dut.x_upper_limit_b2.eq(b2)
 
@@ -164,6 +167,7 @@ def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper 
     b1 = int(bits(b1))
     b2 = int(bits(b2))
 
+    print(f'set y upper limit: {x_upper}')
     yield dut.y_upper_limit_b1.eq(b1)
     yield dut.y_upper_limit_b2.eq(b2)
 
@@ -223,7 +227,7 @@ def sim_iobus():
             yield step_size.eq(5)
             #yield const_dwell_time.eq(0)
             yield scan_mode.eq(1)
-            yield from set_frame_params(dut, x_res=512, y_res=512)
+            yield from set_frame_params(dut, x_res=512, y_res=512, x_lower = 10, x_upper = 200, y_lower = 50, y_upper = 300)
             yield
             yield configuration.eq(1)
             yield
@@ -232,12 +236,12 @@ def sim_iobus():
             yield unpause.eq(1)
             yield
             yield from raster_sim(50, eight_bit_output = True)
-            yield from set_frame_params(dut, x_res=520, y_res=512)
-            yield configuration.eq(1)
-            yield
-            yield configuration.eq(0)
-            yield
-            yield from raster_sim(100, eight_bit_output = True)
+            # yield from set_frame_params(dut, x_res=520, y_res=512)
+            # yield configuration.eq(1)
+            # yield
+            # yield configuration.eq(0)
+            # yield
+            # yield from raster_sim(100, eight_bit_output = True)
 
 
 
