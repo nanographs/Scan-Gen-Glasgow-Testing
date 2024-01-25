@@ -208,12 +208,27 @@ def sim_iobus():
     eight_bit_output, do_frame_sync, do_line_sync,
     const_dwell_time, configuration, unpause, step_size,
     is_simulation = True,
-    test_mode = "data loopback", use_config_handler = True
+    test_mode = None, use_config_handler = True
     )
     def bench():
         # yield do_frame_sync.eq(1)
         # yield do_line_sync.eq(0)
         # yield eight_bit_output.eq(1)
+
+        def raster_averaging_sim():
+            for n in range(50):
+                n += 1
+                data = yield from sim_scangen_iface.iface.read(1)
+                yield dut.pins_i.eq(n)
+                for n in range(6):
+                    yield 
+                yield dut.pins_i.eq(n+1)
+                for n in range(6):
+                    yield 
+                yield dut.pins_i.eq(n-1)
+                for n in range(6):
+                    yield 
+                
         def config_test():
             # yield from sim_scangen_iface.iface.read(10)
             # yield scan_mode.eq(1)
@@ -235,7 +250,10 @@ def sim_iobus():
             yield
             yield unpause.eq(1)
             yield
-            yield from raster_sim(50, eight_bit_output = True)
+            data = yield from sim_scangen_iface.iface.read(18)
+            print(str(list(data)))
+            #yield from raster_sim(50, eight_bit_output = True)
+            yield from raster_averaging_sim()
             # yield from set_frame_params(dut, x_res=520, y_res=512)
             # yield configuration.eq(1)
             # yield
