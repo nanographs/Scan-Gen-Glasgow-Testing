@@ -27,10 +27,11 @@ class ConnectionManager:
         self.scan_mode = 0
 
         self.pattern_loop = None
+        self.pattern_done = False
 
         self.text_file = open("socket_packets.txt", "w")
 
-        self.logging = True
+        self.logging = False
 
     async def open_connection(self, host, port, future):
         print("trying to open connection at", host, port)
@@ -44,6 +45,7 @@ class ConnectionManager:
                 future.set_result([reader,writer])
                 break
             except ConnectionError:
+                self.pattern_done = True
                 #print("connection error")
                 pass
     
@@ -51,24 +53,34 @@ class ConnectionManager:
         print(f'gen: {gen}')
         self.pattern_loop = packet_from_generator(gen)
         print(f'pattern loop: {self.pattern_loop}')
+        self.pattern_done = False
 
 
-    async def write_points(self,nth, print_debug = False):
+    async def write_points(self,nth, print_debug = True):
         if print_debug:
             print(f'writing points {nth}')
         try:
             points = next(self.pattern_loop)
+            next_points = next(self.pattern_loop)
+            # while True:
+            #     try:
             self.data_writer.write(points)
+            self.data_writer.write(next_points)
             await self.data_writer.drain()
             if self.logging:
                 print(f'wrote points {nth}')
                 self.text_file.write("=====Sent=====\n")
                 self.text_file.write(str(list(points)))
             logger.info(f'wrote points {nth}')
-        except StopIteration:
+                # except Exception as err:
+                #     print(f'done writing points: {err}')
+                #     break
+            return "done2"
+        except Exception as err: ## should be StopIteration
             print(f'Pattern complete')
+            return "done"
 
-    async def read_continously(self, print_debug = False):
+    async def read_continously(self, print_debug = True):
         reader = self.data_reader
         writer = self.data_writer
         n = 0
@@ -78,7 +90,9 @@ class ConnectionManager:
                     print("trying to read")
                 if not reader.at_eof():
                     if self.stream_pattern == True:
-                        await self.write_points(n)
+                        if not self.pattern_done == True:
+                            r = await self.write_points(n)
+                            print("result", r)
                     await asyncio.sleep(0)
                     data = await reader.readexactly(16384)
                     n += 1
@@ -95,6 +109,8 @@ class ConnectionManager:
                     print("at eof?")
                     print(reader)
                     break
+            except StopIteration:
+                print(f'STOPPED 2, {self.pattern_done}')
             except Exception as e:
                 print("error:", e, type(e), vars(e))
                 print(reader)

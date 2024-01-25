@@ -30,6 +30,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         
         self.live_img = pg.ImageItem(border='w',axisOrder="row-major")
         self.live_img.setImage(np.full((y_height, x_width), 0, np.uint8), rect = (0,0,x_width, y_height))
+        #self.live_img.setLevels([0,255])
         self.image_view.addItem(self.live_img)
 
         self.data = np.zeros(shape = (y_height, x_width))

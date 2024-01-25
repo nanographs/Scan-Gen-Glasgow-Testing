@@ -47,7 +47,9 @@ class ByteReplacer(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
+        print(f'test mode: {self.test_mode}')
         if self.test_mode == None:
+            print("not in test mode")
             m.d.comb += self.most_significant_8_bits.eq(self.point_data.as_value()[(self.dac_bits - 8):self.dac_bits])
         else:
             m.d.comb += self.most_significant_8_bits.eq(self.point_data.D1)

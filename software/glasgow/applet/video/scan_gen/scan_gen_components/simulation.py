@@ -189,7 +189,7 @@ def sim_iobus():
     eight_bit_output = Signal()
     do_frame_sync = Signal()
     do_line_sync = Signal()
-    const_dwell_time = Signal()
+    const_dwell_time = Signal(8)
     configuration = Signal()
     unpause = Signal()
     step_size = Signal(8)
@@ -219,6 +219,7 @@ def sim_iobus():
             # yield unpause.eq(0)
             # yield
             yield eight_bit_output.eq(1)
+            yield const_dwell_time.eq(2)
             yield step_size.eq(5)
             #yield const_dwell_time.eq(0)
             yield scan_mode.eq(1)
@@ -333,7 +334,8 @@ def sim_iobus():
                 
         #yield from raster_pattern_test()
 
-        yield from hilbert_test()
+        #yield from hilbert_test()
+        yield from config_test()
         # yield unpause.eq(0)
         # yield
         # yield from set_frame_params(dut, x_res=1024, y_res=1024)
