@@ -19,7 +19,7 @@ requires-python = "~=3.8"
 dependencies = [
   "packaging>=23",
   "appdirs~=1.4",
-  "amaranth[builtin-yosys] @ git+https://github.com/amaranth-lang/amaranth.git",
+  "amaranth~=0.4",
   "fx2>=0.11",
   "libusb1>=1.8.1",
   "pyvcd",

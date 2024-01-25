@@ -64,7 +64,7 @@ class PluginMetadata:
 
     @classmethod
     def get(cls, handle):
-        return cls(importlib.metadata.entry_points(group=cls.GROUP_NAME, name=handle)[0])
+        return cls(list(importlib.metadata.entry_points(group=cls.GROUP_NAME, name=handle))[0])
 
     @classmethod
     def all(cls):
