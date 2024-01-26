@@ -19,7 +19,8 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.y_height = y_height
         self.x_width = x_width
 
-        self.image_view = self.addViewBox(invertY = True)
+        #self.image_view = self.addViewBox(invertY = True)
+        self.image_view = self.addPlot(invertY = True)
         ## lock the aspect ratio so pixels are always square
         self.image_view.setAspectLocked(True)
         # self.image_view.setRange(QtCore.QRectF(0, 0, y_height, x_width))
@@ -56,6 +57,11 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
 
 
         self.exporter = pg.exporters.ImageExporter(self.live_img)
+
+        border = pg.mkPen(color = "#00ff00", width = 2)
+        self.scaleBar = pg.ScaleBar(200, pen = border, width = 5)
+        self.scaleBar.setParentItem(self.image_view)
+        self.scaleBar.anchor((1,1),(1,1),offset = (-200,-20))
 
         #self.add_ROI()
 
