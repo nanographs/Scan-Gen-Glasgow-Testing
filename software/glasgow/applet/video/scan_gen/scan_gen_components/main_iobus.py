@@ -7,13 +7,15 @@ import os, sys
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.multi_mode_controller import ModeController
     from ..scan_gen_components.data_latch_bus import BusMultiplexer
-    from ..scan_gen_components.addresses import *
+    from ..scan_gen_components.structs import *
     from ..scan_gen_components.configuration_handler import ConfigHandler
+    from ..scan_gen_components.board_sim import OBI_Board
 else:
+    from board_sim import OBI_Board
     from multi_mode_controller import ModeController
     from data_latch_bus import BusMultiplexer
     from configuration_handler import ConfigHandler
-    from addresses import *
+    from structs import *
 
 class IOBus(Elaboratable):
     def __init__(self, in_fifo, out_fifo, scan_mode, 
@@ -25,12 +27,13 @@ class IOBus(Elaboratable):
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
                 const_dwell_time, configuration, unpause, step_size,
-                is_simulation = True, test_mode = None,
-                use_config_handler = False):
+                is_simulation = True, test_mode = None):
         ### Build arguments
         self.is_simulation = is_simulation
         self.test_mode = test_mode
-        self.use_config_handler = use_config_handler
+
+        if self.is_simulation:
+            self.board = OBI_Board()
         
         ### Modules
         self.mode_ctrl = ModeController(self.test_mode)
@@ -75,11 +78,10 @@ class IOBus(Elaboratable):
 
         self.roi_registers = Signal(reduced_area_8)
 
-        if self.use_config_handler:
-            print("building with config handler")
-            self.config_handler = ConfigHandler()
-            self.configuration_flag = configuration
-            self.handling_config = Signal()
+
+        self.config_handler = ConfigHandler()
+        self.configuration_flag = configuration
+        self.handling_config = Signal()
         #### =============================================================================
 
         #### Ports A and B signals
@@ -112,8 +114,9 @@ class IOBus(Elaboratable):
         m.submodules["MuxBus"] = self.bus_multiplexer
         m.submodules["OUT_FIFO"] = self.out_fifo
         m.submodules["IN_FIFO"] = self.in_fifo
-        if self.use_config_handler:
-            m.submodules["ConfigHdlr"] = self.config_handler
+        m.submodules["ConfigHdlr"] = self.config_handler
+        if self.is_simulation:
+            m.submodules["OBI_Board"] = self.board
 
         #### =========================== CONTROL SIGNALS ====================================
         m.d.comb += self.x_latch.eq(self.bus_multiplexer.x_dac.latch.le)
@@ -125,6 +128,14 @@ class IOBus(Elaboratable):
 
         m.d.comb += self.a_clock.eq(self.bus_multiplexer.sample_clock.clock)
         m.d.comb += self.d_clock.eq(~self.bus_multiplexer.sample_clock.clock)
+
+        if self.is_simulation:
+            m.d.comb += self.board.x_latch.eq(self.x_latch)
+            m.d.comb += self.board.y_latch.eq(self.y_latch)
+            m.d.comb += self.board.a_latch.eq(self.a_latch)
+            m.d.comb += self.board.a_clock.eq(self.a_clock)
+            m.d.comb += self.board.d_clock.eq(self.d_clock)
+
         #### =============================================================================
 
         #### =========================== REGISTERS ====================================
@@ -139,129 +150,102 @@ class IOBus(Elaboratable):
 
 
 
-        if self.use_config_handler:
-            m.d.comb += self.config_handler.roi_registers.eq(self.roi_registers)
+        m.d.comb += self.config_handler.roi_registers.eq(self.roi_registers)
 
-            m.d.comb += self.mode_ctrl.replace_FF_to_FE.eq(1)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(0)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(0)
-            m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
-
-            m.d.comb += self.config_handler.step_size.eq(self.step_size)
-            m.d.comb += self.mode_ctrl.x_interpolator.step_size.eq(self.config_handler.step_size_locked)
-            m.d.comb += self.mode_ctrl.y_interpolator.step_size.eq(self.config_handler.step_size_locked)
-            
-            m.d.comb += self.handling_config.eq((self.config_handler.writing_config))
-            m.d.comb += self.config_handler.outer_configuration_flag.eq(self.configuration_flag)
+        m.d.comb += self.mode_ctrl.replace_FF_to_FE.eq(1)
+        m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
+        m.d.comb += self.config_handler.step_size.eq(self.step_size)
+        m.d.comb += self.mode_ctrl.x_interpolator.step_size.eq(self.config_handler.step_size_locked)
+        m.d.comb += self.mode_ctrl.y_interpolator.step_size.eq(self.config_handler.step_size_locked)
+        
+        m.d.comb += self.handling_config.eq((self.config_handler.writing_config))
+        m.d.comb += self.config_handler.outer_configuration_flag.eq(self.configuration_flag)
 
 
-            a = Signal()
-            b = Signal()
-            c = Signal()
-            d = Signal()
-            e = Signal()
+        a = Signal()
+        b = Signal()
+        c = Signal()
+        d = Signal()
+        e = Signal()
 
 
-            with m.If(self.unpause == 0):
-                m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
-            with m.Else():
-                with m.FSM() as fsm:
-                    with m.State("Waiting"):
-                        m.d.comb += a.eq(1)
-                        with m.If((self.configuration_flag) & (self.mode_ctrl.writer_data_complete)):
-                            m.next = "Configure"
-                        with m.If((self.configuration_flag) & (~self.mode_ctrl.writer_data_complete)):
-                            m.next = "Wait for write"
-                    with m.State("Wait for write"):
-                        m.d.comb += b.eq(1)
-                        with m.If(self.mode_ctrl.writer_data_complete):
-                            m.next = "Configure"
-                    with m.State("Configure"):
-                        m.d.comb += c.eq(1)
-                        m.d.comb += self.config_handler.configuration_flag.eq(1)
-                        with m.If((self.scan_mode == ScanMode.Raster)|(self.scan_mode == ScanMode.RasterPattern)):
-                            m.next = "Start Frame"
-                        with m.Else():
-                            m.next = "Waiting"
-                    with m.State("Start Frame"):
-                        m.d.comb += d.eq(1)
-                        with m.If(~(self.handling_config)):
-                            m.d.comb += self.mode_ctrl.xy_scan_gen_increment.eq(1)
-                            ## sneak in an extra increment to make up for the fact that we are already
-                            ## starting out on (0,0)
-                            ## or something like that
-                            ### will need to review this again when we throw reduced areas into the mix...
-                            m.next = "Waiting to relatch"
-                    with m.State("Waiting to relatch"):
-                        m.d.comb += e.eq(1)
-                        with m.If(~(self.configuration_flag)):
-                            m.next = "Waiting"
+        with m.If(self.unpause == 0):
+            m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
+        with m.Else():
+            with m.FSM() as fsm:
+                with m.State("Waiting"):
+                    m.d.comb += a.eq(1)
+                    with m.If((self.configuration_flag) & (self.mode_ctrl.writer_data_complete)):
+                        m.next = "Configure"
+                    with m.If((self.configuration_flag) & (~self.mode_ctrl.writer_data_complete)):
+                        m.next = "Wait for write"
+                with m.State("Wait for write"):
+                    m.d.comb += b.eq(1)
+                    with m.If(self.mode_ctrl.writer_data_complete):
+                        m.next = "Configure"
+                with m.State("Configure"):
+                    m.d.comb += c.eq(1)
+                    m.d.comb += self.config_handler.configuration_flag.eq(1)
+                    with m.If((self.scan_mode == ScanMode.Raster)|(self.scan_mode == ScanMode.RasterPattern)):
+                        m.next = "Start Frame"
+                    with m.Else():
+                        m.next = "Waiting"
+                with m.State("Start Frame"):
+                    m.d.comb += d.eq(1)
+                    with m.If(~(self.handling_config)):
+                        m.d.comb += self.mode_ctrl.xy_scan_gen_increment.eq(1)
+                        ## sneak in an extra increment to make up for the fact that we are already
+                        ## starting out on (0,0)
+                        ## or something like that
+                        ### will need to review this again when we throw reduced areas into the mix...
+                        m.next = "Waiting to relatch"
+                with m.State("Waiting to relatch"):
+                    m.d.comb += e.eq(1)
+                    with m.If(~(self.configuration_flag)):
+                        m.next = "Waiting"
 
 
-            ## Reset counters when configuration changes
-            m.d.comb += self.mode_ctrl.reset.eq(self.handling_config)
-            m.d.comb += self.mode_ctrl.disable_dwell.eq(~(self.unpause))
+        ## Reset counters when configuration changes
+        m.d.comb += self.mode_ctrl.reset.eq(self.handling_config)
+        m.d.comb += self.mode_ctrl.disable_dwell.eq(~(self.unpause))
 
-            with m.If(self.handling_config):
-                m.d.comb += self.mode_ctrl.mode.eq(0)
-            with m.Else():
-                m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
-
-            with m.If(~(self.unpause)):
-                m.d.comb += self.write_strobe.eq(0)
-
-            m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
-
-            m.d.comb += self.config_handler.eight_bit_output.eq(self.eight_bit_output)
-            m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.config_handler.eight_bit_output_locked)
-
-            m.d.comb += self.config_handler.x_full_frame_resolution_b1.eq(self.x_full_resolution_b1)
-            m.d.comb += self.config_handler.x_full_frame_resolution_b2.eq(self.x_full_resolution_b2)
-            m.d.comb += self.config_handler.y_full_frame_resolution_b1.eq(self.y_full_resolution_b1)
-            m.d.comb += self.config_handler.y_full_frame_resolution_b2.eq(self.y_full_resolution_b2)
-
-            m.d.comb += self.config_handler.x_upper_limit_b1.eq(self.x_upper_limit_b1)
-            m.d.comb += self.config_handler.x_upper_limit_b2.eq(self.x_upper_limit_b2)
-            m.d.comb += self.config_handler.x_lower_limit_b1.eq(self.x_lower_limit_b1)
-            m.d.comb += self.config_handler.x_lower_limit_b2.eq(self.x_lower_limit_b2)
-
-            m.d.comb += self.config_handler.y_upper_limit_b1.eq(self.y_upper_limit_b1)
-            m.d.comb += self.config_handler.y_upper_limit_b2.eq(self.y_upper_limit_b2)
-            m.d.comb += self.config_handler.y_lower_limit_b1.eq(self.y_lower_limit_b1)
-            m.d.comb += self.config_handler.y_lower_limit_b2.eq(self.y_lower_limit_b2)
-
-
-            m.d.comb += self.mode_ctrl.x_full_frame_resolution.eq(self.config_handler.x_full_frame_resolution_locked)
-            m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked)
-
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(self.config_handler.roi_registers_locked.UX)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.config_handler.roi_registers_locked.LX)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.config_handler.roi_registers_locked.UY)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.config_handler.roi_registers_locked.LY) 
-
-            
-
-        else:
-            m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
+        with m.If(self.handling_config):
+            m.d.comb += self.mode_ctrl.mode.eq(0)
+        with m.Else():
             m.d.comb += self.mode_ctrl.mode.eq(self.scan_mode)
-            m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.eight_bit_output)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_frame_sync.eq(self.do_frame_sync)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.do_line_sync.eq(self.do_line_sync)
 
-            m.d.comb += self.mode_ctrl.x_full_frame_resolution.eq(Cat(self.x_full_resolution_b2,
-                                                                    self.x_full_resolution_b1))
-            m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(Cat(self.y_full_resolution_b2,
-                                                                    self.y_full_resolution_b1))
+        with m.If(~(self.unpause)):
+            m.d.comb += self.write_strobe.eq(0)
 
-            m.d.comb += self.x_upper_limit.eq(Cat(self.x_upper_limit_b2,self.x_upper_limit_b1))
-            m.d.comb += self.x_lower_limit.eq(Cat(self.x_lower_limit_b2,self.x_lower_limit_b1))
-            m.d.comb += self.y_upper_limit.eq(Cat(self.y_upper_limit_b2,self.y_upper_limit_b1))                                                                        
-            m.d.comb += self.y_lower_limit.eq(Cat(self.y_lower_limit_b2,self.y_lower_limit_b1))
+        m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
 
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(self.x_upper_limit)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.x_lower_limit)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.y_upper_limit)
-            m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.y_lower_limit)
+        m.d.comb += self.config_handler.eight_bit_output.eq(self.eight_bit_output)
+        m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.config_handler.eight_bit_output_locked)
+
+        m.d.comb += self.config_handler.x_full_frame_resolution_b1.eq(self.x_full_resolution_b1)
+        m.d.comb += self.config_handler.x_full_frame_resolution_b2.eq(self.x_full_resolution_b2)
+        m.d.comb += self.config_handler.y_full_frame_resolution_b1.eq(self.y_full_resolution_b1)
+        m.d.comb += self.config_handler.y_full_frame_resolution_b2.eq(self.y_full_resolution_b2)
+
+        m.d.comb += self.config_handler.x_upper_limit_b1.eq(self.x_upper_limit_b1)
+        m.d.comb += self.config_handler.x_upper_limit_b2.eq(self.x_upper_limit_b2)
+        m.d.comb += self.config_handler.x_lower_limit_b1.eq(self.x_lower_limit_b1)
+        m.d.comb += self.config_handler.x_lower_limit_b2.eq(self.x_lower_limit_b2)
+
+        m.d.comb += self.config_handler.y_upper_limit_b1.eq(self.y_upper_limit_b1)
+        m.d.comb += self.config_handler.y_upper_limit_b2.eq(self.y_upper_limit_b2)
+        m.d.comb += self.config_handler.y_lower_limit_b1.eq(self.y_lower_limit_b1)
+        m.d.comb += self.config_handler.y_lower_limit_b2.eq(self.y_lower_limit_b2)
+
+
+        m.d.comb += self.mode_ctrl.x_full_frame_resolution.eq(self.config_handler.x_full_frame_resolution_locked)
+        m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked)
+
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(self.config_handler.roi_registers_locked.UX)
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.config_handler.roi_registers_locked.LX)
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.config_handler.roi_registers_locked.UY)
+        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.config_handler.roi_registers_locked.LY) 
+
         #### =============================================================================
 
 
@@ -276,10 +260,16 @@ class IOBus(Elaboratable):
 
         with m.If(self.bus_multiplexer.is_x):
             m.d.comb += self.pins_o.eq(self.mode_ctrl.beam_controller.x_position)
+            if self.is_simulation:
+                m.d.comb += self.board.x_latch_chip.d.eq(self.pins_o)
         with m.If(self.bus_multiplexer.is_y):
             m.d.comb += self.pins_o.eq(self.mode_ctrl.beam_controller.y_position)
+            if self.is_simulation:
+                m.d.comb += self.board.y_latch_chip.d.eq(self.pins_o)
         with m.If(self.bus_multiplexer.is_a):
             m.d.comb += self.mode_ctrl.adc_data_strobe.eq(self.bus_multiplexer.a_adc.released)
+            if self.is_simulation:
+                m.d.sync += self.board.adc_input.eq(self.mode_ctrl.adc_data)
             if self.test_mode == "data loopback":
                 with m.If(self.scan_mode == ScanMode.Raster):
                     m.d.comb += self.mode_ctrl.adc_data.eq(self.mode_ctrl.beam_controller.x_position)
@@ -287,6 +277,9 @@ class IOBus(Elaboratable):
                     m.d.comb += self.mode_ctrl.adc_data.eq(self.mode_ctrl.beam_controller.dwell_time)
             else:
                 m.d.comb += self.mode_ctrl.adc_data.eq(self.pins_i)
+
+        if self.is_simulation:
+            self.board.adc_input.eq(self.mode_ctrl.adc_data)
         #### =============================================================================
 
         #### ===========================FIFO CONTROL=================================================
@@ -313,18 +306,13 @@ class IOBus(Elaboratable):
         m.d.comb += self.mode_ctrl.out_fifo_r_data.eq(self.out_fifo.r_data)
         m.d.comb += self.mode_ctrl.read_happened.eq((self.read_strobe))
 
-        if self.use_config_handler:
-
-            with m.If((self.handling_config)):
-                m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.config_handler.config_data_valid))
-                m.d.comb += self.config_handler.write_happened.eq((self.write_strobe) & (self.unpause))
-            with m.Else():
-                m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.mode_ctrl.writer_data_valid))
-                m.d.comb += self.mode_ctrl.write_happened.eq((self.write_strobe) & (self.unpause))
-
-        else:
+        with m.If((self.handling_config)):
+            m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.config_handler.config_data_valid))
+            m.d.comb += self.config_handler.write_happened.eq((self.write_strobe) & (self.unpause))
+        with m.Else():
             m.d.comb += self.write_strobe.eq((self.in_fifo.w_rdy) & (self.mode_ctrl.writer_data_valid))
-            m.d.comb += self.mode_ctrl.write_happened.eq(self.write_strobe)
+            m.d.comb += self.mode_ctrl.write_happened.eq((self.write_strobe) & (self.unpause))
+
         
         m.d.comb += self.mode_ctrl.write_ready.eq(self.in_fifo.w_rdy)
 
@@ -345,14 +333,11 @@ class IOBus(Elaboratable):
                 m.d.comb += self.out_fifo.r_en.eq(1)
                 
         else:
-            if self.use_config_handler:
-                with m.If(self.unpause):
-                    with m.If(self.handling_config):
-                        m.d.comb += self.in_fifo.w_data.eq(self.config_handler.in_fifo_w_data)
-                    with m.Else():
-                        m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
-            else:
-                m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
+            with m.If(self.unpause):
+                with m.If(self.handling_config):
+                    m.d.comb += self.in_fifo.w_data.eq(self.config_handler.in_fifo_w_data)
+                with m.Else():
+                    m.d.comb += self.in_fifo.w_data.eq(self.mode_ctrl.in_fifo_w_data)
 
             with m.If((self.write_strobe)&(self.unpause)):
                 if self.test_mode == "disable output":

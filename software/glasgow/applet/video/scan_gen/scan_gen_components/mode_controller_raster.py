@@ -6,309 +6,18 @@ from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 
 if "glasgow" in __name__: ## running as applet
     from ..scan_gen_components.byte_replacer import ByteReplacer
-    from ..scan_gen_components.beam_controller import BeamController
+    from ..scan_gen_components.stream_reader import StreamReader
+    from ..scan_gen_components.stream_writer import StreamWriter
     from ..scan_gen_components.xy_scan_gen import XY_Scan_Gen
-    from ..scan_gen_components.addresses import *
+    from ..scan_gen_components.structs import *
 else:
 #if __name__ == "__main__":
     from byte_replacer import ByteReplacer
-    from beam_controller import BeamController
+    from stream_reader import StreamReader
+    from stream_writer import StreamWriter
     from xy_scan_gen import XY_Scan_Gen
-    from addresses import *
+    from structs import *
     from test_streams import test_vector_points, _fifo_write_vector_point
-
-class RasterReader(Elaboratable): 
-    '''
-    This module is only used in raster patterning mode.
-
-    out_fifo_r_data: Signal, in, 8
-        This signal is combinatorially driven by the top level out_fifo.r_data
-    
-    raster_dwell_data: Signal, internal, 16
-        Each cycle that the out_fifo is read from, a byte is synchronously written 
-        to vector_point_data. 
-    raster_dwell_data_c: Signal, out, 16
-        This is the signal that the next dwell time values are read from.
-        This signal is combinatorially assigned to the value of vector_point_data
-        and the latest byte from the out_fifo. This is so that the full vector point
-        data can be used immediately. If the data can't be used immediately, the last
-        byte is synchronously added to raster_dwell_data and the state machine moves to 
-        the HOLD state.
-
-    data_complete: Signal, out, 1:
-        Asserted when all 2 bytes of a dwell time have been assembled. When this is true,
-        the value of raster_dwell_c is valid to assign as the next beam controller dwell
-    read_happened: Signal, in, 1:
-        Asserted when the out_fifo is ready to be read from. This signal is driven by 
-        mode_ctrl.read_happened, which is driven by the top level io_strobe
-    reader_data_used: Signal, in, 1:
-        Asserted when the data held in raster_dwell_data is used. On the cycle after this is
-        asserted, the module will return to state X1 and be ready to read a new point in
-
-    State Machine:
-        D1 -> D2 -> Hold
-        ↑-----↲----- ↲
-
-    Inspiration taken from https://github.com/maia-sdr/maia-sdr/blob/main/maia-hdl/maia_hdl/packer.py
-    
-    '''
-    def __init__(self):
-        self.out_fifo_r_data = Signal(8)
-
-        # self.raster_point_data = Signal(vector_point)
-        # self.raster_point_data_c = Signal(vector_point)
-
-        self.raster_dwell_data = Signal(vector_dwell)
-        self.raster_dwell_data_c = Signal(vector_dwell)
-        
-        self.data_complete = Signal()
-        self.read_happened = Signal()
-        self.data_point_used = Signal()
-
-        self.eight_bit_output = Signal()
-
-        self.data_used_count = Signal(3)
-        self.data_fresh = Signal()
-
-    def elaborate(self, platform):
-        m = Module()
-
-        with m.If(self.data_point_used):
-            m.d.sync += self.data_used_count.eq(self.data_used_count - 1)
-        with m.If(self.data_used_count == 1):
-            m.d.comb += self.data_fresh.eq(1)
-
-        with m.FSM() as fsm:
-            with m.State("D1"):    
-                with m.If(self.read_happened):
-                    m.d.sync += self.raster_dwell_data.D1.eq(self.out_fifo_r_data)
-                    with m.If(self.eight_bit_output):
-                        m.next = "Hold"
-                    with m.Else():
-                        m.next = "D2"
-            with m.State("D2"):    
-                with m.If(self.read_happened):
-                    m.d.sync += self.data_used_count.eq(self.data_used_count + 1)
-                    m.d.comb += self.data_complete.eq(1)
-                    m.d.comb += self.raster_dwell_data_c.eq(Cat(self.raster_dwell_data.D1, 
-                                                                self.out_fifo_r_data))
-                    with m.If(self.data_point_used):
-                        m.next = "D1"
-                        m.d.sync += self.raster_dwell_data.eq(0)
-                    with m.Else():
-                        m.d.sync += self.raster_dwell_data.D2.eq(self.out_fifo_r_data)
-                        m.next = "Hold"
-            with m.State("Hold"):
-                    m.d.comb += self.data_complete.eq(1)
-                    m.d.comb += self.raster_dwell_data_c.eq(self.raster_dwell_data)
-                    with m.If(self.data_point_used):
-                        m.next = "D1"
-
-        return m
-
-class RasterWriter(Elaboratable):
-    '''
-    in_fifo_w_data: Signal, out, 8
-        This signal combinatorially drives the top level in_fifo.w_data
-
-    raster_position_data_c: Signal, in, 32:
-        This signal is combinatorially driven by the same value that sets
-        the next x and y position for the beam controller.
-    raster_position_data: Signal, internal, 32
-        When strobe_in_xy is asserted, this signal is synchronously set
-        to the value of raster_position_data_c
-    The position data of each point is stored but not used. This leaves the
-    option of reconfiguring to return X and Y data as well as brightness
-    for points in a raster scan.
-
-    raster_dwell_data_c: Signal, in, 16:
-        This signal is combinatorially driven by ras_mode_ctrl.raster_output_data.
-        This data is driven from the ADC input data, or if testing in loopback, 
-        the beam controller next dwell time
-    raster_dwell_data: Signal, internal, 16
-        When strobe_in_dwell is asserted, this signal is synchronously set
-        to the value of vector_dwell_data_c
-
-    write_happened: Signal, in, 1:
-        Asserted when the in_fifo is ready to be written to. This signal is driven by 
-        mode_ctrl.output_enable, which is driven by the top level io_strobe
-    strobe_in_xy: Signal, in, 1
-        Asserted when valid data is present at raster_position_data_c
-        This signal also indicates that the beam controller has recieved new position
-        data, so this module should prepare to recieve new brightness/dwell time data
-
-    strobe_in_dwell: Signal, in, 1
-        Asserted when valid data is present at raster_dwell_data_c
-    writer_data_valid: Signal, out, 1
-        Asserted when the data at in_fifo_w_data is valid. 
-        If strobe_out is high, data will be written to the in_fifo
-
-    strobe_in_frame_sync: Signal, in, 1
-        Asserted when you want to insert a 0 into the data stream.
-        Driven by xy_scan_gen x_ovf & y_ovf
-    prev_strobe_in_frame_sync: Signal, out, 1
-        Equal to the value of strobe_in_frame_sync one cycle previously.
-        This signal "holds on to" the strobe for an extra cycle
-    strobe_in_line_sync: Signal, in, 1
-        Asserted when you want to insert a 1 into the data stream.
-        Driven by xy_scan_gen x_ovf
-    prev_strobe_in_line_sync: Signal, out, 1
-        Equal to the value of strobe_in_line_sync one cycle previously.
-        This signal "holds on to" the strobe for an extra cycle
-    eight_bit_output: Signal, in, 1
-        If true, only one byte per data point will be written to
-        the in_fifo.
-
-
-    State Machine:
-                    ↓----------------------↑
-        Waiting -> Dwell Waiting -> D1 -> D2
-                    ↳----------------------↑       
-        Output: [...16382, 16383,    0, 1, 2, 3...]
-
-    With Line/Frame Sync:
-                    ↓----------------------------------↑
-        Waiting -> Dwell Waiting -> D1 -> D2 -> B1 -> B2
-                    ↳----------------------------------↑     
-        Output: [...16382, 16383, 0, 1, 1, 2, 3...]
-                                  ^ frame sync
-        Output: [...16382, 16383, 1, 2, 2, 2, 3...]
-                                  ^  line sync
-        Output: [...16382, 16383, 0, 2, 2, 2, 3...]
-                                  ^ frame sync & line sync
-
-    With 8-bit Output:
-                    ↓----------------↑
-        Waiting -> Dwell Waiting -> D1
-                    ↳----------------↑   
-        Output: [...254, 255,    0, 1, 2, 3...]
-
-    With 8-bit Output & Frame Sync:
-                    ↓----------------------↑
-        Waiting -> Dwell Waiting -> D1 -> B1
-                    ↳----------------------↑   
-        Output: [...254, 255, 0, 1, 1, 2, 3...]
-                              ^ frame sync
-        Output: [...254, 255, 1, 2, 2, 3...]
-                              ^ line sync
-        Output: [...254, 255, 0, 2, 2, 3...]
-                              ^ frame sync & line sync
-    '''
-    def __init__(self):
-        self.in_fifo_w_data = Signal(8)
-
-        self.raster_position_data = Signal(vector_position)
-        self.raster_position_data_c = Signal(vector_position)
-        self.raster_dwell_data = Signal(vector_dwell)
-        self.raster_dwell_data_c = Signal(vector_dwell)
-        
-        self.write_happened = Signal()
-        self.strobe_in_xy = Signal()
-        self.strobe_in_dwell = Signal()
-        self.data_valid = Signal()
-
-        self.strobe_in_frame_sync = Signal()
-        self.prev_strobe_in_frame_sync = Signal()
-        self.strobe_in_line_sync = Signal()
-        self.prev_strobe_in_line_sync = Signal()
-        
-        self.eight_bit_output = Signal()
-
-        self.data_complete = Signal()
-
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.sync += self.prev_strobe_in_frame_sync.eq(self.strobe_in_frame_sync)
-        m.d.sync += self.prev_strobe_in_line_sync.eq(self.strobe_in_line_sync)
-        ## the line and frame sync strobes only occur on the first byte, D1
-        ## so to make sure the frame sync is inserted at the right point after
-        ## a two-byte output, we need to delay those signals another cycle
-        
-
-        with m.FSM() as fsm:
-            with m.State("Waiting"):
-                m.d.comb += self.data_valid.eq(0)
-                with m.If(self.strobe_in_xy):
-                    m.d.sync += self.raster_position_data.eq(self.raster_position_data_c)
-                    m.next = "Dwell_Waiting"
-            with m.State("Dwell_Waiting"):
-                m.d.comb += self.data_valid.eq(self.strobe_in_dwell)
-                with m.If((self.strobe_in_dwell) & ~(self.write_happened)):
-                    m.d.sync += self.raster_dwell_data.eq(self.raster_dwell_data_c)
-                    m.next = "D1"
-                with m.If((self.strobe_in_dwell) & (self.write_happened)):
-                    m.d.sync += self.raster_dwell_data.eq(self.raster_dwell_data_c)
-                    m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data_c.D1)
-                    with m.If(self.eight_bit_output):
-                        with m.If(self.strobe_in_frame_sync):
-                            m.next = "Frame_Sync_B1"
-                        with m.Elif(self.strobe_in_line_sync):
-                            m.next = "Line_Sync_B1"
-                        with m.Else():
-                            m.d.comb += self.data_complete.eq(1)
-                            m.next = "Dwell_Waiting"
-                    with m.Else():
-                        m.next = "D2"
-            with m.State("D1"):  
-                m.d.comb += self.data_valid.eq(1)
-                with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data.D1)
-                    with m.If(self.eight_bit_output):
-                        with m.If(self.strobe_in_frame_sync):
-                            m.next = "Frame_Sync_B1"
-                        with m.Elif(self.strobe_in_line_sync):
-                            m.next = "Line_Sync_B1"
-                        with m.Else():
-                            m.d.comb += self.data_complete.eq(1)
-                            m.next = "Dwell_Waiting"
-                    with m.Else():
-                        m.next = "D2"
-            with m.State("D2"):  
-                m.d.comb += self.data_valid.eq(1)
-                with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.raster_dwell_data.D2)
-                    with m.If(self.prev_strobe_in_frame_sync):
-                            m.next = "Frame_Sync_B1"
-                    with m.Elif(self.prev_strobe_in_line_sync):
-                            m.next = "Line_Sync_B1"
-                    with m.Else():
-                            m.d.comb += self.data_complete.eq(1)
-                            m.next = "Dwell_Waiting"
-            with m.State("Frame_Sync_B1"):
-                m.d.comb += self.data_valid.eq(1)
-                m.d.comb += self.in_fifo_w_data.eq(0)
-                with m.If(self.write_happened):
-                    with m.If(self.eight_bit_output):
-                        m.d.comb += self.data_complete.eq(1)
-                        m.next = "Dwell_Waiting"
-                    with m.Else():
-                        m.next = "Frame_Sync_B2"
-            with m.State("Frame_Sync_B2"):
-                m.d.comb += self.data_valid.eq(1)
-                m.d.comb += self.in_fifo_w_data.eq(0)
-                with m.If(self.write_happened):
-                    m.d.comb += self.data_complete.eq(1)
-                    m.next = "Dwell_Waiting"
-            with m.State("Line_Sync_B1"):
-                m.d.comb += self.data_valid.eq(1)
-                m.d.comb += self.in_fifo_w_data.eq(1)
-                with m.If(self.write_happened):
-                    with m.If(self.eight_bit_output):
-                        m.d.comb += self.data_complete.eq(1)
-                        m.next = "Dwell_Waiting"
-                    with m.Else():
-                        m.next = "Line_Sync_B2"
-            with m.State("Line_Sync_B2"):
-                m.d.comb += self.data_valid.eq(1)
-                m.d.comb += self.in_fifo_w_data.eq(1)
-                with m.If(self.write_happened):
-                    m.d.comb += self.data_complete.eq(1)
-                    m.next = "Dwell_Waiting"
-        return m
-
-
 
 class RasterModeController(Elaboratable):
     '''
@@ -350,64 +59,63 @@ class RasterModeController(Elaboratable):
         If true, RasterWriter will write 0 to the in_fifo
     '''
     def __init__(self):
-        self.raster_writer = RasterWriter()
-        self.raster_reader = RasterReader()
+        self.writer = StreamWriter(scan_dwell_8)
+        self.reader = StreamReader(scan_dwell_8)
         self.xy_scan_gen = XY_Scan_Gen()
-        #self.byte_replacer = ByteReplacer()
 
-        self.raster_point_data = Signal(vector_point)
-        self.raster_point_output = Signal(vector_dwell)
+        self.adc_data_avgd = Signal(scan_dwell_8)
 
         self.beam_controller_end_of_dwell = Signal()
         self.beam_controller_start_dwell = Signal()
-        self.beam_controller_next_x_position = Signal(16)
-        self.beam_controller_next_y_position = Signal(16)
-        self.beam_controller_next_dwell = Signal(16)
+        self.beam_controller_next = Signal(scan_point_16)
 
-        self.eight_bit_output = Signal()
-        self.do_frame_sync = Signal()
-        self.do_line_sync = Signal()
+        self.reader_data_complete = Signal()
+        self.reader_data_fresh = Signal()
+        self.reader_read_happened = Signal()
+        self.writer_data_complete = Signal()
+        self.writer_data_valid = Signal()
+        self.writer_write_happened = Signal()
+        self.write_this_point = Signal()
 
-        self.patterning = Signal()
         #self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
         self.xy_scan_gen_increment = Signal()
         self.load_next_point = Signal()
 
     def elaborate(self, platform):
         m = Module()
-        m.submodules["RasterWriter"] = self.raster_writer
-        m.submodules["RasterReader"] = self.raster_reader
+        m.submodules["RasterWriter"] = self.writer
+        m.submodules["RasterReader"] = self.reader
         #m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
+
+
+        m.d.comb += self.reader_data_complete.eq(self.reader.data_complete)
+        m.d.comb += self.reader_data_fresh.eq(self.reader.data_fresh)
+        m.d.comb += self.reader.read_happened.eq(self.reader_read_happened)
+        m.d.comb += self.writer_data_complete.eq(self.writer.data_complete)
+        m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
+        m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
 
         # with m.If((self.raster_reader.data_complete) & (self.raster_fifo.w_rdy)):
         #     m.d.comb += self.raster_reader.data_point_used.eq(1)
         #     m.d.comb += self.raster_fifo.w_en.eq(1)
-        #     m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.raster_dwell_data_c)
+        #     m.d.comb += self.raster_fifo.w_data.eq(self.raster_reader.data_c)
 
-        m.d.comb += self.xy_scan_gen.increment.eq(self.xy_scan_gen_increment)
-
-        m.d.comb += self.raster_writer.raster_dwell_data_c.eq(self.raster_point_output)
-
-        #with m.If((self.beam_controller_end_of_dwell) & ((self.raster_reader.data_fresh)|(~(self.patterning)))):
-        with m.If(self.load_next_point):
-            with m.If(self.do_frame_sync):
-                m.d.sync += self.raster_writer.strobe_in_frame_sync.eq(self.xy_scan_gen.frame_sync) ### one cycle delay
-            with m.If(self.do_line_sync):
-                m.d.sync += self.raster_writer.strobe_in_line_sync.eq(self.xy_scan_gen.line_sync) ### one cycle delay
+        inner_xy_scan_gen_increment = Signal()
+        with m.If((inner_xy_scan_gen_increment) | (self.xy_scan_gen_increment)):
             m.d.comb += self.xy_scan_gen.increment.eq(1)
-            m.d.comb += Cat(self.raster_point_data.X1,self.raster_point_data.X2).eq(self.xy_scan_gen.current_x)
-            m.d.comb += Cat(self.raster_point_data.Y1,self.raster_point_data.Y2).eq(self.xy_scan_gen.current_y)
-            m.d.comb += self.raster_writer.strobe_in_xy.eq(1)
-            m.d.comb += self.raster_writer.raster_position_data_c.eq(Cat(self.raster_point_data.X1,
-                                                                        self.raster_point_data.X2,
-                                                                        self.raster_point_data.Y1,
-                                                                        self.raster_point_data.Y2))
-            m.d.comb += self.beam_controller_next_x_position.eq(Cat(self.raster_point_data.X1, 
-                                                                    self.raster_point_data.X2))
-            m.d.comb += self.beam_controller_next_y_position.eq(Cat(self.raster_point_data.Y1, 
-                                                                    self.raster_point_data.Y2))
-            m.d.comb += self.beam_controller_next_dwell.eq(self.raster_reader.raster_dwell_data)
+
+        m.d.comb += self.writer.data_c.eq(self.adc_data_avgd)
+
+        with m.If(self.write_this_point):
+            m.d.comb += self.writer.strobe_in.eq(1)
+
+        with m.If(self.load_next_point):
+            m.d.comb += inner_xy_scan_gen_increment.eq(1)
+            m.d.comb += self.beam_controller_next.X.eq(self.xy_scan_gen.current_x)
+            m.d.comb += self.beam_controller_next.Y.eq(self.xy_scan_gen.current_x)
+            m.d.comb += self.reader.data_used.eq(1)
+            m.d.comb += self.beam_controller_next.D.eq(self.reader.data_c)
             # with m.If(self.raster_fifo.r_rdy):
             #     m.d.comb += self.beam_controller_next_dwell.eq(self.raster_fifo.r_data)
             #     m.d.comb += self.raster_fifo.r_en.eq(1)

@@ -4,280 +4,15 @@ from amaranth.sim import Simulator
 from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.beam_controller import BeamController
-    from ..scan_gen_components.xy_scan_gen import XY_Scan_Gen
-    from ..scan_gen_components.addresses import *
+    from ..scan_gen_components.stream_reader import StreamReader
+    from ..scan_gen_components.stream_writer import StreamWriter
+    from ..scan_gen_components.structs import *
 #if __name__ == "__main__":
 else:
-    from beam_controller import BeamController
-    from xy_scan_gen import XY_Scan_Gen
-    from addresses import *
-    
+    from structs import *
+    from stream_reader import StreamReader
+    from stream_writer import StreamWriter
     from test_streams import test_vector_points, _fifo_write_vector_point
-
-
-class VectorReader(Elaboratable): 
-    '''
-    out_fifo_r_data: Signal, in, 8
-        This signal is combinatorially driven by the top level out_fifo.r_data
-    
-    vector_point_data: Signal, internal, 48
-        Each cycle that the out_fifo is read from, a byte is synchronously written 
-        to vector_point_data. 
-    vector_point_data_c: Signal, out, 48
-        This is the signal that the next values for the beam controller are read from.
-        This signal is combinatorially assigned to the value of vector_point_data
-        and the latest byte from the out_fifo. This is so that the full vector point
-        data can be used immediately. If the data can't be used immediately, the last
-        byte is synchronously added to vector_point_data and the state machine moves to 
-        the HOLD state.
-
-    data_complete: Signal, out, 1:
-        Asserted when all 6 bytes of a vector point have been assembled. When this is true,
-        the value of vector_point_c is valid to assign as the next beam controller values
-    read_happened: Signal, in, 1:
-        Asserted when the out_fifo is ready to be read from. This signal is driven by 
-        mode_ctrl.output_enable, which is driven by the top level io_strobe
-    data_point_used: Signal, in, 1:
-        Asserted when the data held in vector_point_data is used. On the cycle after this is
-        asserted, the module will return to state X1 and be ready to read a new point in
-
-    State Machine:
-        X1 -> X2 -> Y1 -> Y2 -> D1 -> D2 -> Hold
-                                    X1 ↲    X1 ↲
-
-    Inspiration taken from https://github.com/maia-sdr/maia-sdr/blob/main/maia-hdl/maia_hdl/packer.py
-    
-    '''
-    def __init__(self):
-        self.out_fifo_r_data = Signal(8)
-
-        self.vector_point_data = Signal(vector_point)
-        self.vector_point_data_c = Signal(vector_point)
-        
-        self.data_complete = Signal()
-        self.read_happened = Signal()
-        self.data_point_used = Signal()
-
-        self.data_used_count = Signal(3)
-        self.data_fresh = Signal()
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += self.vector_point_data_c.eq(self.vector_point_data) 
-
-        with m.If(self.data_point_used):
-            m.d.sync += self.data_used_count.eq(self.data_used_count - 1)
-        with m.If(self.data_used_count == 1):
-            m.d.comb += self.data_fresh.eq(1)
-
-        with m.FSM() as fsm:
-            with m.State("X1"):   
-                with m.If(self.read_happened):
-                    m.d.sync += self.vector_point_data.X1.eq(self.out_fifo_r_data)
-                    m.next = "X2"
-            with m.State("X2"):    
-                with m.If(self.read_happened):
-                    m.d.sync += self.vector_point_data.X2.eq(self.out_fifo_r_data)
-                    m.next = "Y1"
-            with m.State("Y1"):    
-                with m.If(self.read_happened):
-                    m.d.sync += self.vector_point_data.Y1.eq(self.out_fifo_r_data)
-                    m.next = "Y2"
-            with m.State("Y2"):    
-                with m.If(self.read_happened):
-                    m.d.sync += self.vector_point_data.Y2.eq(self.out_fifo_r_data)
-                    m.next = "D1"
-            with m.State("D1"):    
-                with m.If(self.read_happened):
-                    m.d.sync += self.vector_point_data.D1.eq(self.out_fifo_r_data)
-                    m.next = "D2"
-            with m.State("D2"):    
-                with m.If(self.read_happened):
-                    m.d.sync += self.data_used_count.eq(self.data_used_count + 1)
-                    m.d.comb += self.vector_point_data_c.eq(Cat(self.vector_point_data.X1, self.vector_point_data.X2,
-                                                                self.vector_point_data.Y1, self.vector_point_data.Y2,
-                                                                self.vector_point_data.D1, self.out_fifo_r_data))
-                
-                    with m.If(self.data_point_used):
-                        m.next = "X1"
-                        #m.d.sync += self.vector_point_data.eq(0)
-                    with m.Else():
-                        m.d.sync += self.vector_point_data.D2.eq(self.out_fifo_r_data)
-                        m.next = "Hold"
-            with m.State("Hold"):
-                    m.d.comb += self.data_complete.eq(1)
-                    m.d.comb += self.vector_point_data_c.eq(self.vector_point_data)
-                    with m.If(self.data_point_used):
-                        #m.d.sync += self.vector_point_data.eq(0)
-                        m.next = "X1"
-
-        return m
-
-
-
-
-class VectorWriter(Elaboratable):
-    '''
-    in_fifo_w_data: Signal, out, 8
-        This signal combinatorially drives the top level in_fifo.w_data
-
-    vector_position_data_c: Signal, in, 32:
-        This signal is combinatorially driven by the same value that sets
-        the next x and y position for the beam controller.
-    vector_position_data: Signal, internal, 32
-        When strobe_in_xy is asserted, this signal is synchronously set
-        to the value of vector_position_data_c
-    vector_dwell_data_c: Signal, in, 16:
-        This signal is combinatorially driven by vec_mode_ctrl.vector_output_data.
-        This data is driven from the ADC input data, or if testing in loopback, 
-        the beam controller next dwell time
-    vector_position_data: Signal, internal, 16
-        When strobe_in_dwell is asserted, this signal is synchronously set
-        to the value of vector_dwell_data_c
-
-    write_happened: Signal, in, 1:
-        Asserted when the in_fifo is ready to be written to. This signal is driven by 
-        mode_ctrl.output_enable, which is driven by the top level io_strobe
-    strobe_in_xy: Signal, in, 1
-        Asserted when valid data is present at vector_position_data_c
-    strobe_in_dwell: Signal, in, 1
-        Asserted when valid data is present at vector_dwell_data_c
-    data_valid: Signal, out, 1
-        Asserted when the data at in_fifo_w_data is valid. 
-        If strobe_out is high, data will be written to the in_fifo
-
-    eight_bit_output: Signal, in, 1:
-        If true, only one byte per brightness data point will be written 
-        to the in_fifo. Two bytes of data will still be transmitted for
-        each x and y position.
-
-    State Machine:
-            ↓------------------------------------------------------↑
-        Waiting -> X1 -> X2 -> Y1 -> Y2 -> Dwell Waiting -> D1 -> D2
-            ↳------------↑                       ↳-----------------↑
-    With eight bit output:
-            ↓------------------------------------------------↑
-        Waiting -> X1 -> X2 -> Y1 -> Y2 -> Dwell Waiting -> D1
-            ↳------------↑                       ↳-----------↑
-    '''
-    def __init__(self):
-        self.in_fifo_w_data = Signal(8)
-
-        self.vector_position_data = Signal(vector_position)
-        self.vector_position_data_c = Signal(vector_position)
-        self.vector_dwell_data = Signal(vector_dwell)
-        self.vector_dwell_data_c = Signal(vector_dwell)
-        
-        self.write_happened = Signal()
-        self.strobe_in_xy = Signal()
-        self.strobe_in_xy_happened = Signal()
-        self.strobe_in_dwell = Signal()
-        self.data_valid = Signal()
-        self.data_complete = Signal()
-
-        self.eight_bit_output = Signal()
-
-        
-
-    def elaborate(self, platform):
-        m = Module()
-
-        w = Signal()
-        x1 = Signal()
-        x2 = Signal()
-        y1 = Signal()
-        y2 = Signal()
-        dw = Signal()
-        d1 = Signal()
-        d2 = Signal()
-
-
-        with m.FSM() as fsm:
-            with m.State("Waiting"):
-                m.d.comb += w.eq(1)
-                m.d.comb += self.data_valid.eq(self.strobe_in_xy)
-                with m.If((self.strobe_in_xy) & ~(self.write_happened)):
-                    m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
-                    m.next = "X1"
-                with m.If((self.strobe_in_xy) & (self.write_happened)):
-                    m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
-                    m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data_c.X1)
-                    m.next = "X2"
-            with m.State("X1"):   
-                m.d.comb += x1.eq(1)
-                m.d.comb += self.data_valid.eq(1)
-                with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.X1)
-                    m.next = "X2"
-            with m.State("X2"):  
-                m.d.comb += x2.eq(1)
-                m.d.comb += self.data_valid.eq(1)
-                with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.X2)
-                    m.next = "Y1"
-            with m.State("Y1"): 
-                m.d.comb += y1.eq(1)
-                m.d.comb += self.data_valid.eq(1)   
-                with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.Y1)
-                    m.next = "Y2"
-            with m.State("Y2"):  
-                m.d.comb += y2.eq(1)
-                m.d.comb += self.data_valid.eq(1)  
-                with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.vector_position_data.Y2)
-                    m.next = "Dwell_Waiting"
-            with m.State("Dwell_Waiting"):
-                m.d.comb += dw.eq(1)
-                m.d.comb += self.data_valid.eq(0)
-                with m.If(self.strobe_in_xy):
-                    m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
-                    m.d.sync += self.strobe_in_xy_happened.eq(1)
-                with m.If((self.strobe_in_dwell) & ~(self.write_happened)):
-                    m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
-                    m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
-                    m.next = "D1"
-                with m.If((self.strobe_in_dwell) & (self.write_happened)):
-                    m.d.comb += self.data_valid.eq(0)
-                    m.d.sync += self.vector_dwell_data.eq(self.vector_dwell_data_c)
-                    m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data_c.D1)
-                    with m.If(self.eight_bit_output):
-                        m.d.comb += self.data_complete.eq(1)
-                        m.next = "Waiting"
-                    with m.Else():
-                        m.next = "D2"
-            with m.State("D1"):   
-                m.d.comb += d1.eq(1)
-                m.d.comb += self.data_valid.eq(1) 
-                with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D1)
-                    m.next = "D2"
-            with m.State("D2"):  
-                m.d.comb += d2.eq(1)
-                m.d.comb += self.data_valid.eq(1)
-                with m.If(self.write_happened):
-                    m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D2)
-                    m.d.comb += self.data_complete.eq(1)
-                    with m.If(self.strobe_in_xy_happened):
-                        m.d.sync += self.strobe_in_xy_happened.eq(0)
-                        m.next = "X1"
-                    with m.Else():
-                        m.next = "Waiting"
-
-                # with m.If((self.write_happened) & (~(self.strobe_in_xy))):
-                #     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D2)
-                #     m.d.comb += self.data_complete.eq(1)
-                #     m.next = "Waiting"
-                # with m.If((self.write_happened) & (self.strobe_in_xy)):
-                #     m.d.comb += self.in_fifo_w_data.eq(self.vector_dwell_data.D2)
-                #     m.d.comb += self.data_complete.eq(1)
-                #     m.d.sync += self.vector_position_data.eq(self.vector_position_data_c)
-                #     m.next = "X1"
-
-        return m
-
 
 
 class VectorModeController(Elaboratable):
@@ -319,38 +54,44 @@ class VectorModeController(Elaboratable):
 
     '''
     def __init__(self):
-        self.vector_fifo = SyncFIFOBuffered(width = 48, depth = 1)
+        #self.vector_fifo = SyncFIFOBuffered(width = 48, depth = 1)
 
-        self.vector_reader = VectorReader()
-        self.vector_writer = VectorWriter()
+        self.reader = StreamReader(scan_point_8)
+        self.writer = StreamWriter(scan_dwell_8)
 
-        self.vector_point_data = Signal(vector_point)
-        self.vector_point_output = Signal(16)
+        self.adc_data_avgd = Signal(16)
 
-        self.vector_fifo_data = Signal(48)
+        #self.vector_fifo_data = Signal(48)
 
         self.beam_controller_end_of_dwell = Signal()
         self.beam_controller_start_dwell = Signal()
-        self.beam_controller_next_x_position = Signal(16)
-        self.beam_controller_next_y_position = Signal(16)
-        self.beam_controller_next_dwell = Signal(16)
-        self.beam_controller_dwelling_changed = Signal()
-        self.reader_data_used = Signal()
+        self.beam_controller_next = Signal(scan_point_16)
+
         self.reader_data_complete = Signal()
-        self.writer_data_complete = Signal()
+        self.reader_read_happened = Signal()
         self.reader_data_fresh = Signal()
+        self.writer_data_complete = Signal()
+        self.writer_data_valid = Signal()
+        self.writer_write_happened = Signal()
+        self.write_this_point = Signal()
 
         self.load_next_point = Signal()
 
     def elaborate(self, platform):
         m = Module()
-        m.submodules["VectorReader"] = self.vector_reader
-        m.submodules["VectorWriter"] = self.vector_writer
-        m.submodules["VectorFIFO"] = self.vector_fifo
+        m.submodules["VectorReader"] = self.reader
+        m.submodules["VectorWriter"] = self.writer
+        #m.submodules["VectorFIFO"] = self.vector_fifo
 
-        m.d.comb += self.reader_data_fresh.eq(self.vector_reader.data_fresh)
-        m.d.comb += self.reader_data_complete.eq(self.vector_reader.data_complete)
-        m.d.comb += self.writer_data_complete.eq(self.vector_writer.data_complete)
+        m.d.comb += self.reader_data_complete.eq(self.reader.data_complete)
+        m.d.comb += self.reader_data_fresh.eq(self.reader.data_fresh)
+
+        m.d.comb += self.reader.read_happened.eq(self.reader_read_happened)
+
+        m.d.comb += self.writer_data_complete.eq(self.writer.data_complete)
+        m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
+
+        m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
         #m.d.comb += self.vector_reader.strobe_out.eq(self.vector_fifo.w_rdy)
 
         # with m.If((self.vector_reader.data_complete) & (self.vector_fifo.w_rdy)):
@@ -360,30 +101,16 @@ class VectorModeController(Elaboratable):
         #with m.If((self.vector_reader.data_complete)):
             #m.d.sync += self.vector_fifo_data.eq(self.vector_reader.vector_point_data_c)
 
+        with m.If(self.write_this_point):
+            m.d.comb += self.writer.strobe_in.eq(1)
 
-        m.d.comb += self.vector_writer.vector_dwell_data_c.eq(self.vector_point_output)
-        #with m.If(self.vector_fifo.r_rdy & self.beam_controller_end_of_dwell):
-        #with m.If((self.beam_controller_end_of_dwell) &(~(self.beam_controller_dwelling_changed))
-        # with m.If((self.beam_controller_end_of_dwell)
-        #         & (self.vector_reader.data_fresh)):
+        m.d.comb += self.writer.data_c.eq(self.adc_data_avgd)
+        #with m.If(self.vector_fifo.r_rdy & self.beam_controller_end_of_dwell)::
         with m.If(self.load_next_point):
             #m.d.comb += self.vector_fifo.r_en.eq(1)
             #m.d.comb += self.vector_point_data.eq(self.vector_fifo.r_data)
-            m.d.comb += self.vector_point_data.eq(self.vector_reader.vector_point_data_c)
-                
-            #m.d.comb += self.vector_writer.strobe_in_xy.eq(1)
-
-            m.d.comb += self.vector_writer.vector_position_data_c.eq(Cat(self.vector_point_data.X1,
-                                                                        self.vector_point_data.X2,
-                                                                        self.vector_point_data.Y1,
-                                                                        self.vector_point_data.Y2))
-            m.d.comb += self.beam_controller_next_x_position.eq(Cat(self.vector_point_data.X1, 
-                                                                    self.vector_point_data.X2))
-            m.d.comb += self.beam_controller_next_y_position.eq(Cat(self.vector_point_data.Y1, 
-                                                                    self.vector_point_data.Y2))
-            m.d.comb += self.beam_controller_next_dwell.eq(Cat(self.vector_point_data.D1, 
-                                                                    self.vector_point_data.D2))
-
+            m.d.comb += self.reader.data_used.eq(1)
+            m.d.comb += self.beam_controller_next.eq(self.reader.data)
         
         
 
