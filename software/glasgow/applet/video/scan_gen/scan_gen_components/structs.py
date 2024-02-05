@@ -9,7 +9,7 @@ class ScanMode(enum.Enum, shape = 2):
     RasterPattern = 2
     Vector = 3
 
-vector_point = data.StructLayout({
+scan_point_8 = data.StructLayout({
     "X1": 8,
     "X2": 8,
     "Y1": 8,
@@ -18,14 +18,20 @@ vector_point = data.StructLayout({
     "D2": 8,
 })
 
-vector_position = data.StructLayout({
+scan_point_16 = data.StructLayout({
+    "X": 16,
+    "Y": 16,
+    "D": 16,
+})
+
+scan_position_8 = data.StructLayout({
     "X1": 8,
     "X2": 8,
     "Y1": 8,
     "Y2": 8,
 })
 
-vector_dwell = data.StructLayout({
+scan_dwell_8 = data.StructLayout({
     "D1": 8,
     "D2": 8,
 })
