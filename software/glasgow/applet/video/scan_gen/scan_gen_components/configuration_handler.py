@@ -2,9 +2,9 @@ from amaranth import *
 from amaranth.sim import Simulator
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.addresses import *
+    from ..scan_gen_components.structs import *
 else:
-    from addresses import *
+    from structs import *
 
 
 class ConfigHandler(Elaboratable):

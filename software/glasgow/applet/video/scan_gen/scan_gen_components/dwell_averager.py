@@ -73,12 +73,14 @@ class DwellTimeAverager(Elaboratable):
             m.d.comb += self.running_average.eq((self.pixel_in+self.prev_pixel)//2)
             m.d.sync += self.running_average_s.eq((self.pixel_in+self.prev_pixel)//2)
             m.d.sync += self.prev_pixel.eq(self.running_average)
-        with m.If((self.strobe) & ((self.start_new_average)|(self.start_new_average_s))):
+        #with m.If((self.strobe) & ((self.start_new_average)|(self.start_new_average_s))):
+        with m.If((self.strobe) & (self.start_new_average_s)):
             m.d.sync += self.start_new_average_s.eq(0)
             m.d.sync += self.prev_pixel.eq(self.pixel_in)
             m.d.comb += self.running_average.eq((self.pixel_in))
             m.d.sync += self.running_average_s.eq((self.pixel_in))
-        with m.If((~(self.strobe)) & (self.start_new_average)):
+        #with m.If((~(self.strobe)) & (self.start_new_average)):
+        with m.If(self.strobe):
             m.d.sync += self.start_new_average_s.eq(1)
             #m.d.sync += self.prev_pixel.eq(self.pixel_in)
 

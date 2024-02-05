@@ -5,7 +5,7 @@ from amaranth import *
 from amaranth.build import *
 from amaranth.sim import Simulator
 
-from addresses import *
+from structs import *
 #sys.path.append("/Users/adammccombs/glasgow/Scan-Gen-Glasgow-Testing/software")
 sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
 from glasgow import *
@@ -82,39 +82,15 @@ def raster_sim(n=16384, eight_bit_output=False):
 
 
 
-def vector_sim(r):
-    i = 0
-    while i < r:
-        for n in short_test_vector_points:
-            x, y, d = n
-            i += 6
-            #yield from write_vector_point(n, sim_app_iface)
-            yield from sim_scangen_iface.sim_write_vpoint(n)
-            print("i:", i, "<", r)
-
-
-#https://stackoverflow.com/questions/12944882/how-can-i-infinitely-loop-an-iterator-in-python-via-a-generator-or-other
-L = [255, 0, 255, 0, 0, 0]
-def gentr_fn(alist):
-    while 1:
-        for j in alist:
-            yield j
-a = gentr_fn(L)
-
-def v_sim(r):
-    i = 0
-    while i < r:
-        yield from sim_scangen_iface.iface.write([next(a)])
-        i += 1
-    print("wrote", i)
-
-
 def vector_pattern_sim(dut):
-    yield dut.scan_mode.eq(ScanMode.Vector)
-    yield from v_sim(9)
-    #yield from vector_sim(30)
-    # for n in range(200):
-    #     yield
+    for n in short_test_vector_points:
+        x, y, d = n
+        #yield from write_vector_point(n, sim_app_iface)
+        yield from sim_scangen_iface.sim_write_2bytes(x)
+        yield from sim_scangen_iface.sim_write_2bytes(y)
+        yield from sim_scangen_iface.sim_write_2bytes(d)
+        data = yield from sim_app_iface.read(2)
+        print(list(data))
 
 def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
     b1, b2 = get_two_bytes(x_res)
@@ -208,7 +184,7 @@ def sim_iobus():
     eight_bit_output, do_frame_sync, do_line_sync,
     const_dwell_time, configuration, unpause, step_size,
     is_simulation = True,
-    test_mode = None, use_config_handler = True
+    test_mode = "data loopback"
     )
     def bench():
         # yield do_frame_sync.eq(1)
@@ -266,18 +242,16 @@ def sim_iobus():
         def vec_test():
             yield eight_bit_output.eq(1)
             yield scan_mode.eq(3)
-            yield from set_frame_params(dut, x_res=512, y_res=512)
+            yield from set_frame_params(dut, x_res=4000, y_res=4000)
             yield
             yield configuration.eq(1)
             yield
             yield configuration.eq(0)
             yield unpause.eq(1)
-            data = yield from sim_app_iface.read(10)
+            data = yield from sim_app_iface.read(18)
             print(list(data))
-            for n in range(3):
-                yield from vector_pattern_sim(dut)
-                data = yield from sim_app_iface.read(9)
-                print(list(data))
+            yield from vector_pattern_sim(dut)
+
 
         def count():
             n = 0
@@ -330,11 +304,14 @@ def sim_iobus():
             yield unpause.eq(1)
             data = yield from sim_app_iface.read(18)
             print(list(data))
-            pattern = test_raster_pattern_checkerboard(5,5)
-            for n in pattern:
+            # yield from sim_scangen_iface.sim_write_2bytes(1)
+            # pattern = test_raster_pattern_checkerboard(5,5)
+            for n in range(2,10):
                 yield from sim_scangen_iface.sim_write_2bytes(n)
                 data = yield from sim_app_iface.read(2)
-                print(data)
+                print("read", data)
+            data = yield from sim_app_iface.read(6)
+            print(data)
 
 
         # yield scan_mode.eq(3)
@@ -354,10 +331,18 @@ def sim_iobus():
         # print(data)
 
                 
-        #yield from raster_pattern_test()
+        #yield from config_test()
+        yield from vec_test()
+        data = yield from sim_app_iface.read(2)
+        print(data)
+        data = yield from sim_app_iface.read(2)
+        print(data)
+        data = yield from sim_app_iface.read(2)
+        print(data)
 
         #yield from hilbert_test()
-        yield from config_test()
+        #yield from raster_pattern_test()
+        #yield from config_test()
         # yield unpause.eq(0)
         # yield
         # yield from set_frame_params(dut, x_res=1024, y_res=1024)

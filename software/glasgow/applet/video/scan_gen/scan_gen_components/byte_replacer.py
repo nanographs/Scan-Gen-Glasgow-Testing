@@ -4,9 +4,9 @@ from amaranth.sim import Simulator
 
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.addresses import *
+    from ..scan_gen_components.structs import *
 else:
-    from addresses import *
+    from structs import *
 
 class ByteReplacer(Elaboratable):
     '''
@@ -37,8 +37,8 @@ class ByteReplacer(Elaboratable):
     def __init__(self, test_mode, dac_bits = 14):
         self.test_mode = test_mode
         self.dac_bits = dac_bits
-        self.point_data = Signal(vector_dwell)
-        self.processed_point_data = Signal(vector_dwell)
+        self.point_data = Signal(scan_dwell_8)
+        self.processed_point_data = Signal(scan_dwell_8)
         self.eight_bit_output = Signal()
         self.replace_0_to_1 = Signal()
         self.replace_0_to_2 = Signal()
@@ -60,11 +60,11 @@ class ByteReplacer(Elaboratable):
         with m.Else():
             m.d.comb += self.processed_point_data.eq(self.point_data)
 
-        zero = Signal(vector_dwell)
+        zero = Signal(scan_dwell_8)
         m.d.comb += zero.D1.eq(0)
         m.d.comb += zero.D2.eq(0)
 
-        one = Signal(vector_dwell)
+        one = Signal(scan_dwell_8)
         m.d.comb += one.D1.eq(1)
         m.d.comb += one.D2.eq(0)
 

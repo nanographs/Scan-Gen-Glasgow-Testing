@@ -1,18 +1,18 @@
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.addresses import *
+    from ..scan_gen_components.structs import *
 else:
-    from addresses import *
+    from structs import *
 
 short_test_vector_points = [
-    [2000,1000,0],
-    [1000,1000,0],
-    [2500,1500,0],
-    [2000,1000,0],
-    [1000,1000,0],
-    [2500,1500,0],
-    [2000,1000,0],
-    [1000,1000,0],
-    [2500,1500,0],
+    [2000,1000,1],
+    [1000,1000,2],
+    [2500,1500,3],
+    [2000,1000,4],
+    [1000,1000,5],
+    [2500,1500,6],
+    [2000,1000,7],
+    [1000,1000,8],
+    [2500,1500,9],
 ]
 
 test_vector_points = [

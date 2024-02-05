@@ -64,10 +64,12 @@ class BeamController(Elaboratable):
 
         self.counter = Signal(16)
         self.count_enable = Signal()
+        
+        self.true_counter = Signal(16)
 
         self.dwelling = Signal()
         self.end_of_dwell = Signal()
-        self.start_dwell = Signal()
+        self.at_dwell = Signal()
         
         self.lock_new_point = Signal()
 
@@ -82,33 +84,38 @@ class BeamController(Elaboratable):
         m = Module()
 
         with m.If(self.count_enable):
-            m.d.comb += self.end_of_dwell.eq(self.counter == self.dwell_time)
-            m.d.comb += self.start_dwell.eq(self.counter == 0)
+            m.d.comb += self.at_dwell.eq(self.counter == self.dwell_time)
 
+        m.d.comb += self.end_of_dwell.eq((self.at_dwell) & (~(self.dwelling_changed)))
         m.d.sync += self.prev_dwelling.eq(self.dwelling)
         m.d.comb += self.dwelling_changed.eq(self.dwelling != self.prev_dwelling)
         m.d.sync += self.prev_dwelling_changed.eq(self.dwelling_changed)
 
-        with m.If(self.dwelling):
-            m.d.comb += self.lock_new_point.eq(self.end_of_dwell)
+        with m.If(self.dwelling & (~(self.freeze))):
+            # m.d.comb += self.lock_new_point.eq(self.at_dwell)
             with m.If(self.count_enable):
-                with m.If(self.end_of_dwell):
+                with m.If(self.at_dwell):
                     m.d.sync += self.counter.eq(0)
                 with m.Else():
                     m.d.sync += self.counter.eq(self.counter + 1)
         with m.Else():
             m.d.sync += self.counter.eq(0)
 
-
         with m.If(self.reset): 
             m.d.sync += self.x_position.eq(0)  
             m.d.sync += self.y_position.eq(0)
             m.d.sync += self.dwell_time.eq(0)  
         with m.Else():
-            with m.If((self.lock_new_point) & (~(self.freeze))):
+            with m.If((self.lock_new_point)):
                 m.d.sync += self.x_position.eq(self.next_x_position)
                 m.d.sync += self.y_position.eq(self.next_y_position)
-                m.d.sync += self.dwell_time.eq(self.next_dwell)     
+                m.d.sync += self.dwell_time.eq(self.next_dwell)    
+
+
+        m.d.sync += self.true_counter.eq(self.true_counter + 1)
+        with m.If(self.lock_new_point):
+            m.d.sync += self.true_counter.eq(0)
+
         return m
     def ports(self):
         return [self.x_position, self.y_position, self.dwell_time,
