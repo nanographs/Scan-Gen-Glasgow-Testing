@@ -18,7 +18,7 @@ def bmp_import(filename):
 
 
 
-def bmp_to_bitstream(filename, dimension, invert_color = False):
+def bmp_to_bitstream(filename, x_width, y_height, invert_color = False):
     im = Image.open(filename)
     height, width = im.size
     im = im.convert("L")
@@ -28,8 +28,8 @@ def bmp_to_bitstream(filename, dimension, invert_color = False):
     pattern_array = np.array(im).astype(np.uint8)
 
     ## pad the array to fit the full frame resolution
-    padding_tb = dimension - height ## difference between height of frame and full resolution
-    padding_lr = dimension - width ## difference between width of frame and full resolution
+    padding_tb = y_height - height ## difference between height of frame and full resolution
+    padding_lr = x_width - width ## difference between width of frame and full resolution
     #   dimension
     # ───────┬──────┐
     #        │      │
@@ -51,7 +51,15 @@ def bmp_to_bitstream(filename, dimension, invert_color = False):
     print(pattern_array)
 
     pattern_stream = np.ravel(pattern_array)
-    return pattern_stream
+    return pattern_loop(x_width*y_height, pattern_stream)
+
+
+def pattern_loop(dimension, pattern_stream):
+    while 1:
+        for n in range(dimension):
+            yield pattern_stream[n]
+        print("pattern complete")
+
 
 if __name__ == "__main__":
     bmp_to_bitstream("Nanographs Pattern Test Logo and Gradients.bmp", 2048, invert_color=False)

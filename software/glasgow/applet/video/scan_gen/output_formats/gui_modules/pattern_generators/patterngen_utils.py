@@ -9,8 +9,9 @@ def in2_out1_byte_stream(in_gen):
 
 
 
-def packet_from_generator(gen):
-    gen = in2_out1_byte_stream(gen)
+def packet_from_generator(gen, two_bytes = True):
+    if two_bytes:
+        gen = in2_out1_byte_stream(gen)
     while True:
         packet = bytearray()
         for n in range(16384):

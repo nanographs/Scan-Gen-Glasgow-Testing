@@ -279,7 +279,7 @@ class ScanStream:
             pass
 
         if len(data) > 0: 
-            if self.scan_mode == 1:
+            if (self.scan_mode == 1) | (self.scan_mode == 2):
                 if self.eight_bit_output == 0:
                     start = time.perf_counter()
                     data = data.cast('H')

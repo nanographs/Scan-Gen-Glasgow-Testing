@@ -29,7 +29,7 @@ class ConnectionManager:
         self.pattern_loop = None
         self.pattern_done = False
 
-        self.text_file = open("socket_packets.txt", "w")
+        # self.text_file = open("socket_packets.txt", "w")
 
         self.logging = False
 

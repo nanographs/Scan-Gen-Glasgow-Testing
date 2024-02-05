@@ -6,11 +6,12 @@ from pyqtgraph.Qt import QtCore
 from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QMessageBox, QPushButton, QComboBox,
                              QVBoxLayout, QWidget, QLabel, QGridLayout,
-                             QSpinBox)
+                             QFileDialog, QSpinBox)
 
 from gui_modules.frame_settings import FrameSettings
 from gui_modules.image_display import ImageDisplay
 from scan_stream import ScanStream
+from bmp_utils import bmp_to_bitstream, bmp_import
 
 class ScanMainWindow(QWidget):
 
@@ -49,6 +50,9 @@ class ScanMainWindow(QWidget):
         self.roi_btn.setCheckable(True) 
         self.roi_btn.clicked.connect(self.toggle_ROI)
 
+        self.upload_pattern_btn = QPushButton("Upload Pattern File")
+        self.upload_pattern_btn.clicked.connect(self.file_select)
+
         self.save_btn = QPushButton("Save")
         self.save_btn.clicked.connect(self.image_display.saveImage_PIL)
 
@@ -59,7 +63,8 @@ class ScanMainWindow(QWidget):
         mode_options.addWidget(self.start_btn,0,2)
         mode_options.addWidget(self.reset_btn,0,3)
         mode_options.addWidget(self.roi_btn,0,4)
-        mode_options.addWidget(self.save_btn, 0, 5)
+        mode_options.addWidget(self.upload_pattern_btn, 0, 5)
+        mode_options.addWidget(self.save_btn, 0, 6)
 
         self.layout.addLayout(mode_options,0,0)
 
@@ -81,6 +86,13 @@ class ScanMainWindow(QWidget):
 
     def getframe(self):
         return self.frame_settings.getframe()
+
+    def file_select(self):
+        self.file_dialog = ImportPatternFileWindow()
+        self.file_path = self.file_dialog.show_and_get_file()
+        print(self.file_path)
+        x_width, y_height = self.getframe()
+        self.pattern = bmp_to_bitstream(self.file_path, x_width, y_height)
 
 
     def scale_pattern(self):
@@ -125,7 +137,59 @@ class ScanMainWindow(QWidget):
             self.reset_btn.setEnabled(True)
             self.mode_select_dropdown.setEnabled(True)
 
+
+
     
+class ImportPatternFileWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Import Pattern File")
+        self.layout = QGridLayout()
+        self.setLayout(self.layout)
+
+        self.file_dialog = QFileDialog()
+        self.file_dialog.setNameFilter("tr(Images (*.bmp)")
+        self.layout.addWidget(self.file_dialog)
+
+    def show_and_get_file(self):
+        self.show()
+        if self.file_dialog.exec():
+            self.file_path = self.file_dialog.selectedFiles()[0]
+            print(self.file_path)
+            # self.show_pattern(self.file_path)
+            self.hide()
+            return self.file_path
+
+    def show_pattern(self, file_path):
+        bmp = bmp_import(file_path)
+        print(bmp)
+        path_label = QLabel(file_path)
+        height, width = bmp.size
+        size_label = QLabel("Height: " + str(height) + "px  Width: " + str(width) + "px")
+        self.layout.addWidget(path_label, 0, 0)
+        self.layout.addWidget(size_label, 1, 0)
+        array = np.array(bmp).astype(np.uint8)
+        # graphicsview = pg.GraphicsView()
+
+        self.image_display = ImageDisplay(height, width)
+        self.image_display.live_img.setImage(array)
+        
+        self.layout.addWidget(self.image_display)
+
+        self.resolution_options = ResolutionDropdown()
+
+        # if any(height < self.dimension, width < self.dimension):
+        #     error_label = QLabel("Image dimensions exceed current scan resolution")
+        #     self.layout.addWidget(error_label)
+        # else:
+        self.go_button = QPushButton("Go")
+        self.layout.addWidget(self.go_button)
+        self.go_button.clicked.connect(self.go)
+
+    def go(self):
+        self.hide()
+
+
 
 class Mockup(ScanMainWindow):
     def __init__(self):

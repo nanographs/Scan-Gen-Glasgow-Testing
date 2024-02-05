@@ -24,7 +24,7 @@ from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
 
 from ..scan_gen.scan_gen_components.main_iobus import IOBus
-from ..scan_gen.scan_gen_components.addresses import *
+from ..scan_gen.scan_gen_components.structs import *
 from ..scan_gen.scan_gen_components.test_streams import *
 from ..scan_gen.output_formats.scan_server import ServerHost
 from ..scan_gen.output_formats.gui_modules.pattern_generators.hilbert import hilbert
@@ -32,6 +32,8 @@ from ..scan_gen.output_formats.gui_modules.pattern_generators.rectangles import 
 from ..scan_gen.output_formats.gui_modules.pattern_generators.patterngen_utils import packet_from_generator, in2_out1_byte_stream
 from ..scan_gen.output_formats.scan_stream import ScanStream
 from ..scan_gen.output_formats.microscope import MicroscopeInterface
+from ..scan_gen.output_formats.bmp_utils import bmp_to_bitstream
+from ..scan_gen.resources import obi_resources
 
 from ... import *
 
@@ -47,12 +49,15 @@ class IOBusSubtarget(Elaboratable):
                 y_upper_limit_b1, y_upper_limit_b2,
                 y_lower_limit_b1, y_lower_limit_b2,
                 eight_bit_output, do_frame_sync, do_line_sync,
-                const_dwell_time, configuration, unpause, step_size, test_mode):
-        self.data = data
-        self.power_ok = power_ok
+                const_dwell_time, configuration, unpause, step_size, test_mode, board_version):
+        self.board_version = board_version
+        if self.board_version == 0:
+            self.data = data
+            self.power_ok = power_ok
         self.in_fifo = in_fifo
         self.out_fifo = out_fifo
         self.scan_mode = scan_mode
+        
 
         self.io_bus = IOBus(self.in_fifo, self.out_fifo, scan_mode, 
                             x_full_resolution_b1, x_full_resolution_b2,
@@ -63,7 +68,7 @@ class IOBusSubtarget(Elaboratable):
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
                             const_dwell_time, configuration, unpause, step_size,
-                            test_mode = test_mode, use_config_handler = True, 
+                            test_mode = test_mode, 
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -73,43 +78,92 @@ class IOBusSubtarget(Elaboratable):
 
         m.submodules["IOBus"] = self.io_bus
 
-        x_latch = platform.request("X_LATCH")
-        x_enable = platform.request("X_ENABLE")
-        y_latch = platform.request("Y_LATCH")
-        y_enable = platform.request("Y_ENABLE")
-        a_latch = platform.request("A_LATCH")
-        a_enable = platform.request("A_ENABLE")
+        if self.board_version == 0:
+            x_latch = platform.request("X_LATCH")
+            x_enable = platform.request("X_ENABLE")
+            y_latch = platform.request("Y_LATCH")
+            y_enable = platform.request("Y_ENABLE")
+            a_latch = platform.request("A_LATCH")
+            a_enable = platform.request("A_ENABLE")
 
-        a_clock = platform.request("A_CLOCK")
-        d_clock = platform.request("D_CLOCK")
+            a_clock = platform.request("A_CLOCK")
+            d_clock = platform.request("D_CLOCK")
+        if self.board_version == 1:
+            control_signals = platform.request("control")
+            power_good = control_signals.D17
+            x_latch = control_signals.D19
+            y_latch = control_signals.D20
+            a_enable = control_signals.D21
+            a_latch = control_signals.D22
+            d_clock = control_signals.D23
+            a_clock = control_signals.D24
 
         m.d.comb += x_latch.o.eq(self.io_bus.x_latch)
-        m.d.comb += x_enable.o.eq(self.io_bus.x_enable)
         m.d.comb += y_latch.o.eq(self.io_bus.y_latch)
-        m.d.comb += y_enable.o.eq(self.io_bus.y_enable)
         m.d.comb += a_latch.o.eq(self.io_bus.a_latch)
         m.d.comb += a_enable.o.eq(self.io_bus.a_enable)
 
+        if self.board_version == 0:
+            m.d.comb += x_enable.o.eq(self.io_bus.x_enable)
+            m.d.comb += y_enable.o.eq(self.io_bus.y_enable)
+
+
         m.d.comb += a_clock.o.eq(self.io_bus.a_clock)
         m.d.comb += d_clock.o.eq(self.io_bus.d_clock)
+
+        if self.board_version == 1:
+            # data = platform.request("data")
+            power_ok = platform.request("power_ok")
+            data_lines = platform.request("data")
+            data = [
+                data_lines.D1,
+                data_lines.D2,
+                data_lines.D3,
+                data_lines.D4,
+                data_lines.D5,
+                data_lines.D6,
+                data_lines.D7,
+                data_lines.D8,
+                data_lines.D9,
+                data_lines.D10,
+                data_lines.D11,
+                data_lines.D12,
+                data_lines.D13,
+                data_lines.D14
+            ]
         
         with m.If(self.io_bus.bus_multiplexer.is_x):
-            for i, pad in enumerate(self.data):
-                m.d.comb += [
-                    pad.oe.eq(self.power_ok.i),
-                    pad.o.eq(self.io_bus.pins_o[i]),
-                ]
+            if self.board_version == 0:
+                for i, pad in enumerate(self.data):
+                    m.d.comb += [
+                        pad.oe.eq(self.power_ok.i),
+                        pad.o.eq(self.io_bus.pins_o[i]),
+                    ]
+            if self.board_version == 1:
+                for i, pad in enumerate(data):
+                    # print(pad)
+                    with m.If(power_ok.i):
+                        m.d.comb += pad.o.eq(self.io_bus.pins_o[i])
         with m.If(self.io_bus.bus_multiplexer.is_y):
-            for i, pad in enumerate(self.data):
-                m.d.comb += [
-                    pad.oe.eq(self.power_ok.i),
-                    pad.o.eq(self.io_bus.pins_o[i]),
-                ]
+            if self.board_version == 0:
+                for i, pad in enumerate(self.data):
+                    m.d.comb += [
+                        pad.oe.eq(self.power_ok.i),
+                        pad.o.eq(self.io_bus.pins_o[i]),
+                    ]
+            if self.board_version == 1:
+                for i, pad in enumerate(data):
+                    with m.If(power_ok.i):
+                        m.d.comb += pad.o.eq(self.io_bus.pins_o[i])
         with m.If(self.io_bus.bus_multiplexer.is_a):
-            for i, pad in enumerate(self.data):
-                m.d.comb += [
-                    self.io_bus.pins_i[i].eq(pad.i)
-                ]
+            if self.board_version == 0:
+                for i, pad in enumerate(self.data):
+                    m.d.comb += [
+                        self.io_bus.pins_i[i].eq(pad.i)
+                    ]
+            if self.board_version == 1:
+                for i, pad in enumerate(data):
+                    m.d.comb += self.io_bus.pins_i[i].eq(pad.i)
 
         return m
 
@@ -396,7 +450,7 @@ class SG_EndpointInterface(ScanGenInterface):
         n = 0
         while True:
             try:
-                if self.scan_mode == 3:
+                if (self.scan_mode == 3) | (self.scan_mode == 2):
                     await self.recv_packet(n)
                 if self.logging:
                     self._logger.info(f'awaiting read {n}')
@@ -425,7 +479,7 @@ class SG_EndpointInterface(ScanGenInterface):
             if val == 1:
                 await self.unpause()
                 print("unpaused")
-                if self.scan_mode == 3:
+                if (self.scan_mode == 3) | (self.scan_mode == 2):
                     if self.logging:
                         self._logger.info("created recv_packet task")
                     await self.recv_packet("*")
@@ -535,6 +589,9 @@ class ScanGenApplet(GlasgowApplet):
         access.add_pin_set_argument(parser, "data", width=14, default=range(0,14))
         access.add_pin_argument(parser, "power_ok", default=15)
         parser.add_argument(
+        "-R", "--vers", type=int,
+        help="OBI board revision: 0, 1", default = "0")
+        parser.add_argument(
         "-T", "--test_mode", type=str,
         help="gateware build configuration: loopback, data loopback", default = None)
         parser.add_argument(
@@ -543,17 +600,21 @@ class ScanGenApplet(GlasgowApplet):
 
     def build(self, target, args):
         ### LVDS Header (Not used as LVDS)
-        LVDS = [
-            Resource("X_ENABLE", 0, Pins("B1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-            Resource("X_LATCH", 0, Pins("C4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-            Resource("Y_ENABLE", 0, Pins("C2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-            Resource("Y_LATCH", 0, Pins("E1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-            Resource("A_ENABLE", 0, Pins("D2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-            Resource("A_LATCH", 0, Pins("E2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-            Resource("D_CLOCK", 0, Pins("F1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
-            Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),]
+        if args.vers == 0:
+            LVDS = [
+                Resource("X_ENABLE", 0, Pins("B1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+                Resource("X_LATCH", 0, Pins("C4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+                Resource("Y_ENABLE", 0, Pins("C2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+                Resource("Y_LATCH", 0, Pins("E1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+                Resource("A_ENABLE", 0, Pins("D2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+                Resource("A_LATCH", 0, Pins("E2", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+                Resource("D_CLOCK", 0, Pins("F1", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),
+                Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),]
 
-        target.platform.add_resources(LVDS)
+            target.platform.add_resources(LVDS)
+        
+        if args.vers == 1:
+            target.platform.add_resources(obi_resources)
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args, throttle = "none")
 
@@ -600,7 +661,7 @@ class ScanGenApplet(GlasgowApplet):
             y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
             eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync,
             const_dwell_time = const_dwell_time, configuration = configuration, unpause = unpause, step_size = step_size,
-            test_mode = args.test_mode
+            test_mode = args.test_mode, board_version = args.vers
         ))
         
     @classmethod
@@ -709,7 +770,28 @@ class ScanGenApplet(GlasgowApplet):
             # pg.exec()
             #scan_iface.text_file.write(scan_stream.buffer)
 
-            
+        if args.buf == "test_raster_pattern":
+            file = "/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software/glasgow/applet/video/scan_gen/input_formats/Nanographs Pattern Test Logo and Gradients.bmp"
+            stream = bmp_to_bitstream(file, 2048, 2048)
+            patterngen = packet_from_generator(stream)
+            await scan_iface.set_8bit_output(1)
+            await scan_iface.set_scan_mode(2)
+            await scan_iface.set_frame_resolution(2048, 2048)
+            await scan_iface.set_config_flag(1)
+            await scan_iface.set_config_flag(0)
+            await scan_iface.unpause()
+            for n in range(10):
+                pattern = next(patterngen)
+                scan_iface.text_file.write("\n SENT: \n")
+                scan_iface.text_file.write(str(list(pattern)))
+                await scan_iface.write(pattern)
+                pattern = next(patterngen)
+                scan_iface.text_file.write("\n SENT: \n")
+                scan_iface.text_file.write(str(list(pattern)))
+                await scan_iface.write(pattern)
+                data = await scan_iface.read(16384)
+                scan_iface.text_file.write("\n RCVD: \n")
+                scan_iface.text_file.write(str(data.tolist()))
 
         if args.buf == "hilbert":
             await scan_iface.hilbert_loop()

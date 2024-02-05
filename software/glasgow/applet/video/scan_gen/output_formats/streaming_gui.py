@@ -47,62 +47,9 @@ cwd = os.getcwd()
 #     app.setStyleSheet(style)
 
 
-class ImportPatternFileWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Import Pattern File")
-        self.layout = QGridLayout()
-        self.setLayout(self.layout)
 
-        self.file_dialog = QFileDialog()
-        self.file_dialog.setNameFilter("tr(Images (*.bmp)")
-        self.layout.addWidget(self.file_dialog)
 
-    def show_and_get_file(self):
-        self.show()
-        if self.file_dialog.exec():
-            self.file_path = self.file_dialog.selectedFiles()[0]
-            print(self.file_path)
-            self.show_pattern(self.file_path)
-            # self.hide()
-            return self.file_path
 
-    def show_pattern(self, file_path):
-        bmp = bmp_import(file_path)
-        print(bmp)
-        path_label = QLabel(file_path)
-        height, width = bmp.size
-        size_label = QLabel("Height: " + str(height) + "px  Width: " + str(width) + "px")
-        self.layout.addWidget(path_label, 0, 0)
-        self.layout.addWidget(size_label, 1, 0)
-        array = np.array(bmp).astype(np.uint8)
-        # graphicsview = pg.GraphicsView()
-
-        self.image_display = ImageDisplay(height, width)
-        self.image_display.live_img.setImage(array)
-        
-        self.layout.addWidget(self.image_display)
-
-        self.resolution_options = ResolutionDropdown()
-
-        # if any(height < self.dimension, width < self.dimension):
-        #     error_label = QLabel("Image dimensions exceed current scan resolution")
-        #     self.layout.addWidget(error_label)
-        # else:
-        self.go_button = QPushButton("Go")
-        self.layout.addWidget(self.go_button)
-        self.go_button.clicked.connect(self.go)
-
-    @asyncSlot()
-    async def go(self):
-        self.hide()
-
-def pattern_loop(dimension, pattern_stream):
-    while 1:
-        for n in range(int(dimension*dimension/16384)): #packets per frame
-            print(n)
-            yield pattern_stream[n*16384:(n+1)*16384]
-        print("pattern complete")
 
 
 class StreamFrameSettings(FrameSettings):
@@ -151,15 +98,9 @@ class MainWindow(ScanMainWindow):
         
         self.setState("disconnected")
 
-    # def file_select(self):
-    #     self.file_dialog = ImportPatternFileWindow()
-    #     self.file_path = self.file_dialog.show_and_get_file()
-    #     print(self.file_path)
-    #     pattern_stream = bmp_to_bitstream(self.file_path, self.dimension)
-    #     self.pattern = pattern_loop(self.dimension, pattern_stream)
-    #     # self.image_display.image_view.addItem(self.file_dialog.image_display.live_img) #oof
-    #     # self.image_display.image_view.autoRange()
-    #     # print(self.image_display.image_view.allChildren())
+    def file_select(self):
+        super().file_select()
+        self.con.set_patterngen(self.pattern)
 
     def set_pattern(self):
         print("setting pattern...")
@@ -215,7 +156,7 @@ class MainWindow(ScanMainWindow):
             self.start_btn.setText('🔄')
             await self.con.unpause()
             mode = self.mode_select_dropdown.currentIndex() + 1
-            if mode == 3:
+            if (mode == 3) | (mode == 2):
                 self.con.stream_pattern = True
                 await self.con.write_points("*")
             self.update_continously = asyncio.ensure_future(self.keepUpdating())

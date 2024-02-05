@@ -3,6 +3,7 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.exporters import Exporter
 from pyqtgraph.Qt import QtCore
+from pyqtgraph.graphicsItems.TextItem import TextItem
 
 from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QMessageBox, QPushButton,
@@ -10,6 +11,23 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QSpinBox)
 
 from PIL import Image
+import tifffile
+
+
+class MicroScaleBar(pg.ScaleBar):
+    def __init__(self, pixel_size, **kwargs):
+        scale_bar_pixels = 200
+        actual_length = scale_bar_pixels * pixel_size
+        super().__init__(scale_bar_pixels, **kwargs)
+
+        self.text = TextItem(text=pg.siFormat(actual_length, suffix="m"), anchor=(0.5,1))
+        self.text.setParentItem(self)
+
+        #self.setScale(10)
+
+        print(vars(self))
+    # def updateBar(self):
+    #     print("Hello!")
 
 
 
@@ -19,16 +37,17 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.y_height = y_height
         self.x_width = x_width
 
-        #self.image_view = self.addViewBox(invertY = True)
-        self.image_view = self.addPlot(invertY = True)
+        self.image_view = self.addViewBox(invertY = True)
+        # self.plot = self.addPlot(viewBox = self.image_view)
         ## lock the aspect ratio so pixels are always square
         self.image_view.setAspectLocked(True)
         # self.image_view.setRange(QtCore.QRectF(0, 0, y_height, x_width))
         
-        self.image_view.setLimits(xMin=0, xMax=16384, 
-             minXRange=1, maxXRange=16384, 
-             yMin=0, yMax=16384,
-             minYRange=1, maxYRange=16384)
+        # self.image_view.setLimits(xMin=0, xMax=self.x_width, 
+        #     minXRange=0, maxXRange=self.x_width, 
+        #     yMin=0, yMax=self.x_width,
+        #     minYRange=0, maxYRange=self.x_width)
+        self.image_view.autoRange(padding=.1)
         
         self.live_img = pg.ImageItem(border='w',axisOrder="row-major")
         self.live_img.setImage(np.full((y_height, x_width), 0, np.uint8), rect = (0,0,x_width, y_height), autoLevels=False, autoHistogramRange=True)
@@ -58,10 +77,13 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
 
         self.exporter = pg.exporters.ImageExporter(self.live_img)
 
-        border = pg.mkPen(color = "#00ff00", width = 2)
-        self.scaleBar = pg.ScaleBar(200, pen = border, width = 5)
-        self.scaleBar.setParentItem(self.image_view)
-        self.scaleBar.anchor((1,1),(1,1),offset = (-200,-20))
+        self.pixel_size = .001
+
+        # border = pg.mkPen(color = "#00ff00", width = 2)
+        # self.scaleBar = MicroScaleBar(self.pixel_size, pen = border, width = 5)
+        # self.scaleBar.setParentItem(self.image_view)
+        # self.scaleBar.anchor((1,1),(1,1),offset = (-200,-20))
+
 
         #self.add_ROI()
 
@@ -111,6 +133,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         array = array.astype(np.uint8)
         self.setImage(self.y_height, self.x_width, array)
 
+
     def saveImage(self):
         self.exporter.parameters()['height'] = self.y_height
         self.exporter.parameters()['width'] = self.x_width
@@ -124,6 +147,14 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         image.save(img_name)
         print(img_name)
 
+    def saveImage_tifffile(self):
+        image = self.live_img.image
+        metadata = [(3, 1, 1, 100)]
+        img_name = "saved" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + ".tif"
+        tifffile.imwrite(img_name, image, shape = (self.x_width, self.y_height), dtype = np.uint8, extratags = metadata)
+
+
+
         
 
 
@@ -135,4 +166,5 @@ if __name__ == "__main__":
     image_display.add_ROI()
     image_display.remove_ROI()
     image_display.show()
+    image_display.saveImage_tifffile()
     pg.exec()
