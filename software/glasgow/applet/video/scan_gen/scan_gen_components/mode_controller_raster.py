@@ -80,6 +80,9 @@ class RasterModeController(Elaboratable):
         #self.raster_fifo = SyncFIFOBuffered(width = 16, depth = 256)
         self.xy_scan_gen_increment = Signal()
         self.load_next_point = Signal()
+        
+        self.in_fifo_w_data = Signal(8)
+        self.out_fifo_r_data = Signal(8)
 
     def elaborate(self, platform):
         m = Module()
@@ -95,6 +98,8 @@ class RasterModeController(Elaboratable):
         m.d.comb += self.writer_data_complete.eq(self.writer.data_complete)
         m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
         m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
+        m.d.comb += self.in_fifo_w_data.eq(self.writer.in_fifo_w_data)
+        m.d.comb += self.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
 
         # with m.If((self.raster_reader.data_complete) & (self.raster_fifo.w_rdy)):
         #     m.d.comb += self.raster_reader.data_point_used.eq(1)

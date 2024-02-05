@@ -113,6 +113,10 @@ class ConfigHandler(Elaboratable):
 
         l = Signal()
 
+        # latched_config_flag = Signal()
+        # with m.If(self.configuration_flag):
+        #     m.d.sync += latched_config_flag.eq(1)
+
         with m.FSM() as fsm:
             with m.State("Latch"):
                 m.d.comb += self.writing_config.eq(0)

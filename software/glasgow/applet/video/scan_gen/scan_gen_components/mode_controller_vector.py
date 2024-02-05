@@ -76,6 +76,8 @@ class VectorModeController(Elaboratable):
         self.write_this_point = Signal()
 
         self.load_next_point = Signal()
+        self.in_fifo_w_data = Signal(8)
+        self.out_fifo_r_data = Signal(8)
 
     def elaborate(self, platform):
         m = Module()
@@ -92,6 +94,8 @@ class VectorModeController(Elaboratable):
         m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
 
         m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
+        m.d.comb += self.in_fifo_w_data.eq(self.writer.in_fifo_w_data)
+        m.d.comb += self.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
         #m.d.comb += self.vector_reader.strobe_out.eq(self.vector_fifo.w_rdy)
 
         # with m.If((self.vector_reader.data_complete) & (self.vector_fifo.w_rdy)):

@@ -125,6 +125,8 @@ class ModeController(Elaboratable):
         self.load_next_point = Signal()
         self.write_this_point = Signal()
         self.reader_data_fresh = Signal()
+
+        self.beam_controller_freeze = Signal()
         
     def elaborate(self, platform):
         m = Module()
@@ -138,6 +140,7 @@ class ModeController(Elaboratable):
         m.submodules["DwellAvgr"] = self.dwell_avgr
         m.submodules["ByteReplace"] = self.byte_replacer
 
+        m.d.comb += self.beam_controller.freeze.eq(self.beam_controller_freeze)
         m.d.comb += self.x_interpolator.frame_size.eq(self.x_full_frame_resolution)
         m.d.comb += self.y_interpolator.frame_size.eq(self.y_full_frame_resolution)
 
@@ -163,14 +166,14 @@ class ModeController(Elaboratable):
 
         with m.If((self.mode == ScanMode.Vector)|(self.mode == ScanMode.RasterPattern)):
             with m.If((self.beam_controller.end_of_dwell) & (~(self.reader_data_fresh))):
-                m.d.sync += self.beam_controller.freeze.eq(1)
+                m.d.sync += self.beam_controller_freeze.eq(1)
                 m.d.comb += self.write_this_point.eq(1)
             with m.If((self.beam_controller.end_of_dwell) & (self.reader_data_fresh)):
                 m.d.comb += self.load_next_point.eq(self.beam_controller.end_of_dwell)
                 m.d.comb += self.write_this_point.eq(self.beam_controller.end_of_dwell)
                 m.d.comb += self.dwell_avgr.start_new_average.eq(self.beam_controller.at_dwell)
             with m.If((self.beam_controller.freeze) & (self.adc_data_strobe) & (self.reader_data_fresh)):
-                m.d.sync += self.beam_controller.freeze.eq(0)
+                m.d.sync += self.beam_controller_freeze.eq(0)
                 m.d.comb += self.load_next_point.eq(1)
                 m.d.comb += self.beam_controller.lock_new_point.eq(1)
                 m.d.comb += self.dwell_avgr.start_new_average.eq(1)
@@ -197,7 +200,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.ras_mode_ctrl.adc_data_avgd.eq(self.byte_replacer.processed_point_data)
 
             
-            m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.writer.in_fifo_w_data)
+            m.d.comb += self.in_fifo_w_data.eq(self.ras_mode_ctrl.in_fifo_w_data)
             m.d.comb += self.ras_mode_ctrl.writer_write_happened.eq(self.write_happened)
             m.d.comb += self.writer_data_valid.eq(self.ras_mode_ctrl.writer_data_valid)
             m.d.comb += self.writer_data_complete.eq(self.ras_mode_ctrl.writer_data_complete)
@@ -215,7 +218,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.reader_data_complete.eq(self.ras_mode_ctrl.reader_data_complete);
             m.d.comb += self.reader_data_fresh.eq(self.ras_mode_ctrl.reader_data_fresh)
 
-            m.d.comb += self.ras_mode_ctrl.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
+            m.d.comb += self.ras_mode_ctrl.out_fifo_r_data.eq(self.out_fifo_r_data)
             m.d.comb += self.ras_mode_ctrl.reader_read_happened.eq(self.read_happened)
             m.d.comb += self.beam_controller.next_dwell.eq(self.ras_mode_ctrl.beam_controller_next.D)
 
@@ -237,11 +240,11 @@ class ModeController(Elaboratable):
             m.d.comb += self.y_interpolator.input.eq(self.vec_mode_ctrl.beam_controller_next.Y)
             m.d.comb += self.beam_controller.next_dwell.eq(self.vec_mode_ctrl.beam_controller_next.D)
 
-            m.d.comb += self.in_fifo_w_data.eq(self.vec_mode_ctrl.writer.in_fifo_w_data)
+            m.d.comb += self.in_fifo_w_data.eq(self.vec_mode_ctrl.in_fifo_w_data)
             m.d.comb += self.vec_mode_ctrl.writer_write_happened.eq(self.write_happened)
             m.d.comb += self.vec_mode_ctrl.reader_read_happened.eq(self.read_happened)
             m.d.comb += self.writer_data_valid.eq(self.vec_mode_ctrl.writer_data_valid)
-            m.d.comb += self.vec_mode_ctrl.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
+            m.d.comb += self.vec_mode_ctrl.out_fifo_r_data.eq(self.out_fifo_r_data)
             
 
 

@@ -68,20 +68,6 @@ sim_app_iface = SimulationDemultiplexerInterface(GlasgowHardwareDevice, ScanGenA
 sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app_iface.device, 
                     2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, is_simulation = True)
 
-textfile = open('packets.txt','w')
-def raster_sim(n=16384, eight_bit_output=False):
-    output = yield from sim_app_iface.read(n)
-    print("length:", len(output))
-    if eight_bit_output:
-        print(list(output))
-        textfile.write(str(list(output)))
-    else:
-        print(sim_scangen_iface.decode_rdwell_packet(output))
-    
-
-
-
-
 def vector_pattern_sim(dut):
     for n in short_test_vector_points:
         x, y, d = n
@@ -213,7 +199,6 @@ def sim_iobus():
             #     yield
             # yield unpause.eq(0)
             # yield
-            yield eight_bit_output.eq(1)
             yield const_dwell_time.eq(2)
             yield step_size.eq(5)
             #yield const_dwell_time.eq(0)
@@ -226,16 +211,20 @@ def sim_iobus():
             yield
             yield unpause.eq(1)
             yield
-            data = yield from sim_scangen_iface.iface.read(18)
-            print(str(list(data)))
-            #yield from raster_sim(50, eight_bit_output = True)
-            yield from raster_averaging_sim()
-            # yield from set_frame_params(dut, x_res=520, y_res=512)
-            # yield configuration.eq(1)
-            # yield
-            # yield configuration.eq(0)
-            # yield
-            # yield from raster_sim(100, eight_bit_output = True)
+            output = yield from sim_scangen_iface.iface.read(18)
+            print(list(output))
+            output = yield from sim_app_iface.read(10)
+            print(list(output))
+            #yield from raster_averaging_sim()
+            yield from set_frame_params(dut, x_res=520, y_res=520)
+            yield configuration.eq(1)
+            yield
+            yield configuration.eq(0)
+            yield
+            output = yield from sim_app_iface.read(18)
+            print(list(output))
+            output = yield from sim_app_iface.read(10)
+            print(list(output))
 
 
 
@@ -331,14 +320,14 @@ def sim_iobus():
         # print(data)
 
                 
-        #yield from config_test()
-        yield from vec_test()
-        data = yield from sim_app_iface.read(2)
-        print(data)
-        data = yield from sim_app_iface.read(2)
-        print(data)
-        data = yield from sim_app_iface.read(2)
-        print(data)
+        yield from config_test()
+        # yield from vec_test()
+        # data = yield from sim_app_iface.read(2)
+        # print(data)
+        # data = yield from sim_app_iface.read(2)
+        # print(data)
+        # data = yield from sim_app_iface.read(2)
+        # print(data)
 
         #yield from hilbert_test()
         #yield from raster_pattern_test()
