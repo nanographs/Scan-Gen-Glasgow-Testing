@@ -60,7 +60,9 @@ class RasterModeController(Elaboratable):
     '''
     def __init__(self):
         self.writer = StreamWriter(scan_dwell_8)
+        self.onebyte_writer = StreamWriter(scan_dwell_8_onebyte)
         self.reader = StreamReader(scan_dwell_8)
+        
         self.xy_scan_gen = XY_Scan_Gen()
 
         self.adc_data_avgd = Signal(scan_dwell_8)
@@ -84,22 +86,25 @@ class RasterModeController(Elaboratable):
         self.in_fifo_w_data = Signal(8)
         self.out_fifo_r_data = Signal(8)
 
+        self.eight_bit_output = Signal()
+
     def elaborate(self, platform):
         m = Module()
+        m.submodules["Raster1byteWriter"] = self.onebyte_writer
         m.submodules["RasterWriter"] = self.writer
         m.submodules["RasterReader"] = self.reader
         #m.submodules["RasterFIFO"] = self.raster_fifo
         m.submodules["XYScanGen"] = self.xy_scan_gen
 
 
-        m.d.comb += self.reader_data_complete.eq(self.reader.data_complete)
-        m.d.comb += self.reader_data_fresh.eq(self.reader.data_fresh)
-        m.d.comb += self.reader.read_happened.eq(self.reader_read_happened)
-        m.d.comb += self.writer_data_complete.eq(self.writer.data_complete)
-        m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
-        m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
-        m.d.comb += self.in_fifo_w_data.eq(self.writer.in_fifo_w_data)
-        m.d.comb += self.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
+        # m.d.comb += self.reader_data_complete.eq(self.reader.data_complete)
+        # m.d.comb += self.reader_data_fresh.eq(self.reader.data_fresh)
+        # m.d.comb += self.reader.read_happened.eq(self.reader_read_happened)
+        # m.d.comb += self.writer_data_complete.eq(self.writer.data_complete)
+        # m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
+        # m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
+        # m.d.comb += self.in_fifo_w_data.eq(self.writer.in_fifo_w_data)
+        # m.d.comb += self.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
 
         # with m.If((self.raster_reader.data_complete) & (self.raster_fifo.w_rdy)):
         #     m.d.comb += self.raster_reader.data_point_used.eq(1)
@@ -110,10 +115,16 @@ class RasterModeController(Elaboratable):
         with m.If((inner_xy_scan_gen_increment) | (self.xy_scan_gen_increment)):
             m.d.comb += self.xy_scan_gen.increment.eq(1)
 
-        m.d.comb += self.writer.data_c.eq(self.adc_data_avgd)
+        with m.If(self.eight_bit_output):
+            m.d.comb += self.onebyte_writer.data_c.eq(self.adc_data_avgd)
+        with m.Else():
+            m.d.comb += self.writer.data_c.eq(self.adc_data_avgd)
 
         with m.If(self.write_this_point):
-            m.d.comb += self.writer.strobe_in.eq(1)
+            with m.If(self.eight_bit_output):
+                m.d.comb += self.onebyte_writer.strobe_in.eq(1)
+            with m.Else():
+                m.d.comb += self.writer.strobe_in.eq(1)
 
         with m.If(self.load_next_point):
             m.d.comb += inner_xy_scan_gen_increment.eq(1)

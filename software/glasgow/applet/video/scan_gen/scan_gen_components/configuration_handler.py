@@ -107,15 +107,13 @@ class ConfigHandler(Elaboratable):
 
         self.writing_config = Signal()
 
+        self.config_flag_released = Signal()
+
 
     def elaborate(self, platform):
         m = Module()
 
         l = Signal()
-
-        # latched_config_flag = Signal()
-        # with m.If(self.configuration_flag):
-        #     m.d.sync += latched_config_flag.eq(1)
 
         with m.FSM() as fsm:
             with m.State("Latch"):
@@ -244,6 +242,7 @@ class ConfigHandler(Elaboratable):
                 with m.If(self.write_happened):
                     m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     with m.If(~self.outer_configuration_flag):
+                        m.d.comb += self.config_flag_released.eq(1)
                         m.next = "Latch"
                     with m.Else():
                         m.next = "Wait_unlatch"
@@ -252,6 +251,7 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.writing_config.eq(0)
                 m.d.comb += l.eq(1)
                 with m.If(~self.outer_configuration_flag):
+                    m.d.comb += self.config_flag_released.eq(1)
                     m.next = "Latch"
 
 

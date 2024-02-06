@@ -432,7 +432,7 @@ class SG_EndpointInterface(ScanGenInterface):
         print("at eof?", self.server_host.data_reader.at_eof())
         print(len(self.server_host.data_reader._buffer))
         try:
-            data = await self.server_host.data_reader.readexactly(16384*2)
+            data = await self.server_host.data_reader.readexactly(16384*3)
             #data = await self.server_host.data_reader.read()
             print(type(data))
             print(f'recieved {len(data)} points, {n}')
@@ -596,7 +596,7 @@ class ScanGenApplet(GlasgowApplet):
         help="gateware build configuration: loopback, data loopback", default = None)
         parser.add_argument(
         "-B", "--buf", type=str,
-        help="local, streaming", default = "local")
+        help="local, endpoint", default = "None")
 
     def build(self, target, args):
         ### LVDS Header (Not used as LVDS)
@@ -718,6 +718,9 @@ class ScanGenApplet(GlasgowApplet):
         #ServerEndpoint.add_argument(parser, "endpoint")
 
     async def interact(self, device, args, scan_iface):
+        if args.buf == "None":
+            pass
+
         if args.buf == "local":
             await scan_iface.set_8bit_output()
             await scan_iface.set_frame_sync()
@@ -726,45 +729,60 @@ class ScanGenApplet(GlasgowApplet):
             scan_iface.launch_gui()
 
         if args.buf == "test_raster":
-            await scan_iface.set_8bit_output(1)
+            await scan_iface.pause()
             await scan_iface.set_raster_mode()
-            await scan_iface.set_frame_resolution(255,255)
+            await scan_iface.set_frame_resolution(100,100)
             await scan_iface.set_config_flag(1)
             await scan_iface.set_config_flag(0)
-            await scan_iface.set_raster_mode()
             await scan_iface.unpause()
-            await scan_iface.set_frame_resolution(512,512)
-            await scan_iface.set_config_flag(1)
-            await scan_iface.set_config_flag(0)
-            data = await scan_iface.iface.read(16384)
+            data = await scan_iface.iface.read(100)
             scan_iface.text_file.write(str(data.tolist()))
+            # await scan_iface.set_frame_resolution(512,512)
+            # await scan_iface.set_config_flag(1)
+            # await scan_iface.set_config_flag(0)
+            # data = await scan_iface.iface.read(16384)
+            # scan_iface.text_file.write(str(data.tolist()))
 
         if args.buf == "test_vector":
             scan_stream = ScanStream()
             scan_stream.change_buffer(1024, 1024)
-            r = vector_rectangle(1024, 512 ,3)
+            r = vector_gradient_rectangle(1024, 512 ,3)
             patterngen = packet_from_generator(r)
-            r2 = vector_rectangle(1024, 512 ,3)
-            patterngen_check_against = in2_out1_byte_stream(r2)
+            r2 = vector_gradient_rectangle(1024, 512 ,3)
+            #patterngen_check_against = in2_out1_byte_stream(r2)
             await scan_iface.set_vector_mode()
             await scan_iface.set_frame_resolution(1024,1024)
             await scan_iface.set_config_flag(1)
             await scan_iface.set_config_flag(0)
             await scan_iface.unpause()
-            for n in range(1):
-                await scan_iface.iface.write(next(patterngen))
-                data = await scan_iface.iface.read(16384)
-                config = data[0:18]
-                print(f'config: {config.tolist()}')
-                data = data[18:]
-                for d in data:
-                    check_against = next(patterngen_check_against)
-                    print(f'{bytes([d])} == {check_against}?')
-                    print(f'{d} == {int.from_bytes(check_against)}?')
-                    assert(bytes([d]) == check_against)
-                scan_iface.text_file.write("=====Received=====\n")
+            for n in range(2):
+                for i in range(3):
+                    pattern = next(patterngen)
+                    scan_iface.text_file.write("\n=====Sent=====\n")
+                    scan_iface.text_file.write(str(list(pattern)))
+                    await scan_iface.write(pattern)
+                data = await scan_iface.read(16384)
+                scan_iface.text_file.write("\n=====Received=====\n")
                 scan_iface.text_file.write(str(data.tolist()))
                 print("wrote data to text file")
+                if n == 0:
+                    config = data[0:18]
+                    print(f'config: {config.tolist()}')
+                    data = memoryview(bytes(data[18:])).cast('H').tolist()
+                else:
+                    data = memoryview(bytes(data)).cast('H').tolist()
+                print(len(data))
+                for d in data:
+                    x = next(r2)
+                    y = next(r2)
+                    check_against = next(r2)
+                    print(f'x: {x}, y: {y}, d: {check_against}')
+                    print(f'{d} == {check_against}?')
+                    try:
+                        assert(d == check_against)
+                    except AssertionError:
+                        print("NOT A MATCH")
+                
             #     scan_stream.parse_config_from_data(bytes(data))
             # pg.image(scan_stream.buffer)
             # pg.exec()

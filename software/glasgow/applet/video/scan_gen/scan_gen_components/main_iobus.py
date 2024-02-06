@@ -46,6 +46,9 @@ class IOBus(Elaboratable):
         self.write_strobe = Signal(reset=0)
         self.read_strobe = Signal()
 
+        ## signals "pulled out" of other modules
+        self.beam_controller_end_of_dwell = Signal()
+
         #### Registers
         self.scan_mode = scan_mode
         self.eight_bit_output = eight_bit_output
@@ -174,46 +177,14 @@ class IOBus(Elaboratable):
 
         with m.If(self.unpause == 0):
             m.d.comb += self.config_handler.configuration_flag.eq(self.configuration_flag)
+            #pass
         with m.Else():
             with m.If(self.configuration_flag):
                 m.d.sync += config_flag_latched.eq(1)
-            with m.If((config_flag_latched) & (self.mode_ctrl.adc_data_strobe)):
+            with m.If((config_flag_latched) & (self.mode_ctrl.writer_data_complete)):
                 m.d.comb += self.config_handler.configuration_flag.eq(1)
                 m.d.sync += config_flag_latched.eq(0)
                 
-            
-
-            # with m.FSM() as fsm:
-            #     with m.State("Waiting"):
-            #         m.d.comb += a.eq(1)
-            #         with m.If((self.configuration_flag) & (self.mode_ctrl.writer_data_complete)):
-            #             m.next = "Configure"
-            #         with m.If((self.configuration_flag) & (~self.mode_ctrl.writer_data_complete)):
-            #             m.next = "Wait for write"
-            #     with m.State("Wait for write"):
-            #         m.d.comb += b.eq(1)
-            #         with m.If(self.mode_ctrl.writer_data_complete):
-            #             m.next = "Configure"
-            #     with m.State("Configure"):
-            #         m.d.comb += c.eq(1)
-            #         m.d.comb += self.config_handler.configuration_flag.eq(1)
-            #         with m.If((self.scan_mode == ScanMode.Raster)|(self.scan_mode == ScanMode.RasterPattern)):
-            #             m.next = "Start Frame"
-            #         with m.Else():
-            #             m.next = "Waiting"
-            #     with m.State("Start Frame"):
-            #         m.d.comb += d.eq(1)
-            #         with m.If(~(self.handling_config)):
-            #             m.d.comb += self.mode_ctrl.xy_scan_gen_increment.eq(1)
-            #             ## sneak in an extra increment to make up for the fact that we are already
-            #             ## starting out on (0,0)
-            #             ## or something like that
-            #             ### will need to review this again when we throw reduced areas into the mix...
-            #             m.next = "Waiting to relatch"
-            #     with m.State("Waiting to relatch"):
-            #         m.d.comb += e.eq(1)
-            #         with m.If(~(self.configuration_flag)):
-            #             m.next = "Waiting"
 
 
         ## Reset counters when configuration changes
@@ -227,7 +198,18 @@ class IOBus(Elaboratable):
 
         with m.If(~(self.unpause)):
             m.d.comb += self.write_strobe.eq(0)
+        
+        eflnp = Signal() ## pipelined intermediate to make timing easier
+        asdf = Signal() ## pipelined intermediate to make timing easier
+        sdfg = Signal()
+        m.d.sync += eflnp.eq(self.config_handler.config_flag_released)
+        m.d.sync += asdf.eq(eflnp)
+        m.d.sync += sdfg.eq(asdf)
+        m.d.comb += self.mode_ctrl.external_force_load_new_point.eq(sdfg)
 
+        #m.d.comb += self.mode_ctrl.external_force_load_new_point.eq(self.config_handler.config_flag_released)
+
+        m.d.comb += self.beam_controller_end_of_dwell.eq(self.mode_ctrl.beam_controller_end_of_dwell)
         m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
 
         m.d.comb += self.config_handler.eight_bit_output.eq(self.eight_bit_output)

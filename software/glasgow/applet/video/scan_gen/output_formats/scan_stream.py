@@ -24,7 +24,7 @@ class ScanStream:
         self.config_match = re.compile(b'\xff{2}.{14}\xff{2}')
 
         self.scan_mode = 0
-        self.eight_bit_output = 1
+        self.eight_bit_output = 0
         self.patterngen = None
 
         ## place to stash <6 bytes of an incomplete vector point
@@ -62,7 +62,7 @@ class ScanStream:
         self.x_width = x_width
         self.y_height = y_height
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
-                    dtype = np.uint8)
+                dtype = np.uint8)
         print("new buffer size:", x_width, y_height)
         self.current_x = 0
         self.current_y = 0
@@ -73,6 +73,8 @@ class ScanStream:
         print("cleared buffer")
 
     def points_to_frame(self, m:memoryview, print_debug = True):
+        cast_type = 'B'
+
         m_len = len(m)
         if print_debug:
             print("data length:", m_len)
@@ -165,7 +167,7 @@ class ScanStream:
 
                 self.buffer[current_y:(current_y + bottom_rows),self.x_lower:self.x_lower+x_width] = \
                         m[partial_start_points:(partial_start_points + x_width*bottom_rows)]\
-                            .cast('B',shape=([bottom_rows,x_width]))
+                            .cast(cast_type,shape=([bottom_rows,x_width]))
 
                 if top_rows == 0:
                     current_y = top_rows
@@ -180,14 +182,14 @@ class ScanStream:
                     self.buffer[0:top_rows, self.x_lower:self.x_lower+x_width] = \
                             m[(partial_start_points + x_width*bottom_rows):\
                                 (partial_start_points + x_width*bottom_rows+ x_width*top_rows)]\
-                                .cast('B',shape=([top_rows,x_width]))
+                                .cast(cast_type,shape=([top_rows,x_width]))
                     if top_rows >= y_height: ## there's more than one full frame left
                         skip_frames = top_rows//y_height
                         extra_rows = top_rows%y_height
                         self.buffer[0:extra_rows] = \
                                 m[(partial_start_points + x_width*y_height*skip_frames):\
                                     (partial_start_points + x_width*y_height*skip_frames + x_width*extra_rows)]\
-                                    .cast('B',shape=([top_rows,x_width]))
+                                    .cast(cast_type,shape=([top_rows,x_width]))
                         current_y = extra_rows
                     else:
                         current_y = top_rows
@@ -201,7 +203,7 @@ class ScanStream:
                     self.check_sync()
                 self.buffer[current_y:current_y+full_lines,self.x_lower:self.x_lower+x_width] = \
                         m[partial_start_points:(partial_start_points + x_width*full_lines)]\
-                            .cast('B',shape=([full_lines,x_width - self.x_lower]))
+                            .cast(cast_type,shape=([full_lines,x_width - self.x_lower]))
                 if print_debug:
                     print(f'beginning of block: {self.buffer[current_y]}')
                 current_y += full_lines
@@ -244,13 +246,12 @@ class ScanStream:
 
     def points_to_vector(self, m:memoryview, print_debug = True):
         self.point_buffer.extend(m)
-        while len(self.point_buffer) >= 6:
-            point = self.point_buffer[:6]
-            self.point_buffer = self.point_buffer[6:]
-            x, y, a = memoryview(point).cast('H').tolist()
+        while len(self.point_buffer) >= 2:
+            point = self.point_buffer[:2]
+            self.point_buffer = self.point_buffer[2:]
+            a = memoryview(point).cast('H').tolist()[0]
             if print_debug:
-                print(f' x: {x}, y: {y}, a: {a}')
-            self.buffer[y][x] = a
+                print(f' a: {a}')
             x2 = next(self.patterngen)
             y2 = next(self.patterngen)
             a2 = next(self.patterngen)
@@ -259,8 +260,6 @@ class ScanStream:
             self.buffer[y2][x2] = a
             self.totalbytes += 6
             print(f'total bytes: {self.totalbytes}')
-            assert(x == x2)
-            assert(y == y2)
             assert(a == a2)
 
     def handle_data_with_config(self, data:memoryview, config = None, print_debug = None):
@@ -282,7 +281,9 @@ class ScanStream:
             if (self.scan_mode == 1) | (self.scan_mode == 2):
                 if self.eight_bit_output == 0:
                     start = time.perf_counter()
-                    data = data.cast('H')
+                    #data = data.cast('H')
+                    eight_bit_data = data.tobytes()[1::2]
+                    data = memoryview(eight_bit_data)
                     end = time.perf_counter()
                     if print_debug:
                         print(f'16 to 8 time {end-start}')
@@ -342,7 +343,7 @@ class ScanStream:
         print(f'8bit mode: {self.eight_bit_output}')
         
 
-    def parse_config_from_data(self, d:bytes, print_debug=False):
+    def parse_config_from_data(self, d:bytes, print_debug=True):
         n = re.finditer(self.config_match, d)
         prev_stop = 0
         prev_config = None
@@ -409,12 +410,12 @@ class ScanStream:
 
 
 if __name__ == "__main__":
-    from test_streams import generate_packet_with_config, generate_vector_packet
+    from tests import generate_packet_with_config, generate_vector_packet
     def test_frame_stuffing():
         #data = [4, 5, 6] + [n for n in range(0,6)]*10 + [0, 1, 2]
         s = ScanStream()
         s.change_buffer(400, 400)
-        packet_generator = generate_packet_with_config(400,400)
+        packet_generator = generate_packet_with_config(400,400, False)
         for n in range(3):
             print("=====start new packet======")
             data = next(packet_generator)
@@ -430,5 +431,5 @@ if __name__ == "__main__":
             d = memoryview(bytes(data))
             s.writeto(d)
         
-    test_vector_stuffing()
-    #test_frame_stuffing()
+    #test_vector_stuffing()
+    test_frame_stuffing()

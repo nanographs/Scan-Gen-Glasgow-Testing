@@ -61,10 +61,12 @@ class ConnectionManager:
         try:
             points = next(self.pattern_loop)
             next_points = next(self.pattern_loop)
+            next_next_points = next(self.pattern_loop)
             # while True:
             #     try:
             self.data_writer.write(points)
             self.data_writer.write(next_points)
+            self.data_writer.write(next_next_points)
             await self.data_writer.drain()
             if self.logging:
                 print(f'wrote points {nth}')

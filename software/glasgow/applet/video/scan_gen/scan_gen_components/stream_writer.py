@@ -27,10 +27,14 @@ class StreamWriter(Elaboratable):
         fields = self.dtype._fields
         field_strs = list(fields.keys())
         first_field = field_strs[0]
-        second_field = field_strs[1]
-        print(second_field)
         last_field = field_strs[-1]
-        print(last_field)
+
+        if len(field_strs) > 1:
+            second_field = field_strs[1]
+        else:
+            second_field = "Waiting" # only writing a single byte, 
+                                    # so stay in a single state
+        
 
         w = Signal()
         f = Signal(3)
@@ -43,6 +47,8 @@ class StreamWriter(Elaboratable):
                     m.d.comb += self.data_valid.eq(1)
                     m.d.comb += self.in_fifo_w_data.eq(self.data_c.__getitem__(first_field))
                     m.d.sync += self.data.eq(self.data_c)
+                    if second_field == "Waiting": #if only writing one byte
+                        m.d.comb += self.data_complete.eq(1)
                     with m.If(self.write_happened):
                         m.next = second_field
                     with m.Else():
@@ -57,6 +63,7 @@ class StreamWriter(Elaboratable):
                     with m.If(self.write_happened):
                         m.next = next_field
             with m.State(last_field):
+                m.d.comb += self.data_complete.eq(1)
                 m.d.comb += lf.eq(1)
                 m.d.comb += self.data_valid.eq(1)
                 m.d.comb += self.in_fifo_w_data.eq(self.data_c.__getitem__(last_field))
@@ -68,33 +75,24 @@ class StreamWriter(Elaboratable):
 
 if __name__ == "__main__":
     def sim_reader():
-        dut = StreamWriter(vector_dwell)
+        dut = StreamWriter(scan_dwell_8)
         
         def bench():
-            for n in range(1,5):
-                yield dut.out_fifo_r_data.eq(n)
-                yield dut.read_happened.eq(1)
-                yield
+            yield dut.data_c.eq(8)
+            yield dut.strobe_in.eq(1)
             yield
+            yield dut.strobe_in.eq(0)
+            yield dut.write_happened.eq(1)
             yield
+            yield dut.write_happened.eq(0)
             yield
-            yield dut.data_used.eq(1)
-            yield
-            yield dut.data_used.eq(0)
-            for n in range(5,8):
-                yield dut.out_fifo_r_data.eq(n)
-                yield dut.read_happened.eq(1)
-                yield
-            yield dut.out_fifo_r_data.eq(8)
-            yield dut.read_happened.eq(1)
-            yield dut.data_used.eq(1)
-            yield
+            
 
 
         sim = Simulator(dut)
         sim.add_clock(1e-6) # 1 MHz
         sim.add_sync_process(bench)
-        with sim.write_vcd("stream_reader_sim.vcd"):
+        with sim.write_vcd("stream_writer_sim.vcd"):
             sim.run()
 
     sim_reader()

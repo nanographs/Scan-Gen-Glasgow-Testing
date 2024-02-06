@@ -33,12 +33,12 @@ class StreamReader(Elaboratable):
         last_field = field_strs[-1]
         second_to_last_field = field_strs[-2]
 
-        with m.If(self.data_complete):
-            m.d.sync += self.data_fresh_s.eq(1)
-        with m.If(self.data_used):
-            m.d.sync += self.data_fresh_s.eq(0)
-        with m.If(self.data_fresh_s):
-            m.d.comb += self.data_fresh.eq(1)
+        # with m.If(self.data_complete):
+        #     m.d.sync += self.data_fresh_s.eq(1)
+        # with m.If(self.data_used):
+        #     m.d.sync += self.data_fresh_s.eq(0)
+        # with m.If(self.data_fresh_s):
+        #     m.d.comb += self.data_fresh.eq(1)
 
         with m.FSM() as fsm:
             for n in range(len(fields)-1):

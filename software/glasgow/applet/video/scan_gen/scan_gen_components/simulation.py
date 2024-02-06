@@ -69,16 +69,19 @@ sim_scangen_iface = ScanGenInterface(sim_app_iface,sim_app_iface.logger, sim_app
                     2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, is_simulation = True)
 
 def vector_pattern_sim(dut):
-    for n in short_test_vector_points:
-        x, y, d = n
+    for n in range(4): 
+        x, y, d = short_test_vector_points[n]
         #yield from write_vector_point(n, sim_app_iface)
         yield from sim_scangen_iface.sim_write_2bytes(x)
         yield from sim_scangen_iface.sim_write_2bytes(y)
         yield from sim_scangen_iface.sim_write_2bytes(d)
-        data = yield from sim_app_iface.read(2)
-        print(list(data))
+    data = yield from sim_app_iface.read(8)
+    print(list(data))
 
 def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
+    step_size = int(16384/max(x_res,y_res))
+    print(f'set step size: {step_size}')
+    yield dut.step_size.eq(step_size)
     b1, b2 = get_two_bytes(x_res)
     print("set x resolution:", x_res)
     print(b1, b2)
@@ -192,23 +195,19 @@ def sim_iobus():
                     yield 
                 
         def config_test():
-            # yield from sim_scangen_iface.iface.read(10)
-            # yield scan_mode.eq(1)
-            # yield unpause.eq(1)
-            # for n in range(40):
-            #     yield
-            # yield unpause.eq(0)
-            # yield
-            yield const_dwell_time.eq(2)
-            yield step_size.eq(5)
+            #yield const_dwell_time.eq(0)
             #yield const_dwell_time.eq(0)
             yield scan_mode.eq(1)
-            yield from set_frame_params(dut, x_res=512, y_res=512, x_lower = 10, x_upper = 200, y_lower = 50, y_upper = 300)
-            yield
+            yield from set_frame_params(dut, x_res=255, y_res=255)
+            yield eight_bit_output.eq(1)
+            for n in range(20):
+                yield
             yield configuration.eq(1)
-            yield
+            for n in range(20):
+                yield
             yield configuration.eq(0)
-            yield
+            for n in range(20):
+                yield
             yield unpause.eq(1)
             yield
             output = yield from sim_scangen_iface.iface.read(18)
@@ -216,8 +215,9 @@ def sim_iobus():
             output = yield from sim_app_iface.read(10)
             print(list(output))
             #yield from raster_averaging_sim()
-            yield from set_frame_params(dut, x_res=520, y_res=520)
+            yield from set_frame_params(dut, x_res=512, y_res=512)
             yield configuration.eq(1)
+            yield
             yield
             yield configuration.eq(0)
             yield
@@ -239,7 +239,8 @@ def sim_iobus():
             yield unpause.eq(1)
             data = yield from sim_app_iface.read(18)
             print(list(data))
-            yield from vector_pattern_sim(dut)
+            for n in range(3):
+                yield from vector_pattern_sim(dut)
 
 
         def count():
@@ -264,7 +265,8 @@ def sim_iobus():
             yield from set_frame_params(dut, x_res=1024, y_res=1024)
             yield
             yield configuration.eq(1)
-            yield
+            for n in range(20):
+                yield
             yield configuration.eq(0)
             yield unpause.eq(1)
             data = yield from sim_app_iface.read(18)
@@ -299,7 +301,7 @@ def sim_iobus():
                 yield from sim_scangen_iface.sim_write_2bytes(n)
                 data = yield from sim_app_iface.read(2)
                 print("read", data)
-            data = yield from sim_app_iface.read(6)
+            data = yield from sim_app_iface.read(12)
             print(data)
 
 
@@ -320,8 +322,8 @@ def sim_iobus():
         # print(data)
 
                 
-        yield from config_test()
-        # yield from vec_test()
+        #yield from config_test()
+        yield from vec_test()
         # data = yield from sim_app_iface.read(2)
         # print(data)
         # data = yield from sim_app_iface.read(2)

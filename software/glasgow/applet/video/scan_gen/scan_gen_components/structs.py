@@ -36,6 +36,10 @@ scan_dwell_8 = data.StructLayout({
     "D2": 8,
 })
 
+scan_dwell_8_onebyte = data.StructLayout({
+    "D1": 8,
+})
+
 reduced_area_8 = data.StructLayout({
     "LX1": 8,
     "LX2": 8,

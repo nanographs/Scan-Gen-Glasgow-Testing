@@ -85,17 +85,17 @@ class VectorModeController(Elaboratable):
         m.submodules["VectorWriter"] = self.writer
         #m.submodules["VectorFIFO"] = self.vector_fifo
 
-        m.d.comb += self.reader_data_complete.eq(self.reader.data_complete)
-        m.d.comb += self.reader_data_fresh.eq(self.reader.data_fresh)
+        # m.d.comb += self.reader_data_complete.eq(self.reader.data_complete)
+        # m.d.comb += self.reader_data_fresh.eq(self.reader.data_fresh)
 
-        m.d.comb += self.reader.read_happened.eq(self.reader_read_happened)
+        # m.d.comb += self.reader.read_happened.eq(self.reader_read_happened)
 
-        m.d.comb += self.writer_data_complete.eq(self.writer.data_complete)
-        m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
+        # m.d.comb += self.writer_data_complete.eq(self.writer.data_complete)
+        # m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
 
-        m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
-        m.d.comb += self.in_fifo_w_data.eq(self.writer.in_fifo_w_data)
-        m.d.comb += self.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
+        # m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
+        # m.d.comb += self.in_fifo_w_data.eq(self.writer.in_fifo_w_data)
+        # m.d.comb += self.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
         #m.d.comb += self.vector_reader.strobe_out.eq(self.vector_fifo.w_rdy)
 
         # with m.If((self.vector_reader.data_complete) & (self.vector_fifo.w_rdy)):
