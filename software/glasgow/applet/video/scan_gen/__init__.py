@@ -142,8 +142,9 @@ class IOBusSubtarget(Elaboratable):
             if self.board_version == 1:
                 for i, pad in enumerate(data):
                     # print(pad)
-                    with m.If(power_ok.i):
-                        m.d.comb += pad.o.eq(self.io_bus.pins_o[i])
+                    #with m.If(power_ok.i):
+                    m.d.comb += pad.oe.eq(1)
+                    m.d.comb += pad.o.eq(self.io_bus.pins_o[i])
         with m.If(self.io_bus.bus_multiplexer.is_y):
             if self.board_version == 0:
                 for i, pad in enumerate(self.data):
@@ -153,8 +154,9 @@ class IOBusSubtarget(Elaboratable):
                     ]
             if self.board_version == 1:
                 for i, pad in enumerate(data):
-                    with m.If(power_ok.i):
-                        m.d.comb += pad.o.eq(self.io_bus.pins_o[i])
+                    #with m.If(power_ok.i):
+                    m.d.comb += pad.oe.eq(1)
+                    m.d.comb += pad.o.eq(self.io_bus.pins_o[i])
         with m.If(self.io_bus.bus_multiplexer.is_a):
             if self.board_version == 0:
                 for i, pad in enumerate(self.data):
@@ -162,8 +164,9 @@ class IOBusSubtarget(Elaboratable):
                         self.io_bus.pins_i[i].eq(pad.i)
                     ]
             if self.board_version == 1:
-                for i, pad in enumerate(data):
-                    m.d.comb += self.io_bus.pins_i[i].eq(pad.i)
+                pass
+                # for i, pad in enumerate(data):
+                #     m.d.comb += self.io_bus.pins_i[i].eq(pad.i)
 
         return m
 
@@ -813,6 +816,16 @@ class ScanGenApplet(GlasgowApplet):
 
         if args.buf == "hilbert":
             await scan_iface.hilbert_loop()
+
+        if args.buf == "endless":
+            await scan_iface.pause()
+            await scan_iface.set_raster_mode()
+            await scan_iface.set_frame_resolution(100,100)
+            await scan_iface.set_config_flag(1)
+            await scan_iface.set_config_flag(0)
+            await scan_iface.unpause()
+            while True:
+                data = await scan_iface.iface.read(16384)
 
         
             
