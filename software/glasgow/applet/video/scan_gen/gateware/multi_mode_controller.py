@@ -5,13 +5,13 @@ from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 from amaranth.lib import data, enum
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.beam_controller import BeamController
-    from ..scan_gen_components.mode_controller_raster import RasterModeController
-    from ..scan_gen_components.mode_controller_vector import VectorModeController
-    from ..scan_gen_components.structs import *
-    from ..scan_gen_components.pixel_ratio_interpolator import PixelRatioInterpolator
-    from ..scan_gen_components.dwell_averager import DwellTimeAverager
-    from ..scan_gen_components.byte_replacer import ByteReplacer
+    from ..gateware.beam_controller import BeamController
+    from ..gateware.mode_controller_raster import RasterModeController
+    from ..gateware.mode_controller_vector import VectorModeController
+    from ..gateware.structs import *
+    from ..gateware.pixel_ratio_interpolator import PixelRatioInterpolator
+    from ..gateware.dwell_averager import DwellTimeAverager
+    from ..gateware.byte_replacer import ByteReplacer
 # if __name__ == "__main__":
 else:
     from beam_controller import BeamController

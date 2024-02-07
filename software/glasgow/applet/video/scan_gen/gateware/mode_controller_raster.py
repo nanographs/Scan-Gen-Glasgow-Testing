@@ -5,14 +5,12 @@ from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.byte_replacer import ByteReplacer
-    from ..scan_gen_components.stream_reader import StreamReader
-    from ..scan_gen_components.stream_writer import StreamWriter
-    from ..scan_gen_components.xy_scan_gen import XY_Scan_Gen
-    from ..scan_gen_components.structs import *
+    from ..gateware.stream_reader import StreamReader
+    from ..gateware.stream_writer import StreamWriter
+    from ..gateware.xy_scan_gen import XY_Scan_Gen
+    from ..gateware.structs import *
 else:
 #if __name__ == "__main__":
-    from byte_replacer import ByteReplacer
     from stream_reader import StreamReader
     from stream_writer import StreamWriter
     from xy_scan_gen import XY_Scan_Gen

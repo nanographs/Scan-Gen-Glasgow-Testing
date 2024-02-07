@@ -11,8 +11,8 @@ sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
 from glasgow import *
 from glasgow.access.simulation import SimulationMultiplexerInterface, SimulationDemultiplexerInterface
 from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGenInterface
-from glasgow.applet.video.scan_gen.scan_gen_components.main_iobus import IOBus
-from glasgow.applet.video.scan_gen.scan_gen_components.test_streams import *
+from glasgow.applet.video.scan_gen.gateware.main_iobus import IOBus
+from glasgow.applet.video.scan_gen.gateware.test_streams import *
 #from glasgow.applet.video.scan_gen.output_formats.hilbert_test import hilbert
 from glasgow.device.hardware import GlasgowHardwareDevice
 from glasgow.device.simulation import GlasgowSimulationDevice

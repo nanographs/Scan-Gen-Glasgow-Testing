@@ -2,7 +2,7 @@ from amaranth import *
 from amaranth.sim import Simulator
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.structs import *
+    from ..gateware.structs import *
 else:
     from structs import *
 

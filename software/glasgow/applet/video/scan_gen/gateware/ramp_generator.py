@@ -2,10 +2,6 @@ import amaranth
 from amaranth import *
 from amaranth.sim import Simulator
 
-import amaranth
-from amaranth import *
-from amaranth.sim import Simulator
-
 class RampGenerator(Elaboratable):
     """
     A n-bit up counter with a fixed limit.

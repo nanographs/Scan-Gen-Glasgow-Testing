@@ -3,11 +3,9 @@ from amaranth import *
 from amaranth.sim import Simulator
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.ramp_generator import RampGenerator
-    from ..scan_gen_components.pixel_ratio_interpolator import PixelRatioInterpolator
+    from ..gateware.ramp_generator import RampGenerator
 else:
     from ramp_generator import RampGenerator, test_ramp
-    from pixel_ratio_interpolator import PixelRatioInterpolator
 
 class XY_Scan_Gen(Elaboratable):
     ''' 

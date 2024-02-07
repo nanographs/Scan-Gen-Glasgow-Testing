@@ -5,11 +5,11 @@ from amaranth.lib import data, enum
 import os, sys
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.multi_mode_controller import ModeController
-    from ..scan_gen_components.data_latch_bus import BusMultiplexer
-    from ..scan_gen_components.structs import *
-    from ..scan_gen_components.configuration_handler import ConfigHandler
-    from ..scan_gen_components.board_sim import OBI_Board
+    from ..gateware.multi_mode_controller import ModeController
+    from ..gateware.data_latch_bus import BusMultiplexer
+    from ..gateware.structs import *
+    from ..gateware.configuration_handler import ConfigHandler
+    from ..gateware.board_sim import OBI_Board
 else:
     from board_sim import OBI_Board
     from multi_mode_controller import ModeController

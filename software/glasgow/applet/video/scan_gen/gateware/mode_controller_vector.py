@@ -4,9 +4,9 @@ from amaranth.sim import Simulator
 from amaranth.lib.fifo import SyncFIFO, SyncFIFOBuffered
 
 if "glasgow" in __name__: ## running as applet
-    from ..scan_gen_components.stream_reader import StreamReader
-    from ..scan_gen_components.stream_writer import StreamWriter
-    from ..scan_gen_components.structs import *
+    from ..gateware.stream_reader import StreamReader
+    from ..gateware.stream_writer import StreamWriter
+    from ..gateware.structs import *
 #if __name__ == "__main__":
 else:
     from structs import *
