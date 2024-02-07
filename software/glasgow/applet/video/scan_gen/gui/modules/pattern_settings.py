@@ -8,16 +8,12 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QVBoxLayout, QWidget, QLabel, QGridLayout,
                              QSpinBox)
 
-if __name__ == "__main__":
-    from pattern_generators.hilbert import hilbert
-    from pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
-elif "glasgow" in __name__:
+if "glasgow" in __name__:
     from .pattern_generators.hilbert import hilbert
     from .pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
-
 else:
-    from gui_modules.pattern_generators.hilbert import hilbert
-    from gui_modules.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
+    from pattern_generators.hilbert import hilbert
+    from pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
 
     
 class PatternGen:

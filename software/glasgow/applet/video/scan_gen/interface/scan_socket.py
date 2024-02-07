@@ -1,9 +1,17 @@
 import asyncio
 
-from scan_ctrl import ScanCtrl
-from scan_stream import ScanStream
+if __name__ == "interface.scan_socket":
+    import sys
+    import os
+    path = os.path.split(sys.path[0])[0]
+    sys.path.append(path)
+    from interface.scan_ctrl import ScanCtrl
+    from interface.scan_stream import ScanStream
 
-from gui_modules.pattern_generators.patterngen_utils import packet_from_generator
+else:
+    from scan_ctrl import ScanCtrl
+    from scan_stream import ScanStream
+    from ..pattern_generators.patterngen_utils import packet_from_generator
 
 import logging
 logger = logging.getLogger(__name__)

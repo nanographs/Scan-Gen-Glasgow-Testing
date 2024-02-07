@@ -26,31 +26,22 @@ from pyqtgraph.Qt import QtCore
 import qasync
 from qasync import asyncSlot, asyncClose, QApplication, QEventLoop
 
-#from microscope import ScanCtrl, ScanStream
-from scan_socket import ScanInterface
-from gui_modules.image_display import ImageDisplay
-from gui_modules.frame_settings import FrameSettings, RegisterUpdateBox
-from generic_gui import ScanMainWindow
+if __name__ == "__main__":
+    import sys
+    import os
+    path = os.path.split(sys.path[0])[0]
+    sys.path.append(path)
 
-
-from bmp_utils import *
+    from interface.scan_socket import ScanInterface
+    from modules.image_display import ImageDisplay
+    from modules.frame_settings import FrameSettings, RegisterUpdateBox
+    from generic_gui import ScanMainWindow
+    from pattern_generators.bmp_utils import *
 
 
 app = pg.mkQApp("Scan Control")
 
 cwd = os.getcwd()
-
-# # Open the qss styles file and read in the CSS-like styling code
-# with open(cwd + '/software/glasgow/applet/video/scan_gen/output_formats/styles.qss', 'r') as f:
-#     style = f.read()
-#     # Set the stylesheet of the application
-#     app.setStyleSheet(style)
-
-
-
-
-
-
 
 class StreamFrameSettings(FrameSettings):
     def __init__(self, con):

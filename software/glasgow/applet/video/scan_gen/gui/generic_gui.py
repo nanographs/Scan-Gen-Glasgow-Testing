@@ -8,10 +8,16 @@ from PyQt6.QtWidgets import (QHBoxLayout, QMainWindow,
                              QVBoxLayout, QWidget, QLabel, QGridLayout,
                              QFileDialog, QSpinBox)
 
-from gui_modules.frame_settings import FrameSettings
-from gui_modules.image_display import ImageDisplay
-from scan_stream import ScanStream
-from bmp_utils import bmp_to_bitstream, bmp_import
+if __name__ == "__main__":
+    import sys
+    import os
+    path = os.path.split(sys.path[0])[0]
+    sys.path.append(path)
+
+from modules.frame_settings import FrameSettings
+from modules.image_display import ImageDisplay
+from interface.scan_stream import ScanStream
+from pattern_generators.bmp_utils import bmp_to_bitstream, bmp_import
 
 class ScanMainWindow(QWidget):
 

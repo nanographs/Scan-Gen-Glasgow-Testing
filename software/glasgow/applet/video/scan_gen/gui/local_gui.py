@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QMainWindow, QPushButton,
                             QGridLayout, QWidget, QComboBox, 
                             QLabel, QSpinBox, QFileDialog)
 
-from even_newer_gui import ImageDisplay
+from modules import ImageDisplay
 
 
 class MainWindow(QWidget):

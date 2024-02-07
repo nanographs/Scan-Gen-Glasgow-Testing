@@ -4,7 +4,7 @@ import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 from pyqtgraph.Qt import QtCore
 
-from bmp_utils import *
+from ..pattern_generators.bmp_utils import *
 
 ## Create a GL View widget to display data
 app = pg.mkQApp("GLSurfacePlot Example")
