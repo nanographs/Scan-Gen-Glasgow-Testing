@@ -23,17 +23,17 @@ from asyncio.exceptions import TimeoutError
 from amaranth.lib import data, enum
 from amaranth.lib.fifo import SyncFIFO
 
-from ..scan_gen.scan_gen_components.main_iobus import IOBus
-from ..scan_gen.scan_gen_components.structs import *
-from ..scan_gen.scan_gen_components.test_streams import *
-from ..scan_gen.output_formats.scan_server import ServerHost
-from ..scan_gen.output_formats.gui_modules.pattern_generators.hilbert import hilbert
-from ..scan_gen.output_formats.gui_modules.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
-from ..scan_gen.output_formats.gui_modules.pattern_generators.patterngen_utils import packet_from_generator, in2_out1_byte_stream
-from ..scan_gen.output_formats.scan_stream import ScanStream
-from ..scan_gen.output_formats.microscope import MicroscopeInterface
-from ..scan_gen.output_formats.bmp_utils import bmp_to_bitstream
-from ..scan_gen.resources import obi_resources
+from ..scan_gen.gateware.main_iobus import IOBus
+from ..scan_gen.gateware.structs import *
+from ..scan_gen.gateware.test_streams import *
+from ..scan_gen.interface.scan_server import ServerHost
+from ..scan_gen.interface.scan_stream import ScanStream
+from ..scan_gen.interface.microscope import MicroscopeInterface
+from ..scan_gen.pattern_generators.hilbert import hilbert
+from ..scan_gen.pattern_generators.rectangles import vector_rectangle, vector_gradient_rectangle
+from ..scan_gen.pattern_generators.patterngen_utils import packet_from_generator, in2_out1_byte_stream
+from ..scan_gen.pattern_generators.bmp_utils import bmp_to_bitstream
+from ..scan_gen.gateware.resources import obi_resources
 
 from ... import *
 
