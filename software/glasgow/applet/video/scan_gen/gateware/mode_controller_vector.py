@@ -17,42 +17,43 @@ else:
 
 class VectorModeController(Elaboratable):
     '''
-    vector_fifo: FIFO, 48 bits wide, 12 values deep
-        This FIFO holds full vector points
-
-    vector_reader: See VectorReader
-        This module handles reading data from the out_fifo and 
-        assembling into 48-bit vector point format
-    vector_writer: See VectorWriter
-        This module takes 32-bit wide vector position data and
-        16-bit wide dwell time or brightness data, and disassembles
+    writer: See StreamWriter
+        This module takes 16-bit wide dwell time or brightness data, and disassembles
         it into bytes to write to the in_fifo
-    
-    vector_point_data: Signal, internal, 48
-        This signal is driven by the value read from the vector FIFO,
-        and drives the next x, y, and dwell values for the beam controller.
-        The first 32 bits of this signal also drive the vector_position_c
-        value of vector_output. In this way, the x and y position of each 
-        point are read into the output stream
 
-    vector_point_output: Signal, in, 16
-        This signal is driven by the ADC data sampled at each point.
-        In test_mode = data_loopback, the dwell time is returned directly.
+    onebyte_writer: See StreamWriter
+        This module takes 8-bit wide dwell time or brightness data, and passes it
+        to the in_fifo
+
+    reader: See StreamReader
+        This module takes 8-bit values from the out_fifo and combines them
+        into 16-bit dwell time values for raster pattern streaming
+    
+    xy_scan_gen_increment: Signal, in, 1
+        Buffer for signals from other modules to assert xy_scan_gen.increment
+    
+    inner_xy_scan_gen_increment: Signal, internal, 1
+        Buffer for xy_scan_gen.increment to be asserted from within this module
+
+    adc_data_avgd: Signal, in, 16, scan_dwell_8
+        Adc_data -> [Dwell Time Avgr] -> running_average -> [Byte Replacer] -> adc_data_avgd
+    
+    beam_controller_next: Signal, internal, 48, scan_point_16
+        This signal is driven by the x and y values from the xy_scan_gen module,
+        and the dwell time from the dwell register.
+        This signal drives the next x, y, and dwell values for the beam controller.
 
     beam_controller_end_of_dwell: Signal, in, 1
         Driven by the beam controller module when the dwell counter has
         reached the current dwell time
-    beam_controller_start_dwell: Signal, in, 1
-        Driven by the beam controller module when the dwell counter is 0
 
-    beam_controller_next_x_position: Signal, out, 16:
-        Drives beam_controller.next_x_position
-    beam_controller_next_y_position: Signal, out, 16:
-        Drives beam_controller.next_y_position
-    beam_controller_next_dwell: Signal, out, 16:
-        Drives beam_controller.next_dwell
-
+    load_this_point: Signal, in, 1
+        Asserted when it's time for the beam controller module to move to the next point
+    write_this_point: Signal, in, 1
+        Asserted when it's time for the current input at adc_data_avgd to be written into the in_fifo
+    
     '''
+
     def __init__(self):
         #self.vector_fifo = SyncFIFOBuffered(width = 48, depth = 1)
 
@@ -67,17 +68,9 @@ class VectorModeController(Elaboratable):
         self.beam_controller_start_dwell = Signal()
         self.beam_controller_next = Signal(scan_point_16)
 
-        self.reader_data_complete = Signal()
-        self.reader_read_happened = Signal()
-        self.reader_data_fresh = Signal()
-        self.writer_data_complete = Signal()
-        self.writer_data_valid = Signal()
-        self.writer_write_happened = Signal()
+        self.load_next_point = Signal()
         self.write_this_point = Signal()
 
-        self.load_next_point = Signal()
-        self.in_fifo_w_data = Signal(8)
-        self.out_fifo_r_data = Signal(8)
 
     def elaborate(self, platform):
         m = Module()
@@ -85,24 +78,12 @@ class VectorModeController(Elaboratable):
         m.submodules["VectorWriter"] = self.writer
         #m.submodules["VectorFIFO"] = self.vector_fifo
 
-        # m.d.comb += self.reader_data_complete.eq(self.reader.data_complete)
-        # m.d.comb += self.reader_data_fresh.eq(self.reader.data_fresh)
 
-        # m.d.comb += self.reader.read_happened.eq(self.reader_read_happened)
-
-        # m.d.comb += self.writer_data_complete.eq(self.writer.data_complete)
-        # m.d.comb += self.writer_data_valid.eq(self.writer.data_valid)
-
-        # m.d.comb += self.writer.write_happened.eq(self.writer_write_happened)
-        # m.d.comb += self.in_fifo_w_data.eq(self.writer.in_fifo_w_data)
-        # m.d.comb += self.reader.out_fifo_r_data.eq(self.out_fifo_r_data)
-        #m.d.comb += self.vector_reader.strobe_out.eq(self.vector_fifo.w_rdy)
-
-        # with m.If((self.vector_reader.data_complete) & (self.vector_fifo.w_rdy)):
+        # with m.If((self.reader.data_complete) & (self.vector_fifo.w_rdy)):
         #     m.d.comb += self.vector_fifo.w_en.eq(1)
         #     m.d.comb += self.vector_fifo.w_data.eq(self.vector_reader.vector_point_data_c)
 
-        #with m.If((self.vector_reader.data_complete)):
+        #with m.If((self.reader.data_complete)):
             #m.d.sync += self.vector_fifo_data.eq(self.vector_reader.vector_point_data_c)
 
         with m.If(self.write_this_point):
@@ -112,7 +93,7 @@ class VectorModeController(Elaboratable):
         #with m.If(self.vector_fifo.r_rdy & self.beam_controller_end_of_dwell)::
         with m.If(self.load_next_point):
             #m.d.comb += self.vector_fifo.r_en.eq(1)
-            #m.d.comb += self.vector_point_data.eq(self.vector_fifo.r_data)
+            #m.d.comb += self.beam_controller_next.eq(self.vector_fifo.r_data)
             m.d.comb += self.reader.data_used.eq(1)
             m.d.comb += self.beam_controller_next.eq(self.reader.data)
         
