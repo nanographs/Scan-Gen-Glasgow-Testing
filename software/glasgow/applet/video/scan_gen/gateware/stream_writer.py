@@ -9,17 +9,52 @@ else:
 
 
 class StreamWriter(Elaboratable):
+    '''
+    Inputs:
+        datatype: An Amaranth data struct that is divided into bytes
+
+    in_fifo_w_data: Signal, out, 8
+        This signal combinatorially drives the top level in_fifo.w_data
+
+    data_c: Signal, in, {datatype}:
+        This signal is combinatorially driven by the processed ADC input data, 
+        or if testing in loopback is set to an internal value (x position or dwell)
+    data: Signal, internal, 16
+        When strobe_inis asserted, this signal is synchronously set equal to data_c
+
+    write_happened: Signal, in, {datatype}:
+        Asserted when the in_fifo is ready to be written to. This signal is driven by 
+        the top level write_strobe through mode_ctrl.write_happened
+    data_valid: Signal, out, 1
+        Asserted when the data at in_fifo_w_data is valid. 
+        If strobe_out is high, data will be written to the in_fifo
+    data_complete: Signal, out, 1
+        Asserted on the last byte of data
+    strobe_in: Signal, out, 1
+        Asserted when valid data is present at data_c
+
+    State Machine:
+            ↓------------------------------↑
+        Waiting -> F1 -> F2 ... FN - 1 -> FN
+            ↳------------↑                       
+
+    For struct scan_data_8:
+            ↓------------↑
+        Waiting -> D1 -> D2 
+            ↳------------↑    
+
+    '''
     def __init__(self, datatype):
         self.dtype = datatype
-        
+
+        self.in_fifo_w_data = Signal(8)
         self.data_c = Signal(datatype)
         self.data = Signal(datatype)
-        self.in_fifo_w_data = Signal(8)
+        
         self.write_happened = Signal()
         self.data_valid = Signal()
         self.data_complete = Signal()
         self.strobe_in = Signal()
-        self.data_fresh = Signal()
 
     def elaborate(self, platform):
         m = Module()

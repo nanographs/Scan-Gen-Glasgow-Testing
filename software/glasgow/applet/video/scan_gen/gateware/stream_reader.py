@@ -8,19 +8,58 @@ else:
     from structs import *
 
 
+'''
+    Inputs:
+        datatype: An Amaranth data struct that is divided into bytes
+    out_fifo_r_data: Signal, in, 8
+        This signal is combinatorially driven by the top level out_fifo.r_data
+    
+    data: Signal, internal, {datatype}
+        Each cycle that the out_fifo is read from, a byte is synchronously written 
+        to vector_point_data. 
+    data_c: Signal, out, 48
+        This is the signal that the next values for the beam controller are read from.
+        This signal is combinatorially assigned to the value of data and the latest byte from the out_fifo. 
+        This is so that the data can be used immediately. If the data can't be used immediately, the last
+        byte is synchronously added to data and the state machine moves to 
+        the HOLD state.
+
+    data_complete: Signal, out, 1:
+        Asserted when all bytes of a data have been assembled. When this is true,
+        the value of data_c is valid to assign as the next beam controller values
+    read_happened: Signal, in, 1:
+        Asserted when the out_fifo is ready to be read from. This signal is driven by 
+        mode_ctrl.read_happened, which is driven by the top level read_strobe
+    data_point_used: Signal, in, 1:
+        Asserted when the data held in data is used. On the cycle after this is
+        asserted, the module will return to state X1 and be ready to read a new point in
+    data_fresh: Signal, in, 1:
+        Asserted when a data point is both complete and unused
+        actually, I'm not sure what this does
+
+    State Machine:
+        F1 -> F2 ... -> FN -> Hold
+        ↑---------------↲-------↲
+    
+    For struct scan_data_8:
+        D1 -> D2 -> Hold
+        ↑-----↲-------↲
+
+    Inspiration taken from https://github.com/maia-sdr/maia-sdr/blob/main/maia-hdl/maia_hdl/packer.py
+    
+    '''
 class StreamReader(Elaboratable):
+    
     def __init__(self, datatype):
-        print(datatype)
-        print(vars(datatype))
         self.dtype = datatype
         
+        self.out_fifo_r_data = Signal(8)
         self.data_c = Signal(datatype)
         self.data = Signal(datatype)
-        self.out_fifo_r_data = Signal(8)
+        
+        self.data_complete = Signal()
         self.read_happened = Signal()
         self.data_used = Signal()
-        self.data_complete = Signal()
-        self.data_fresh_s = Signal()
         self.data_fresh = Signal()
 
     def elaborate(self, platform):
@@ -33,12 +72,6 @@ class StreamReader(Elaboratable):
         last_field = field_strs[-1]
         second_to_last_field = field_strs[-2]
 
-        # with m.If(self.data_complete):
-        #     m.d.sync += self.data_fresh_s.eq(1)
-        # with m.If(self.data_used):
-        #     m.d.sync += self.data_fresh_s.eq(0)
-        # with m.If(self.data_fresh_s):
-        #     m.d.comb += self.data_fresh.eq(1)
 
         with m.FSM() as fsm:
             for n in range(len(fields)-1):
