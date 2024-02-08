@@ -155,7 +155,6 @@ class IOBus(Elaboratable):
 
         m.d.comb += self.config_handler.roi_registers.eq(self.roi_registers)
 
-        m.d.comb += self.mode_ctrl.replace_FF_to_FE.eq(1)
         m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.config_handler.eight_bit_output_locked)
         m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
         m.d.comb += self.config_handler.step_size.eq(self.step_size)

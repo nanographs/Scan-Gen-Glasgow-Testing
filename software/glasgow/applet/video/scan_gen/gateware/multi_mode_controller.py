@@ -93,11 +93,7 @@ class ModeController(Elaboratable):
         self.in_fifo_w_data = Signal(8)
         self.out_fifo_r_data = Signal(8)
 
-        #self.read_enable = Signal()
-        #self.write_enable = Signal()
-        #self.write_strobe = Signal()
         self.write_ready = Signal()
-        #self.read_strobe = Signal()
         self.reader_data_complete = Signal()
         self.read_happened = Signal()
 
@@ -113,13 +109,7 @@ class ModeController(Elaboratable):
         self.eight_bit_output = Signal()
         self.const_dwell_time = Signal(8)
 
-        self.replace_FF_to_FE = Signal()
-
         self.reset = Signal()
-        self.disable_dwell = Signal()
-        self.complete_one_point = Signal()
-
-        self.strobe_new_point = Signal()
 
         self.xy_scan_gen_increment = Signal()
 
@@ -145,8 +135,7 @@ class ModeController(Elaboratable):
         m.submodules["DwellAvgr"] = self.dwell_avgr
         m.submodules["ByteReplace"] = self.byte_replacer
 
-        #m.d.comb += self.beam_controller.freeze.eq(self.beam_controller_freeze)
-        #m.d.comb += self.beam_controller_end_of_dwell.eq(self.beam_controller.end_of_dwell)
+
         m.d.comb += self.x_interpolator.frame_size.eq(self.x_full_frame_resolution)
         m.d.comb += self.y_interpolator.frame_size.eq(self.y_full_frame_resolution)
 
@@ -154,7 +143,6 @@ class ModeController(Elaboratable):
         m.d.comb += self.dwell_avgr.strobe.eq(self.adc_data_strobe)
 
         m.d.comb += self.byte_replacer.point_data.eq(self.dwell_avgr.running_average)
-        #m.d.comb += self.byte_replacer.replace_FF_to_FE.eq(self.replace_FF_to_FE)
         m.d.comb += self.byte_replacer.eight_bit_output.eq(self.eight_bit_output)
 
 
@@ -193,11 +181,6 @@ class ModeController(Elaboratable):
                     m.d.comb += self.write_this_point.eq(1)
                 m.d.comb += self.dwell_avgr.start_new_average.eq(self.beam_controller.at_dwell)
                 
-            # with m.If((self.beam_controller.freeze) & (self.adc_data_strobe) & (self.reader_data_fresh)):
-            #     m.d.sync += self.beam_controller_freeze.eq(0)
-            #     m.d.comb += self.force_load_new_point.eq(1)
-
-            
 
 
             with m.FSM() as fsm:
