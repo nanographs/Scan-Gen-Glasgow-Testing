@@ -11,7 +11,8 @@ if "glasgow" in __name__: ## running as applet
     from ..gateware.structs import *
     from ..gateware.pixel_ratio_interpolator import PixelRatioInterpolator
     from ..gateware.dwell_averager import DwellTimeAverager
-    from ..gateware.byte_replacer import ByteReplacer
+    #from ..gateware.byte_replacer import ByteReplacer
+    from ..gateware.byte_swapper import ByteSwapper
 # if __name__ == "__main__":
 else:
     from beam_controller import BeamController
@@ -75,7 +76,7 @@ class ModeController(Elaboratable):
         self.x_interpolator = PixelRatioInterpolator()
         self.y_interpolator = PixelRatioInterpolator()
 
-        self.byte_replacer = ByteReplacer(self.test_mode)
+        self.byte_replacer = ByteSwapper(self.test_mode)
 
         self.dwell_avgr = DwellTimeAverager()
 
@@ -153,7 +154,8 @@ class ModeController(Elaboratable):
         m.d.comb += self.dwell_avgr.strobe.eq(self.adc_data_strobe)
 
         m.d.comb += self.byte_replacer.point_data.eq(self.dwell_avgr.running_average)
-        m.d.comb += self.byte_replacer.replace_FF_to_FE.eq(self.replace_FF_to_FE)
+        #m.d.comb += self.byte_replacer.replace_FF_to_FE.eq(self.replace_FF_to_FE)
+        m.d.comb += self.byte_replacer.eight_bit_output.eq(self.eight_bit_output)
 
 
         m.d.comb += self.beam_controller.next_x_position.eq(self.x_interpolator.output)
@@ -233,7 +235,7 @@ class ModeController(Elaboratable):
             m.d.comb += self.ras_mode_ctrl.write_this_point.eq(self.write_this_point)
 
             with m.If(self.external_force_load_new_point):
-                m.d.comb += self.ras_mode_ctrl.xy_scan_gen_increment.eq(1)
+                m.d.comb += self.xy_scan_gen_increment.eq(1)
 
         with m.If(self.mode == ScanMode.Raster):
             m.d.comb += self.dwell_avgr.start_new_average.eq(self.beam_controller.at_dwell)

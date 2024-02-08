@@ -156,6 +156,7 @@ class IOBus(Elaboratable):
         m.d.comb += self.config_handler.roi_registers.eq(self.roi_registers)
 
         m.d.comb += self.mode_ctrl.replace_FF_to_FE.eq(1)
+        m.d.comb += self.mode_ctrl.eight_bit_output.eq(self.config_handler.eight_bit_output_locked)
         m.d.comb += self.config_handler.scan_mode.eq(self.scan_mode)
         m.d.comb += self.config_handler.step_size.eq(self.step_size)
         m.d.comb += self.mode_ctrl.x_interpolator.step_size.eq(self.config_handler.step_size_locked)
@@ -204,8 +205,8 @@ class IOBus(Elaboratable):
         sdfg = Signal()
         m.d.sync += eflnp.eq(self.config_handler.config_flag_released)
         m.d.sync += asdf.eq(eflnp)
-        m.d.sync += sdfg.eq(asdf)
-        m.d.comb += self.mode_ctrl.external_force_load_new_point.eq(sdfg)
+        # m.d.sync += sdfg.eq(asdf)
+        m.d.comb += self.mode_ctrl.external_force_load_new_point.eq(asdf)
 
         #m.d.comb += self.mode_ctrl.external_force_load_new_point.eq(self.config_handler.config_flag_released)
 

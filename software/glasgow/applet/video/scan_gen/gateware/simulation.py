@@ -212,19 +212,19 @@ def sim_iobus():
             yield
             output = yield from sim_scangen_iface.iface.read(18)
             print(list(output))
-            output = yield from sim_app_iface.read(10)
+            output = yield from sim_app_iface.read(100)
             print(list(output))
-            #yield from raster_averaging_sim()
-            yield from set_frame_params(dut, x_res=512, y_res=512)
-            yield configuration.eq(1)
-            yield
-            yield
-            yield configuration.eq(0)
-            yield
-            output = yield from sim_app_iface.read(18)
-            print(list(output))
-            output = yield from sim_app_iface.read(10)
-            print(list(output))
+            # #yield from raster_averaging_sim()
+            # yield from set_frame_params(dut, x_res=512, y_res=512)
+            # yield configuration.eq(1)
+            # yield
+            # yield
+            # yield configuration.eq(0)
+            # yield
+            # output = yield from sim_app_iface.read(18)
+            # print(list(output))
+            # output = yield from sim_app_iface.read(10)
+            # print(list(output))
 
 
 
@@ -322,8 +322,8 @@ def sim_iobus():
         # print(data)
 
                 
-        #yield from config_test()
-        yield from vec_test()
+        yield from config_test()
+        #yield from vec_test()
         # data = yield from sim_app_iface.read(2)
         # print(data)
         # data = yield from sim_app_iface.read(2)

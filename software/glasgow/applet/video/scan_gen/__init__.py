@@ -115,6 +115,7 @@ class IOBusSubtarget(Elaboratable):
             # data = platform.request("data")
             power_ok = platform.request("power_ok")
             data_lines = platform.request("data")
+
             data = [
                 data_lines.D1,
                 data_lines.D2,
@@ -131,6 +132,8 @@ class IOBusSubtarget(Elaboratable):
                 data_lines.D13,
                 data_lines.D14
             ]
+
+
         
         with m.If(self.io_bus.bus_multiplexer.is_x):
             if self.board_version == 0:
@@ -164,9 +167,8 @@ class IOBusSubtarget(Elaboratable):
                         self.io_bus.pins_i[i].eq(pad.i)
                     ]
             if self.board_version == 1:
-                pass
-                # for i, pad in enumerate(data):
-                #     m.d.comb += self.io_bus.pins_i[i].eq(pad.i)
+                for i, pad in enumerate(data):
+                    m.d.comb += self.io_bus.pins_i[i].eq(pad.i)
 
         return m
 
@@ -735,10 +737,11 @@ class ScanGenApplet(GlasgowApplet):
             await scan_iface.pause()
             await scan_iface.set_raster_mode()
             await scan_iface.set_frame_resolution(100,100)
+            await scan_iface.set_8bit_output(1)
             await scan_iface.set_config_flag(1)
             await scan_iface.set_config_flag(0)
             await scan_iface.unpause()
-            data = await scan_iface.iface.read(100)
+            data = await scan_iface.iface.read(16384)
             scan_iface.text_file.write(str(data.tolist()))
             # await scan_iface.set_frame_resolution(512,512)
             # await scan_iface.set_config_flag(1)

@@ -127,7 +127,7 @@ class RasterModeController(Elaboratable):
         with m.If(self.load_next_point):
             m.d.comb += inner_xy_scan_gen_increment.eq(1)
             m.d.comb += self.beam_controller_next.X.eq(self.xy_scan_gen.current_x)
-            m.d.comb += self.beam_controller_next.Y.eq(self.xy_scan_gen.current_x)
+            m.d.comb += self.beam_controller_next.Y.eq(self.xy_scan_gen.current_y)
             m.d.comb += self.reader.data_used.eq(1)
             m.d.comb += self.beam_controller_next.D.eq(self.reader.data_c)
             # with m.If(self.raster_fifo.r_rdy):
