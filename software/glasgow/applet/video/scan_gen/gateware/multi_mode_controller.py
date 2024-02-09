@@ -6,8 +6,6 @@ from amaranth.lib import data, enum
 
 if "glasgow" in __name__: ## running as applet
     from ..gateware.beam_controller import BeamController
-    from ..gateware.mode_controller_raster import RasterModeController
-    from ..gateware.mode_controller_vector import VectorModeController
     from ..gateware.structs import *
     from ..gateware.pixel_ratio_interpolator import PixelRatioInterpolator
     from ..gateware.dwell_averager import DwellTimeAverager
@@ -20,8 +18,6 @@ if "glasgow" in __name__: ## running as applet
 else:
     from beam_controller import BeamController
     from structs import *
-    from mode_controller_raster import RasterModeController
-    from mode_controller_vector import VectorModeController
     from pixel_ratio_interpolator import PixelRatioInterpolator
     from dwell_averager import DwellTimeAverager
     from stream_reader import StreamReader
