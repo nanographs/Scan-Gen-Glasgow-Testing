@@ -209,7 +209,7 @@ class IOBus(Elaboratable):
 
         #m.d.comb += self.mode_ctrl.external_force_load_new_point.eq(self.config_handler.config_flag_released)
 
-        m.d.comb += self.beam_controller_end_of_dwell.eq(self.mode_ctrl.beam_controller_end_of_dwell)
+        m.d.comb += self.beam_controller_end_of_dwell.eq(self.mode_ctrl.beam_controller.end_of_dwell)
         m.d.comb += self.mode_ctrl.const_dwell_time.eq(self.const_dwell_time)
 
         m.d.comb += self.config_handler.eight_bit_output.eq(self.eight_bit_output)
@@ -234,10 +234,10 @@ class IOBus(Elaboratable):
         m.d.comb += self.mode_ctrl.x_full_frame_resolution.eq(self.config_handler.x_full_frame_resolution_locked)
         m.d.comb += self.mode_ctrl.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked)
 
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_upper_limit.eq(self.config_handler.roi_registers_locked.UX)
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.config_handler.roi_registers_locked.LX)
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.config_handler.roi_registers_locked.UY)
-        m.d.comb += self.mode_ctrl.ras_mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.config_handler.roi_registers_locked.LY) 
+        m.d.comb += self.mode_ctrl.xy_scan_gen.x_upper_limit.eq(self.config_handler.roi_registers_locked.UX)
+        m.d.comb += self.mode_ctrl.xy_scan_gen.x_lower_limit.eq(self.config_handler.roi_registers_locked.LX)
+        m.d.comb += self.mode_ctrl.xy_scan_gen.y_upper_limit.eq(self.config_handler.roi_registers_locked.UY)
+        m.d.comb += self.mode_ctrl.xy_scan_gen.y_lower_limit.eq(self.config_handler.roi_registers_locked.LY) 
 
         #### =============================================================================
 

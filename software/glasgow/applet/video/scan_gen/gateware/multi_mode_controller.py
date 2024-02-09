@@ -83,8 +83,6 @@ class ModeController(Elaboratable):
         self.xy_scan_gen = XY_Scan_Gen()
 
         self.beam_controller = BeamController()
-        self.vec_mode_ctrl = VectorModeController()
-        self.ras_mode_ctrl = RasterModeController()
 
         self.x_interpolator = PixelRatioInterpolator()
         self.y_interpolator = PixelRatioInterpolator()
