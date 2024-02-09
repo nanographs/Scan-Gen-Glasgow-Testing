@@ -7,7 +7,7 @@ from amaranth.sim import Simulator
 
 from structs import *
 #sys.path.append("/Users/adammccombs/glasgow/Scan-Gen-Glasgow-Testing/software")
-sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing/software")
+sys.path.append("/Users/isabelburgos/Scan-Gen-Glasgow-Testing-main/software")
 from glasgow import *
 from glasgow.access.simulation import SimulationMultiplexerInterface, SimulationDemultiplexerInterface
 from glasgow.applet.video.scan_gen import ScanGenApplet, IOBusSubtarget, ScanGenInterface
