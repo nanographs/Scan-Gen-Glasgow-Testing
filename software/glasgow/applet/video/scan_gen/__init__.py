@@ -661,9 +661,9 @@ class ScanGenApplet(GlasgowApplet):
             x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
             y_full_resolution_b1 = y_full_resolution_b1, y_full_resolution_b2 = y_full_resolution_b2,
             x_upper_limit_b1 = x_upper_limit_b1, x_upper_limit_b2 = x_upper_limit_b2,
-            x_lower_limit_b1 = x_upper_limit_b1, x_lower_limit_b2 = x_lower_limit_b2,
+            x_lower_limit_b1 = x_lower_limit_b1, x_lower_limit_b2 = x_lower_limit_b2,
             y_upper_limit_b1 = y_upper_limit_b1, y_upper_limit_b2 = y_upper_limit_b2,
-            y_lower_limit_b1 = y_upper_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
+            y_lower_limit_b1 = y_lower_limit_b1, y_lower_limit_b2 = y_lower_limit_b2,
             eight_bit_output = eight_bit_output, do_frame_sync = do_frame_sync, do_line_sync = do_line_sync,
             const_dwell_time = const_dwell_time, configuration = configuration, unpause = unpause, step_size = step_size,
             test_mode = args.test_mode, board_version = args.vers
