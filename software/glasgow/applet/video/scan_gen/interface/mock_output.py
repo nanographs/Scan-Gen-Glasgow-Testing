@@ -6,15 +6,27 @@ def get_two_bytes(n: int):
     return b1, b2
 
 
-def generate_raster_config(x_resolution, y_resolution, eight_bit_output):
+def generate_raster_config(x_resolution, y_resolution, eight_bit_output, lx=None, ux=None, ly=None, uy=None):
     x1, x2 = get_two_bytes(x_resolution-1)
     y1, y2 = get_two_bytes(y_resolution-1)
-    lx1 = 0
-    lx2 = 0
-    ly1 = 0
-    ly2 = 0
-    ux1, ux2 = x1, x2
-    uy1, uy2 = y1, y2
+    if lx == None:
+        lx1 = 0
+        lx2 = 0
+    else:
+        lx1, lx2 = get_two_bytes(lx)
+    if ly == None:
+        ly1 = 0
+        ly2 = 0
+    else:
+        ly1, ly2 = get_two_bytes(ly)
+    if ux == None:
+        ux1, ux2 = x1, x2
+    else:
+        ux1, ux2 = get_two_bytes(ux)
+    if uy == None:
+        uy1, uy2 = y1, y2
+    else:
+        uy1, uy2 = get_two_bytes(uy)
     if eight_bit_output:
         b8 = 1
     else:
@@ -49,28 +61,37 @@ def generate_frame(x_resolution, y_resolution):
             b1, b2 = get_two_bytes(x)
             print(b2)
 
-def get_next_pixel(x_resolution, y_resolution, eight_bit_output = True):
+def get_next_pixel(x_resolution, y_resolution, eight_bit_output, lx=None, ux=None, ly=None, uy=None):
     x = 0
     y = 0
 
+    if lx == None:
+        lx = 0
+    if ly == None:
+        ly = 0
+    if ux == None:
+        ux = x_resolution
+    if uy == None:
+        uy = y_resolution
+
     while True:
-        if x >= x_resolution:
-            x = 0
+        if x >= ux:
+            x = lx
             y += 1
-        if y >= y_resolution:
-            y = 0
-        b1, b2 = get_two_bytes(x)
+        if y >= uy:
+            y = ly
         x += 1
+        b1, b2 = get_two_bytes(x)
         if not eight_bit_output:
             yield b1
         yield b2
 
 
-def generate_packet_with_config(x_resolution, y_resolution, eight_bit_output):
-    config = generate_raster_config(x_resolution, y_resolution, eight_bit_output)
+def generate_raster_packet_with_config(*args, **kwargs):
+    config = generate_raster_config(*args, **kwargs)
     packet = config
     n = 10
-    framegenerator = get_next_pixel(x_resolution, y_resolution, eight_bit_output)
+    framegenerator = get_next_pixel(*args, **kwargs)
     while n <= 16383:
         packet.append(next(framegenerator))
         n += 1
@@ -105,11 +126,11 @@ def generate_vector_packet():
 
 if __name__ == "__main__":
     #print(bytes(generate_raster_config(400,400)))
-    # packet_generator = generate_packet_with_config(400,400)
-    # text_file = open("fakepackets.txt", "w")
-    # for n in range(3):
-    #     text_file.write(str(next(packet_generator)))
+    packet_generator = generate_raster_packet_with_config(400,400, True)
+    text_file = open("fakepackets.txt", "w")
+    for n in range(3):
+        text_file.write(str(next(packet_generator)))
 
-    packet_generator = generate_vector_packet()
-    print(next(packet_generator))
+    # packet_generator = generate_vector_packet()
+    #print(next(packet_generator))
 
