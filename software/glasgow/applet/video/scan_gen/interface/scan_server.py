@@ -38,11 +38,11 @@ class ServerHost:
         self.data_server = await asyncio.start_server(self.handle_data, host, port)
         await self.data_server.serve_forever()
 
-    async def stopdata(self):
-        print("closing data writer")
-        self.streaming.cancel()
-        self.data_writer.close()
-        await self.data_writer.wait_closed()
+    # async def stopdata(self):
+    #     print("closing data writer")
+    #     self.streaming.cancel()
+    #     self.data_writer.close()
+    #     await self.data_writer.wait_closed()
 
     async def handle_cmd(self, reader, writer):
         self.cmd_reader = reader
@@ -64,7 +64,7 @@ class ServerHost:
                 print("reading additional cmds")
                 await read_cmd()
         except asyncio.IncompleteReadError:
-            print("err")
+            print("unable to read 7 bytes from cmd stream")
 
 
     async def handle_data(self, reader, writer):
@@ -76,15 +76,15 @@ class ServerHost:
         self.data_server_future.set_result("done")
         
 
-    async def send_data_continously(self):
-        while True:
-            await self.write_data()
+    # async def send_data_continously(self):
+    #     while True:
+    #         await self.write_data()
 
-    async def write_data(self):
-        await asyncio.sleep(1)
-        data = await get_data()
-        print("sending data")
-        self.data_writer.write(data)
+    # async def write_data(self):
+    #     await asyncio.sleep(1)
+    #     data = await get_data()
+    #     print("sending data")
+    #     self.data_writer.write(data)
 
 
 

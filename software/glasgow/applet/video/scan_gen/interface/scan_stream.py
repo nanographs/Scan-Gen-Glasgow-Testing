@@ -112,8 +112,6 @@ class ScanStream:
             #      ┌──────┼──────┼─────┼─────┐RX
             #      │      │      │     │     │
             #      │      │      │     │     │
-            #      │      │      │     │     │
-            #      │      │      │     │     │
             # LY───┼──────┼──────┼─────┼─────┤
             #      │      │      │     │     │
             #      │      │      ▼     │     │
@@ -121,8 +119,6 @@ class ScanStream:
             #      │      │            │     │
             #      │      │            │     │
             # UY───┼──────┼────────────┼─────┤
-            #      │      │            │     │
-            #      │      │            │     │
             #      │      │            │     │
             #      └──────┴────────────┴─────┘
             #     RY
@@ -135,8 +131,6 @@ class ScanStream:
             #      ┌──────┼──────┼─────┼─────┐RX
             #      │      │      │     │     │
             #      │      │      │     │     │
-            #      │      │      │     │     │
-            #      │      │      │     │     │
             # LY───┼──────┼──────┼─────┼─────┤
             #      │      │      │     │     │
             #      │      │      ▼     │     │
@@ -144,8 +138,6 @@ class ScanStream:
             #      │      │            │     │
             #      │      │            │     │
             # UY───┼──────┼────────────┼─────┤
-            #      │      │            │     │
-            #      │      │            │     │
             #      │      │            │     │
             #      └──────┴────────────┴─────┘
             #     RY
@@ -175,7 +167,7 @@ class ScanStream:
                 self.current_x = self.x_lower
 
                 ### roll over into the next frame if necessary
-                if self.current_y + 1 == self.y_upper:
+                if self.current_y == self.y_upper:
                     if print_debug:
                         print(f'\tat end of frame, y = {self.current_y} --> y = {self.y_upper}')
                     self.current_y = self.y_lower
@@ -215,8 +207,6 @@ class ScanStream:
                 #      ┌──────┼────────────┼─────┐RX
                 #      │      │            │     │
                 #      │      │            │     │
-                #      │      │            │     │
-                #      │      │            │     │
                 # LY───┼──────┼────────────┼─────┤
                 #      │      │            │     │
                 #      │      |            │     │
@@ -224,8 +214,6 @@ class ScanStream:
                 #  CY──┼──────►++++++++++++│     │
                 #      │      │++++++++++++│     │
                 # UY───┼──────┼────────────┼─────┤
-                #      │      │            │     │
-                #      │      │            │     │
                 #      │      │            │     │
                 #      └──────┴────────────┴─────┘
                 #     RY
@@ -272,8 +260,6 @@ class ScanStream:
                 #      ┌──────┼────────────┼─────┐RX
                 #      │      │            │     │
                 #      │      │            │     │
-                #      │      │            │     │
-                #      │      │            │     │
                 # LY───┼──────┼────────────┼─────┤
                 #      │      │            │     │
                 #      │      |            │     │
@@ -281,8 +267,6 @@ class ScanStream:
                 #  CY──┼──────►++++++++++++│     │
                 #      │      │++++++++++++│     │
                 # UY───┼──────┼────────────┼─────┤
-                #      │      │            │     │
-                #      │      │            │     │
                 #      │      │            │     │
                 #      └──────┴────────────┴─────┘
                 #     RY
@@ -296,7 +280,7 @@ class ScanStream:
                     print(f'\t\t with shape ({full_lines},{self.x_upper-self.x_lower})')
                     print(f'\t\t      {self.x_lower: <5}                    {self.x_upper: <5}')
                     print(f'\t\t{self.current_y: <5} [+++++++++++++++++++++++++]     ')
-                    print(f'\t\t      [+++++++++++++++++++++++++]     +{full_lines}')
+                    print(f'\t\t      [+++++++++++++++++++++++++]     +{full_lines} lines')
                     print(f'\t\t{self.current_y+full_lines: <5}                    0 remaining / {total_full_lines} total')
                 self.buffer[self.current_y:self.current_y + full_lines, self.x_lower:self.x_upper] = \
                     m[buffer_segment_start:buffer_segment_end]\
@@ -311,8 +295,6 @@ class ScanStream:
             #      ┌──────┼─────┼──────┼─────┐RX
             #      │      │     |      │     │
             #      │      │     |      │     │
-            #      │      │     |      │     │
-            #      │      │     |      │     │
             # LY───┼──────┼─────┼──────┼─────┤
             #      │      │     |      │     │
             #      │      |     |      │     │
@@ -321,8 +303,6 @@ class ScanStream:
             #      │      │+++++▼++++++│     │
             # CY───┼──────►@@@@@@      │     │
             # UY───┼──────┼────────────┼─────┤
-            #      │      │            │     │
-            #      │      │            │     │
             #      │      │            │     │
             #      └──────┴────────────┴─────┘
             #     RY

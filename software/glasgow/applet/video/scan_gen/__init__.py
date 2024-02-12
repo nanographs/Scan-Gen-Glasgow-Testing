@@ -411,35 +411,34 @@ class SG_EndpointInterface(ScanGenInterface):
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
                         start_new_session = True)
 
-    async def send_packet(self, future_data,n):
-        loop = asyncio.get_event_loop()
-        future_future_data = loop.create_future()
-        await self.rcv_future_data(future_future_data,n)
-        data = future_future_data.result()
-        if self.logging:
-            self._logger.info(f'recieved future data {n}, length: {str(len(data))}' )
-        print("writing", data)
-        if data is not None:
-            self.server_host.data_writer.write(data)
-            await self.server_host.data_writer.drain()
-            self._logger.info(f'wrote future data to socket {n}, length: {str(len(data))}')
-            self.text_file.write(str(data.tolist()))
-            print("send complete")
-        future_data.set_result(n)
+    # async def send_packet(self, future_data,n):
+    #     loop = asyncio.get_event_loop()
+    #     future_future_data = loop.create_future()
+    #     await self.rcv_future_data(future_future_data,n)
+    #     data = future_future_data.result()
+    #     if self.logging:
+    #         self._logger.info(f'received future data {n}, length: {str(len(data))}' )
+    #     print("writing", data)
+    #     if data is not None:
+    #         self.server_host.data_writer.write(data)
+    #         await self.server_host.data_writer.drain()
+    #         self._logger.info(f'wrote future data to socket {n}, length: {str(len(data))}')
+    #         self.text_file.write(str(data.tolist()))
+    #         print("send complete")
+    #     future_data.set_result(n)
 
     async def recv_packet(self, n):
-        print(f'standing by to recieve packet {n}...')
+        print(f'standing by to recieve pattern packet {n}...')
         await self.data_server_future
-        print(f'reading from server {n}')
+        print(f'reading from data server {n}')
         if self.logging:
-            self._logger.info(f'reading from server {n}')
+            self._logger.info(f'reading from data server {n}')
         print(self.server_host.data_reader)
-        print("at eof?", self.server_host.data_reader.at_eof())
+        print("data reader at eof?", self.server_host.data_reader.at_eof())
         print(len(self.server_host.data_reader._buffer))
         try:
             data = await self.server_host.data_reader.readexactly(16384*3)
             #data = await self.server_host.data_reader.read()
-            print(type(data))
             print(f'recieved {len(data)} points, {n}')
             if self.logging:
                 self._logger.info(f'recieved points from server {n}')
