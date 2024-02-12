@@ -9,11 +9,11 @@ async def get_data():
     #future.set_result(data)
 
 class ServerHost:
-    def __init__(self, queue, process_cmd):
+    def __init__(self, process_cmd):
         self.streaming = None
         self.HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         self.PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
-        self.queue = queue
+        #self.queue = queue
         self.process_cmd = process_cmd
 
 
@@ -54,8 +54,9 @@ class ServerHost:
             data = await self.cmd_reader.readexactly(7)
             message = data.decode()
             print("cmd:", message)
-            self.queue.submit(self.process_cmd(message))
-            await self.queue.poll()
+            # self.queue.submit(self.process_cmd(message))
+            # await self.queue.poll()
+            await self.process_cmd(message)
 
         try:
             await read_cmd()

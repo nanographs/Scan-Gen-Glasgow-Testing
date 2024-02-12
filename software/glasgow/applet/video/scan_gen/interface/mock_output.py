@@ -1,9 +1,9 @@
 
+import struct 
 def get_two_bytes(n: int):
-    bits = "{0:016b}".format(n)
-    b1 = int(bits[0:8], 2)
-    b2 = int(bits[8:16], 2)
-    return b1, b2
+    b = struct.pack('H', n)
+    b1, b2 = list(b)
+    return b2, b1
 
 
 def generate_raster_config(x_resolution, y_resolution, eight_bit_output, lx=None, ux=None, ly=None, uy=None):
@@ -22,11 +22,11 @@ def generate_raster_config(x_resolution, y_resolution, eight_bit_output, lx=None
     if ux == None:
         ux1, ux2 = x1, x2
     else:
-        ux1, ux2 = get_two_bytes(ux)
+        ux1, ux2 = get_two_bytes(ux-1)
     if uy == None:
         uy1, uy2 = y1, y2
     else:
-        uy1, uy2 = get_two_bytes(uy)
+        uy1, uy2 = get_two_bytes(uy-1)
     if eight_bit_output:
         b8 = 1
     else:
@@ -62,8 +62,7 @@ def generate_frame(x_resolution, y_resolution):
             print(b2)
 
 def get_next_pixel(x_resolution, y_resolution, eight_bit_output, lx=None, ux=None, ly=None, uy=None):
-    x = 0
-    y = 0
+    
 
     if lx == None:
         lx = 0
@@ -74,17 +73,24 @@ def get_next_pixel(x_resolution, y_resolution, eight_bit_output, lx=None, ux=Non
     if uy == None:
         uy = y_resolution
 
+    x = lx
+    y = ly
+    
+    #print(f'lx: {lx}, ux: {ux}, ly: {ly}, uy: {uy}')
+    
+
     while True:
         if x >= ux:
             x = lx
             y += 1
         if y >= uy:
             y = ly
-        x += 1
         b1, b2 = get_two_bytes(x)
         if not eight_bit_output:
             yield b1
         yield b2
+        #print(f'x: {x}, y: {y}')
+        x += 1
 
 
 def generate_raster_packet_with_config(*args, **kwargs):
@@ -126,9 +132,9 @@ def generate_vector_packet():
 
 if __name__ == "__main__":
     #print(bytes(generate_raster_config(400,400)))
-    packet_generator = generate_raster_packet_with_config(400,400, True)
+    packet_generator = generate_raster_packet_with_config(512,512, False, lx=15, ux=400, ly=15, uy=400)
     text_file = open("fakepackets.txt", "w")
-    for n in range(3):
+    for n in range(1):
         text_file.write(str(next(packet_generator)))
 
     # packet_generator = generate_vector_packet()

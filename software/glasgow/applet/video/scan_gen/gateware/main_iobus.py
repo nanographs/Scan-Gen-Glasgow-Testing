@@ -295,6 +295,8 @@ class IOBus(Elaboratable):
         m.d.comb += self.config_handler.y_lower_limit_b1.eq(self.y_lower_limit_b1)
         m.d.comb += self.config_handler.y_lower_limit_b2.eq(self.y_lower_limit_b2)
 
+        m.d.comb += self.xy_scan_gen.x_full_frame_resolution.eq(self.config_handler.x_full_frame_resolution_locked)
+        m.d.comb += self.xy_scan_gen.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked)
 
         m.d.comb += self.xy_scan_gen.x_upper_limit.eq(self.config_handler.roi_registers_locked.UX)
         m.d.comb += self.xy_scan_gen.x_lower_limit.eq(self.config_handler.roi_registers_locked.LX)
@@ -341,7 +343,7 @@ class IOBus(Elaboratable):
                 m.d.comb += self.load_next_point.eq(1)
                 with m.If((~(data_stale))):
                     m.d.comb += self.write_this_point.eq(1)
-                m.d.comb += self.dwell_avgr.start_new_average.eq(self.beam_controller.at_dwell)
+                m.d.comb += self.dwell_avgr.start_new_average.eq(1)
                 
 
 

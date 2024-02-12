@@ -208,6 +208,12 @@ def sim_iobus():
             yield configuration.eq(0)
             for n in range(20):
                 yield
+            yield configuration.eq(0)
+            for n in range(20):
+                yield
+            yield configuration.eq(1)
+            for n in range(20):
+                yield
             yield unpause.eq(1)
             yield
             output = yield from sim_scangen_iface.iface.read(18)

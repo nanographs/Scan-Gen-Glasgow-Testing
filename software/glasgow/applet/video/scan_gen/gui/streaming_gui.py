@@ -108,7 +108,7 @@ class MainWindow(ScanMainWindow):
 
     @asyncSlot()
     async def set_ROI(self):
-        x_lower, x_upper, y_lower, y_upper = self.image_display.get_ROI()
+        x_upper, x_lower, y_upper, y_lower = self.image_display.get_ROI()
         await self.con.set_ROI(x_lower, x_upper, y_lower, y_upper)
         await self.con.strobe_config()
 

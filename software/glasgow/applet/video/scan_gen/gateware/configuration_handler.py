@@ -248,7 +248,7 @@ class ConfigHandler(Elaboratable):
                         m.next = "Wait_unlatch"
             with m.State("Wait_unlatch"):
                 m.d.comb += self.config_data_valid.eq(0)
-                m.d.comb += self.writing_config.eq(0)
+                m.d.comb += self.writing_config.eq(1)
                 m.d.comb += l.eq(1)
                 with m.If(~self.outer_configuration_flag):
                     m.d.comb += self.config_flag_released.eq(1)

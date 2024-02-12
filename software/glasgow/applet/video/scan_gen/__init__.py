@@ -263,8 +263,8 @@ class ScanGenInterface(MicroscopeInterface):
         b1 = int(bits(b1))
         b2 = int(bits(b2))
         #print("writing", b1, b2)
-        await self._device.write_register(addr_b1, b1)
-        await self._device.write_register(addr_b2, b2)
+        await asyncio.gather(self._device.write_register(addr_b1, b1),
+        self._device.write_register(addr_b2, b2))
 
     async def set_8bit_output(self, val=1):
         await self._device.write_register(self.__addr_8_bit_output, val)
@@ -385,7 +385,7 @@ class SG_EndpointInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.task_queue = TaskQueue()
-        self.server_host = ServerHost(self.task_queue, self.process_cmd)
+        self.server_host = ServerHost(self.process_cmd)
         self.streaming = None
         self.logging = True
         print(f'logging? {self.logging}')
@@ -479,40 +479,51 @@ class SG_EndpointInterface(ScanGenInterface):
             self._logger.info(f'cmd recieved: {cmd} - {val}')
         if c == "ps":
             if val == 0:
-                await self.pause()
+                #await self.pause()
+                self.task_queue.submit(self.pause())
                 print("pause")
             if val == 1:
-                await self.unpause()
+                #await self.unpause()
+                self.task_queue.submit(self.unpause())
                 print("unpaused")
                 if (self.scan_mode == 3) | (self.scan_mode == 2):
                     if self.logging:
                         self._logger.info("created recv_packet task")
-                    await self.recv_packet("*")
+                    #await self.recv_packet("*")
+                    self.task_queue.submit(self.recv_packet("*"))
         elif c == "sc":
-            await self.set_scan_mode(val)
+            #await self.set_scan_mode(val)
+            self.task_queue.submit(self.set_scan_mode(val))
             print("set scan mode done")
         elif c == "dw":
-            await self.set_dwell_time(val)
+            #await self.set_dwell_time(val)
+            self.task_queue.submit(self.set_dwell_time(val))
         elif c == "rx":
-            await self.set_x_resolution(val)
+            #await self.set_x_resolution(val)
+            self.task_queue.submit(self.set_x_resolution(val))
         elif c == "ry":
-            await self.set_y_resolution(val)
+            #await self.set_y_resolution(val)
+            self.task_queue.submit(self.set_y_resolution(val))
         elif c == "ux":
-            await self.set_x_upper_limit(val)
+            #await self.set_x_upper_limit(val)
+            self.task_queue.submit(self.set_x_upper_limit(val))
         elif c == "lx":
-            await self.set_x_lower_limit(val)
+            #await self.set_x_lower_limit(val)
+            self.task_queue.submit(self.set_x_lower_limit(val))
         elif c == "uy":
-            await self.set_y_upper_limit(val)
+            #await self.set_y_upper_limit(val)
+            self.task_queue.submit(self.set_y_upper_limit(val))
         elif c == "ly":
-            await self.set_y_lower_limit(val)
-        elif c == "fs":
-            await self.set_frame_sync(val)
-        elif c == "ls":
-            await self.set_line_sync(val)
+            #await self.set_y_lower_limit(val)
+            self.task_queue.submit(self.set_y_lower_limit(val))
         elif c == "8b":
-            await self.set_8bit_output(val)
+            #await self.set_8bit_output(val)
+            self.task_queue.submit(self.set_8bit_output(val))
         elif c == "cf":
-            await self.set_config_flag(val)
+            #await self.set_config_flag(val)
+            self.task_queue.submit(self.set_config_flag(val))
+        
+        await self.task_queue.poll()
 
 
 class SG_LocalBufferInterface(ScanGenInterface):
@@ -736,7 +747,7 @@ class ScanGenApplet(GlasgowApplet):
         if args.buf == "test_raster":
             await scan_iface.pause()
             await scan_iface.set_raster_mode()
-            await scan_iface.set_frame_resolution(100,100)
+            await scan_iface.set_frame_resolution(512, 512)
             await scan_iface.set_8bit_output(1)
             await scan_iface.set_config_flag(1)
             await scan_iface.set_config_flag(0)
@@ -749,6 +760,7 @@ class ScanGenApplet(GlasgowApplet):
             # data = await scan_iface.iface.read(16384)
             # scan_iface.text_file.write(str(data.tolist()))
 
+        ## tests that vector mode works
         if args.buf == "test_vector":
             scan_stream = ScanStream()
             scan_stream.change_buffer(1024, 1024)
