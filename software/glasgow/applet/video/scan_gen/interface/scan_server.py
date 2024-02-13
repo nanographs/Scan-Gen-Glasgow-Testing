@@ -9,11 +9,11 @@ async def get_data():
     #future.set_result(data)
 
 class ServerHost:
-    def __init__(self, process_cmd):
+    def __init__(self, process_cmd, queue):
         self.streaming = None
         self.HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         self.PORT = 1237  # Port to listen on (non-privileged ports are > 1023)
-        #self.queue = queue
+        self.queue = queue
         self.process_cmd = process_cmd
 
 
@@ -47,17 +47,23 @@ class ServerHost:
     async def handle_cmd(self, reader, writer):
         self.cmd_reader = reader
         self.cmd_writer = writer
-        loop = asyncio.get_running_loop()
+        #loop = asyncio.get_running_loop()
+        #self.cmd_server_closed_future = loop.create_future()
+        #loop.create_task(self.read_cmds())
         
+
+    
+    #async def read_cmds(self):
         async def read_cmd():
             print("awaiting cmd read")
             data = await self.cmd_reader.readexactly(7)
             message = data.decode()
             print("cmd:", message)
-            # self.queue.submit(self.process_cmd(message))
-            # await self.queue.poll()
-            await self.process_cmd(message)
+            self.queue.submit(self.process_cmd(message))
+            await self.queue.poll()
+            #await self.process_cmd(message)
 
+        #while True:
         try:
             await read_cmd()
             while len(self.cmd_reader._buffer) >= 7:

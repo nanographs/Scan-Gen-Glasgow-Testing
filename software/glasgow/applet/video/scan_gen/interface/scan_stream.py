@@ -65,15 +65,6 @@ class ScanStream:
         
 
 
-    def change_buffer(self, x_width, y_height):
-        self.x_width = x_width
-        self.y_height = y_height
-        self.buffer = np.zeros(shape=(self.y_height, self.x_width),
-                dtype = np.uint8)
-        print("new buffer size:", x_width, y_height)
-        self.current_x = self.x_lower
-        self.current_y = self.y_lower
-
     def clear_buffer(self):
         self.buffer = np.zeros(shape=(self.y_height, self.x_width),
                     dtype = np.uint8)
@@ -82,7 +73,7 @@ class ScanStream:
     def check_left_sync(self):
         b1, b2 = get_two_bytes(self.x_lower)
         print(f'checking if buffer[{self.current_y},{self.x_lower}] == {b2}')
-        assert(self.buffer[self.current_y,self.x_lower] == self.x_lower)
+        assert(self.buffer[self.current_y,self.x_lower] == b2)
 
     
     def new_points_to_frame(self, m:memoryview, print_debug = True):
@@ -166,15 +157,13 @@ class ScanStream:
                 
                 self.current_x = self.x_lower
 
+
+                self.current_y += 1
                 ### roll over into the next frame if necessary
                 if self.current_y == self.y_upper:
                     if print_debug:
                         print(f'\tat end of frame, y = {self.current_y} --> y = {self.y_upper}')
                     self.current_y = self.y_lower
-                else:
-                    self.current_y += 1
-                
-
             
 
             ### ===========================STEP 2: FULL LINES TO END OF FRAME================================
@@ -184,7 +173,7 @@ class ScanStream:
                 print("\t===STEP 2: FULL LINES TO END OF FRAME===")
                 print(f'\t\tpacket contains {full_lines} full lines')
 
-            while (self.current_y + full_lines) > self.y_upper:
+            while (self.current_y + full_lines) >= self.y_upper:
                 #  [######..............................]
                 #        ^
                 #
@@ -289,6 +278,7 @@ class ScanStream:
                 buffer_segment_start = buffer_segment_end
                 self.current_y += full_lines
 
+
             #             LX    CX     UX
             #             |     |      │
             #    (0,0)    │     |      │
@@ -315,6 +305,9 @@ class ScanStream:
             self.current_x = self.x_lower + remaining_points
 
 
+            
+
+
             if remaining_points > 0:
                 if print_debug:
                     print("\t===STEP 3: LAST LINE===")
@@ -326,211 +319,11 @@ class ScanStream:
                 self.buffer[self.current_y, self.x_lower:self.current_x] = \
                     m[buffer_segment_start:data_length].cast('B')
 
+            
             break
 
-            self.check_left_sync()
-
+        #self.check_left_sync()
             
-
-
-
-
-
-        
-
-
-        
-
-    def points_to_frame(self, m:memoryview, print_debug = True):
-        cast_type = 'B'
-
-        m_len = len(m)
-        if print_debug:
-            print("data length:", m_len)
-            print("frame size (x, y):", self.x_width, self.y_height)
-            print("current x, current y:", self.current_x, self.current_y)
-        
-        current_x = self.current_x + self.x_lower
-        current_y = self.current_y + self.y_lower
-        x_width = self.x_upper - self.x_lower
-        y_height = self.y_upper - self.y_lower
-
-        if print_debug:
-            print("ROI frame size (x, y):", x_width, y_height)
-            print("ROI current x, current y:", current_x, current_y)
-            print(f'current line: {self.buffer[current_y]}')
-            print(f'{self.buffer[current_y][current_x]}')
-        
-
-        if self.current_x > 0: ## if not at the beginning of a line
-            partial_start_points = x_width - self.current_x
-            if print_debug:
-                print(f'partial start points: {partial_start_points}')
-            if partial_start_points > m_len: ## the current line will not be completed
-                
-                full_lines = 0
-                self.buffer[current_y][current_x:(current_x + m_len)] = \
-                    m[0:partial_start_points]
-                partial_end_points = 0
-                if print_debug:
-                    print(f'partial start points {partial_start_points} > data len {m_len}')
-                    self.check_sync()
-            else: ## fill in to the end of current line
-                if print_debug:
-                    print(f'buffer [{current_y}][{current_x}:{x_width + self.x_lower}]')
-                    print(f'set to m[0:{partial_start_points}]')
-                full_lines = ((m_len) - partial_start_points)//x_width
-                self.buffer[current_y][current_x:(x_width+self.x_lower)] = \
-                    m[0:partial_start_points]
-                partial_end_points = (m_len - partial_start_points)%x_width
-
-            if print_debug:
-                print(f'current line: {self.buffer[current_y]}')
-                print(f'full lines: {full_lines}')
-                print(f'top rollover index 0:{partial_start_points}')  
-                self.check_sync()
-            
-            if current_y >= y_height - 1:
-                current_y = self.y_lower
-            else:
-                current_y += 1
-            if print_debug:
-                print(f'current y: {current_y}')
-
-        else: 
-            partial_start_points = 0
-            partial_end_points = m_len%x_width
-            full_lines = m_len//x_width
-            if print_debug:
-                print("no top rollover")
-                print(f'full lines: {full_lines}')
-
-        
-        ## fill in solid middle rectangle
-
-        if not full_lines == 0:
-            if print_debug:
-                print(f'{full_lines} >= {y_height}?')
-            if full_lines >= y_height:
-                full_frames = full_lines//y_height
-                extra_lines = m_len%y_height
-                if print_debug:
-                    print(f'{full_frames} full frames')
-                    print(f'{extra_lines} extra lines')
-
-            if print_debug:
-                print(f'{current_y + full_lines} >= {y_height}?')
-            if (current_y + full_lines) >= y_height:
-                bottom_rows = y_height - current_y
-                top_rows =  full_lines - bottom_rows
-                if print_debug:
-                    print("rolled into next frame")
-                    print(f'bottom rows: {bottom_rows}')
-                    print(f'buffer [{current_y}:{current_y + bottom_rows},{self.x_lower}:{self.x_lower+x_width}]')
-                    print(f'with shape {self.buffer[current_y:(current_y + bottom_rows),self.x_lower:self.x_lower+x_width].shape}')
-                    print(f'set to data [{partial_start_points} : {partial_start_points + x_width*bottom_rows}]')
-                    print(f'with m shape {m[partial_start_points:(partial_start_points + x_width*bottom_rows)].shape}')
-                    print(f'with shape [{bottom_rows}, {x_width}]')
-                    
-
-                self.buffer[current_y:(current_y + bottom_rows),self.x_lower:self.x_lower+x_width] = \
-                        m[partial_start_points:(partial_start_points + x_width*bottom_rows)]\
-                            .cast(cast_type,shape=([bottom_rows,x_width]))
-
-                if print_debug:
-                    self.check_sync()
-
-                if top_rows == 0:
-                    current_y = top_rows
-                else:
-                    if print_debug:
-                        print(f'top rows: {top_rows}')
-                        print(f'buffer [0:{top_rows},{self.x_lower}:{self.x_lower+x_width}]')
-                        print(f'with shape {self.buffer[0:top_rows, self.x_lower:self.x_lower+x_width].shape}')
-                        print(f'set to: {partial_start_points + x_width*bottom_rows} :{partial_start_points + x_width*bottom_rows+ x_width*top_rows}')
-                        print(f'cast shape: {top_rows},{self.x_width}')
-
-                    self.buffer[0:top_rows, self.x_lower:self.x_lower+x_width] = \
-                            m[(partial_start_points + x_width*bottom_rows):\
-                                (partial_start_points + x_width*bottom_rows+ x_width*top_rows)]\
-                                .cast(cast_type,shape=([top_rows,x_width]))
-                    if print_debug:
-                        self.check_sync()
-
-                    if top_rows >= y_height: ## there's more than one full frame left
-                        skip_frames = top_rows//y_height
-                        extra_rows = top_rows%y_height
-                        self.buffer[0:extra_rows] = \
-                                m[(partial_start_points + x_width*y_height*skip_frames):\
-                                    (partial_start_points + x_width*y_height*skip_frames + x_width*extra_rows)]\
-                                    .cast(cast_type,shape=([top_rows,x_width]))
-                        current_y = extra_rows
-                    else:
-                        current_y = top_rows
-            
-            else:
-                if print_debug:
-                    print(f'buffer[{current_y}:{current_y+full_lines}][{self.x_lower}:{self.x_lower + x_width}]')
-                    print(f'with shape {self.buffer[current_y:current_y+full_lines, self.x_lower:self.x_lower+x_width].shape}')
-                    print(f'set to data [{partial_start_points}:{partial_start_points + x_width*full_lines}]')
-                    print(f'with shape [{full_lines},{x_width}]')
-                self.buffer[current_y:current_y+full_lines,self.x_lower:self.x_lower+x_width] = \
-                        m[partial_start_points:(partial_start_points + x_width*full_lines)]\
-                            .cast(cast_type,shape=([full_lines,x_width]))
-                # if print_debug:
-                #     print(f'beginning of block: {self.buffer[current_y]}')
-                current_y += full_lines
-                # if print_debug:
-                #     print(f'end of block: {self.buffer[current_y]}')
-                ## printing these takes up way too much space
-
-                if print_debug:
-                    self.check_sync()
-                
-
-
-
-        if print_debug:
-            print(f'partial end points: {partial_end_points}')
-            print(f'buffer [{current_y}][{self.x_lower}:{self.x_lower + partial_end_points}]')
-            print(f' = m[{m_len-partial_end_points}:]')
-            print(f'last line: {str(m[m_len-partial_end_points:].tolist())} ')
-            print(f'length: {len(m[m_len-partial_end_points:])}')
-            self.check_sync()
-
-
-        self.buffer[current_y][self.x_lower:self.x_lower+partial_end_points] = m[m_len-partial_end_points:]
-
-
-        self.current_y = current_y - self.y_lower
-        self.current_x = partial_end_points
-
-        if print_debug:
-            print(self.buffer[self.y_lower:self.y_upper, self.x_lower:self.x_upper])
-            #self.check_sync()
-    
-            
-
-    
-    def check_sync(self):
-        try:
-            assert (self.buffer[self.current_y+self.y_lower][self.x_lower] == self.x_lower)
-            b1, b2 = get_two_bytes(self.x_upper-1)
-            if b2 == 255:
-                b2 = 254
-            assert (self.buffer[self.current_y+self.y_lower][self.x_upper-1] == b2)
-        except AssertionError:
-            b1, b2 = get_two_bytes(self.x_upper-1)
-            if b2 == 255:
-                b2 = 254
-            print("****frame is out of sync****")
-            print(f'buffer [{self.current_y + self.y_lower}][{self.x_lower}] != {self.x_lower}')
-            print(self.buffer[self.current_y+self.y_lower][self.x_lower-5: self.x_lower+5])
-            print(f'buffer [{self.current_y + self.y_lower}][{self.x_upper-1}] != {b2}')
-            print(self.buffer[self.current_y+self.y_lower][self.x_upper-1-5: self.x_upper-1+5])
-            print(self.buffer[self.current_y+self.y_lower][self.x_upper-1])
-            #assert (self.buffer[self.current_y+self.y_lower][self.x_lower] == self.x_lower)
-            #assert (self.buffer[self.current_y+self.y_lower][self.x_upper] == b2)
 
 
     def points_to_vector(self, m:memoryview, print_debug = True):
@@ -590,47 +383,37 @@ class ScanStream:
 
 
     def parse_config_packet(self, d:memoryview, print_debug = False):
-        f = d[0:12].tolist()
-        if print_debug:
-            print("decoded config packet", f)
-        new_x = f[0]*256  + f[1] + 1
-        new_y = f[2]*256 + f[3] + 1
-
-        new_x_upper = f[4]*256  + f[5]
-        new_x_lower = f[6]*256 + f[7]
-        new_y_upper = f[8]*256  + f[9]
-        new_y_lower = f[10]*256 + f[11]
-
-        if any ([(new_x_upper != self.x_upper), (new_x_lower != self.x_lower), 
-            (new_y_upper != self.y_upper), (new_y_lower != self.y_lower)]):
-            if not new_x_upper == 0:
-                self.x_upper = new_x_upper + 1
-            else:
-                self.x_upper = self.x_width
-            self.x_lower = new_x_lower
-            if not new_y_upper == 0:
-                self.y_upper = new_y_upper + 1
-            else:
-                self.y_upper = self.y_height
-            self.y_lower = new_y_lower
-            
-            self.current_x = self.x_lower
-            self.current_y = self.y_lower
+        f = d[0:14].tolist()
+        x1, x2, y1, y2, ux1, ux2, lx1, lx2, uy1, uy2, ly1, ly2, mode, eight_bit = f
         
+        x_width = x1*256 + x2 + 1 ## add one to account for zero indexing
+        y_height = y1*256 + y2 + 1 ## add one to account for zero indexing
 
-        if ((new_x != self.x_width) | (new_y != self.y_height)):
-            self.change_buffer(new_x, new_y)
+        ux = ux1*256 + ux2 + 1 ## add one to account for zero indexing
+        lx = lx1*256 + lx2
+        uy = uy1*256 + uy2 + 1 ## add one to account for zero indexing
+        ly = ly1*256 + ly2
 
-        print(f'x width, y height: {self.x_width}, {self.y_height}')
-        print(f'x lower, x upper: {self.x_lower}, {self.x_upper}')
-        print(f'y lower, y upper: {self.y_lower}, {self.y_upper}')
+        self.scan_mode = mode
+        self.eight_bit_output = eight_bit
 
-        s = d[12:14].tolist()
-        self.scan_mode = s[0]
-        self.eight_bit_output = s[1]
-        print(f'scan mode: {self.scan_mode}')
-        print(f'8bit mode: {self.eight_bit_output}')
-        
+        ## Any time a config packet is recieved, reset to the beginning of the frame
+        self.current_x = lx
+        self.current_y = ly
+
+        self.x_upper = ux
+        self.y_upper = uy
+        self.x_lower = lx
+        self.y_lower = ly
+
+        ### Only clear the buffer if the image resolution changes
+        if ((x_width != self.x_width) | (y_height != self.y_height)):
+            self.x_width = x_width
+            self.y_height = y_height
+            self.clear_buffer()
+
+
+
 
     def parse_config_from_data(self, d:bytes, print_debug=True):
         n = re.finditer(self.config_match, d)
@@ -684,30 +467,26 @@ class ScanStream:
 
 
 
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     from mock_output import generate_raster_packet_with_config, generate_vector_packet, get_two_bytes
     import matplotlib.pyplot as plt
     def test_frame_stuffing():
         #data = [4, 5, 6] + [n for n in range(0,6)]*10 + [0, 1, 2]
         s = ScanStream()
-        s.change_buffer(512, 512)
-        packet_generator = generate_raster_packet_with_config(512, 512, True, 32, 100, 50, 100)
-        for n in range(2):
+        packet_generator = generate_raster_packet_with_config(837, 536, True)
+        for n in range(1000):
             data = next(packet_generator)
             d = bytes(data)
             try:
                 s.writeto(d)
+                print("SUCCESS!")
             except:
+                print("FAIL")
                 break
+            
+
         # for n in range(100, 200):
+        #     s.change_buffer(512, 512)
         #     packet_generator = generate_raster_packet_with_config(512,512, False, 32, 255+n, 54, 255+n)
         #     for n in range(100):
         #         print("=====start new packet======")
@@ -715,8 +494,10 @@ if __name__ == "__main__":
         #         d = bytes(data)
         #         try:
         #             s.writeto(d)
-        #         except:
-        #             break
+        #         except Exception as err:
+        #             print("ERROR:", err)
+                    # break
+
         plt.matshow(s.buffer)
         plt.show()
 

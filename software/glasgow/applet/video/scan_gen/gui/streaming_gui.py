@@ -114,9 +114,10 @@ class MainWindow(ScanMainWindow):
 
     @asyncSlot()
     async def connect(self):
+        #await self.con.open_cmd_client()
+        await self.con.open_data_client()
         await self.transmit_current_settings()
         await self.con.strobe_config()
-        await self.con.open_data_client()
         self.setState("scan_not_started")
 
     @asyncSlot()

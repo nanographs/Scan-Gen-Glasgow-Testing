@@ -209,14 +209,14 @@ class IOBus(Elaboratable):
 
 
         #### =========================== REGISTERS ====================================
-        m.d.comb += self.roi_registers.LX1.eq(self.x_lower_limit_b2)
-        m.d.comb += self.roi_registers.LX2.eq(self.x_lower_limit_b1)
-        m.d.comb += self.roi_registers.UX1.eq(self.x_upper_limit_b2)
-        m.d.comb += self.roi_registers.UX2.eq(self.x_upper_limit_b1)
-        m.d.comb += self.roi_registers.LY1.eq(self.y_lower_limit_b2)
-        m.d.comb += self.roi_registers.LY2.eq(self.y_lower_limit_b1)
-        m.d.comb += self.roi_registers.UY1.eq(self.y_upper_limit_b2)
-        m.d.comb += self.roi_registers.UY2.eq(self.y_upper_limit_b1)
+        m.d.comb += self.roi_registers.LX1.eq(self.x_lower_limit_b1)
+        m.d.comb += self.roi_registers.LX2.eq(self.x_lower_limit_b2)
+        m.d.comb += self.roi_registers.UX1.eq(self.x_upper_limit_b1)
+        m.d.comb += self.roi_registers.UX2.eq(self.x_upper_limit_b2)
+        m.d.comb += self.roi_registers.LY1.eq(self.y_lower_limit_b1)
+        m.d.comb += self.roi_registers.LY2.eq(self.y_lower_limit_b2)
+        m.d.comb += self.roi_registers.UY1.eq(self.y_upper_limit_b1)
+        m.d.comb += self.roi_registers.UY2.eq(self.y_upper_limit_b2)
 
 
 
@@ -248,9 +248,14 @@ class IOBus(Elaboratable):
         with m.Else():
             with m.If(self.configuration_flag):
                 m.d.sync += config_flag_latched.eq(1)
-            with m.If((config_flag_latched) & (self.writer.data_complete)):
-                m.d.comb += self.config_handler.configuration_flag.eq(1)
-                m.d.sync += config_flag_latched.eq(0)
+            with m.If(self.config_handler.eight_bit_output_locked):
+                with m.If((config_flag_latched) & (self.onebyte_writer.data_complete)):
+                    m.d.comb += self.config_handler.configuration_flag.eq(1)
+                    m.d.sync += config_flag_latched.eq(0)
+            with m.If(~(self.config_handler.eight_bit_output_locked)):
+                with m.If((config_flag_latched) & (self.writer.data_complete)):
+                    m.d.comb += self.config_handler.configuration_flag.eq(1)
+                    m.d.sync += config_flag_latched.eq(0)
 
 
         with m.If(~(self.unpause)):
@@ -285,26 +290,27 @@ class IOBus(Elaboratable):
         m.d.comb += self.config_handler.y_full_frame_resolution_b1.eq(self.y_full_resolution_b1)
         m.d.comb += self.config_handler.y_full_frame_resolution_b2.eq(self.y_full_resolution_b2)
 
-        m.d.comb += self.config_handler.x_upper_limit_b1.eq(self.x_upper_limit_b1)
-        m.d.comb += self.config_handler.x_upper_limit_b2.eq(self.x_upper_limit_b2)
-        m.d.comb += self.config_handler.x_lower_limit_b1.eq(self.x_lower_limit_b1)
-        m.d.comb += self.config_handler.x_lower_limit_b2.eq(self.x_lower_limit_b2)
+        # m.d.comb += self.config_handler.x_upper_limit_b1.eq(self.x_upper_limit_b1)
+        # m.d.comb += self.config_handler.x_upper_limit_b2.eq(self.x_upper_limit_b2)
+        # m.d.comb += self.config_handler.x_lower_limit_b1.eq(self.x_lower_limit_b1)
+        # m.d.comb += self.config_handler.x_lower_limit_b2.eq(self.x_lower_limit_b2)
 
-        m.d.comb += self.config_handler.y_upper_limit_b1.eq(self.y_upper_limit_b1)
-        m.d.comb += self.config_handler.y_upper_limit_b2.eq(self.y_upper_limit_b2)
-        m.d.comb += self.config_handler.y_lower_limit_b1.eq(self.y_lower_limit_b1)
-        m.d.comb += self.config_handler.y_lower_limit_b2.eq(self.y_lower_limit_b2)
+        # m.d.comb += self.config_handler.y_upper_limit_b1.eq(self.y_upper_limit_b1)
+        # m.d.comb += self.config_handler.y_upper_limit_b2.eq(self.y_upper_limit_b2)
+        # m.d.comb += self.config_handler.y_lower_limit_b1.eq(self.y_lower_limit_b1)
+        # m.d.comb += self.config_handler.y_lower_limit_b2.eq(self.y_lower_limit_b2)
 
         m.d.comb += self.xy_scan_gen.x_full_frame_resolution.eq(self.config_handler.x_full_frame_resolution_locked)
         m.d.comb += self.xy_scan_gen.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked)
 
-        m.d.comb += self.xy_scan_gen.x_upper_limit.eq(self.config_handler.roi_registers_locked.UX)
-        m.d.comb += self.xy_scan_gen.x_lower_limit.eq(self.config_handler.roi_registers_locked.LX)
-        m.d.comb += self.xy_scan_gen.y_upper_limit.eq(self.config_handler.roi_registers_locked.UY)
-        m.d.comb += self.xy_scan_gen.y_lower_limit.eq(self.config_handler.roi_registers_locked.LY) 
+        m.d.comb += self.xy_scan_gen.x_counter.upper_limit.eq(self.config_handler.roi_registers_locked.UX)
+        m.d.comb += self.xy_scan_gen.x_counter.lower_limit.eq(self.config_handler.roi_registers_locked.LX)
+        m.d.comb += self.xy_scan_gen.y_counter.upper_limit.eq(self.config_handler.roi_registers_locked.UY)
+        m.d.comb += self.xy_scan_gen.y_counter.lower_limit.eq(self.config_handler.roi_registers_locked.LY) 
 
-        m.d.comb += self.x_interpolator.frame_size.eq(self.config_handler.x_full_frame_resolution_locked)
-        m.d.comb += self.y_interpolator.frame_size.eq(self.config_handler.x_full_frame_resolution_locked)
+        #not used because we can't do division
+        #m.d.comb += self.x_interpolator.frame_size.eq(self.config_handler.x_full_frame_resolution_locked)
+        #m.d.comb += self.y_interpolator.frame_size.eq(self.config_handler.x_full_frame_resolution_locked)
 
         #### =============================================================================
 

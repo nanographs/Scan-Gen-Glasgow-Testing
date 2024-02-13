@@ -96,7 +96,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         self.roi.addScaleHandle([0, 0], [1, 1])
         self.image_view.addItem(self.roi)
         self.roi.setZValue(10)  # make sure ROI is drawn above image
-        #self.roi.sigRegionChanged.connect(self.get_ROI)
+        self.roi.sigRegionChanged.connect(self.get_ROI)
 
     def remove_ROI(self):
         if not self.roi == None:
@@ -110,6 +110,7 @@ class ImageDisplay(pg.GraphicsLayoutWidget):
         x_lower = int(x0 + x1)
         y_lower = int(y0 + y1)
         #print(x0, y0, x1, y1)
+        print(x_upper, x_lower, y_upper, y_lower)
         return x_upper, x_lower, y_upper, y_lower
         
 
@@ -164,7 +165,7 @@ if __name__ == "__main__":
     image_display = ImageDisplay(512, 512)
     image_display.showTest()
     image_display.add_ROI()
-    image_display.remove_ROI()
+    #image_display.remove_ROI()
     image_display.show()
     image_display.saveImage_tifffile()
     pg.exec()

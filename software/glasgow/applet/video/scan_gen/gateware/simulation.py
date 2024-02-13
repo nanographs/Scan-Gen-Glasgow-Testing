@@ -79,6 +79,13 @@ def vector_pattern_sim(dut):
     print(list(data))
 
 def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
+    ## account for zero indexing
+    x_res -= 1
+    y_res -= 1
+    if not x_upper == 0:
+        x_upper -= 1
+        y_upper -= 1
+
     step_size = int(16384/max(x_res,y_res))
     print(f'set step size: {step_size}')
     yield dut.step_size.eq(step_size)
@@ -198,7 +205,7 @@ def sim_iobus():
             #yield const_dwell_time.eq(0)
             #yield const_dwell_time.eq(0)
             yield scan_mode.eq(1)
-            yield from set_frame_params(dut, x_res=255, y_res=255)
+            yield from set_frame_params(dut, x_res=255, y_res=255, x_lower = 10, x_upper = 100, y_lower = 20, y_upper = 110)
             yield eight_bit_output.eq(1)
             for n in range(20):
                 yield
@@ -208,17 +215,28 @@ def sim_iobus():
             yield configuration.eq(0)
             for n in range(20):
                 yield
-            yield configuration.eq(0)
-            for n in range(20):
-                yield
-            yield configuration.eq(1)
-            for n in range(20):
-                yield
+            # yield configuration.eq(0)
+            # for n in range(20):
+            #     yield
+            # yield configuration.eq(1)
+            # for n in range(20):
+            #     yield
             yield unpause.eq(1)
             yield
             output = yield from sim_scangen_iface.iface.read(18)
             print(list(output))
-            output = yield from sim_app_iface.read(100)
+            output = yield from sim_app_iface.read(50)
+            print(list(output))
+            yield from set_frame_params(dut, x_res=200, y_res=200)
+            yield configuration.eq(1)
+            for n in range(20):
+                yield
+            yield configuration.eq(0)
+            for n in range(20):
+                yield
+            output = yield from sim_scangen_iface.iface.read(18)
+            print(list(output))
+            output = yield from sim_app_iface.read(50)
             print(list(output))
             # #yield from raster_averaging_sim()
             # yield from set_frame_params(dut, x_res=512, y_res=512)

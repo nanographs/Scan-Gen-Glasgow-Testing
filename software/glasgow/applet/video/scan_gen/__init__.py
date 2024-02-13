@@ -265,6 +265,7 @@ class ScanGenInterface(MicroscopeInterface):
         #print("writing", b1, b2)
         await asyncio.gather(self._device.write_register(addr_b1, b1),
         self._device.write_register(addr_b2, b2))
+        print("set 2 REGISTERS", val, "1:", addr_b1, "2:", addr_b1)
 
     async def set_8bit_output(self, val=1):
         await self._device.write_register(self.__addr_8_bit_output, val)
@@ -291,7 +292,7 @@ class ScanGenInterface(MicroscopeInterface):
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_x_full_resolution_b1,self.__addr_x_full_resolution_b2)
         await self.set_step_size()
-        print("set x resolution:", val)
+        print("REG:set x resolution:", val)
 
     async def set_y_resolution(self,val):
         assert(val > 0)
@@ -299,36 +300,40 @@ class ScanGenInterface(MicroscopeInterface):
         ## subtract 1 to account for 0-indexing
         await self.set_2byte_register(val-1,self.__addr_y_full_resolution_b1,self.__addr_y_full_resolution_b2)
         await self.set_step_size()
-        print("set y resolution:", val)
+        print("REG:set y resolution:", val)
 
     async def set_x_upper_limit(self, val):
         assert(val >= 0)
         if val == 0:
             val = self.x_width
         self.x_upper_limit = val
-        await self.set_2byte_register(val,self.__addr_x_upper_limit_b1,self.__addr_x_upper_limit_b2)
+        await self.set_2byte_register(val-1,self.__addr_x_upper_limit_b1,self.__addr_x_upper_limit_b2)
+        print("REG: Set x upper", val)
 
     async def set_x_lower_limit(self, val):
         assert(val >= 0)
         self.x_lower_limit = val
         await self.set_2byte_register(val,self.__addr_x_lower_limit_b1,self.__addr_x_lower_limit_b2)
+        print("REG: Set x lower", val)
 
     async def set_y_upper_limit(self, val):
         assert(val >= 0)
         if val == 0:
             val = self.y_height
         self.y_upper_limit = val
-        await self.set_2byte_register(val,self.__addr_y_upper_limit_b1,self.__addr_y_upper_limit_b2)
+        await self.set_2byte_register(val-1,self.__addr_y_upper_limit_b1,self.__addr_y_upper_limit_b2)
+        print("REG: Set y upper", val)
 
     async def set_y_lower_limit(self, val):
         assert(val >= 0)
         self.y_lower_limit = val
         await self.set_2byte_register(val,self.__addr_y_lower_limit_b1,self.__addr_y_lower_limit_b2)
+        print("REG: Set y lower", val)
 
     async def set_frame_resolution(self,xval,yval):
         await self.set_x_resolution(xval)
         await self.set_y_resolution(yval)
-        print("set frame resolution x:", xval, "y:", yval)
+        print("REG: set frame resolution x:", xval, "y:", yval)
 
     async def set_scan_mode(self, val):
         assert(3 >= val > 0)
@@ -336,39 +341,39 @@ class ScanGenInterface(MicroscopeInterface):
         self.scan_mode = val
         if self.logging:
             self._logger.info("set scan mode " + str(val))
-        print("set scan mode", val)
+        print("REG: set scan mode", val)
 
     async def set_config_flag(self, val):
         assert(1 >= val >= 0)
         await self._device.write_register(self.__addr_configuration, val)
-        print("set config flag", val)
+        print("REG: set config flag", val)
 
     async def set_dwell_time(self, val):
         assert(val > 0)
         ## subtract 1 to account for 0-indexing
         await self._device.write_register(self.__addr_const_dwell_time, val-1)
-        print("set dwell time", val)
+        print("REG:set dwell time", val)
 
     async def pause(self):
         await self._device.write_register(self.__addr_unpause, 0)
-        print("paused")
+        print("REG:paused")
 
     async def unpause(self):
         await self._device.write_register(self.__addr_unpause, 1)
-        print("unpaused")
+        print("REG:unpaused")
 
     async def set_raster_mode(self):
         await self._device.write_register(self.__addr_scan_mode, 1)
-        print("set raster mode")
+        print("REG:set raster mode")
 
     async def set_vector_mode(self):
         await self._device.write_register(self.__addr_scan_mode, 3)
-        print("set vector mode")
+        print("REG:set vector mode")
 
     async def set_step_size(self):
         step_size = (16384//(max(self.x_width, self.y_height)))
         await self._device.write_register(self.__addr_step_size, step_size)
-        print("set step size", step_size)
+        print("REG:set step size", step_size)
 
     async def benchmark(self):
         await self.set_frame_resolution(2048,2048)
@@ -385,7 +390,7 @@ class SG_EndpointInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.task_queue = TaskQueue()
-        self.server_host = ServerHost(self.process_cmd)
+        self.server_host = ServerHost(self.process_cmd, self.task_queue)
         self.streaming = None
         self.logging = True
         print(f'logging? {self.logging}')
@@ -478,12 +483,12 @@ class SG_EndpointInterface(ScanGenInterface):
             self._logger.info(f'cmd recieved: {cmd} - {val}')
         if c == "ps":
             if val == 0:
-                #await self.pause()
-                self.task_queue.submit(self.pause())
+                await self.pause()
+                #self.task_queue.submit(self.pause())
                 print("pause")
             if val == 1:
-                #await self.unpause()
-                self.task_queue.submit(self.unpause())
+                await self.unpause()
+                #self.task_queue.submit(self.unpause())
                 print("unpaused")
                 if (self.scan_mode == 3) | (self.scan_mode == 2):
                     if self.logging:
@@ -491,38 +496,38 @@ class SG_EndpointInterface(ScanGenInterface):
                     #await self.recv_packet("*")
                     self.task_queue.submit(self.recv_packet("*"))
         elif c == "sc":
-            #await self.set_scan_mode(val)
-            self.task_queue.submit(self.set_scan_mode(val))
+            await self.set_scan_mode(val)
+            #self.task_queue.submit(self.set_scan_mode(val))
             print("set scan mode done")
         elif c == "dw":
-            #await self.set_dwell_time(val)
-            self.task_queue.submit(self.set_dwell_time(val))
+            await self.set_dwell_time(val)
+            #self.task_queue.submit(self.set_dwell_time(val))
         elif c == "rx":
-            #await self.set_x_resolution(val)
-            self.task_queue.submit(self.set_x_resolution(val))
+            await self.set_x_resolution(val)
+            #self.task_queue.submit(self.set_x_resolution(val))
         elif c == "ry":
-            #await self.set_y_resolution(val)
-            self.task_queue.submit(self.set_y_resolution(val))
+            await self.set_y_resolution(val)
+            #self.task_queue.submit(self.set_y_resolution(val))
         elif c == "ux":
-            #await self.set_x_upper_limit(val)
-            self.task_queue.submit(self.set_x_upper_limit(val))
+            await self.set_x_upper_limit(val)
+            #self.task_queue.submit(self.set_x_upper_limit(val))
         elif c == "lx":
-            #await self.set_x_lower_limit(val)
-            self.task_queue.submit(self.set_x_lower_limit(val))
+            await self.set_x_lower_limit(val)
+            #self.task_queue.submit(self.set_x_lower_limit(val))
         elif c == "uy":
-            #await self.set_y_upper_limit(val)
-            self.task_queue.submit(self.set_y_upper_limit(val))
+            await self.set_y_upper_limit(val)
+            #self.task_queue.submit(self.set_y_upper_limit(val))
         elif c == "ly":
-            #await self.set_y_lower_limit(val)
-            self.task_queue.submit(self.set_y_lower_limit(val))
+            await self.set_y_lower_limit(val)
+            #self.task_queue.submit(self.set_y_lower_limit(val))
         elif c == "8b":
-            #await self.set_8bit_output(val)
-            self.task_queue.submit(self.set_8bit_output(val))
+            await self.set_8bit_output(val)
+            #self.task_queue.submit(self.set_8bit_output(val))
         elif c == "cf":
-            #await self.set_config_flag(val)
-            self.task_queue.submit(self.set_config_flag(val))
+            await self.set_config_flag(val)
+            #self.task_queue.submit(self.set_config_flag(val))
         
-        await self.task_queue.poll()
+        #await self.task_queue.poll()
 
 
 class SG_LocalBufferInterface(ScanGenInterface):
@@ -746,11 +751,17 @@ class ScanGenApplet(GlasgowApplet):
         if args.buf == "test_raster":
             await scan_iface.pause()
             await scan_iface.set_raster_mode()
-            await scan_iface.set_frame_resolution(512, 512)
+            await scan_iface.set_frame_resolution(255, 255)
+            #await scan_iface.set_ROI(20, 100, 20, 100)
             await scan_iface.set_8bit_output(1)
             await scan_iface.set_config_flag(1)
             await scan_iface.set_config_flag(0)
             await scan_iface.unpause()
+            data = await scan_iface.iface.read(16384)
+            scan_iface.text_file.write(str(data.tolist()))
+            await scan_iface.set_frame_resolution(200, 200)
+            await scan_iface.set_config_flag(1)
+            await scan_iface.set_config_flag(0)
             data = await scan_iface.iface.read(16384)
             scan_iface.text_file.write(str(data.tolist()))
             # await scan_iface.set_frame_resolution(512,512)

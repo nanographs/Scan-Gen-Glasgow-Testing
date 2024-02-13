@@ -138,6 +138,17 @@ class ConnectionManager:
         self.data_reader, self.data_writer = await future_con
         await self.start_reading()
 
+    async def open_cmd_client(self):
+        host = "127.0.0.1"  # Standard loopback interface address (localhost)
+        port = 1237  # Port to listen on (non-privileged ports are > 1023)
+        print("opening data client")
+        loop = asyncio.get_event_loop()
+        future_con = loop.create_future()
+        loop.create_task(self.open_connection(host, port, future_con))
+        await asyncio.sleep(0)
+        self.cmd_reader, self.cmd_writer = await future_con
+        #await self.start_reading()
+
     async def cmd_client(self, message, print_debug = True):
         HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
         PORT = 1237  # Port to listen on (non-privileged ports are > 1023)

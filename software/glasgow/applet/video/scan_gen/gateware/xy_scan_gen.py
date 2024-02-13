@@ -73,11 +73,11 @@ class XY_Scan_Gen(Elaboratable):
         self.y_bigger = Signal()
         self.full_frame_size = Signal(16)
         
-        self.x_lower_limit = Signal(16)
-        self.x_upper_limit = Signal(16)
+        # self.x_lower_limit = Signal(16)
+        # self.x_upper_limit = Signal(16)
 
-        self.y_lower_limit = Signal(16)
-        self.y_upper_limit = Signal(16)
+        # self.y_lower_limit = Signal(16)
+        # self.y_upper_limit = Signal(16)
 
         self.current_x = Signal(16)
         self.current_y = Signal(16)
@@ -99,31 +99,31 @@ class XY_Scan_Gen(Elaboratable):
             m.d.comb += self.y_counter.reset.eq(1)
 
         with m.If(self.x_full_frame_resolution >= self.y_full_frame_resolution):
-            m.d.comb += self.full_frame_size.eq(self.x_full_frame_resolution)
+            #m.d.comb += self.full_frame_size.eq(self.x_full_frame_resolution)
             m.d.comb += self.x_bigger.eq(1)
 
         with m.If(self.x_full_frame_resolution < self.y_full_frame_resolution):
-            m.d.comb += self.full_frame_size.eq(self.y_full_frame_resolution)
+            #m.d.comb += self.full_frame_size.eq(self.y_full_frame_resolution)
             m.d.comb += self.y_bigger.eq(1)
 
-        with m.If(self.x_upper_limit <= self.x_lower_limit):
-            m.d.comb += self.x_counter.upper_limit.eq(self.x_full_frame_resolution)
-        with m.Else():
-            m.d.comb += self.x_counter.upper_limit.eq(self.x_upper_limit)
+        # with m.If(self.x_upper_limit <= self.x_lower_limit):
+        #     m.d.comb += self.x_counter.upper_limit.eq(self.x_full_frame_resolution)
+        # with m.Else():
+        #     m.d.comb += self.x_counter.upper_limit.eq(self.x_upper_limit)
 
-        with m.If(self.y_upper_limit <= self.y_lower_limit):
-            m.d.comb += self.y_counter.upper_limit.eq(self.y_full_frame_resolution)
-        with m.Else():
-            m.d.comb += self.y_counter.upper_limit.eq(self.y_upper_limit)
+        # with m.If(self.y_upper_limit <= self.y_lower_limit):
+        #     m.d.comb += self.y_counter.upper_limit.eq(self.y_full_frame_resolution)
+        # with m.Else():
+        #     m.d.comb += self.y_counter.upper_limit.eq(self.y_upper_limit)
 
-        with m.If(self.y_upper_limit == 0):
-            m.d.comb += self.y_counter.upper_limit.eq(self.y_full_frame_resolution)
+        # with m.If(self.y_upper_limit == 0):
+        #     m.d.comb += self.y_counter.upper_limit.eq(self.y_full_frame_resolution)
         
-        with m.If(self.x_upper_limit == 0):
-            m.d.comb += self.x_counter.upper_limit.eq(self.x_full_frame_resolution)
+        # with m.If(self.x_upper_limit == 0):
+        #     m.d.comb += self.x_counter.upper_limit.eq(self.x_full_frame_resolution)
 
-        m.d.comb += self.x_counter.lower_limit.eq(self.x_lower_limit)
-        m.d.comb += self.y_counter.lower_limit.eq(self.y_lower_limit)
+        # m.d.comb += self.x_counter.lower_limit.eq(self.x_lower_limit)
+        # m.d.comb += self.y_counter.lower_limit.eq(self.y_lower_limit)
 
         m.d.comb += self.frame_sync.eq((self.x_counter.ovf) & (self.y_counter.ovf))
         m.d.comb += self.line_sync.eq((self.x_counter.ovf) & ~(self.y_counter.ovf))
@@ -310,5 +310,5 @@ def sim_scangenerator():
         sim.run()
 
 if __name__ == "__main__":
-    test_scangenerator_new()
-    #sim_scangenerator()
+    #test_scangenerator_new()
+    sim_scangenerator()
