@@ -57,12 +57,14 @@ class StreamFrameSettings(FrameSettings):
     async def set_x(self):
         xval = self.rx.getval()
         await self.con.set_x_resolution(xval)
+        await self.con.set_ROI(0,0,0,0)
         await self.con.strobe_config()
 
     @asyncSlot()
     async def set_y(self):
         yval = self.ry.getval()
         await self.con.set_y_resolution(yval)
+        await self.con.set_ROI(0,0,0,0)
         await self.con.strobe_config()
 
     @asyncSlot()
