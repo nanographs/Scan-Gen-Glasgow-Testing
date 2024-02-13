@@ -50,9 +50,6 @@ class ServerHost:
         #loop = asyncio.get_running_loop()
         #self.cmd_server_closed_future = loop.create_future()
         #loop.create_task(self.read_cmds())
-        
-
-    
     #async def read_cmds(self):
         async def read_cmd():
             print("awaiting cmd read")
@@ -63,14 +60,14 @@ class ServerHost:
             await self.queue.poll()
             #await self.process_cmd(message)
 
-        #while True:
-        try:
-            await read_cmd()
-            while len(self.cmd_reader._buffer) >= 7:
+        await read_cmd()
+        while len(self.cmd_reader._buffer) >= 7:
+            try:
                 print("reading additional cmds")
                 await read_cmd()
-        except asyncio.IncompleteReadError:
-            print("unable to read 7 bytes from cmd stream")
+            except asyncio.IncompleteReadError:
+                print("unable to read 7 bytes from cmd stream")
+                break
 
 
     async def handle_data(self, reader, writer):
