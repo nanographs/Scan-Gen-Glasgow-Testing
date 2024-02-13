@@ -85,7 +85,7 @@ class ScanMainWindow(QWidget):
 
     def add_ROI(self):
         self.image_display.add_ROI()
-        self.image_display.roi.sigRegionChanged.connect(self.set_ROI)
+        self.image_display.roi.sigRegionChangeFinished.connect(self.set_ROI)
 
     def get_ROI(self):
         return self.image_display.get_ROI()
