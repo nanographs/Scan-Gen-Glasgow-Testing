@@ -368,7 +368,7 @@ class IOBus(Elaboratable):
                             m.d.comb += self.dwell_avgr.start_new_average.eq(1)
                             m.next = "Patterning"
                 with m.State("Patterning"):
-                    m.d.comb += self.beam_controller.dwelling.eq((self.in_fifo.w_rdy) & (~(self.unpause)) & (~(self.handling_config)))
+                    m.d.comb += self.beam_controller.dwelling.eq((self.in_fifo.w_rdy) & (self.unpause) & (~(self.handling_config)))
 
         with m.If((self.scan_mode == ScanMode.Raster)|(self.scan_mode == ScanMode.RasterPattern)):
             #### Interpolation 
