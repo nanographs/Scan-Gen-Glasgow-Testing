@@ -290,15 +290,6 @@ class IOBus(Elaboratable):
         m.d.comb += self.config_handler.y_full_frame_resolution_b1.eq(self.y_full_resolution_b1)
         m.d.comb += self.config_handler.y_full_frame_resolution_b2.eq(self.y_full_resolution_b2)
 
-        # m.d.comb += self.config_handler.x_upper_limit_b1.eq(self.x_upper_limit_b1)
-        # m.d.comb += self.config_handler.x_upper_limit_b2.eq(self.x_upper_limit_b2)
-        # m.d.comb += self.config_handler.x_lower_limit_b1.eq(self.x_lower_limit_b1)
-        # m.d.comb += self.config_handler.x_lower_limit_b2.eq(self.x_lower_limit_b2)
-
-        # m.d.comb += self.config_handler.y_upper_limit_b1.eq(self.y_upper_limit_b1)
-        # m.d.comb += self.config_handler.y_upper_limit_b2.eq(self.y_upper_limit_b2)
-        # m.d.comb += self.config_handler.y_lower_limit_b1.eq(self.y_lower_limit_b1)
-        # m.d.comb += self.config_handler.y_lower_limit_b2.eq(self.y_lower_limit_b2)
 
         m.d.comb += self.xy_scan_gen.x_full_frame_resolution.eq(self.config_handler.x_full_frame_resolution_locked)
         m.d.comb += self.xy_scan_gen.y_full_frame_resolution.eq(self.config_handler.y_full_frame_resolution_locked)

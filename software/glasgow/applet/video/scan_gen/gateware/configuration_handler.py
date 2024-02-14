@@ -75,18 +75,8 @@ class ConfigHandler(Elaboratable):
         self.roi_registers = Signal(reduced_area_8)
         self.roi_registers_locked = Signal(reduced_area_16)
 
-        # self.x_lower_limit_b1 = Signal(8)
-        # self.x_lower_limit_b2 = Signal(8)
-        # self.x_upper_limit_b1 = Signal(8)
-        # self.x_upper_limit_b2 = Signal(8)
-
         self.x_lower_limit_locked = Signal(16)
         self.x_upper_limit_locked = Signal(16)
-
-        # self.y_lower_limit_b1 = Signal(8)
-        # self.y_lower_limit_b2 = Signal(8)
-        # self.y_upper_limit_b1 = Signal(8)
-        # self.y_upper_limit_b2 = Signal(8)
 
         self.y_lower_limit_locked = Signal(16)
         self.y_upper_limit_locked = Signal(16)
@@ -120,8 +110,6 @@ class ConfigHandler(Elaboratable):
                 m.d.comb += self.writing_config.eq(0)
                 m.d.comb += self.config_data_valid.eq(0)
                 with m.If(self.configuration_flag):
-                    #m.d.comb += self.writing_config.eq(1)
-                    #m.d.sync += self.roi_registers_locked.eq(self.roi_registers)
 
                     m.d.sync += self.roi_registers_locked.LX.eq(Cat(self.roi_registers.LX2,self.roi_registers.LX1))
                     m.d.sync += self.roi_registers_locked.LY.eq(Cat(self.roi_registers.LY2,self.roi_registers.LY1))
@@ -145,6 +133,8 @@ class ConfigHandler(Elaboratable):
                                                                             self.y_full_frame_resolution_b1))                 
                     m.d.sync += self.eight_bit_output_locked.eq(self.eight_bit_output)
                     m.d.sync += self.step_size_locked.eq(self.step_size)
+
+                    #m.d.comb += self.writing_config.eq(1)
                     #m.d.comb += self.config_data_valid.eq(1)
                     m.d.comb += self.in_fifo_w_data.eq(self.demarcator)
                     with m.If(self.write_happened):
