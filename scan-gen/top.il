@@ -1476,21 +1476,27 @@ module \top.registers
   attribute \init 8'00000000
   wire width 8 output 19 $signal$11
   wire width 8 $signal$11$next
-  attribute \init 1'0
-  wire width 1 output 20 $signal$12
-  wire width 1 $signal$12$next
+  attribute \init 8'00000000
+  wire width 8 output 20 $signal$12
+  wire width 8 $signal$12$next
   attribute \init 8'00000000
   wire width 8 output 21 $signal$13
   wire width 8 $signal$13$next
   attribute \init 1'0
   wire width 1 output 22 $signal$14
   wire width 1 $signal$14$next
+  attribute \init 8'00000000
+  wire width 8 output 23 $signal$15
+  wire width 8 $signal$15$next
   attribute \init 1'0
-  wire width 1 output 23 $signal$15
-  wire width 1 $signal$15$next
+  wire width 1 output 24 $signal$16
+  wire width 1 $signal$16$next
+  attribute \init 1'0
+  wire width 1 output 25 $signal$17
+  wire width 1 $signal$17$next
   attribute \init 8'00000001
-  wire width 8 output 24 $signal$16
-  wire width 8 $signal$16$next
+  wire width 8 output 26 $signal$18
+  wire width 8 $signal$18$next
   attribute \init 8'00000000
   wire width 8 \reg_data
   wire width 8 \reg_data$next
@@ -1516,8 +1522,8 @@ module \top.registers
         assign \latch_addr$next 1'0
     end
   end
-  wire width 1 $17
-  cell $lt $18
+  wire width 1 $19
+  cell $lt $20
     parameter \A_SIGNED 0
     parameter \A_WIDTH 8
     parameter \B_SIGNED 0
@@ -1525,7 +1531,7 @@ module \top.registers
     parameter \Y_WIDTH 1
     connect \A \data_i
     connect \B 5'10101
-    connect \Y $17
+    connect \Y $19
   end
   process $group_2
     assign \ack_o 1'0
@@ -1533,7 +1539,7 @@ module \top.registers
       case 1'1
         switch { \latch_addr }
           case 1'1
-            switch { $17 }
+            switch { $19 }
               case 1'1
                 assign \ack_o 1'1
             end
@@ -1560,34 +1566,28 @@ module \top.registers
         assign \reg_addr$next 5'00000
     end
   end
-  wire width 8 $19
-  cell $pos $20
+  wire width 8 $21
+  cell $pos $22
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 8
     connect \A $signal
-    connect \Y $19
+    connect \Y $21
   end
-  wire width 8 $21
-  cell $pos $22
+  wire width 8 $23
+  cell $pos $24
     parameter \A_SIGNED 0
     parameter \A_WIDTH 2
     parameter \Y_WIDTH 8
     connect \A $signal$1
-    connect \Y $21
+    connect \Y $23
   end
-  attribute \init 8'00000000
-  wire width 8 $signal$23
-  wire width 8 $signal$23$next
-  attribute \init 8'00000000
-  wire width 8 $signal$24
-  wire width 8 $signal$24$next
   wire width 8 $25
   cell $pos $26
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 8
-    connect \A $signal$12
+    connect \A $signal$14
     connect \Y $25
   end
   wire width 8 $27
@@ -1617,7 +1617,7 @@ module \top.registers
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 8
-    connect \A $signal$14
+    connect \A $signal$16
     connect \Y $33
   end
   wire width 8 $35
@@ -1625,7 +1625,7 @@ module \top.registers
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 8
-    connect \A $signal$15
+    connect \A $signal$17
     connect \Y $35
   end
   wire width 8 $37
@@ -1647,9 +1647,9 @@ module \top.registers
           case 1'1
             switch \data_i
               case 8'00000000
-                assign \reg_data$next $19
-              case 8'00000001
                 assign \reg_data$next $21
+              case 8'00000001
+                assign \reg_data$next $23
               case 8'00000010
                 assign \reg_data$next $signal$2
               case 8'00000011
@@ -1663,17 +1663,17 @@ module \top.registers
               case 8'00000111
                 assign \reg_data$next $signal$7
               case 8'00001000
-                assign \reg_data$next $signal$23
-              case 8'00001001
                 assign \reg_data$next $signal$8
-              case 8'00001010
+              case 8'00001001
                 assign \reg_data$next $signal$9
-              case 8'00001011
+              case 8'00001010
                 assign \reg_data$next $signal$10
-              case 8'00001100
-                assign \reg_data$next $signal$24
-              case 8'00001101
+              case 8'00001011
                 assign \reg_data$next $signal$11
+              case 8'00001100
+                assign \reg_data$next $signal$12
+              case 8'00001101
+                assign \reg_data$next $signal$13
               case 8'00001110
                 assign \reg_data$next $25
               case 8'00001111
@@ -1681,13 +1681,13 @@ module \top.registers
               case 8'00010000
                 assign \reg_data$next $30
               case 8'00010001
-                assign \reg_data$next $signal$13
+                assign \reg_data$next $signal$15
               case 8'00010010
                 assign \reg_data$next $33
               case 8'00010011
                 assign \reg_data$next $35
               case 8'--------
-                assign \reg_data$next $signal$16
+                assign \reg_data$next $signal$18
             end
           case
             assign \reg_data$next { \reg_data \data_i } [7:0]
@@ -1718,19 +1718,19 @@ module \top.registers
     assign $signal$5$next $signal$5
     assign $signal$6$next $signal$6
     assign $signal$7$next $signal$7
-    assign $signal$23$next $signal$23
     assign $signal$8$next $signal$8
     assign $signal$9$next $signal$9
     assign $signal$10$next $signal$10
-    assign $signal$24$next $signal$24
     assign $signal$11$next $signal$11
     assign $signal$12$next $signal$12
-    assign $signal$28$next $signal$28
-    assign $signal$31$next $signal$31
     assign $signal$13$next $signal$13
     assign $signal$14$next $signal$14
+    assign $signal$28$next $signal$28
+    assign $signal$31$next $signal$31
     assign $signal$15$next $signal$15
     assign $signal$16$next $signal$16
+    assign $signal$17$next $signal$17
+    assign $signal$18$next $signal$18
     switch { \write }
       case 1'1
         switch { \latch_addr }
@@ -1754,31 +1754,31 @@ module \top.registers
               case 5'00111
                 assign $signal$7$next { \reg_data \data_i } [7:0]
               case 5'01000
-                assign $signal$23$next { \reg_data \data_i } [7:0]
-              case 5'01001
                 assign $signal$8$next { \reg_data \data_i } [7:0]
-              case 5'01010
+              case 5'01001
                 assign $signal$9$next { \reg_data \data_i } [7:0]
-              case 5'01011
+              case 5'01010
                 assign $signal$10$next { \reg_data \data_i } [7:0]
-              case 5'01100
-                assign $signal$24$next { \reg_data \data_i } [7:0]
-              case 5'01101
+              case 5'01011
                 assign $signal$11$next { \reg_data \data_i } [7:0]
+              case 5'01100
+                assign $signal$12$next { \reg_data \data_i } [7:0]
+              case 5'01101
+                assign $signal$13$next { \reg_data \data_i } [7:0]
               case 5'01110
-                assign { $41 $signal$12$next } { \reg_data \data_i } [7:0]
+                assign { $41 $signal$14$next } { \reg_data \data_i } [7:0]
               case 5'01111
                 assign { $42 $signal$28$next } { \reg_data \data_i } [7:0]
               case 5'10000
                 assign { $43 $signal$31$next } { \reg_data \data_i } [7:0]
               case 5'10001
-                assign $signal$13$next { \reg_data \data_i } [7:0]
+                assign $signal$15$next { \reg_data \data_i } [7:0]
               case 5'10010
-                assign { $44 $signal$14$next } { \reg_data \data_i } [7:0]
+                assign { $44 $signal$16$next } { \reg_data \data_i } [7:0]
               case 5'10011
-                assign { $45 $signal$15$next } { \reg_data \data_i } [7:0]
+                assign { $45 $signal$17$next } { \reg_data \data_i } [7:0]
               case 5'-----
-                assign $signal$16$next { \reg_data \data_i } [7:0]
+                assign $signal$18$next { \reg_data \data_i } [7:0]
             end
         end
     end
@@ -1792,19 +1792,19 @@ module \top.registers
         assign $signal$5$next 8'00000000
         assign $signal$6$next 8'00000000
         assign $signal$7$next 8'00000000
-        assign $signal$23$next 8'00000000
         assign $signal$8$next 8'00000000
         assign $signal$9$next 8'00000000
         assign $signal$10$next 8'00000000
-        assign $signal$24$next 8'00000000
         assign $signal$11$next 8'00000000
-        assign $signal$12$next 1'0
-        assign $signal$28$next 1'0
-        assign $signal$31$next 1'0
+        assign $signal$12$next 8'00000000
         assign $signal$13$next 8'00000000
         assign $signal$14$next 1'0
-        assign $signal$15$next 1'0
-        assign $signal$16$next 8'00000001
+        assign $signal$28$next 1'0
+        assign $signal$31$next 1'0
+        assign $signal$15$next 8'00000000
+        assign $signal$16$next 1'0
+        assign $signal$17$next 1'0
+        assign $signal$18$next 8'00000001
     end
   end
   cell $dff $46
@@ -1888,50 +1888,50 @@ module \top.registers
     parameter \CLK_POLARITY 1
     parameter \WIDTH 8
     connect \CLK \clk
-    connect \D $signal$23$next
-    connect \Q $signal$23
-  end
-  cell $dff $58
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 8
-    connect \CLK \clk
     connect \D $signal$8$next
     connect \Q $signal$8
   end
-  cell $dff $59
+  cell $dff $58
     parameter \CLK_POLARITY 1
     parameter \WIDTH 8
     connect \CLK \clk
     connect \D $signal$9$next
     connect \Q $signal$9
   end
-  cell $dff $60
+  cell $dff $59
     parameter \CLK_POLARITY 1
     parameter \WIDTH 8
     connect \CLK \clk
     connect \D $signal$10$next
     connect \Q $signal$10
   end
-  cell $dff $61
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 8
-    connect \CLK \clk
-    connect \D $signal$24$next
-    connect \Q $signal$24
-  end
-  cell $dff $62
+  cell $dff $60
     parameter \CLK_POLARITY 1
     parameter \WIDTH 8
     connect \CLK \clk
     connect \D $signal$11$next
     connect \Q $signal$11
   end
+  cell $dff $61
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 8
+    connect \CLK \clk
+    connect \D $signal$12$next
+    connect \Q $signal$12
+  end
+  cell $dff $62
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 8
+    connect \CLK \clk
+    connect \D $signal$13$next
+    connect \Q $signal$13
+  end
   cell $dff $63
     parameter \CLK_POLARITY 1
     parameter \WIDTH 1
     connect \CLK \clk
-    connect \D $signal$12$next
-    connect \Q $signal$12
+    connect \D $signal$14$next
+    connect \Q $signal$14
   end
   cell $dff $64
     parameter \CLK_POLARITY 1
@@ -1951,29 +1951,29 @@ module \top.registers
     parameter \CLK_POLARITY 1
     parameter \WIDTH 8
     connect \CLK \clk
-    connect \D $signal$13$next
-    connect \Q $signal$13
+    connect \D $signal$15$next
+    connect \Q $signal$15
   end
   cell $dff $67
     parameter \CLK_POLARITY 1
     parameter \WIDTH 1
     connect \CLK \clk
-    connect \D $signal$14$next
-    connect \Q $signal$14
+    connect \D $signal$16$next
+    connect \Q $signal$16
   end
   cell $dff $68
     parameter \CLK_POLARITY 1
     parameter \WIDTH 1
     connect \CLK \clk
-    connect \D $signal$15$next
-    connect \Q $signal$15
+    connect \D $signal$17$next
+    connect \Q $signal$17
   end
   cell $dff $69
     parameter \CLK_POLARITY 1
     parameter \WIDTH 8
     connect \CLK \clk
-    connect \D $signal$16$next
-    connect \Q $signal$16
+    connect \D $signal$18$next
+    connect \Q $signal$18
   end
 end
 attribute \generator "Amaranth"
@@ -5130,4253 +5130,6 @@ module \top.fx2_crossbar
   connect \complete 1'0
 end
 attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.BeamController
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 1 input 3 \dwelling
-  wire width 1 input 4 \count_enable
-  attribute \init 14'00000000000000
-  wire width 14 output 5 \x_position
-  wire width 14 \x_position$next
-  attribute \init 14'00000000000000
-  wire width 14 output 6 \y_position
-  wire width 14 \y_position$next
-  wire width 14 input 7 \next_x_position
-  wire width 14 input 8 \next_y_position
-  wire width 1 input 9 \reset
-  wire width 1 input 10 \lock_new_point
-  wire width 1 output 11 \end_of_dwell
-  wire width 1 output 12 \at_dwell
-  wire width 16 input 13 \next_dwell
-  attribute \init 16'0000000000000000
-  wire width 16 \counter
-  wire width 16 \counter$next
-  attribute \init 14'00000000000000
-  wire width 14 \dwell_time
-  wire width 14 \dwell_time$next
-  wire width 1 $1
-  cell $eq $2
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 14
-    parameter \Y_WIDTH 1
-    connect \A \counter
-    connect \B \dwell_time
-    connect \Y $1
-  end
-  process $group_0
-    assign \at_dwell 1'0
-    switch { \count_enable }
-      case 1'1
-        assign \at_dwell $1
-    end
-  end
-  wire width 1 $3
-  wire width 1 \dwelling_changed
-  cell $not $4
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \dwelling_changed
-    connect \Y $3
-  end
-  wire width 1 $5
-  cell $and $6
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \at_dwell
-    connect \B $3
-    connect \Y $5
-  end
-  process $group_1
-    assign \end_of_dwell 1'0
-    assign \end_of_dwell $5
-  end
-  attribute \init 1'0
-  wire width 1 \prev_dwelling
-  wire width 1 \prev_dwelling$next
-  process $group_2
-    assign \prev_dwelling$next \prev_dwelling
-    assign \prev_dwelling$next \dwelling
-    switch $signal
-      case 1'1
-        assign \prev_dwelling$next 1'0
-    end
-    switch \rst
-      case 1'1
-        assign \prev_dwelling$next 1'0
-    end
-  end
-  wire width 1 $7
-  cell $ne $8
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \dwelling
-    connect \B \prev_dwelling
-    connect \Y $7
-  end
-  process $group_3
-    assign \dwelling_changed 1'0
-    assign \dwelling_changed $7
-  end
-  attribute \init 1'0
-  wire width 1 \prev_dwelling_changed
-  wire width 1 \prev_dwelling_changed$next
-  process $group_4
-    assign \prev_dwelling_changed$next \prev_dwelling_changed
-    assign \prev_dwelling_changed$next \dwelling_changed
-    switch $signal
-      case 1'1
-        assign \prev_dwelling_changed$next 1'0
-    end
-    switch \rst
-      case 1'1
-        assign \prev_dwelling_changed$next 1'0
-    end
-  end
-  wire width 1 $9
-  wire width 1 \freeze
-  cell $not $10
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \freeze
-    connect \Y $9
-  end
-  wire width 1 $11
-  cell $and $12
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \dwelling
-    connect \B $9
-    connect \Y $11
-  end
-  wire width 17 $13
-  wire width 17 $14
-  cell $add $15
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 17
-    connect \A \counter
-    connect \B 1'1
-    connect \Y $14
-  end
-  connect $13 $14
-  process $group_5
-    assign \counter$next \counter
-    switch { $11 }
-      case 1'1
-        switch { \count_enable }
-          case 1'1
-            switch { \at_dwell }
-              case 1'1
-                assign \counter$next 16'0000000000000000
-              case
-                assign \counter$next $13 [15:0]
-            end
-        end
-      case
-        assign \counter$next 16'0000000000000000
-    end
-    switch $signal
-      case 1'1
-        assign \counter$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \counter$next 16'0000000000000000
-    end
-  end
-  process $group_6
-    assign \x_position$next \x_position
-    switch { \reset }
-      case 1'1
-        assign \x_position$next 14'00000000000000
-      case
-        switch { \lock_new_point }
-          case 1'1
-            assign \x_position$next \next_x_position
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \x_position$next 14'00000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \x_position$next 14'00000000000000
-    end
-  end
-  process $group_7
-    assign \y_position$next \y_position
-    switch { \reset }
-      case 1'1
-        assign \y_position$next 14'00000000000000
-      case
-        switch { \lock_new_point }
-          case 1'1
-            assign \y_position$next \next_y_position
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \y_position$next 14'00000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \y_position$next 14'00000000000000
-    end
-  end
-  process $group_8
-    assign \dwell_time$next \dwell_time
-    switch { \reset }
-      case 1'1
-        assign \dwell_time$next 14'00000000000000
-      case
-        switch { \lock_new_point }
-          case 1'1
-            assign \dwell_time$next \next_dwell [13:0]
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \dwell_time$next 14'00000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \dwell_time$next 14'00000000000000
-    end
-  end
-  attribute \init 16'0000000000000000
-  wire width 16 \true_counter
-  wire width 16 \true_counter$next
-  wire width 17 $16
-  wire width 17 $17
-  cell $add $18
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 17
-    connect \A \true_counter
-    connect \B 1'1
-    connect \Y $17
-  end
-  connect $16 $17
-  process $group_9
-    assign \true_counter$next \true_counter
-    assign \true_counter$next $16 [15:0]
-    switch { \lock_new_point }
-      case 1'1
-        assign \true_counter$next 16'0000000000000000
-    end
-    switch $signal
-      case 1'1
-        assign \true_counter$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \true_counter$next 16'0000000000000000
-    end
-  end
-  cell $dff $19
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 1
-    connect \CLK \clk
-    connect \D \prev_dwelling$next
-    connect \Q \prev_dwelling
-  end
-  cell $dff $20
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 1
-    connect \CLK \clk
-    connect \D \prev_dwelling_changed$next
-    connect \Q \prev_dwelling_changed
-  end
-  cell $dff $21
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \counter$next
-    connect \Q \counter
-  end
-  cell $dff $22
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 14
-    connect \CLK \clk
-    connect \D \x_position$next
-    connect \Q \x_position
-  end
-  cell $dff $23
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 14
-    connect \CLK \clk
-    connect \D \y_position$next
-    connect \Q \y_position
-  end
-  cell $dff $24
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 14
-    connect \CLK \clk
-    connect \D \dwell_time$next
-    connect \Q \dwell_time
-  end
-  cell $dff $25
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \true_counter$next
-    connect \Q \true_counter
-  end
-  connect \freeze 1'0
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.Raster1byteWriter
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 8 output 3 \in_fifo_w_data
-  wire width 1 input 4 \write_happened
-  wire width 1 output 5 \data_valid
-  wire width 1 output 6 \data_complete
-  wire width 8 input 7 \data_c
-  wire width 1 input 8 \strobe_in
-  wire width 1 \w
-  attribute \init 1'0
-  wire width 1 \fsm_state
-  wire width 1 \fsm_state$next
-  process $group_0
-    assign \w 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 1'0
-        assign \w 1'1
-      attribute \amaranth.decoding "D1/1"
-      case 1'1
-    end
-  end
-  process $group_1
-    assign \data_valid 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 1'0
-        switch { \strobe_in }
-          case 1'1
-            assign \data_valid 1'1
-        end
-      attribute \amaranth.decoding "D1/1"
-      case 1'1
-        assign \data_valid 1'1
-    end
-  end
-  process $group_2
-    assign \in_fifo_w_data 8'00000000
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 1'0
-        switch { \strobe_in }
-          case 1'1
-            assign \in_fifo_w_data \data_c
-        end
-      attribute \amaranth.decoding "D1/1"
-      case 1'1
-        assign \in_fifo_w_data \data_c
-    end
-  end
-  attribute \init 8'00000000
-  wire width 8 \data
-  wire width 8 \data$next
-  process $group_3
-    assign \data$next \data
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 1'0
-        switch { \strobe_in }
-          case 1'1
-            assign \data$next \data_c
-        end
-      attribute \amaranth.decoding "D1/1"
-      case 1'1
-    end
-    switch $signal
-      case 1'1
-        assign \data$next 8'00000000
-    end
-    switch \rst
-      case 1'1
-        assign \data$next 8'00000000
-    end
-  end
-  process $group_4
-    assign \data_complete 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 1'0
-        switch { \strobe_in }
-          case 1'1
-            assign \data_complete 1'1
-        end
-      attribute \amaranth.decoding "D1/1"
-      case 1'1
-        assign \data_complete 1'1
-    end
-  end
-  process $group_5
-    assign \fsm_state$next \fsm_state
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 1'0
-        switch { \strobe_in }
-          case 1'1
-            switch { \write_happened }
-              case 1'1
-                assign \fsm_state$next 1'0
-              case
-                assign \fsm_state$next 1'1
-            end
-        end
-      attribute \amaranth.decoding "D1/1"
-      case 1'1
-        switch { \write_happened }
-          case 1'1
-            assign \fsm_state$next 1'0
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \fsm_state$next 1'0
-    end
-    switch \rst
-      case 1'1
-        assign \fsm_state$next 1'0
-    end
-  end
-  wire width 1 \lf
-  process $group_6
-    assign \lf 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 1'0
-      attribute \amaranth.decoding "D1/1"
-      case 1'1
-        assign \lf 1'1
-    end
-  end
-  cell $dff $1
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 8
-    connect \CLK \clk
-    connect \D \data$next
-    connect \Q \data
-  end
-  cell $dff $2
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 1
-    connect \CLK \clk
-    connect \D \fsm_state$next
-    connect \Q \fsm_state
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.RasterWriter
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 8 output 3 \in_fifo_w_data
-  wire width 1 input 4 \write_happened
-  wire width 1 output 5 \data_valid
-  wire width 1 output 6 \data_complete
-  wire width 16 input 7 \data_c
-  wire width 1 input 8 \strobe_in
-  wire width 1 \w
-  attribute \init 2'00
-  wire width 2 \fsm_state
-  wire width 2 \fsm_state$next
-  process $group_0
-    assign \w 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        assign \w 1'1
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-    end
-  end
-  process $group_1
-    assign \data_valid 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        switch { \strobe_in }
-          case 1'1
-            assign \data_valid 1'1
-        end
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-        assign \data_valid 1'1
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        assign \data_valid 1'1
-    end
-  end
-  process $group_2
-    assign \in_fifo_w_data 8'00000000
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        switch { \strobe_in }
-          case 1'1
-            assign \in_fifo_w_data \data_c [7:0]
-        end
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-        assign \in_fifo_w_data \data_c [7:0]
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        assign \in_fifo_w_data \data_c [15:8]
-    end
-  end
-  attribute \init 16'0000000000000000
-  wire width 16 \data
-  wire width 16 \data$next
-  process $group_3
-    assign \data$next \data
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        switch { \strobe_in }
-          case 1'1
-            assign \data$next \data_c
-        end
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-    end
-    switch $signal
-      case 1'1
-        assign \data$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \data$next 16'0000000000000000
-    end
-  end
-  process $group_4
-    assign \fsm_state$next \fsm_state
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        switch { \strobe_in }
-          case 1'1
-            switch { \write_happened }
-              case 1'1
-                assign \fsm_state$next 2'01
-              case
-                assign \fsm_state$next 2'10
-            end
-        end
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-        switch { \write_happened }
-          case 1'1
-            assign \fsm_state$next 2'01
-        end
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        switch { \write_happened }
-          case 1'1
-            assign \fsm_state$next 2'00
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \fsm_state$next 2'00
-    end
-    switch \rst
-      case 1'1
-        assign \fsm_state$next 2'00
-    end
-  end
-  wire width 3 \f
-  process $group_5
-    assign \f 3'000
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-        assign \f 3'001
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-    end
-  end
-  process $group_6
-    assign \data_complete 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        assign \data_complete 1'1
-    end
-  end
-  wire width 1 \lf
-  process $group_7
-    assign \lf 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        assign \lf 1'1
-    end
-  end
-  cell $dff $1
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \data$next
-    connect \Q \data
-  end
-  cell $dff $2
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 2
-    connect \CLK \clk
-    connect \D \fsm_state$next
-    connect \Q \fsm_state
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.RasterReader
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 1 output 3 \data_complete
-  wire width 1 output 4 \data_fresh
-  wire width 8 input 5 \out_fifo_r_data
-  wire width 1 input 6 \read_happened
-  wire width 1 input 7 \data_used
-  wire width 16 output 8 \data_c
-  attribute \init 16'0000000000000000
-  wire width 16 \data
-  wire width 16 \data$next
-  attribute \init 2'00
-  wire width 2 \fsm_state
-  wire width 2 \fsm_state$next
-  process $group_0
-    assign \data$next \data
-    switch \fsm_state
-      attribute \amaranth.decoding "D1/0"
-      case 2'00
-        switch { \read_happened }
-          case 1'1
-            assign \data$next [7:0] \out_fifo_r_data
-        end
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        switch { \read_happened }
-          case 1'1
-            switch { \data_used }
-              case 1'1
-                assign \data$next 16'0000000000000000
-              case
-                assign \data$next \data_c
-            end
-        end
-      attribute \amaranth.decoding "Hold/2"
-      case 2'10
-        switch { \data_used }
-          case 1'1
-            assign \data$next 16'0000000000000000
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \data$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \data$next 16'0000000000000000
-    end
-  end
-  process $group_1
-    assign \fsm_state$next \fsm_state
-    switch \fsm_state
-      attribute \amaranth.decoding "D1/0"
-      case 2'00
-        switch { \read_happened }
-          case 1'1
-            assign \fsm_state$next 2'01
-        end
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        switch { \read_happened }
-          case 1'1
-            switch { \data_used }
-              case 1'1
-                assign \fsm_state$next 2'00
-              case
-                assign \fsm_state$next 2'10
-            end
-        end
-      attribute \amaranth.decoding "Hold/2"
-      case 2'10
-        switch { \data_used }
-          case 1'1
-            assign \fsm_state$next 2'00
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \fsm_state$next 2'00
-    end
-    switch \rst
-      case 1'1
-        assign \fsm_state$next 2'00
-    end
-  end
-  process $group_2
-    assign \data_c 16'0000000000000000
-    switch \fsm_state
-      attribute \amaranth.decoding "D1/0"
-      case 2'00
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        switch { \read_happened }
-          case 1'1
-            assign \data_c [7:0] \data [7:0]
-            assign \data_c [15:8] \out_fifo_r_data
-        end
-      attribute \amaranth.decoding "Hold/2"
-      case 2'10
-        assign \data_c \data
-    end
-  end
-  process $group_3
-    assign \data_fresh 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "D1/0"
-      case 2'00
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        switch { \read_happened }
-          case 1'1
-            assign \data_fresh 1'1
-        end
-      attribute \amaranth.decoding "Hold/2"
-      case 2'10
-        assign \data_fresh 1'1
-    end
-  end
-  wire width 1 \s
-  process $group_4
-    assign \s 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "D1/0"
-      case 2'00
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-      attribute \amaranth.decoding "Hold/2"
-      case 2'10
-        assign \s 1'1
-    end
-  end
-  process $group_5
-    assign \data_complete 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "D1/0"
-      case 2'00
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-      attribute \amaranth.decoding "Hold/2"
-      case 2'10
-        assign \data_complete 1'1
-    end
-  end
-  cell $dff $1
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \data$next
-    connect \Q \data
-  end
-  cell $dff $2
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 2
-    connect \CLK \clk
-    connect \D \fsm_state$next
-    connect \Q \fsm_state
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.XYScanGen.x_counter
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 1 input 3 \increment
-  wire width 1 output 4 \ovf
-  wire width 1 input 5 \reset
-  wire width 16 input 6 \upper_limit
-  wire width 16 input 7 \lower_limit
-  attribute \init 16'0000000000000000
-  wire width 16 output 8 \current_count
-  wire width 16 \current_count$next
-  wire width 1 $1
-  cell $ge $2
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \current_count
-    connect \B \upper_limit
-    connect \Y $1
-  end
-  process $group_0
-    assign \ovf 1'0
-    assign \ovf $1
-  end
-  wire width 1 \unf
-  wire width 1 $3
-  cell $lt $4
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \current_count
-    connect \B \lower_limit
-    connect \Y $3
-  end
-  process $group_1
-    assign \unf 1'0
-    assign \unf $3
-  end
-  wire width 16 \next_count
-  process $group_2
-    assign \current_count$next \current_count
-    switch { \reset }
-      case 1'1
-        assign \current_count$next \lower_limit
-      case
-        switch { \increment }
-          case 1'1
-            switch { \ovf \unf }
-              case 2'-1
-                assign \current_count$next \lower_limit
-              case 2'1-
-                assign \current_count$next \lower_limit
-              case
-                assign \current_count$next \next_count
-            end
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \current_count$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \current_count$next 16'0000000000000000
-    end
-  end
-  wire width 17 $5
-  wire width 17 $6
-  cell $add $7
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 17
-    connect \A \current_count
-    connect \B 1'1
-    connect \Y $6
-  end
-  connect $5 $6
-  process $group_3
-    assign \next_count 16'0000000000000000
-    switch { \reset }
-      case 1'1
-      case
-        switch { \increment }
-          case 1'1
-            switch { \ovf \unf }
-              case 2'-1
-              case 2'1-
-              case
-                assign \next_count $5 [15:0]
-            end
-        end
-    end
-  end
-  cell $dff $8
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \current_count$next
-    connect \Q \current_count
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.XYScanGen.y_counter
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 1 input 3 \increment
-  wire width 1 input 4 \reset
-  wire width 16 input 5 \upper_limit
-  wire width 16 input 6 \lower_limit
-  wire width 1 output 7 \ovf
-  attribute \init 16'0000000000000000
-  wire width 16 output 8 \current_count
-  wire width 16 \current_count$next
-  wire width 1 $1
-  cell $ge $2
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \current_count
-    connect \B \upper_limit
-    connect \Y $1
-  end
-  process $group_0
-    assign \ovf 1'0
-    assign \ovf $1
-  end
-  wire width 1 \unf
-  wire width 1 $3
-  cell $lt $4
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \current_count
-    connect \B \lower_limit
-    connect \Y $3
-  end
-  process $group_1
-    assign \unf 1'0
-    assign \unf $3
-  end
-  wire width 16 \next_count
-  process $group_2
-    assign \current_count$next \current_count
-    switch { \reset }
-      case 1'1
-        assign \current_count$next \lower_limit
-      case
-        switch { \increment }
-          case 1'1
-            switch { \ovf \unf }
-              case 2'-1
-                assign \current_count$next \lower_limit
-              case 2'1-
-                assign \current_count$next \lower_limit
-              case
-                assign \current_count$next \next_count
-            end
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \current_count$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \current_count$next 16'0000000000000000
-    end
-  end
-  wire width 17 $5
-  wire width 17 $6
-  cell $add $7
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 17
-    connect \A \current_count
-    connect \B 1'1
-    connect \Y $6
-  end
-  connect $5 $6
-  process $group_3
-    assign \next_count 16'0000000000000000
-    switch { \reset }
-      case 1'1
-      case
-        switch { \increment }
-          case 1'1
-            switch { \ovf \unf }
-              case 2'-1
-              case 2'1-
-              case
-                assign \next_count $5 [15:0]
-            end
-        end
-    end
-  end
-  cell $dff $8
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \current_count$next
-    connect \Q \current_count
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.XYScanGen
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 16 input 3 \x_upper_limit
-  wire width 16 input 4 \x_lower_limit
-  wire width 16 input 5 \y_upper_limit
-  wire width 16 input 6 \y_lower_limit
-  wire width 1 input 7 \reset
-  wire width 16 input 8 \x_full_frame_resolution
-  wire width 16 input 9 \y_full_frame_resolution
-  wire width 1 input 10 \increment
-  wire width 16 output 11 \current_x
-  wire width 1 \x_counter_increment
-  wire width 1 \x_counter_ovf
-  wire width 1 \x_counter_reset
-  wire width 16 \x_counter_upper_limit
-  wire width 16 \x_counter_lower_limit
-  wire width 16 \x_counter_current_count
-  cell \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.XYScanGen.x_counter \x_counter
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \increment \x_counter_increment
-    connect \ovf \x_counter_ovf
-    connect \reset \x_counter_reset
-    connect \upper_limit \x_counter_upper_limit
-    connect \lower_limit \x_counter_lower_limit
-    connect \current_count \x_counter_current_count
-  end
-  wire width 1 \y_counter_increment
-  wire width 1 \y_counter_reset
-  wire width 16 \y_counter_upper_limit
-  wire width 16 \y_counter_lower_limit
-  wire width 1 \y_counter_ovf
-  wire width 16 \y_counter_current_count
-  cell \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.XYScanGen.y_counter \y_counter
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \increment \y_counter_increment
-    connect \reset \y_counter_reset
-    connect \upper_limit \y_counter_upper_limit
-    connect \lower_limit \y_counter_lower_limit
-    connect \ovf \y_counter_ovf
-    connect \current_count \y_counter_current_count
-  end
-  process $group_0
-    assign \x_counter_increment 1'0
-    switch { \increment }
-      case 1'1
-        assign \x_counter_increment \increment
-    end
-  end
-  process $group_1
-    assign \y_counter_increment 1'0
-    switch { \increment }
-      case 1'1
-        assign \y_counter_increment \x_counter_ovf
-    end
-  end
-  process $group_2
-    assign \x_counter_reset 1'0
-    switch { \reset }
-      case 1'1
-        assign \x_counter_reset 1'1
-    end
-  end
-  process $group_3
-    assign \y_counter_reset 1'0
-    switch { \reset }
-      case 1'1
-        assign \y_counter_reset 1'1
-    end
-  end
-  wire width 16 \full_frame_size
-  wire width 1 $1
-  cell $ge $2
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \x_full_frame_resolution
-    connect \B \y_full_frame_resolution
-    connect \Y $1
-  end
-  wire width 1 $3
-  cell $lt $4
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \x_full_frame_resolution
-    connect \B \y_full_frame_resolution
-    connect \Y $3
-  end
-  process $group_4
-    assign \full_frame_size 16'0000000000000000
-    switch { $1 }
-      case 1'1
-        assign \full_frame_size \x_full_frame_resolution
-    end
-    switch { $3 }
-      case 1'1
-        assign \full_frame_size \y_full_frame_resolution
-    end
-  end
-  wire width 1 \x_bigger
-  wire width 1 $5
-  cell $ge $6
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \x_full_frame_resolution
-    connect \B \y_full_frame_resolution
-    connect \Y $5
-  end
-  process $group_5
-    assign \x_bigger 1'0
-    switch { $5 }
-      case 1'1
-        assign \x_bigger 1'1
-    end
-  end
-  wire width 1 \y_bigger
-  wire width 1 $7
-  cell $lt $8
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \x_full_frame_resolution
-    connect \B \y_full_frame_resolution
-    connect \Y $7
-  end
-  process $group_6
-    assign \y_bigger 1'0
-    switch { $7 }
-      case 1'1
-        assign \y_bigger 1'1
-    end
-  end
-  wire width 1 $9
-  cell $le $10
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \x_upper_limit
-    connect \B \x_lower_limit
-    connect \Y $9
-  end
-  wire width 1 $11
-  cell $eq $12
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \x_upper_limit
-    connect \B 1'0
-    connect \Y $11
-  end
-  process $group_7
-    assign \x_counter_upper_limit 16'0000000000000001
-    switch { $9 }
-      case 1'1
-        assign \x_counter_upper_limit \x_full_frame_resolution
-      case
-        assign \x_counter_upper_limit \x_upper_limit
-    end
-    switch { $11 }
-      case 1'1
-        assign \x_counter_upper_limit \x_full_frame_resolution
-    end
-  end
-  wire width 1 $13
-  cell $le $14
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \y_upper_limit
-    connect \B \y_lower_limit
-    connect \Y $13
-  end
-  wire width 1 $15
-  cell $eq $16
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \y_upper_limit
-    connect \B 1'0
-    connect \Y $15
-  end
-  process $group_8
-    assign \y_counter_upper_limit 16'0000000000000001
-    switch { $13 }
-      case 1'1
-        assign \y_counter_upper_limit \y_full_frame_resolution
-      case
-        assign \y_counter_upper_limit \y_upper_limit
-    end
-    switch { $15 }
-      case 1'1
-        assign \y_counter_upper_limit \y_full_frame_resolution
-    end
-  end
-  process $group_9
-    assign \x_counter_lower_limit 16'0000000000000000
-    assign \x_counter_lower_limit \x_lower_limit
-  end
-  process $group_10
-    assign \y_counter_lower_limit 16'0000000000000000
-    assign \y_counter_lower_limit \y_lower_limit
-  end
-  wire width 1 \frame_sync
-  wire width 1 $17
-  cell $and $18
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \x_counter_ovf
-    connect \B \y_counter_ovf
-    connect \Y $17
-  end
-  process $group_11
-    assign \frame_sync 1'0
-    assign \frame_sync $17
-  end
-  wire width 1 \line_sync
-  wire width 1 $19
-  cell $not $20
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \y_counter_ovf
-    connect \Y $19
-  end
-  wire width 1 $21
-  cell $and $22
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \x_counter_ovf
-    connect \B $19
-    connect \Y $21
-  end
-  process $group_12
-    assign \line_sync 1'0
-    assign \line_sync $21
-  end
-  process $group_13
-    assign \current_x 16'0000000000000000
-    assign \current_x \x_counter_current_count
-  end
-  wire width 16 \current_y
-  process $group_14
-    assign \current_y 16'0000000000000000
-    assign \current_y \y_counter_current_count
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 16 input 3 \x_upper_limit
-  wire width 16 input 4 \x_lower_limit
-  wire width 16 input 5 \y_upper_limit
-  wire width 16 input 6 \y_lower_limit
-  wire width 1 input 7 \reset
-  wire width 1 input 8 \xy_scan_gen_increment
-  wire width 1 input 9 \eight_bit_output
-  wire width 16 input 10 \x_full_frame_resolution
-  wire width 16 input 11 \y_full_frame_resolution
-  wire width 48 output 12 \beam_controller_next
-  wire width 16 input 13 \adc_data_avgd
-  wire width 8 output 14 \in_fifo_w_data
-  wire width 1 input 15 \write_happened
-  wire width 1 output 16 \data_valid
-  wire width 1 output 17 \data_complete
-  wire width 8 output 18 \in_fifo_w_data$1
-  wire width 1 input 19 \write_happened$2
-  wire width 1 output 20 \data_valid$3
-  wire width 1 output 21 \data_complete$4
-  wire width 1 input 22 \load_next_point
-  wire width 1 input 23 \write_this_point
-  wire width 1 output 24 \data_complete$5
-  wire width 1 output 25 \data_fresh
-  wire width 8 input 26 \out_fifo_r_data
-  wire width 1 input 27 \read_happened
-  wire width 8 \Raster1byteWriter_data_c
-  wire width 1 \Raster1byteWriter_strobe_in
-  cell \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.Raster1byteWriter \Raster1byteWriter
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \in_fifo_w_data \in_fifo_w_data
-    connect \write_happened \write_happened
-    connect \data_valid \data_valid
-    connect \data_complete \data_complete
-    connect \data_c \Raster1byteWriter_data_c
-    connect \strobe_in \Raster1byteWriter_strobe_in
-  end
-  wire width 16 \RasterWriter_data_c
-  wire width 1 \RasterWriter_strobe_in
-  cell \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.RasterWriter \RasterWriter
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \in_fifo_w_data \in_fifo_w_data$1
-    connect \write_happened \write_happened$2
-    connect \data_valid \data_valid$3
-    connect \data_complete \data_complete$4
-    connect \data_c \RasterWriter_data_c
-    connect \strobe_in \RasterWriter_strobe_in
-  end
-  wire width 1 \RasterReader_data_used
-  wire width 16 \RasterReader_data_c
-  cell \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.RasterReader \RasterReader
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \data_complete \data_complete$5
-    connect \data_fresh \data_fresh
-    connect \out_fifo_r_data \out_fifo_r_data
-    connect \read_happened \read_happened
-    connect \data_used \RasterReader_data_used
-    connect \data_c \RasterReader_data_c
-  end
-  wire width 1 \XYScanGen_increment
-  wire width 16 \XYScanGen_current_x
-  cell \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl.XYScanGen \XYScanGen
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \x_upper_limit \x_upper_limit
-    connect \x_lower_limit \x_lower_limit
-    connect \y_upper_limit \y_upper_limit
-    connect \y_lower_limit \y_lower_limit
-    connect \reset \reset
-    connect \x_full_frame_resolution \x_full_frame_resolution
-    connect \y_full_frame_resolution \y_full_frame_resolution
-    connect \increment \XYScanGen_increment
-    connect \current_x \XYScanGen_current_x
-  end
-  wire width 1 \inner_xy_scan_gen_increment
-  wire width 1 $6
-  cell $or $7
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \inner_xy_scan_gen_increment
-    connect \B \xy_scan_gen_increment
-    connect \Y $6
-  end
-  process $group_0
-    assign \XYScanGen_increment 1'0
-    switch { $6 }
-      case 1'1
-        assign \XYScanGen_increment 1'1
-    end
-  end
-  process $group_1
-    assign \Raster1byteWriter_data_c 8'00000000
-    switch { \eight_bit_output }
-      case 1'1
-        assign \Raster1byteWriter_data_c \adc_data_avgd [7:0]
-      case
-    end
-  end
-  process $group_2
-    assign \RasterWriter_data_c 16'0000000000000000
-    switch { \eight_bit_output }
-      case 1'1
-      case
-        assign \RasterWriter_data_c \adc_data_avgd
-    end
-  end
-  process $group_3
-    assign \Raster1byteWriter_strobe_in 1'0
-    switch { \write_this_point }
-      case 1'1
-        switch { \eight_bit_output }
-          case 1'1
-            assign \Raster1byteWriter_strobe_in 1'1
-          case
-        end
-    end
-  end
-  process $group_4
-    assign \RasterWriter_strobe_in 1'0
-    switch { \write_this_point }
-      case 1'1
-        switch { \eight_bit_output }
-          case 1'1
-          case
-            assign \RasterWriter_strobe_in 1'1
-        end
-    end
-  end
-  process $group_5
-    assign \inner_xy_scan_gen_increment 1'0
-    switch { \load_next_point }
-      case 1'1
-        assign \inner_xy_scan_gen_increment 1'1
-    end
-  end
-  process $group_6
-    assign \beam_controller_next 48'000000000000000000000000000000000000000000000000
-    switch { \load_next_point }
-      case 1'1
-        assign \beam_controller_next [15:0] \XYScanGen_current_x
-        assign \beam_controller_next [31:16] \XYScanGen_current_x
-        assign \beam_controller_next [47:32] \RasterReader_data_c
-    end
-  end
-  process $group_7
-    assign \RasterReader_data_used 1'0
-    switch { \load_next_point }
-      case 1'1
-        assign \RasterReader_data_used 1'1
-    end
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.VectorModeCtrl.VectorReader
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 1 output 3 \data_complete
-  wire width 1 input 4 \read_happened
-  wire width 1 output 5 \data_fresh
-  wire width 8 input 6 \out_fifo_r_data
-  wire width 1 input 7 \data_used
-  attribute \init 48'000000000000000000000000000000000000000000000000
-  wire width 48 output 8 \data
-  wire width 48 \data$next
-  attribute \init 3'000
-  wire width 3 \fsm_state
-  wire width 3 \fsm_state$next
-  wire width 48 \data_c
-  process $group_0
-    assign \data$next \data
-    switch \fsm_state
-      attribute \amaranth.decoding "X1/0"
-      case 3'000
-        switch { \read_happened }
-          case 1'1
-            assign \data$next [7:0] \out_fifo_r_data
-        end
-      attribute \amaranth.decoding "X2/1"
-      case 3'001
-        switch { \read_happened }
-          case 1'1
-            assign \data$next [15:8] \out_fifo_r_data
-        end
-      attribute \amaranth.decoding "Y1/2"
-      case 3'010
-        switch { \read_happened }
-          case 1'1
-            assign \data$next [23:16] \out_fifo_r_data
-        end
-      attribute \amaranth.decoding "Y2/3"
-      case 3'011
-        switch { \read_happened }
-          case 1'1
-            assign \data$next [31:24] \out_fifo_r_data
-        end
-      attribute \amaranth.decoding "D1/4"
-      case 3'100
-        switch { \read_happened }
-          case 1'1
-            assign \data$next [39:32] \out_fifo_r_data
-        end
-      attribute \amaranth.decoding "D2/5"
-      case 3'101
-        switch { \read_happened }
-          case 1'1
-            switch { \data_used }
-              case 1'1
-                assign \data$next 48'000000000000000000000000000000000000000000000000
-              case
-                assign \data$next \data_c
-            end
-        end
-      attribute \amaranth.decoding "Hold/6"
-      case 3'110
-        switch { \data_used }
-          case 1'1
-            assign \data$next 48'000000000000000000000000000000000000000000000000
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \data$next 48'000000000000000000000000000000000000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \data$next 48'000000000000000000000000000000000000000000000000
-    end
-  end
-  process $group_1
-    assign \fsm_state$next \fsm_state
-    switch \fsm_state
-      attribute \amaranth.decoding "X1/0"
-      case 3'000
-        switch { \read_happened }
-          case 1'1
-            assign \fsm_state$next 3'001
-        end
-      attribute \amaranth.decoding "X2/1"
-      case 3'001
-        switch { \read_happened }
-          case 1'1
-            assign \fsm_state$next 3'010
-        end
-      attribute \amaranth.decoding "Y1/2"
-      case 3'010
-        switch { \read_happened }
-          case 1'1
-            assign \fsm_state$next 3'011
-        end
-      attribute \amaranth.decoding "Y2/3"
-      case 3'011
-        switch { \read_happened }
-          case 1'1
-            assign \fsm_state$next 3'100
-        end
-      attribute \amaranth.decoding "D1/4"
-      case 3'100
-        switch { \read_happened }
-          case 1'1
-            assign \fsm_state$next 3'101
-        end
-      attribute \amaranth.decoding "D2/5"
-      case 3'101
-        switch { \read_happened }
-          case 1'1
-            switch { \data_used }
-              case 1'1
-                assign \fsm_state$next 3'000
-              case
-                assign \fsm_state$next 3'110
-            end
-        end
-      attribute \amaranth.decoding "Hold/6"
-      case 3'110
-        switch { \data_used }
-          case 1'1
-            assign \fsm_state$next 3'000
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \fsm_state$next 3'000
-    end
-    switch \rst
-      case 1'1
-        assign \fsm_state$next 3'000
-    end
-  end
-  process $group_2
-    assign \data_c 48'000000000000000000000000000000000000000000000000
-    switch \fsm_state
-      attribute \amaranth.decoding "X1/0"
-      case 3'000
-      attribute \amaranth.decoding "X2/1"
-      case 3'001
-      attribute \amaranth.decoding "Y1/2"
-      case 3'010
-      attribute \amaranth.decoding "Y2/3"
-      case 3'011
-      attribute \amaranth.decoding "D1/4"
-      case 3'100
-      attribute \amaranth.decoding "D2/5"
-      case 3'101
-        switch { \read_happened }
-          case 1'1
-            assign \data_c [7:0] \data [7:0]
-            assign \data_c [15:8] \data [15:8]
-            assign \data_c [23:16] \data [23:16]
-            assign \data_c [31:24] \data [31:24]
-            assign \data_c [39:32] \data [39:32]
-            assign \data_c [47:40] \out_fifo_r_data
-        end
-      attribute \amaranth.decoding "Hold/6"
-      case 3'110
-        assign \data_c \data
-    end
-  end
-  process $group_3
-    assign \data_fresh 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "X1/0"
-      case 3'000
-      attribute \amaranth.decoding "X2/1"
-      case 3'001
-      attribute \amaranth.decoding "Y1/2"
-      case 3'010
-      attribute \amaranth.decoding "Y2/3"
-      case 3'011
-      attribute \amaranth.decoding "D1/4"
-      case 3'100
-      attribute \amaranth.decoding "D2/5"
-      case 3'101
-        switch { \read_happened }
-          case 1'1
-            assign \data_fresh 1'1
-        end
-      attribute \amaranth.decoding "Hold/6"
-      case 3'110
-        assign \data_fresh 1'1
-    end
-  end
-  wire width 1 \s
-  process $group_4
-    assign \s 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "X1/0"
-      case 3'000
-      attribute \amaranth.decoding "X2/1"
-      case 3'001
-      attribute \amaranth.decoding "Y1/2"
-      case 3'010
-      attribute \amaranth.decoding "Y2/3"
-      case 3'011
-      attribute \amaranth.decoding "D1/4"
-      case 3'100
-      attribute \amaranth.decoding "D2/5"
-      case 3'101
-      attribute \amaranth.decoding "Hold/6"
-      case 3'110
-        assign \s 1'1
-    end
-  end
-  process $group_5
-    assign \data_complete 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "X1/0"
-      case 3'000
-      attribute \amaranth.decoding "X2/1"
-      case 3'001
-      attribute \amaranth.decoding "Y1/2"
-      case 3'010
-      attribute \amaranth.decoding "Y2/3"
-      case 3'011
-      attribute \amaranth.decoding "D1/4"
-      case 3'100
-      attribute \amaranth.decoding "D2/5"
-      case 3'101
-      attribute \amaranth.decoding "Hold/6"
-      case 3'110
-        assign \data_complete 1'1
-    end
-  end
-  cell $dff $1
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 48
-    connect \CLK \clk
-    connect \D \data$next
-    connect \Q \data
-  end
-  cell $dff $2
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 3
-    connect \CLK \clk
-    connect \D \fsm_state$next
-    connect \Q \fsm_state
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.VectorModeCtrl.VectorWriter
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 1 output 3 \data_complete
-  wire width 8 output 4 \in_fifo_w_data
-  wire width 1 input 5 \write_happened
-  wire width 1 output 6 \data_valid
-  wire width 1 input 7 \strobe_in
-  wire width 16 input 8 \data_c
-  wire width 1 \w
-  attribute \init 2'00
-  wire width 2 \fsm_state
-  wire width 2 \fsm_state$next
-  process $group_0
-    assign \w 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        assign \w 1'1
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-    end
-  end
-  process $group_1
-    assign \data_valid 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        switch { \strobe_in }
-          case 1'1
-            assign \data_valid 1'1
-        end
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-        assign \data_valid 1'1
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        assign \data_valid 1'1
-    end
-  end
-  process $group_2
-    assign \in_fifo_w_data 8'00000000
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        switch { \strobe_in }
-          case 1'1
-            assign \in_fifo_w_data \data_c [7:0]
-        end
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-        assign \in_fifo_w_data \data_c [7:0]
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        assign \in_fifo_w_data \data_c [15:8]
-    end
-  end
-  attribute \init 16'0000000000000000
-  wire width 16 \data
-  wire width 16 \data$next
-  process $group_3
-    assign \data$next \data
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        switch { \strobe_in }
-          case 1'1
-            assign \data$next \data_c
-        end
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-    end
-    switch $signal
-      case 1'1
-        assign \data$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \data$next 16'0000000000000000
-    end
-  end
-  process $group_4
-    assign \fsm_state$next \fsm_state
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-        switch { \strobe_in }
-          case 1'1
-            switch { \write_happened }
-              case 1'1
-                assign \fsm_state$next 2'01
-              case
-                assign \fsm_state$next 2'10
-            end
-        end
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-        switch { \write_happened }
-          case 1'1
-            assign \fsm_state$next 2'01
-        end
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        switch { \write_happened }
-          case 1'1
-            assign \fsm_state$next 2'00
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \fsm_state$next 2'00
-    end
-    switch \rst
-      case 1'1
-        assign \fsm_state$next 2'00
-    end
-  end
-  wire width 3 \f
-  process $group_5
-    assign \f 3'000
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-        assign \f 3'001
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-    end
-  end
-  process $group_6
-    assign \data_complete 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        assign \data_complete 1'1
-    end
-  end
-  wire width 1 \lf
-  process $group_7
-    assign \lf 1'0
-    switch \fsm_state
-      attribute \amaranth.decoding "Waiting/0"
-      case 2'00
-      attribute \amaranth.decoding "D1/2"
-      case 2'10
-      attribute \amaranth.decoding "D2/1"
-      case 2'01
-        assign \lf 1'1
-    end
-  end
-  cell $dff $1
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \data$next
-    connect \Q \data
-  end
-  cell $dff $2
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 2
-    connect \CLK \clk
-    connect \D \fsm_state$next
-    connect \Q \fsm_state
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.VectorModeCtrl
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 1 output 3 \data_complete
-  wire width 1 output 4 \data_complete$1
-  wire width 1 input 5 \read_happened
-  wire width 1 input 6 \load_next_point
-  wire width 1 input 7 \write_this_point
-  wire width 1 output 8 \data_fresh
-  wire width 16 input 9 \adc_data_avgd
-  wire width 48 output 10 \beam_controller_next
-  wire width 8 output 11 \in_fifo_w_data
-  wire width 1 input 12 \write_happened
-  wire width 1 output 13 \data_valid
-  wire width 8 input 14 \out_fifo_r_data
-  wire width 1 \VectorReader_data_used
-  wire width 48 \VectorReader_data
-  cell \top.multiplexer.U$$0.ModeCtrl.VectorModeCtrl.VectorReader \VectorReader
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \data_complete \data_complete$1
-    connect \read_happened \read_happened
-    connect \data_fresh \data_fresh
-    connect \out_fifo_r_data \out_fifo_r_data
-    connect \data_used \VectorReader_data_used
-    connect \data \VectorReader_data
-  end
-  wire width 1 \VectorWriter_strobe_in
-  wire width 16 \VectorWriter_data_c
-  cell \top.multiplexer.U$$0.ModeCtrl.VectorModeCtrl.VectorWriter \VectorWriter
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \data_complete \data_complete
-    connect \in_fifo_w_data \in_fifo_w_data
-    connect \write_happened \write_happened
-    connect \data_valid \data_valid
-    connect \strobe_in \VectorWriter_strobe_in
-    connect \data_c \VectorWriter_data_c
-  end
-  process $group_0
-    assign \VectorWriter_strobe_in 1'0
-    switch { \write_this_point }
-      case 1'1
-        assign \VectorWriter_strobe_in 1'1
-    end
-  end
-  process $group_1
-    assign \VectorWriter_data_c 16'0000000000000000
-    assign \VectorWriter_data_c \adc_data_avgd
-  end
-  process $group_2
-    assign \VectorReader_data_used 1'0
-    switch { \load_next_point }
-      case 1'1
-        assign \VectorReader_data_used 1'1
-    end
-  end
-  process $group_3
-    assign \beam_controller_next 48'000000000000000000000000000000000000000000000000
-    switch { \load_next_point }
-      case 1'1
-        assign \beam_controller_next \VectorReader_data
-    end
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.XInt
-  wire width 8 input 0 \step_size
-  wire width 16 output 1 \output
-  wire width 16 input 2 \input
-  wire width 24 $1
-  wire width 24 $2
-  cell $mul $3
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 8
-    parameter \Y_WIDTH 24
-    connect \A \input
-    connect \B \step_size
-    connect \Y $2
-  end
-  connect $1 $2
-  process $group_0
-    assign \output 16'0000000000000000
-    assign \output $1 [15:0]
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.YInt
-  wire width 8 input 0 \step_size
-  wire width 16 output 1 \output
-  wire width 16 input 2 \input
-  wire width 24 $1
-  wire width 24 $2
-  cell $mul $3
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 8
-    parameter \Y_WIDTH 24
-    connect \A \input
-    connect \B \step_size
-    connect \Y $2
-  end
-  connect $1 $2
-  process $group_0
-    assign \output 16'0000000000000000
-    assign \output $1 [15:0]
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.DwellAvgr
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 16 input 3 \pixel_in
-  wire width 1 input 4 \strobe
-  wire width 16 output 5 \running_average
-  attribute \init 16'0000000000000000
-  wire width 16 \running_average_s
-  wire width 16 \running_average_s$next
-  wire width 17 $1
-  attribute \init 16'0000000000000000
-  wire width 16 \prev_pixel
-  wire width 16 \prev_pixel$next
-  wire width 17 $2
-  cell $add $3
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 17
-    connect \A \pixel_in
-    connect \B \prev_pixel
-    connect \Y $2
-  end
-  wire width 17 $4
-  cell $divfloor $5
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 17
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 17
-    connect \A $2
-    connect \B 2'10
-    connect \Y $4
-  end
-  wire width 17 $6
-  wire width 1 $7
-  cell $eq $8
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A 2'10
-    connect \B 1'0
-    connect \Y $7
-  end
-  cell $mux $9
-    parameter \WIDTH 17
-    connect \A $4
-    connect \B 17'00000000000000000
-    connect \S $7
-    connect \Y $6
-  end
-  connect $1 $6
-  attribute \init 1'0
-  wire width 1 \start_new_average_s
-  wire width 1 \start_new_average_s$next
-  wire width 1 $10
-  cell $and $11
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \strobe
-    connect \B \start_new_average_s
-    connect \Y $10
-  end
-  process $group_0
-    assign \running_average 16'0000000000000000
-    assign \running_average \running_average_s
-    switch { \strobe }
-      case 1'1
-        assign \running_average $1 [15:0]
-    end
-    switch { $10 }
-      case 1'1
-        assign \running_average \pixel_in
-    end
-  end
-  attribute \init 16'0000000000000000
-  wire width 16 \pixel_in_s
-  wire width 16 \pixel_in_s$next
-  process $group_1
-    assign \pixel_in_s$next \pixel_in_s
-    switch { \strobe }
-      case 1'1
-        assign \pixel_in_s$next \pixel_in
-    end
-    switch $signal
-      case 1'1
-        assign \pixel_in_s$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \pixel_in_s$next 16'0000000000000000
-    end
-  end
-  wire width 17 $12
-  wire width 17 $13
-  cell $add $14
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 17
-    connect \A \pixel_in
-    connect \B \prev_pixel
-    connect \Y $13
-  end
-  wire width 17 $15
-  cell $divfloor $16
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 17
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 17
-    connect \A $13
-    connect \B 2'10
-    connect \Y $15
-  end
-  wire width 17 $17
-  wire width 1 $18
-  cell $eq $19
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A 2'10
-    connect \B 1'0
-    connect \Y $18
-  end
-  cell $mux $20
-    parameter \WIDTH 17
-    connect \A $15
-    connect \B 17'00000000000000000
-    connect \S $18
-    connect \Y $17
-  end
-  connect $12 $17
-  wire width 1 $21
-  cell $and $22
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \strobe
-    connect \B \start_new_average_s
-    connect \Y $21
-  end
-  process $group_2
-    assign \running_average_s$next \running_average_s
-    switch { \strobe }
-      case 1'1
-        assign \running_average_s$next $12 [15:0]
-    end
-    switch { $21 }
-      case 1'1
-        assign \running_average_s$next \pixel_in
-    end
-    switch $signal
-      case 1'1
-        assign \running_average_s$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \running_average_s$next 16'0000000000000000
-    end
-  end
-  wire width 1 $23
-  cell $and $24
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \strobe
-    connect \B \start_new_average_s
-    connect \Y $23
-  end
-  process $group_3
-    assign \prev_pixel$next \prev_pixel
-    switch { \strobe }
-      case 1'1
-        assign \prev_pixel$next \running_average
-    end
-    switch { $23 }
-      case 1'1
-        assign \prev_pixel$next \pixel_in
-    end
-    switch $signal
-      case 1'1
-        assign \prev_pixel$next 16'0000000000000000
-    end
-    switch \rst
-      case 1'1
-        assign \prev_pixel$next 16'0000000000000000
-    end
-  end
-  wire width 1 $25
-  cell $and $26
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \strobe
-    connect \B \start_new_average_s
-    connect \Y $25
-  end
-  process $group_4
-    assign \start_new_average_s$next \start_new_average_s
-    switch { $25 }
-      case 1'1
-        assign \start_new_average_s$next 1'0
-    end
-    switch { \strobe }
-      case 1'1
-        assign \start_new_average_s$next 1'1
-    end
-    switch $signal
-      case 1'1
-        assign \start_new_average_s$next 1'0
-    end
-    switch \rst
-      case 1'1
-        assign \start_new_average_s$next 1'0
-    end
-  end
-  cell $dff $27
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \pixel_in_s$next
-    connect \Q \pixel_in_s
-  end
-  cell $dff $28
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \running_average_s$next
-    connect \Q \running_average_s
-  end
-  cell $dff $29
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 16
-    connect \CLK \clk
-    connect \D \prev_pixel$next
-    connect \Q \prev_pixel
-  end
-  cell $dff $30
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 1
-    connect \CLK \clk
-    connect \D \start_new_average_s$next
-    connect \Q \start_new_average_s
-  end
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl.ByteReplace
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 16 input 3 \point_data
-  wire width 1 input 4 \replace_FF_to_FE
-  wire width 16 output 5 \processed_point_data
-  wire width 8 \most_significant_8_bits
-  process $group_0
-    assign \most_significant_8_bits 8'00000000
-    assign \most_significant_8_bits \point_data [13:6]
-  end
-  wire width 1 \eight_bit_output
-  wire width 1 \replace_0_to_1
-  wire width 16 \zero
-  wire width 1 $1
-  cell $eq $2
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \point_data
-    connect \B \zero
-    connect \Y $1
-  end
-  wire width 1 $3
-  cell $eq $4
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 8
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \most_significant_8_bits
-    connect \B 1'0
-    connect \Y $3
-  end
-  wire width 1 \replace_0_to_2
-  wire width 16 \one
-  wire width 1 $5
-  cell $eq $6
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \point_data
-    connect \B \one
-    connect \Y $5
-  end
-  wire width 1 $7
-  cell $eq $8
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 16
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 16
-    parameter \Y_WIDTH 1
-    connect \A \point_data
-    connect \B \zero
-    connect \Y $7
-  end
-  wire width 1 $9
-  cell $or $10
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $5
-    connect \B $7
-    connect \Y $9
-  end
-  wire width 1 $11
-  cell $eq $12
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 8
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \most_significant_8_bits
-    connect \B 1'1
-    connect \Y $11
-  end
-  wire width 1 $13
-  cell $eq $14
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 8
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \most_significant_8_bits
-    connect \B 1'0
-    connect \Y $13
-  end
-  wire width 1 $15
-  cell $or $16
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $11
-    connect \B $13
-    connect \Y $15
-  end
-  wire width 1 $17
-  cell $eq $18
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 8
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 8
-    parameter \Y_WIDTH 1
-    connect \A \most_significant_8_bits
-    connect \B 8'11111111
-    connect \Y $17
-  end
-  process $group_1
-    assign \processed_point_data 16'0000000000000000
-    switch { \eight_bit_output }
-      case 1'1
-        assign \processed_point_data [7:0] \most_significant_8_bits
-        assign \processed_point_data [15:8] 8'00000000
-      case
-        assign \processed_point_data \point_data
-    end
-    switch { \replace_0_to_1 }
-      case 1'1
-        switch { $1 }
-          case 1'1
-            assign \processed_point_data 16'0000000000000001
-        end
-        switch { \eight_bit_output }
-          case 1'1
-            switch { $3 }
-              case 1'1
-                assign \processed_point_data [7:0] 8'00000001
-            end
-        end
-    end
-    switch { \replace_0_to_2 }
-      case 1'1
-        switch { $9 }
-          case 1'1
-            assign \processed_point_data 16'0000000000000010
-        end
-        switch { \eight_bit_output }
-          case 1'1
-            switch { $15 }
-              case 1'1
-                assign \processed_point_data [7:0] 8'00000010
-            end
-        end
-    end
-    switch { \replace_FF_to_FE }
-      case 1'1
-        switch { \eight_bit_output }
-          case 1'1
-            switch { $17 }
-              case 1'1
-                assign \processed_point_data [7:0] 8'11111110
-            end
-        end
-    end
-  end
-  process $group_2
-    assign \zero 16'0000000000000000
-    assign \zero [7:0] 8'00000000
-    assign \zero [15:8] 8'00000000
-  end
-  process $group_3
-    assign \one 16'0000000000000000
-    assign \one [7:0] 8'00000001
-    assign \one [15:8] 8'00000000
-  end
-  attribute \init 1'0
-  wire width 1 \s
-  wire width 1 \s$next
-  process $group_4
-    assign \s$next \s
-    assign \s$next 1'1
-    switch $signal
-      case 1'1
-        assign \s$next 1'0
-    end
-    switch \rst
-      case 1'1
-        assign \s$next 1'0
-    end
-  end
-  cell $dff $19
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 1
-    connect \CLK \clk
-    connect \D \s$next
-    connect \Q \s
-  end
-  connect \eight_bit_output 1'0
-  connect \replace_0_to_1 1'0
-  connect \replace_0_to_2 1'0
-end
-attribute \generator "Amaranth"
-module \top.multiplexer.U$$0.ModeCtrl
-  wire width 1 input 0 \rst
-  wire width 1 input 1 \clk
-  wire width 1 input 2 $signal
-  wire width 1 input 3 \replace_FF_to_FE
-  wire width 8 input 4 \step_size
-  wire width 8 input 5 \step_size$1
-  wire width 1 output 6 \writer_data_complete
-  wire width 1 input 7 \reset
-  wire width 1 input 8 \disable_dwell
-  wire width 2 input 9 \mode
-  wire width 1 input 10 \external_force_load_new_point
-  wire width 8 input 11 \const_dwell_time
-  wire width 1 input 12 \eight_bit_output
-  wire width 16 input 13 \x_full_frame_resolution
-  wire width 16 input 14 \y_full_frame_resolution
-  wire width 16 input 15 \x_upper_limit
-  wire width 16 input 16 \x_lower_limit
-  wire width 16 input 17 \y_upper_limit
-  wire width 16 input 18 \y_lower_limit
-  wire width 1 output 19 \dwelling
-  wire width 1 input 20 \count_enable
-  wire width 14 output 21 \x_position
-  wire width 14 output 22 \y_position
-  wire width 1 input 23 \adc_data_strobe
-  wire width 16 input 24 \adc_data
-  wire width 1 output 25 \reader_data_complete
-  wire width 8 input 26 \out_fifo_r_data
-  wire width 1 input 27 \read_happened
-  wire width 1 output 28 \writer_data_valid
-  wire width 1 input 29 \write_happened
-  wire width 1 input 30 \write_ready
-  wire width 8 output 31 \in_fifo_w_data
-  wire width 14 \BeamController_next_x_position
-  wire width 14 \BeamController_next_y_position
-  wire width 1 \BeamController_reset
-  wire width 1 \BeamController_lock_new_point
-  wire width 1 \BeamController_end_of_dwell
-  wire width 1 \BeamController_at_dwell
-  wire width 16 \BeamController_next_dwell
-  cell \top.multiplexer.U$$0.ModeCtrl.BeamController \BeamController
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \dwelling \dwelling
-    connect \count_enable \count_enable
-    connect \x_position \x_position
-    connect \y_position \y_position
-    connect \next_x_position \BeamController_next_x_position
-    connect \next_y_position \BeamController_next_y_position
-    connect \reset \BeamController_reset
-    connect \lock_new_point \BeamController_lock_new_point
-    connect \end_of_dwell \BeamController_end_of_dwell
-    connect \at_dwell \BeamController_at_dwell
-    connect \next_dwell \BeamController_next_dwell
-  end
-  wire width 1 \RasterModeCtrl_reset
-  wire width 1 \RasterModeCtrl_xy_scan_gen_increment
-  wire width 1 \RasterModeCtrl_eight_bit_output
-  wire width 16 \RasterModeCtrl_x_full_frame_resolution
-  wire width 16 \RasterModeCtrl_y_full_frame_resolution
-  wire width 48 \RasterModeCtrl_beam_controller_next
-  wire width 16 \RasterModeCtrl_adc_data_avgd
-  wire width 8 \RasterModeCtrl_in_fifo_w_data
-  wire width 1 \RasterModeCtrl_write_happened
-  wire width 1 \RasterModeCtrl_data_valid
-  wire width 1 \RasterModeCtrl_data_complete
-  wire width 8 \RasterModeCtrl_in_fifo_w_data$2
-  wire width 1 \RasterModeCtrl_write_happened$3
-  wire width 1 \RasterModeCtrl_data_valid$4
-  wire width 1 \RasterModeCtrl_data_complete$5
-  wire width 1 \RasterModeCtrl_load_next_point
-  wire width 1 \RasterModeCtrl_write_this_point
-  wire width 1 \RasterModeCtrl_data_complete$6
-  wire width 1 \RasterModeCtrl_data_fresh
-  wire width 8 \RasterModeCtrl_out_fifo_r_data
-  wire width 1 \RasterModeCtrl_read_happened
-  cell \top.multiplexer.U$$0.ModeCtrl.RasterModeCtrl \RasterModeCtrl
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \x_upper_limit \x_upper_limit
-    connect \x_lower_limit \x_lower_limit
-    connect \y_upper_limit \y_upper_limit
-    connect \y_lower_limit \y_lower_limit
-    connect \reset \RasterModeCtrl_reset
-    connect \xy_scan_gen_increment \RasterModeCtrl_xy_scan_gen_increment
-    connect \eight_bit_output \RasterModeCtrl_eight_bit_output
-    connect \x_full_frame_resolution \RasterModeCtrl_x_full_frame_resolution
-    connect \y_full_frame_resolution \RasterModeCtrl_y_full_frame_resolution
-    connect \beam_controller_next \RasterModeCtrl_beam_controller_next
-    connect \adc_data_avgd \RasterModeCtrl_adc_data_avgd
-    connect \in_fifo_w_data \RasterModeCtrl_in_fifo_w_data
-    connect \write_happened \RasterModeCtrl_write_happened
-    connect \data_valid \RasterModeCtrl_data_valid
-    connect \data_complete \RasterModeCtrl_data_complete
-    connect \in_fifo_w_data$1 \RasterModeCtrl_in_fifo_w_data$2
-    connect \write_happened$2 \RasterModeCtrl_write_happened$3
-    connect \data_valid$3 \RasterModeCtrl_data_valid$4
-    connect \data_complete$4 \RasterModeCtrl_data_complete$5
-    connect \load_next_point \RasterModeCtrl_load_next_point
-    connect \write_this_point \RasterModeCtrl_write_this_point
-    connect \data_complete$5 \RasterModeCtrl_data_complete$6
-    connect \data_fresh \RasterModeCtrl_data_fresh
-    connect \out_fifo_r_data \RasterModeCtrl_out_fifo_r_data
-    connect \read_happened \RasterModeCtrl_read_happened
-  end
-  wire width 1 \VectorModeCtrl_data_complete
-  wire width 1 \VectorModeCtrl_data_complete$7
-  wire width 1 \VectorModeCtrl_read_happened
-  wire width 1 \VectorModeCtrl_load_next_point
-  wire width 1 \VectorModeCtrl_write_this_point
-  wire width 1 \VectorModeCtrl_data_fresh
-  wire width 16 \VectorModeCtrl_adc_data_avgd
-  wire width 48 \VectorModeCtrl_beam_controller_next
-  wire width 8 \VectorModeCtrl_in_fifo_w_data
-  wire width 1 \VectorModeCtrl_write_happened
-  wire width 1 \VectorModeCtrl_data_valid
-  wire width 8 \VectorModeCtrl_out_fifo_r_data
-  cell \top.multiplexer.U$$0.ModeCtrl.VectorModeCtrl \VectorModeCtrl
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \data_complete \VectorModeCtrl_data_complete
-    connect \data_complete$1 \VectorModeCtrl_data_complete$7
-    connect \read_happened \VectorModeCtrl_read_happened
-    connect \load_next_point \VectorModeCtrl_load_next_point
-    connect \write_this_point \VectorModeCtrl_write_this_point
-    connect \data_fresh \VectorModeCtrl_data_fresh
-    connect \adc_data_avgd \VectorModeCtrl_adc_data_avgd
-    connect \beam_controller_next \VectorModeCtrl_beam_controller_next
-    connect \in_fifo_w_data \VectorModeCtrl_in_fifo_w_data
-    connect \write_happened \VectorModeCtrl_write_happened
-    connect \data_valid \VectorModeCtrl_data_valid
-    connect \out_fifo_r_data \VectorModeCtrl_out_fifo_r_data
-  end
-  wire width 16 \XInt_output
-  wire width 16 \XInt_input
-  cell \top.multiplexer.U$$0.ModeCtrl.XInt \XInt
-    connect \step_size \step_size
-    connect \output \XInt_output
-    connect \input \XInt_input
-  end
-  wire width 16 \YInt_output
-  wire width 16 \YInt_input
-  cell \top.multiplexer.U$$0.ModeCtrl.YInt \YInt
-    connect \step_size \step_size$1
-    connect \output \YInt_output
-    connect \input \YInt_input
-  end
-  wire width 16 \DwellAvgr_pixel_in
-  wire width 1 \DwellAvgr_strobe
-  wire width 16 \DwellAvgr_running_average
-  cell \top.multiplexer.U$$0.ModeCtrl.DwellAvgr \DwellAvgr
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \pixel_in \DwellAvgr_pixel_in
-    connect \strobe \DwellAvgr_strobe
-    connect \running_average \DwellAvgr_running_average
-  end
-  wire width 16 \ByteReplace_point_data
-  wire width 1 \ByteReplace_replace_FF_to_FE
-  wire width 16 \ByteReplace_processed_point_data
-  cell \top.multiplexer.U$$0.ModeCtrl.ByteReplace \ByteReplace
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \point_data \ByteReplace_point_data
-    connect \replace_FF_to_FE \ByteReplace_replace_FF_to_FE
-    connect \processed_point_data \ByteReplace_processed_point_data
-  end
-  wire width 16 \frame_size
-  process $group_0
-    assign \frame_size 16'0000000000000000
-    assign \frame_size \x_full_frame_resolution
-  end
-  wire width 16 \frame_size$8
-  process $group_1
-    assign \frame_size$8 16'0000000000000000
-    assign \frame_size$8 \y_full_frame_resolution
-  end
-  process $group_2
-    assign \DwellAvgr_pixel_in 16'0000000000000000
-    assign \DwellAvgr_pixel_in \adc_data
-  end
-  process $group_3
-    assign \DwellAvgr_strobe 1'0
-    assign \DwellAvgr_strobe \adc_data_strobe
-  end
-  process $group_4
-    assign \ByteReplace_point_data 16'0000000000000000
-    assign \ByteReplace_point_data \DwellAvgr_running_average
-  end
-  process $group_5
-    assign \ByteReplace_replace_FF_to_FE 1'0
-    assign \ByteReplace_replace_FF_to_FE \replace_FF_to_FE
-  end
-  process $group_6
-    assign \BeamController_next_x_position 14'00000000000000
-    assign \BeamController_next_x_position \XInt_output [13:0]
-  end
-  process $group_7
-    assign \BeamController_next_y_position 14'00000000000000
-    assign \BeamController_next_y_position \YInt_output [13:0]
-  end
-  process $group_8
-    assign \RasterModeCtrl_reset 1'0
-    assign \RasterModeCtrl_reset \reset
-  end
-  wire width 1 \xy_scan_gen_increment
-  wire width 1 $9
-  cell $eq $10
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $9
-  end
-  wire width 1 $11
-  cell $eq $12
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $11
-  end
-  wire width 1 $13
-  cell $or $14
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $9
-    connect \B $11
-    connect \Y $13
-  end
-  process $group_9
-    assign \RasterModeCtrl_xy_scan_gen_increment 1'0
-    assign \RasterModeCtrl_xy_scan_gen_increment \xy_scan_gen_increment
-    switch { $13 }
-      case 1'1
-        switch { \external_force_load_new_point }
-          case 1'1
-            assign \RasterModeCtrl_xy_scan_gen_increment 1'1
-        end
-    end
-  end
-  process $group_10
-    assign \RasterModeCtrl_eight_bit_output 1'0
-    assign \RasterModeCtrl_eight_bit_output \eight_bit_output
-  end
-  process $group_11
-    assign \BeamController_reset 1'0
-    assign \BeamController_reset \reset
-  end
-  wire width 1 \load_next_point
-  wire width 1 \force_load_new_point
-  wire width 1 $15
-  cell $or $16
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \force_load_new_point
-    connect \B \external_force_load_new_point
-    connect \Y $15
-  end
-  process $group_12
-    assign \BeamController_lock_new_point 1'0
-    assign \BeamController_lock_new_point \load_next_point
-    switch { $15 }
-      case 1'1
-        assign \BeamController_lock_new_point 1'1
-    end
-  end
-  wire width 1 \internal_fifo_ready
-  process $group_13
-    assign \internal_fifo_ready 1'0
-    assign \internal_fifo_ready 1'1
-  end
-  wire width 1 $17
-  cell $or $18
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \force_load_new_point
-    connect \B \external_force_load_new_point
-    connect \Y $17
-  end
-  wire width 1 $19
-  cell $eq $20
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $19
-  end
-  wire width 1 $21
-  cell $eq $22
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $21
-  end
-  wire width 1 $23
-  cell $or $24
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $19
-    connect \B $21
-    connect \Y $23
-  end
-  wire width 1 \reader_data_fresh
-  wire width 1 $25
-  cell $and $26
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \BeamController_end_of_dwell
-    connect \B \reader_data_fresh
-    connect \Y $25
-  end
-  attribute \init 1'0
-  wire width 1 \fsm_state
-  wire width 1 \fsm_state$next
-  wire width 1 $27
-  cell $eq $28
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $27
-  end
-  process $group_14
-    assign \load_next_point 1'0
-    switch { $17 }
-      case 1'1
-        assign \load_next_point 1'1
-    end
-    switch { $23 }
-      case 1'1
-        switch { $25 }
-          case 1'1
-            assign \load_next_point 1'1
-        end
-        switch \fsm_state
-          attribute \amaranth.decoding "Wait for first USB/0"
-          case 1'0
-            switch { \reader_data_complete }
-              case 1'1
-                assign \load_next_point 1'1
-            end
-          attribute \amaranth.decoding "Patterning/1"
-          case 1'1
-        end
-    end
-    switch { $27 }
-      case 1'1
-        assign \load_next_point \BeamController_end_of_dwell
-    end
-  end
-  wire width 1 \start_new_average
-  wire width 1 $29
-  cell $or $30
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \force_load_new_point
-    connect \B \external_force_load_new_point
-    connect \Y $29
-  end
-  wire width 1 $31
-  cell $eq $32
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $31
-  end
-  wire width 1 $33
-  cell $eq $34
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $33
-  end
-  wire width 1 $35
-  cell $or $36
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $31
-    connect \B $33
-    connect \Y $35
-  end
-  wire width 1 $37
-  cell $and $38
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \BeamController_end_of_dwell
-    connect \B \reader_data_fresh
-    connect \Y $37
-  end
-  wire width 1 $39
-  cell $eq $40
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $39
-  end
-  process $group_15
-    assign \start_new_average 1'0
-    switch { $29 }
-      case 1'1
-        assign \start_new_average 1'1
-    end
-    switch { $35 }
-      case 1'1
-        switch { $37 }
-          case 1'1
-            assign \start_new_average \BeamController_at_dwell
-        end
-        switch \fsm_state
-          attribute \amaranth.decoding "Wait for first USB/0"
-          case 1'0
-            switch { \reader_data_complete }
-              case 1'1
-                assign \start_new_average 1'1
-            end
-          attribute \amaranth.decoding "Patterning/1"
-          case 1'1
-        end
-    end
-    switch { $39 }
-      case 1'1
-        assign \start_new_average \BeamController_at_dwell
-    end
-  end
-  attribute \init 1'0
-  wire width 1 \data_stale
-  wire width 1 \data_stale$next
-  wire width 1 $41
-  cell $eq $42
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $41
-  end
-  wire width 1 $43
-  cell $eq $44
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $43
-  end
-  wire width 1 $45
-  cell $or $46
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $41
-    connect \B $43
-    connect \Y $45
-  end
-  wire width 1 $47
-  cell $not $48
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \reader_data_fresh
-    connect \Y $47
-  end
-  wire width 1 $49
-  cell $and $50
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \BeamController_end_of_dwell
-    connect \B $47
-    connect \Y $49
-  end
-  wire width 1 $51
-  cell $and $52
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \BeamController_end_of_dwell
-    connect \B \reader_data_fresh
-    connect \Y $51
-  end
-  process $group_16
-    assign \data_stale$next \data_stale
-    switch { $45 }
-      case 1'1
-        switch { $49 }
-          case 1'1
-            assign \data_stale$next 1'1
-        end
-        switch { $51 }
-          case 1'1
-            assign \data_stale$next 1'0
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \data_stale$next 1'0
-    end
-    switch \rst
-      case 1'1
-        assign \data_stale$next 1'0
-    end
-  end
-  wire width 1 \write_this_point
-  wire width 1 $53
-  cell $eq $54
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $53
-  end
-  wire width 1 $55
-  cell $eq $56
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $55
-  end
-  wire width 1 $57
-  cell $or $58
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $53
-    connect \B $55
-    connect \Y $57
-  end
-  wire width 1 $59
-  cell $not $60
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \reader_data_fresh
-    connect \Y $59
-  end
-  wire width 1 $61
-  cell $and $62
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \BeamController_end_of_dwell
-    connect \B $59
-    connect \Y $61
-  end
-  wire width 1 $63
-  cell $not $64
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \data_stale
-    connect \Y $63
-  end
-  wire width 1 $65
-  cell $and $66
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \BeamController_end_of_dwell
-    connect \B \reader_data_fresh
-    connect \Y $65
-  end
-  wire width 1 $67
-  cell $not $68
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \data_stale
-    connect \Y $67
-  end
-  wire width 1 $69
-  cell $eq $70
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $69
-  end
-  process $group_17
-    assign \write_this_point 1'0
-    switch { $57 }
-      case 1'1
-        switch { $61 }
-          case 1'1
-            switch { $63 }
-              case 1'1
-                assign \write_this_point 1'1
-            end
-        end
-        switch { $65 }
-          case 1'1
-            switch { $67 }
-              case 1'1
-                assign \write_this_point 1'1
-            end
-        end
-    end
-    switch { $69 }
-      case 1'1
-        assign \write_this_point \BeamController_end_of_dwell
-    end
-  end
-  wire width 1 $71
-  cell $eq $72
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $71
-  end
-  wire width 1 $73
-  cell $eq $74
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $73
-  end
-  wire width 1 $75
-  cell $or $76
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $71
-    connect \B $73
-    connect \Y $75
-  end
-  wire width 1 $77
-  cell $not $78
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \disable_dwell
-    connect \Y $77
-  end
-  wire width 1 $79
-  cell $and $80
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \write_ready
-    connect \B $77
-    connect \Y $79
-  end
-  wire width 1 $81
-  cell $not $82
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \disable_dwell
-    connect \Y $81
-  end
-  wire width 1 $83
-  cell $and $84
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \write_ready
-    connect \B $81
-    connect \Y $83
-  end
-  wire width 1 $85
-  cell $eq $86
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $85
-  end
-  wire width 1 $87
-  cell $not $88
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \disable_dwell
-    connect \Y $87
-  end
-  wire width 1 $89
-  cell $and $90
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \write_ready
-    connect \B $87
-    connect \Y $89
-  end
-  process $group_18
-    assign \dwelling 1'0
-    switch { $75 }
-      case 1'1
-        switch \fsm_state
-          attribute \amaranth.decoding "Wait for first USB/0"
-          case 1'0
-            switch { \reader_data_complete }
-              case 1'1
-                assign \dwelling $79
-            end
-          attribute \amaranth.decoding "Patterning/1"
-          case 1'1
-            assign \dwelling $83
-        end
-    end
-    switch { $85 }
-      case 1'1
-        assign \dwelling $89
-    end
-  end
-  wire width 1 $91
-  cell $eq $92
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $91
-  end
-  wire width 1 $93
-  cell $eq $94
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $93
-  end
-  wire width 1 $95
-  cell $or $96
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $91
-    connect \B $93
-    connect \Y $95
-  end
-  process $group_19
-    assign \fsm_state$next \fsm_state
-    switch { $95 }
-      case 1'1
-        switch \fsm_state
-          attribute \amaranth.decoding "Wait for first USB/0"
-          case 1'0
-            switch { \reader_data_complete }
-              case 1'1
-                assign \fsm_state$next 1'1
-            end
-          attribute \amaranth.decoding "Patterning/1"
-          case 1'1
-        end
-    end
-    switch $signal
-      case 1'1
-        assign \fsm_state$next 1'0
-    end
-    switch \rst
-      case 1'1
-        assign \fsm_state$next 1'0
-    end
-  end
-  wire width 1 $97
-  cell $eq $98
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $97
-  end
-  wire width 1 $99
-  cell $eq $100
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $99
-  end
-  wire width 1 $101
-  cell $or $102
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $97
-    connect \B $99
-    connect \Y $101
-  end
-  process $group_20
-    assign \RasterModeCtrl_x_full_frame_resolution 16'0000000000000000
-    switch { $101 }
-      case 1'1
-        assign \RasterModeCtrl_x_full_frame_resolution \x_full_frame_resolution
-    end
-  end
-  wire width 1 $103
-  cell $eq $104
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $103
-  end
-  wire width 1 $105
-  cell $eq $106
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $105
-  end
-  wire width 1 $107
-  cell $or $108
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $103
-    connect \B $105
-    connect \Y $107
-  end
-  process $group_21
-    assign \RasterModeCtrl_y_full_frame_resolution 16'0000000000000000
-    switch { $107 }
-      case 1'1
-        assign \RasterModeCtrl_y_full_frame_resolution \y_full_frame_resolution
-    end
-  end
-  wire width 1 $109
-  cell $eq $110
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $109
-  end
-  wire width 1 $111
-  cell $eq $112
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $111
-  end
-  wire width 1 $113
-  cell $or $114
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $109
-    connect \B $111
-    connect \Y $113
-  end
-  wire width 1 $115
-  cell $eq $116
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $115
-  end
-  process $group_22
-    assign \XInt_input 16'0000000000000000
-    switch { $113 }
-      case 1'1
-        assign \XInt_input \RasterModeCtrl_beam_controller_next [15:0]
-    end
-    switch { $115 }
-      case 1'1
-        assign \XInt_input \VectorModeCtrl_beam_controller_next [15:0]
-    end
-  end
-  wire width 1 $117
-  cell $eq $118
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $117
-  end
-  wire width 1 $119
-  cell $eq $120
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $119
-  end
-  wire width 1 $121
-  cell $or $122
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $117
-    connect \B $119
-    connect \Y $121
-  end
-  wire width 1 $123
-  cell $eq $124
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $123
-  end
-  process $group_23
-    assign \YInt_input 16'0000000000000000
-    switch { $121 }
-      case 1'1
-        assign \YInt_input \RasterModeCtrl_beam_controller_next [31:16]
-    end
-    switch { $123 }
-      case 1'1
-        assign \YInt_input \VectorModeCtrl_beam_controller_next [31:16]
-    end
-  end
-  wire width 1 \beam_controller_end_of_dwell
-  wire width 1 $125
-  cell $eq $126
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $125
-  end
-  wire width 1 $127
-  cell $eq $128
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $127
-  end
-  wire width 1 $129
-  cell $or $130
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $125
-    connect \B $127
-    connect \Y $129
-  end
-  process $group_24
-    assign \beam_controller_end_of_dwell 1'0
-    switch { $129 }
-      case 1'1
-        assign \beam_controller_end_of_dwell \BeamController_end_of_dwell
-    end
-  end
-  wire width 1 $131
-  cell $eq $132
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $131
-  end
-  wire width 1 $133
-  cell $eq $134
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $133
-  end
-  wire width 1 $135
-  cell $or $136
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $131
-    connect \B $133
-    connect \Y $135
-  end
-  process $group_25
-    assign \RasterModeCtrl_adc_data_avgd 16'0000000000000000
-    switch { $135 }
-      case 1'1
-        assign \RasterModeCtrl_adc_data_avgd \ByteReplace_processed_point_data
-    end
-  end
-  wire width 1 $137
-  cell $eq $138
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $137
-  end
-  wire width 1 $139
-  cell $eq $140
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $139
-  end
-  wire width 1 $141
-  cell $or $142
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $137
-    connect \B $139
-    connect \Y $141
-  end
-  wire width 1 $143
-  cell $eq $144
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $143
-  end
-  process $group_26
-    assign \in_fifo_w_data 8'00000000
-    switch { $141 }
-      case 1'1
-        switch { \eight_bit_output }
-          case 1'1
-            assign \in_fifo_w_data \RasterModeCtrl_in_fifo_w_data
-          case
-            assign \in_fifo_w_data \RasterModeCtrl_in_fifo_w_data$2
-        end
-    end
-    switch { $143 }
-      case 1'1
-        assign \in_fifo_w_data \VectorModeCtrl_in_fifo_w_data
-    end
-  end
-  wire width 1 $145
-  cell $eq $146
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $145
-  end
-  wire width 1 $147
-  cell $eq $148
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $147
-  end
-  wire width 1 $149
-  cell $or $150
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $145
-    connect \B $147
-    connect \Y $149
-  end
-  process $group_27
-    assign \RasterModeCtrl_write_happened 1'0
-    switch { $149 }
-      case 1'1
-        switch { \eight_bit_output }
-          case 1'1
-            assign \RasterModeCtrl_write_happened \write_happened
-          case
-        end
-    end
-  end
-  wire width 1 $151
-  cell $eq $152
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $151
-  end
-  wire width 1 $153
-  cell $eq $154
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $153
-  end
-  wire width 1 $155
-  cell $or $156
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $151
-    connect \B $153
-    connect \Y $155
-  end
-  wire width 1 $157
-  cell $eq $158
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $157
-  end
-  process $group_28
-    assign \writer_data_valid 1'0
-    switch { $155 }
-      case 1'1
-        switch { \eight_bit_output }
-          case 1'1
-            assign \writer_data_valid \RasterModeCtrl_data_valid
-          case
-            assign \writer_data_valid \RasterModeCtrl_data_valid$4
-        end
-    end
-    switch { $157 }
-      case 1'1
-        assign \writer_data_valid \VectorModeCtrl_data_valid
-    end
-  end
-  wire width 1 $159
-  cell $eq $160
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $159
-  end
-  wire width 1 $161
-  cell $eq $162
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $161
-  end
-  wire width 1 $163
-  cell $or $164
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $159
-    connect \B $161
-    connect \Y $163
-  end
-  wire width 1 $165
-  cell $eq $166
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $165
-  end
-  process $group_29
-    assign \writer_data_complete 1'0
-    switch { $163 }
-      case 1'1
-        switch { \eight_bit_output }
-          case 1'1
-            assign \writer_data_complete \RasterModeCtrl_data_complete
-          case
-            assign \writer_data_complete \RasterModeCtrl_data_complete$5
-        end
-    end
-    switch { $165 }
-      case 1'1
-        assign \writer_data_complete \VectorModeCtrl_data_complete
-    end
-  end
-  wire width 1 $167
-  cell $eq $168
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $167
-  end
-  wire width 1 $169
-  cell $eq $170
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $169
-  end
-  wire width 1 $171
-  cell $or $172
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $167
-    connect \B $169
-    connect \Y $171
-  end
-  process $group_30
-    assign \RasterModeCtrl_write_happened$3 1'0
-    switch { $171 }
-      case 1'1
-        switch { \eight_bit_output }
-          case 1'1
-          case
-            assign \RasterModeCtrl_write_happened$3 \write_happened
-        end
-    end
-  end
-  wire width 1 $173
-  cell $eq $174
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $173
-  end
-  wire width 1 $175
-  cell $eq $176
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $175
-  end
-  wire width 1 $177
-  cell $or $178
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $173
-    connect \B $175
-    connect \Y $177
-  end
-  process $group_31
-    assign \RasterModeCtrl_load_next_point 1'0
-    switch { $177 }
-      case 1'1
-        assign \RasterModeCtrl_load_next_point \load_next_point
-    end
-  end
-  wire width 1 $179
-  cell $eq $180
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $179
-  end
-  wire width 1 $181
-  cell $eq $182
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $181
-  end
-  wire width 1 $183
-  cell $or $184
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $179
-    connect \B $181
-    connect \Y $183
-  end
-  process $group_32
-    assign \RasterModeCtrl_write_this_point 1'0
-    switch { $183 }
-      case 1'1
-        assign \RasterModeCtrl_write_this_point \write_this_point
-    end
-  end
-  wire width 1 $185
-  cell $eq $186
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'01
-    connect \Y $185
-  end
-  wire width 16 $187
-  cell $pos $188
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 8
-    parameter \Y_WIDTH 16
-    connect \A \const_dwell_time
-    connect \Y $187
-  end
-  wire width 1 $189
-  cell $eq $190
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $189
-  end
-  wire width 1 $191
-  cell $eq $192
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $191
-  end
-  process $group_33
-    assign \BeamController_next_dwell 16'0000000000000000
-    switch { $185 }
-      case 1'1
-        assign \BeamController_next_dwell $187
-    end
-    switch { $189 }
-      case 1'1
-        assign \BeamController_next_dwell \RasterModeCtrl_beam_controller_next [47:32]
-    end
-    switch { $191 }
-      case 1'1
-        assign \BeamController_next_dwell \VectorModeCtrl_beam_controller_next [47:32]
-    end
-  end
-  wire width 1 $193
-  cell $eq $194
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $193
-  end
-  wire width 1 $195
-  cell $eq $196
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $195
-  end
-  process $group_34
-    assign \reader_data_complete 1'0
-    switch { $193 }
-      case 1'1
-        assign \reader_data_complete \RasterModeCtrl_data_complete$6
-    end
-    switch { $195 }
-      case 1'1
-        assign \reader_data_complete \VectorModeCtrl_data_complete$7
-    end
-  end
-  wire width 1 $197
-  cell $eq $198
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $197
-  end
-  wire width 1 $199
-  cell $eq $200
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $199
-  end
-  process $group_35
-    assign \reader_data_fresh 1'0
-    switch { $197 }
-      case 1'1
-        assign \reader_data_fresh \RasterModeCtrl_data_fresh
-    end
-    switch { $199 }
-      case 1'1
-        assign \reader_data_fresh \VectorModeCtrl_data_fresh
-    end
-  end
-  wire width 1 $201
-  cell $eq $202
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $201
-  end
-  process $group_36
-    assign \RasterModeCtrl_out_fifo_r_data 8'00000000
-    switch { $201 }
-      case 1'1
-        assign \RasterModeCtrl_out_fifo_r_data \out_fifo_r_data
-    end
-  end
-  wire width 1 $203
-  cell $eq $204
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'10
-    connect \Y $203
-  end
-  process $group_37
-    assign \RasterModeCtrl_read_happened 1'0
-    switch { $203 }
-      case 1'1
-        assign \RasterModeCtrl_read_happened \read_happened
-    end
-  end
-  wire width 1 $205
-  cell $eq $206
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $205
-  end
-  process $group_38
-    assign \VectorModeCtrl_read_happened 1'0
-    switch { $205 }
-      case 1'1
-        assign \VectorModeCtrl_read_happened \read_happened
-        assign \VectorModeCtrl_read_happened \read_happened
-    end
-  end
-  wire width 1 $207
-  cell $eq $208
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $207
-  end
-  process $group_39
-    assign \VectorModeCtrl_load_next_point 1'0
-    switch { $207 }
-      case 1'1
-        assign \VectorModeCtrl_load_next_point \load_next_point
-    end
-  end
-  wire width 1 $209
-  cell $eq $210
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $209
-  end
-  process $group_40
-    assign \VectorModeCtrl_write_this_point 1'0
-    switch { $209 }
-      case 1'1
-        assign \VectorModeCtrl_write_this_point \write_this_point
-    end
-  end
-  wire width 1 \beam_controller_end_of_dwell$211
-  wire width 1 $212
-  cell $eq $213
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $212
-  end
-  process $group_41
-    assign \beam_controller_end_of_dwell$211 1'0
-    switch { $212 }
-      case 1'1
-        assign \beam_controller_end_of_dwell$211 \BeamController_end_of_dwell
-    end
-  end
-  wire width 1 $214
-  cell $eq $215
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $214
-  end
-  process $group_42
-    assign \VectorModeCtrl_adc_data_avgd 16'0000000000000000
-    switch { $214 }
-      case 1'1
-        assign \VectorModeCtrl_adc_data_avgd \ByteReplace_processed_point_data
-    end
-  end
-  wire width 1 $216
-  cell $eq $217
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $216
-  end
-  process $group_43
-    assign \VectorModeCtrl_write_happened 1'0
-    switch { $216 }
-      case 1'1
-        assign \VectorModeCtrl_write_happened \write_happened
-    end
-  end
-  wire width 1 $218
-  cell $eq $219
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 2
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 2
-    parameter \Y_WIDTH 1
-    connect \A \mode
-    connect \B 2'11
-    connect \Y $218
-  end
-  process $group_44
-    assign \VectorModeCtrl_out_fifo_r_data 8'00000000
-    switch { $218 }
-      case 1'1
-        assign \VectorModeCtrl_out_fifo_r_data \out_fifo_r_data
-    end
-  end
-  cell $dff $220
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 1
-    connect \CLK \clk
-    connect \D \data_stale$next
-    connect \Q \data_stale
-  end
-  cell $dff $221
-    parameter \CLK_POLARITY 1
-    parameter \WIDTH 1
-    connect \CLK \clk
-    connect \D \fsm_state$next
-    connect \Q \fsm_state
-  end
-  connect \xy_scan_gen_increment 1'0
-  connect \force_load_new_point 1'0
-end
-attribute \generator "Amaranth"
 module \top.multiplexer.U$$0.MuxBus.x_dac
   wire width 1 input 0 \rst
   wire width 1 input 1 \clk
@@ -10022,35 +5775,27 @@ module \top.multiplexer.U$$0.ConfigHdlr
   wire width 1 output 7 \writing_config
   wire width 1 input 8 \outer_configuration_flag
   wire width 1 input 9 \configuration_flag
-  wire width 1 output 10 \config_flag_released
-  wire width 1 input 11 \eight_bit_output
   attribute \init 1'0
-  wire width 1 output 12 \eight_bit_output_locked
+  wire width 1 output 10 \eight_bit_output_locked
   wire width 1 \eight_bit_output_locked$next
+  wire width 1 output 11 \config_flag_released
+  wire width 1 input 12 \eight_bit_output
   wire width 8 input 13 \x_full_frame_resolution_b1
   wire width 8 input 14 \x_full_frame_resolution_b2
   wire width 8 input 15 \y_full_frame_resolution_b1
   wire width 8 input 16 \y_full_frame_resolution_b2
-  wire width 8 input 17 \x_upper_limit_b1
-  wire width 8 input 18 \x_upper_limit_b2
-  wire width 8 input 19 \x_lower_limit_b1
-  wire width 8 input 20 \x_lower_limit_b2
-  wire width 8 input 21 \y_upper_limit_b1
-  wire width 8 input 22 \y_upper_limit_b2
-  wire width 8 input 23 \y_lower_limit_b1
-  wire width 8 input 24 \y_lower_limit_b2
   attribute \init 16'0000000000000000
-  wire width 16 output 25 \x_full_frame_resolution_locked
+  wire width 16 output 17 \x_full_frame_resolution_locked
   wire width 16 \x_full_frame_resolution_locked$next
   attribute \init 16'0000000000000000
-  wire width 16 output 26 \y_full_frame_resolution_locked
+  wire width 16 output 18 \y_full_frame_resolution_locked
   wire width 16 \y_full_frame_resolution_locked$next
   attribute \init 64'0000000000000000000000000000000000000000000000000000000000000000
-  wire width 64 output 27 \roi_registers_locked
+  wire width 64 output 19 \roi_registers_locked
   wire width 64 \roi_registers_locked$next
-  wire width 1 output 28 \config_data_valid
-  wire width 1 input 29 \write_happened
-  wire width 8 output 30 \in_fifo_w_data
+  wire width 1 output 20 \config_data_valid
+  wire width 1 input 21 \write_happened
+  wire width 8 output 22 \in_fifo_w_data
   attribute \init 5'00000
   wire width 5 \fsm_state
   wire width 5 \fsm_state$next
@@ -10116,7 +5861,6 @@ module \top.multiplexer.U$$0.ConfigHdlr
         assign \writing_config 1'1
       attribute \amaranth.decoding "Wait_unlatch/19"
       case 5'10011
-        assign \writing_config 1'0
     end
   end
   process $group_1
@@ -10184,6 +5928,28 @@ module \top.multiplexer.U$$0.ConfigHdlr
         assign \config_data_valid 1'0
     end
   end
+  wire width 1 $1
+  cell $le $2
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A { \roi_registers [23:16] \roi_registers [31:24] }
+    connect \B { \roi_registers [7:0] \roi_registers [15:8] }
+    connect \Y $1
+  end
+  wire width 1 $3
+  cell $le $4
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A { \roi_registers [55:48] \roi_registers [63:56] }
+    connect \B { \roi_registers [39:32] \roi_registers [47:40] }
+    connect \Y $3
+  end
   process $group_2
     assign \roi_registers_locked$next \roi_registers_locked
     switch \fsm_state
@@ -10191,7 +5957,20 @@ module \top.multiplexer.U$$0.ConfigHdlr
       case 5'00000
         switch { \configuration_flag }
           case 1'1
-            assign \roi_registers_locked$next \roi_registers
+            assign \roi_registers_locked$next [15:0] { \roi_registers [7:0] \roi_registers [15:8] }
+            assign \roi_registers_locked$next [47:32] { \roi_registers [39:32] \roi_registers [47:40] }
+            switch { $1 }
+              case 1'1
+                assign \roi_registers_locked$next [31:16] { \x_full_frame_resolution_b1 \x_full_frame_resolution_b2 }
+              case
+                assign \roi_registers_locked$next [31:16] { \roi_registers [23:16] \roi_registers [31:24] }
+            end
+            switch { $3 }
+              case 1'1
+                assign \roi_registers_locked$next [63:48] { \y_full_frame_resolution_b1 \y_full_frame_resolution_b2 }
+              case
+                assign \roi_registers_locked$next [63:48] { \roi_registers [55:48] \roi_registers [63:56] }
+            end
         end
       attribute \amaranth.decoding "Insert_Start/2"
       case 5'00010
@@ -10469,21 +6248,21 @@ module \top.multiplexer.U$$0.ConfigHdlr
         assign \step_size_locked$next 8'00000000
     end
   end
-  wire width 8 $1
-  cell $pos $2
+  wire width 8 $5
+  cell $pos $6
     parameter \A_SIGNED 0
     parameter \A_WIDTH 2
     parameter \Y_WIDTH 8
     connect \A \scan_mode
-    connect \Y $1
+    connect \Y $5
   end
-  wire width 8 $3
-  cell $pos $4
+  wire width 8 $7
+  cell $pos $8
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 8
     connect \A \eight_bit_output
-    connect \Y $3
+    connect \Y $7
   end
   process $group_7
     assign \in_fifo_w_data 8'00000000
@@ -10534,61 +6313,61 @@ module \top.multiplexer.U$$0.ConfigHdlr
       case 5'00111
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data \x_upper_limit_b1
+            assign \in_fifo_w_data \roi_registers_locked [31:24]
         end
       attribute \amaranth.decoding "UX2/8"
       case 5'01000
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data \x_upper_limit_b2
+            assign \in_fifo_w_data \roi_registers_locked [23:16]
         end
       attribute \amaranth.decoding "LX1/9"
       case 5'01001
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data \x_lower_limit_b1
+            assign \in_fifo_w_data \roi_registers_locked [15:8]
         end
       attribute \amaranth.decoding "LX2/10"
       case 5'01010
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data \x_lower_limit_b2
+            assign \in_fifo_w_data \roi_registers_locked [7:0]
         end
       attribute \amaranth.decoding "UY1/11"
       case 5'01011
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data \y_upper_limit_b1
+            assign \in_fifo_w_data \roi_registers_locked [63:56]
         end
       attribute \amaranth.decoding "UY2/12"
       case 5'01100
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data \y_upper_limit_b2
+            assign \in_fifo_w_data \roi_registers_locked [55:48]
         end
       attribute \amaranth.decoding "LY1/13"
       case 5'01101
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data \y_lower_limit_b1
+            assign \in_fifo_w_data \roi_registers_locked [47:40]
         end
       attribute \amaranth.decoding "LY2/14"
       case 5'01110
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data \y_lower_limit_b2
+            assign \in_fifo_w_data \roi_registers_locked [39:32]
         end
       attribute \amaranth.decoding "SC/15"
       case 5'01111
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data $1
+            assign \in_fifo_w_data $5
         end
       attribute \amaranth.decoding "8B/16"
       case 5'10000
         switch { \write_happened }
           case 1'1
-            assign \in_fifo_w_data $3
+            assign \in_fifo_w_data $7
         end
       attribute \amaranth.decoding "Insert_End_B1/17"
       case 5'10001
@@ -10606,21 +6385,21 @@ module \top.multiplexer.U$$0.ConfigHdlr
       case 5'10011
     end
   end
-  wire width 1 $5
-  cell $not $6
+  wire width 1 $9
+  cell $not $10
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \outer_configuration_flag
-    connect \Y $5
+    connect \Y $9
   end
-  wire width 1 $7
-  cell $not $8
+  wire width 1 $11
+  cell $not $12
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \outer_configuration_flag
-    connect \Y $7
+    connect \Y $11
   end
   process $group_8
     assign \fsm_state$next \fsm_state
@@ -10742,7 +6521,7 @@ module \top.multiplexer.U$$0.ConfigHdlr
       case 5'10010
         switch { \write_happened }
           case 1'1
-            switch { $5 }
+            switch { $9 }
               case 1'1
                 assign \fsm_state$next 5'00000
               case
@@ -10751,7 +6530,7 @@ module \top.multiplexer.U$$0.ConfigHdlr
         end
       attribute \amaranth.decoding "Wait_unlatch/19"
       case 5'10011
-        switch { $7 }
+        switch { $11 }
           case 1'1
             assign \fsm_state$next 5'00000
         end
@@ -10765,21 +6544,21 @@ module \top.multiplexer.U$$0.ConfigHdlr
         assign \fsm_state$next 5'00000
     end
   end
-  wire width 1 $9
-  cell $not $10
+  wire width 1 $13
+  cell $not $14
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \outer_configuration_flag
-    connect \Y $9
+    connect \Y $13
   end
-  wire width 1 $11
-  cell $not $12
+  wire width 1 $15
+  cell $not $16
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \outer_configuration_flag
-    connect \Y $11
+    connect \Y $15
   end
   process $group_9
     assign \config_flag_released 1'0
@@ -10824,7 +6603,7 @@ module \top.multiplexer.U$$0.ConfigHdlr
       case 5'10010
         switch { \write_happened }
           case 1'1
-            switch { $9 }
+            switch { $13 }
               case 1'1
                 assign \config_flag_released 1'1
               case
@@ -10832,7 +6611,7 @@ module \top.multiplexer.U$$0.ConfigHdlr
         end
       attribute \amaranth.decoding "Wait_unlatch/19"
       case 5'10011
-        switch { $11 }
+        switch { $15 }
           case 1'1
             assign \config_flag_released 1'1
         end
@@ -10885,47 +6664,1860 @@ module \top.multiplexer.U$$0.ConfigHdlr
         assign \l 1'1
     end
   end
-  cell $dff $13
+  cell $dff $17
     parameter \CLK_POLARITY 1
     parameter \WIDTH 64
     connect \CLK \clk
     connect \D \roi_registers_locked$next
     connect \Q \roi_registers_locked
   end
-  cell $dff $14
+  cell $dff $18
     parameter \CLK_POLARITY 1
     parameter \WIDTH 16
     connect \CLK \clk
     connect \D \x_full_frame_resolution_locked$next
     connect \Q \x_full_frame_resolution_locked
   end
-  cell $dff $15
+  cell $dff $19
     parameter \CLK_POLARITY 1
     parameter \WIDTH 16
     connect \CLK \clk
     connect \D \y_full_frame_resolution_locked$next
     connect \Q \y_full_frame_resolution_locked
   end
-  cell $dff $16
+  cell $dff $20
     parameter \CLK_POLARITY 1
     parameter \WIDTH 1
     connect \CLK \clk
     connect \D \eight_bit_output_locked$next
     connect \Q \eight_bit_output_locked
   end
-  cell $dff $17
+  cell $dff $21
     parameter \CLK_POLARITY 1
     parameter \WIDTH 8
     connect \CLK \clk
     connect \D \step_size_locked$next
     connect \Q \step_size_locked
   end
-  cell $dff $18
+  cell $dff $22
     parameter \CLK_POLARITY 1
     parameter \WIDTH 5
     connect \CLK \clk
     connect \D \fsm_state$next
     connect \Q \fsm_state
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.BeamController
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 1 input 3 \dwelling
+  wire width 1 input 4 \count_enable
+  attribute \init 14'00000000000000
+  wire width 14 output 5 \x_position
+  wire width 14 \x_position$next
+  attribute \init 14'00000000000000
+  wire width 14 output 6 \y_position
+  wire width 14 \y_position$next
+  wire width 1 input 7 \lock_new_point
+  wire width 1 input 8 \reset
+  wire width 14 input 9 \next_x_position
+  wire width 14 input 10 \next_y_position
+  wire width 1 output 11 \end_of_dwell
+  wire width 16 input 12 \next_dwell
+  wire width 1 output 13 \at_dwell
+  attribute \init 16'0000000000000000
+  wire width 16 \counter
+  wire width 16 \counter$next
+  attribute \init 14'00000000000000
+  wire width 14 \dwell_time
+  wire width 14 \dwell_time$next
+  wire width 1 $1
+  cell $eq $2
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 14
+    parameter \Y_WIDTH 1
+    connect \A \counter
+    connect \B \dwell_time
+    connect \Y $1
+  end
+  process $group_0
+    assign \at_dwell 1'0
+    switch { \count_enable }
+      case 1'1
+        assign \at_dwell $1
+    end
+  end
+  wire width 1 $3
+  wire width 1 \dwelling_changed
+  cell $not $4
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \dwelling_changed
+    connect \Y $3
+  end
+  wire width 1 $5
+  cell $and $6
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \at_dwell
+    connect \B $3
+    connect \Y $5
+  end
+  process $group_1
+    assign \end_of_dwell 1'0
+    assign \end_of_dwell $5
+  end
+  attribute \init 1'0
+  wire width 1 \prev_dwelling
+  wire width 1 \prev_dwelling$next
+  process $group_2
+    assign \prev_dwelling$next \prev_dwelling
+    assign \prev_dwelling$next \dwelling
+    switch $signal
+      case 1'1
+        assign \prev_dwelling$next 1'0
+    end
+    switch \rst
+      case 1'1
+        assign \prev_dwelling$next 1'0
+    end
+  end
+  wire width 1 $7
+  cell $ne $8
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \dwelling
+    connect \B \prev_dwelling
+    connect \Y $7
+  end
+  process $group_3
+    assign \dwelling_changed 1'0
+    assign \dwelling_changed $7
+  end
+  attribute \init 1'0
+  wire width 1 \prev_dwelling_changed
+  wire width 1 \prev_dwelling_changed$next
+  process $group_4
+    assign \prev_dwelling_changed$next \prev_dwelling_changed
+    assign \prev_dwelling_changed$next \dwelling_changed
+    switch $signal
+      case 1'1
+        assign \prev_dwelling_changed$next 1'0
+    end
+    switch \rst
+      case 1'1
+        assign \prev_dwelling_changed$next 1'0
+    end
+  end
+  wire width 1 $9
+  wire width 1 \freeze
+  cell $not $10
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \freeze
+    connect \Y $9
+  end
+  wire width 1 $11
+  cell $and $12
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \dwelling
+    connect \B $9
+    connect \Y $11
+  end
+  wire width 17 $13
+  wire width 17 $14
+  cell $add $15
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 17
+    connect \A \counter
+    connect \B 1'1
+    connect \Y $14
+  end
+  connect $13 $14
+  process $group_5
+    assign \counter$next \counter
+    switch { $11 }
+      case 1'1
+        switch { \count_enable }
+          case 1'1
+            switch { \at_dwell }
+              case 1'1
+                assign \counter$next 16'0000000000000000
+              case
+                assign \counter$next $13 [15:0]
+            end
+        end
+      case
+        assign \counter$next 16'0000000000000000
+    end
+    switch $signal
+      case 1'1
+        assign \counter$next 16'0000000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \counter$next 16'0000000000000000
+    end
+  end
+  process $group_6
+    assign \x_position$next \x_position
+    switch { \reset }
+      case 1'1
+        assign \x_position$next 14'00000000000000
+      case
+        switch { \lock_new_point }
+          case 1'1
+            assign \x_position$next \next_x_position
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \x_position$next 14'00000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \x_position$next 14'00000000000000
+    end
+  end
+  process $group_7
+    assign \y_position$next \y_position
+    switch { \reset }
+      case 1'1
+        assign \y_position$next 14'00000000000000
+      case
+        switch { \lock_new_point }
+          case 1'1
+            assign \y_position$next \next_y_position
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \y_position$next 14'00000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \y_position$next 14'00000000000000
+    end
+  end
+  process $group_8
+    assign \dwell_time$next \dwell_time
+    switch { \reset }
+      case 1'1
+        assign \dwell_time$next 14'00000000000000
+      case
+        switch { \lock_new_point }
+          case 1'1
+            assign \dwell_time$next \next_dwell [13:0]
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \dwell_time$next 14'00000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \dwell_time$next 14'00000000000000
+    end
+  end
+  attribute \init 16'0000000000000000
+  wire width 16 \true_counter
+  wire width 16 \true_counter$next
+  wire width 17 $16
+  wire width 17 $17
+  cell $add $18
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 17
+    connect \A \true_counter
+    connect \B 1'1
+    connect \Y $17
+  end
+  connect $16 $17
+  process $group_9
+    assign \true_counter$next \true_counter
+    assign \true_counter$next $16 [15:0]
+    switch { \lock_new_point }
+      case 1'1
+        assign \true_counter$next 16'0000000000000000
+    end
+    switch $signal
+      case 1'1
+        assign \true_counter$next 16'0000000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \true_counter$next 16'0000000000000000
+    end
+  end
+  cell $dff $19
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 1
+    connect \CLK \clk
+    connect \D \prev_dwelling$next
+    connect \Q \prev_dwelling
+  end
+  cell $dff $20
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 1
+    connect \CLK \clk
+    connect \D \prev_dwelling_changed$next
+    connect \Q \prev_dwelling_changed
+  end
+  cell $dff $21
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 16
+    connect \CLK \clk
+    connect \D \counter$next
+    connect \Q \counter
+  end
+  cell $dff $22
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 14
+    connect \CLK \clk
+    connect \D \x_position$next
+    connect \Q \x_position
+  end
+  cell $dff $23
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 14
+    connect \CLK \clk
+    connect \D \y_position$next
+    connect \Q \y_position
+  end
+  cell $dff $24
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 14
+    connect \CLK \clk
+    connect \D \dwell_time$next
+    connect \Q \dwell_time
+  end
+  cell $dff $25
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 16
+    connect \CLK \clk
+    connect \D \true_counter$next
+    connect \Q \true_counter
+  end
+  connect \freeze 1'0
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.1byteWriter
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 1 output 3 \data_complete
+  wire width 8 input 4 \data_c
+  wire width 8 output 5 \in_fifo_w_data
+  wire width 1 input 6 \write_happened
+  wire width 1 input 7 \strobe_in
+  wire width 1 output 8 \data_valid
+  wire width 1 \w
+  attribute \init 1'0
+  wire width 1 \fsm_state
+  wire width 1 \fsm_state$next
+  process $group_0
+    assign \w 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 1'0
+        assign \w 1'1
+      attribute \amaranth.decoding "D1/1"
+      case 1'1
+    end
+  end
+  process $group_1
+    assign \data_valid 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 1'0
+        switch { \strobe_in }
+          case 1'1
+            assign \data_valid 1'1
+        end
+      attribute \amaranth.decoding "D1/1"
+      case 1'1
+        assign \data_valid 1'1
+    end
+  end
+  process $group_2
+    assign \in_fifo_w_data 8'00000000
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 1'0
+        switch { \strobe_in }
+          case 1'1
+            assign \in_fifo_w_data \data_c
+        end
+      attribute \amaranth.decoding "D1/1"
+      case 1'1
+        assign \in_fifo_w_data \data_c
+    end
+  end
+  attribute \init 8'00000000
+  wire width 8 \data
+  wire width 8 \data$next
+  process $group_3
+    assign \data$next \data
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 1'0
+        switch { \strobe_in }
+          case 1'1
+            assign \data$next \data_c
+        end
+      attribute \amaranth.decoding "D1/1"
+      case 1'1
+    end
+    switch $signal
+      case 1'1
+        assign \data$next 8'00000000
+    end
+    switch \rst
+      case 1'1
+        assign \data$next 8'00000000
+    end
+  end
+  process $group_4
+    assign \data_complete 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 1'0
+        switch { \strobe_in }
+          case 1'1
+            assign \data_complete 1'1
+        end
+      attribute \amaranth.decoding "D1/1"
+      case 1'1
+        assign \data_complete 1'1
+    end
+  end
+  process $group_5
+    assign \fsm_state$next \fsm_state
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 1'0
+        switch { \strobe_in }
+          case 1'1
+            switch { \write_happened }
+              case 1'1
+                assign \fsm_state$next 1'0
+              case
+                assign \fsm_state$next 1'1
+            end
+        end
+      attribute \amaranth.decoding "D1/1"
+      case 1'1
+        switch { \write_happened }
+          case 1'1
+            assign \fsm_state$next 1'0
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \fsm_state$next 1'0
+    end
+    switch \rst
+      case 1'1
+        assign \fsm_state$next 1'0
+    end
+  end
+  wire width 1 \lf
+  process $group_6
+    assign \lf 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 1'0
+      attribute \amaranth.decoding "D1/1"
+      case 1'1
+        assign \lf 1'1
+    end
+  end
+  cell $dff $1
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 8
+    connect \CLK \clk
+    connect \D \data$next
+    connect \Q \data
+  end
+  cell $dff $2
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 1
+    connect \CLK \clk
+    connect \D \fsm_state$next
+    connect \Q \fsm_state
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.Writer
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 1 output 3 \data_complete
+  wire width 16 input 4 \data_c
+  wire width 8 output 5 \in_fifo_w_data
+  wire width 1 input 6 \write_happened
+  wire width 1 input 7 \strobe_in
+  wire width 1 output 8 \data_valid
+  wire width 1 \w
+  attribute \init 2'00
+  wire width 2 \fsm_state
+  wire width 2 \fsm_state$next
+  process $group_0
+    assign \w 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 2'00
+        assign \w 1'1
+      attribute \amaranth.decoding "D1/2"
+      case 2'10
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+    end
+  end
+  process $group_1
+    assign \data_valid 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 2'00
+        switch { \strobe_in }
+          case 1'1
+            assign \data_valid 1'1
+        end
+      attribute \amaranth.decoding "D1/2"
+      case 2'10
+        assign \data_valid 1'1
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        assign \data_valid 1'1
+    end
+  end
+  process $group_2
+    assign \in_fifo_w_data 8'00000000
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 2'00
+        switch { \strobe_in }
+          case 1'1
+            assign \in_fifo_w_data \data_c [7:0]
+        end
+      attribute \amaranth.decoding "D1/2"
+      case 2'10
+        assign \in_fifo_w_data \data_c [7:0]
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        assign \in_fifo_w_data \data_c [15:8]
+    end
+  end
+  attribute \init 16'0000000000000000
+  wire width 16 \data
+  wire width 16 \data$next
+  process $group_3
+    assign \data$next \data
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 2'00
+        switch { \strobe_in }
+          case 1'1
+            assign \data$next \data_c
+        end
+      attribute \amaranth.decoding "D1/2"
+      case 2'10
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+    end
+    switch $signal
+      case 1'1
+        assign \data$next 16'0000000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \data$next 16'0000000000000000
+    end
+  end
+  process $group_4
+    assign \fsm_state$next \fsm_state
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 2'00
+        switch { \strobe_in }
+          case 1'1
+            switch { \write_happened }
+              case 1'1
+                assign \fsm_state$next 2'01
+              case
+                assign \fsm_state$next 2'10
+            end
+        end
+      attribute \amaranth.decoding "D1/2"
+      case 2'10
+        switch { \write_happened }
+          case 1'1
+            assign \fsm_state$next 2'01
+        end
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        switch { \write_happened }
+          case 1'1
+            assign \fsm_state$next 2'00
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \fsm_state$next 2'00
+    end
+    switch \rst
+      case 1'1
+        assign \fsm_state$next 2'00
+    end
+  end
+  wire width 3 \f
+  process $group_5
+    assign \f 3'000
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 2'00
+      attribute \amaranth.decoding "D1/2"
+      case 2'10
+        assign \f 3'001
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+    end
+  end
+  process $group_6
+    assign \data_complete 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 2'00
+      attribute \amaranth.decoding "D1/2"
+      case 2'10
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        assign \data_complete 1'1
+    end
+  end
+  wire width 1 \lf
+  process $group_7
+    assign \lf 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "Waiting/0"
+      case 2'00
+      attribute \amaranth.decoding "D1/2"
+      case 2'10
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        assign \lf 1'1
+    end
+  end
+  cell $dff $1
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 16
+    connect \CLK \clk
+    connect \D \data$next
+    connect \Q \data
+  end
+  cell $dff $2
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 2
+    connect \CLK \clk
+    connect \D \fsm_state$next
+    connect \Q \fsm_state
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.RasterReader
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 1 output 3 \data_complete
+  wire width 1 input 4 \data_used
+  wire width 16 output 5 \data_c
+  wire width 1 output 6 \data_fresh
+  wire width 8 input 7 \out_fifo_r_data
+  wire width 1 input 8 \read_happened
+  attribute \init 16'0000000000000000
+  wire width 16 output 9 \data
+  wire width 16 \data$next
+  attribute \init 2'00
+  wire width 2 \fsm_state
+  wire width 2 \fsm_state$next
+  process $group_0
+    assign \data$next \data
+    switch \fsm_state
+      attribute \amaranth.decoding "D1/0"
+      case 2'00
+        switch { \read_happened }
+          case 1'1
+            assign \data$next [7:0] \out_fifo_r_data
+        end
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        switch { \read_happened }
+          case 1'1
+            switch { \data_used }
+              case 1'1
+                assign \data$next 16'0000000000000000
+              case
+                assign \data$next \data_c
+            end
+        end
+      attribute \amaranth.decoding "Hold/2"
+      case 2'10
+        switch { \data_used }
+          case 1'1
+            assign \data$next 16'0000000000000000
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \data$next 16'0000000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \data$next 16'0000000000000000
+    end
+  end
+  process $group_1
+    assign \fsm_state$next \fsm_state
+    switch \fsm_state
+      attribute \amaranth.decoding "D1/0"
+      case 2'00
+        switch { \read_happened }
+          case 1'1
+            assign \fsm_state$next 2'01
+        end
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        switch { \read_happened }
+          case 1'1
+            switch { \data_used }
+              case 1'1
+                assign \fsm_state$next 2'00
+              case
+                assign \fsm_state$next 2'10
+            end
+        end
+      attribute \amaranth.decoding "Hold/2"
+      case 2'10
+        switch { \data_used }
+          case 1'1
+            assign \fsm_state$next 2'00
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \fsm_state$next 2'00
+    end
+    switch \rst
+      case 1'1
+        assign \fsm_state$next 2'00
+    end
+  end
+  process $group_2
+    assign \data_c 16'0000000000000000
+    switch \fsm_state
+      attribute \amaranth.decoding "D1/0"
+      case 2'00
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        switch { \read_happened }
+          case 1'1
+            assign \data_c [7:0] \data [7:0]
+            assign \data_c [15:8] \out_fifo_r_data
+        end
+      attribute \amaranth.decoding "Hold/2"
+      case 2'10
+        assign \data_c \data
+    end
+  end
+  process $group_3
+    assign \data_fresh 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "D1/0"
+      case 2'00
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+        switch { \read_happened }
+          case 1'1
+            assign \data_fresh 1'1
+        end
+      attribute \amaranth.decoding "Hold/2"
+      case 2'10
+        assign \data_fresh 1'1
+    end
+  end
+  wire width 1 \s
+  process $group_4
+    assign \s 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "D1/0"
+      case 2'00
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+      attribute \amaranth.decoding "Hold/2"
+      case 2'10
+        assign \s 1'1
+    end
+  end
+  process $group_5
+    assign \data_complete 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "D1/0"
+      case 2'00
+      attribute \amaranth.decoding "D2/1"
+      case 2'01
+      attribute \amaranth.decoding "Hold/2"
+      case 2'10
+        assign \data_complete 1'1
+    end
+  end
+  cell $dff $1
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 16
+    connect \CLK \clk
+    connect \D \data$next
+    connect \Q \data
+  end
+  cell $dff $2
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 2
+    connect \CLK \clk
+    connect \D \fsm_state$next
+    connect \Q \fsm_state
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.VectorReader
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 1 output 3 \data_complete
+  wire width 1 output 4 \data_fresh
+  wire width 1 input 5 \read_happened
+  wire width 8 input 6 \out_fifo_r_data
+  attribute \init 48'000000000000000000000000000000000000000000000000
+  wire width 48 output 7 \data
+  wire width 48 \data$next
+  wire width 1 input 8 \data_used
+  attribute \init 3'000
+  wire width 3 \fsm_state
+  wire width 3 \fsm_state$next
+  wire width 48 \data_c
+  process $group_0
+    assign \data$next \data
+    switch \fsm_state
+      attribute \amaranth.decoding "X1/0"
+      case 3'000
+        switch { \read_happened }
+          case 1'1
+            assign \data$next [7:0] \out_fifo_r_data
+        end
+      attribute \amaranth.decoding "X2/1"
+      case 3'001
+        switch { \read_happened }
+          case 1'1
+            assign \data$next [15:8] \out_fifo_r_data
+        end
+      attribute \amaranth.decoding "Y1/2"
+      case 3'010
+        switch { \read_happened }
+          case 1'1
+            assign \data$next [23:16] \out_fifo_r_data
+        end
+      attribute \amaranth.decoding "Y2/3"
+      case 3'011
+        switch { \read_happened }
+          case 1'1
+            assign \data$next [31:24] \out_fifo_r_data
+        end
+      attribute \amaranth.decoding "D1/4"
+      case 3'100
+        switch { \read_happened }
+          case 1'1
+            assign \data$next [39:32] \out_fifo_r_data
+        end
+      attribute \amaranth.decoding "D2/5"
+      case 3'101
+        switch { \read_happened }
+          case 1'1
+            switch { \data_used }
+              case 1'1
+                assign \data$next 48'000000000000000000000000000000000000000000000000
+              case
+                assign \data$next \data_c
+            end
+        end
+      attribute \amaranth.decoding "Hold/6"
+      case 3'110
+        switch { \data_used }
+          case 1'1
+            assign \data$next 48'000000000000000000000000000000000000000000000000
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \data$next 48'000000000000000000000000000000000000000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \data$next 48'000000000000000000000000000000000000000000000000
+    end
+  end
+  process $group_1
+    assign \fsm_state$next \fsm_state
+    switch \fsm_state
+      attribute \amaranth.decoding "X1/0"
+      case 3'000
+        switch { \read_happened }
+          case 1'1
+            assign \fsm_state$next 3'001
+        end
+      attribute \amaranth.decoding "X2/1"
+      case 3'001
+        switch { \read_happened }
+          case 1'1
+            assign \fsm_state$next 3'010
+        end
+      attribute \amaranth.decoding "Y1/2"
+      case 3'010
+        switch { \read_happened }
+          case 1'1
+            assign \fsm_state$next 3'011
+        end
+      attribute \amaranth.decoding "Y2/3"
+      case 3'011
+        switch { \read_happened }
+          case 1'1
+            assign \fsm_state$next 3'100
+        end
+      attribute \amaranth.decoding "D1/4"
+      case 3'100
+        switch { \read_happened }
+          case 1'1
+            assign \fsm_state$next 3'101
+        end
+      attribute \amaranth.decoding "D2/5"
+      case 3'101
+        switch { \read_happened }
+          case 1'1
+            switch { \data_used }
+              case 1'1
+                assign \fsm_state$next 3'000
+              case
+                assign \fsm_state$next 3'110
+            end
+        end
+      attribute \amaranth.decoding "Hold/6"
+      case 3'110
+        switch { \data_used }
+          case 1'1
+            assign \fsm_state$next 3'000
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \fsm_state$next 3'000
+    end
+    switch \rst
+      case 1'1
+        assign \fsm_state$next 3'000
+    end
+  end
+  process $group_2
+    assign \data_c 48'000000000000000000000000000000000000000000000000
+    switch \fsm_state
+      attribute \amaranth.decoding "X1/0"
+      case 3'000
+      attribute \amaranth.decoding "X2/1"
+      case 3'001
+      attribute \amaranth.decoding "Y1/2"
+      case 3'010
+      attribute \amaranth.decoding "Y2/3"
+      case 3'011
+      attribute \amaranth.decoding "D1/4"
+      case 3'100
+      attribute \amaranth.decoding "D2/5"
+      case 3'101
+        switch { \read_happened }
+          case 1'1
+            assign \data_c [7:0] \data [7:0]
+            assign \data_c [15:8] \data [15:8]
+            assign \data_c [23:16] \data [23:16]
+            assign \data_c [31:24] \data [31:24]
+            assign \data_c [39:32] \data [39:32]
+            assign \data_c [47:40] \out_fifo_r_data
+        end
+      attribute \amaranth.decoding "Hold/6"
+      case 3'110
+        assign \data_c \data
+    end
+  end
+  process $group_3
+    assign \data_fresh 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "X1/0"
+      case 3'000
+      attribute \amaranth.decoding "X2/1"
+      case 3'001
+      attribute \amaranth.decoding "Y1/2"
+      case 3'010
+      attribute \amaranth.decoding "Y2/3"
+      case 3'011
+      attribute \amaranth.decoding "D1/4"
+      case 3'100
+      attribute \amaranth.decoding "D2/5"
+      case 3'101
+        switch { \read_happened }
+          case 1'1
+            assign \data_fresh 1'1
+        end
+      attribute \amaranth.decoding "Hold/6"
+      case 3'110
+        assign \data_fresh 1'1
+    end
+  end
+  wire width 1 \s
+  process $group_4
+    assign \s 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "X1/0"
+      case 3'000
+      attribute \amaranth.decoding "X2/1"
+      case 3'001
+      attribute \amaranth.decoding "Y1/2"
+      case 3'010
+      attribute \amaranth.decoding "Y2/3"
+      case 3'011
+      attribute \amaranth.decoding "D1/4"
+      case 3'100
+      attribute \amaranth.decoding "D2/5"
+      case 3'101
+      attribute \amaranth.decoding "Hold/6"
+      case 3'110
+        assign \s 1'1
+    end
+  end
+  process $group_5
+    assign \data_complete 1'0
+    switch \fsm_state
+      attribute \amaranth.decoding "X1/0"
+      case 3'000
+      attribute \amaranth.decoding "X2/1"
+      case 3'001
+      attribute \amaranth.decoding "Y1/2"
+      case 3'010
+      attribute \amaranth.decoding "Y2/3"
+      case 3'011
+      attribute \amaranth.decoding "D1/4"
+      case 3'100
+      attribute \amaranth.decoding "D2/5"
+      case 3'101
+      attribute \amaranth.decoding "Hold/6"
+      case 3'110
+        assign \data_complete 1'1
+    end
+  end
+  cell $dff $1
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 48
+    connect \CLK \clk
+    connect \D \data$next
+    connect \Q \data
+  end
+  cell $dff $2
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 3
+    connect \CLK \clk
+    connect \D \fsm_state$next
+    connect \Q \fsm_state
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.XYScanGen.x_counter
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 16 input 3 \upper_limit
+  wire width 16 input 4 \lower_limit
+  wire width 1 input 5 \increment
+  wire width 1 output 6 \ovf
+  wire width 1 input 7 \reset
+  attribute \init 16'0000000000000000
+  wire width 16 output 8 \current_count
+  wire width 16 \current_count$next
+  wire width 1 $1
+  cell $ge $2
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A \current_count
+    connect \B \upper_limit
+    connect \Y $1
+  end
+  process $group_0
+    assign \ovf 1'0
+    assign \ovf $1
+  end
+  wire width 1 \unf
+  wire width 1 $3
+  cell $lt $4
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A \current_count
+    connect \B \lower_limit
+    connect \Y $3
+  end
+  process $group_1
+    assign \unf 1'0
+    assign \unf $3
+  end
+  wire width 16 \next_count
+  process $group_2
+    assign \current_count$next \current_count
+    switch { \reset }
+      case 1'1
+        assign \current_count$next \lower_limit
+      case
+        switch { \increment }
+          case 1'1
+            switch { \ovf \unf }
+              case 2'-1
+                assign \current_count$next \lower_limit
+              case 2'1-
+                assign \current_count$next \lower_limit
+              case
+                assign \current_count$next \next_count
+            end
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \current_count$next 16'0000000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \current_count$next 16'0000000000000000
+    end
+  end
+  wire width 17 $5
+  wire width 17 $6
+  cell $add $7
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 17
+    connect \A \current_count
+    connect \B 1'1
+    connect \Y $6
+  end
+  connect $5 $6
+  process $group_3
+    assign \next_count 16'0000000000000000
+    switch { \reset }
+      case 1'1
+      case
+        switch { \increment }
+          case 1'1
+            switch { \ovf \unf }
+              case 2'-1
+              case 2'1-
+              case
+                assign \next_count $5 [15:0]
+            end
+        end
+    end
+  end
+  cell $dff $8
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 16
+    connect \CLK \clk
+    connect \D \current_count$next
+    connect \Q \current_count
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.XYScanGen.y_counter
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 16 input 3 \upper_limit
+  wire width 16 input 4 \lower_limit
+  wire width 1 input 5 \increment
+  wire width 1 input 6 \reset
+  wire width 1 output 7 \ovf
+  attribute \init 16'0000000000000000
+  wire width 16 output 8 \current_count
+  wire width 16 \current_count$next
+  wire width 1 $1
+  cell $ge $2
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A \current_count
+    connect \B \upper_limit
+    connect \Y $1
+  end
+  process $group_0
+    assign \ovf 1'0
+    assign \ovf $1
+  end
+  wire width 1 \unf
+  wire width 1 $3
+  cell $lt $4
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A \current_count
+    connect \B \lower_limit
+    connect \Y $3
+  end
+  process $group_1
+    assign \unf 1'0
+    assign \unf $3
+  end
+  wire width 16 \next_count
+  process $group_2
+    assign \current_count$next \current_count
+    switch { \reset }
+      case 1'1
+        assign \current_count$next \lower_limit
+      case
+        switch { \increment }
+          case 1'1
+            switch { \ovf \unf }
+              case 2'-1
+                assign \current_count$next \lower_limit
+              case 2'1-
+                assign \current_count$next \lower_limit
+              case
+                assign \current_count$next \next_count
+            end
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \current_count$next 16'0000000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \current_count$next 16'0000000000000000
+    end
+  end
+  wire width 17 $5
+  wire width 17 $6
+  cell $add $7
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 17
+    connect \A \current_count
+    connect \B 1'1
+    connect \Y $6
+  end
+  connect $5 $6
+  process $group_3
+    assign \next_count 16'0000000000000000
+    switch { \reset }
+      case 1'1
+      case
+        switch { \increment }
+          case 1'1
+            switch { \ovf \unf }
+              case 2'-1
+              case 2'1-
+              case
+                assign \next_count $5 [15:0]
+            end
+        end
+    end
+  end
+  cell $dff $8
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 16
+    connect \CLK \clk
+    connect \D \current_count$next
+    connect \Q \current_count
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.XYScanGen
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 1 input 3 \increment
+  wire width 1 input 4 \reset
+  wire width 16 input 5 \x_full_frame_resolution
+  wire width 16 input 6 \y_full_frame_resolution
+  wire width 16 input 7 \upper_limit
+  wire width 16 input 8 \lower_limit
+  wire width 16 input 9 \upper_limit$1
+  wire width 16 input 10 \lower_limit$2
+  wire width 16 output 11 \current_x
+  wire width 16 output 12 \current_y
+  wire width 1 \x_counter_increment
+  wire width 1 \x_counter_ovf
+  wire width 1 \x_counter_reset
+  wire width 16 \x_counter_current_count
+  cell \top.multiplexer.U$$0.XYScanGen.x_counter \x_counter
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \upper_limit \upper_limit
+    connect \lower_limit \lower_limit
+    connect \increment \x_counter_increment
+    connect \ovf \x_counter_ovf
+    connect \reset \x_counter_reset
+    connect \current_count \x_counter_current_count
+  end
+  wire width 1 \y_counter_increment
+  wire width 1 \y_counter_reset
+  wire width 1 \y_counter_ovf
+  wire width 16 \y_counter_current_count
+  cell \top.multiplexer.U$$0.XYScanGen.y_counter \y_counter
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \upper_limit \upper_limit$1
+    connect \lower_limit \lower_limit$2
+    connect \increment \y_counter_increment
+    connect \reset \y_counter_reset
+    connect \ovf \y_counter_ovf
+    connect \current_count \y_counter_current_count
+  end
+  process $group_0
+    assign \x_counter_increment 1'0
+    switch { \increment }
+      case 1'1
+        assign \x_counter_increment \increment
+    end
+  end
+  process $group_1
+    assign \y_counter_increment 1'0
+    switch { \increment }
+      case 1'1
+        assign \y_counter_increment \x_counter_ovf
+    end
+  end
+  process $group_2
+    assign \x_counter_reset 1'0
+    switch { \reset }
+      case 1'1
+        assign \x_counter_reset 1'1
+    end
+  end
+  process $group_3
+    assign \y_counter_reset 1'0
+    switch { \reset }
+      case 1'1
+        assign \y_counter_reset 1'1
+    end
+  end
+  wire width 1 \x_bigger
+  wire width 1 $3
+  cell $ge $4
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A \x_full_frame_resolution
+    connect \B \y_full_frame_resolution
+    connect \Y $3
+  end
+  process $group_4
+    assign \x_bigger 1'0
+    switch { $3 }
+      case 1'1
+        assign \x_bigger 1'1
+    end
+  end
+  wire width 1 \y_bigger
+  wire width 1 $5
+  cell $lt $6
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A \x_full_frame_resolution
+    connect \B \y_full_frame_resolution
+    connect \Y $5
+  end
+  process $group_5
+    assign \y_bigger 1'0
+    switch { $5 }
+      case 1'1
+        assign \y_bigger 1'1
+    end
+  end
+  wire width 1 \frame_sync
+  wire width 1 $7
+  cell $and $8
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \x_counter_ovf
+    connect \B \y_counter_ovf
+    connect \Y $7
+  end
+  process $group_6
+    assign \frame_sync 1'0
+    assign \frame_sync $7
+  end
+  wire width 1 \line_sync
+  wire width 1 $9
+  cell $not $10
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \y_counter_ovf
+    connect \Y $9
+  end
+  wire width 1 $11
+  cell $and $12
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \x_counter_ovf
+    connect \B $9
+    connect \Y $11
+  end
+  process $group_7
+    assign \line_sync 1'0
+    assign \line_sync $11
+  end
+  process $group_8
+    assign \current_x 16'0000000000000000
+    assign \current_x \x_counter_current_count
+  end
+  process $group_9
+    assign \current_y 16'0000000000000000
+    assign \current_y \y_counter_current_count
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.XInt
+  wire width 8 input 0 \step_size
+  wire width 16 output 1 \output
+  wire width 16 input 2 \input
+  wire width 24 $1
+  wire width 24 $2
+  cell $mul $3
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 8
+    parameter \Y_WIDTH 24
+    connect \A \input
+    connect \B \step_size
+    connect \Y $2
+  end
+  connect $1 $2
+  process $group_0
+    assign \output 16'0000000000000000
+    assign \output $1 [15:0]
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.YInt
+  wire width 8 input 0 \step_size
+  wire width 16 output 1 \output
+  wire width 16 input 2 \input
+  wire width 24 $1
+  wire width 24 $2
+  cell $mul $3
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 8
+    parameter \Y_WIDTH 24
+    connect \A \input
+    connect \B \step_size
+    connect \Y $2
+  end
+  connect $1 $2
+  process $group_0
+    assign \output 16'0000000000000000
+    assign \output $1 [15:0]
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.DwellAvgr
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 1 input 3 \strobe
+  wire width 16 input 4 \pixel_in
+  wire width 1 input 5 \start_new_average
+  wire width 16 output 6 \running_average
+  attribute \init 1'0
+  wire width 1 \start_new_average_latched
+  wire width 1 \start_new_average_latched$next
+  wire width 1 $1
+  cell $not $2
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \strobe
+    connect \Y $1
+  end
+  wire width 1 $3
+  cell $and $4
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \start_new_average
+    connect \B $1
+    connect \Y $3
+  end
+  wire width 1 $5
+  cell $or $6
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \start_new_average
+    connect \B \start_new_average_latched
+    connect \Y $5
+  end
+  process $group_0
+    assign \start_new_average_latched$next \start_new_average_latched
+    switch { $3 }
+      case 1'1
+        assign \start_new_average_latched$next 1'1
+    end
+    switch { \strobe }
+      case 1'1
+        switch { $5 }
+          case 1'1
+            assign \start_new_average_latched$next 1'0
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \start_new_average_latched$next 1'0
+    end
+    switch \rst
+      case 1'1
+        assign \start_new_average_latched$next 1'0
+    end
+  end
+  attribute \init 16'0000000000000000
+  wire width 16 \running_average_latched
+  wire width 16 \running_average_latched$next
+  process $group_1
+    assign \running_average_latched$next \running_average_latched
+    switch { \strobe }
+      case 1'1
+        assign \running_average_latched$next \running_average
+    end
+    switch $signal
+      case 1'1
+        assign \running_average_latched$next 16'0000000000000000
+    end
+    switch \rst
+      case 1'1
+        assign \running_average_latched$next 16'0000000000000000
+    end
+  end
+  wire width 1 $7
+  wire width 1 $8
+  cell $or $9
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \start_new_average
+    connect \B \start_new_average_latched
+    connect \Y $8
+  end
+  cell $not $10
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $8
+    connect \Y $7
+  end
+  wire width 17 $11
+  wire width 17 $12
+  cell $add $13
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 17
+    connect \A \pixel_in
+    connect \B \running_average_latched
+    connect \Y $12
+  end
+  wire width 17 $14
+  cell $divfloor $15
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 17
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 17
+    connect \A $12
+    connect \B 2'10
+    connect \Y $14
+  end
+  wire width 17 $16
+  wire width 1 $17
+  cell $eq $18
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A 2'10
+    connect \B 1'0
+    connect \Y $17
+  end
+  cell $mux $19
+    parameter \WIDTH 17
+    connect \A $14
+    connect \B 17'00000000000000000
+    connect \S $17
+    connect \Y $16
+  end
+  connect $11 $16
+  wire width 1 $20
+  cell $or $21
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \start_new_average
+    connect \B \start_new_average_latched
+    connect \Y $20
+  end
+  wire width 1 $22
+  cell $not $23
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \strobe
+    connect \Y $22
+  end
+  process $group_2
+    assign \running_average 16'0000000000000000
+    switch { \strobe }
+      case 1'1
+        switch { $7 }
+          case 1'1
+            assign \running_average $11 [15:0]
+        end
+        switch { $20 }
+          case 1'1
+            assign \running_average \pixel_in
+        end
+    end
+    switch { $22 }
+      case 1'1
+        assign \running_average \running_average_latched
+    end
+  end
+  cell $dff $24
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 1
+    connect \CLK \clk
+    connect \D \start_new_average_latched$next
+    connect \Q \start_new_average_latched
+  end
+  cell $dff $25
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 16
+    connect \CLK \clk
+    connect \D \running_average_latched$next
+    connect \Q \running_average_latched
+  end
+end
+attribute \generator "Amaranth"
+module \top.multiplexer.U$$0.ByteReplace
+  wire width 1 input 0 \rst
+  wire width 1 input 1 \clk
+  wire width 1 input 2 $signal
+  wire width 16 input 3 \point_data
+  wire width 1 input 4 \eight_bit_output
+  wire width 16 output 5 \processed_point_data
+  attribute \init 1'0
+  wire width 1 \s
+  wire width 1 \s$next
+  process $group_0
+    assign \s$next \s
+    assign \s$next 1'1
+    switch $signal
+      case 1'1
+        assign \s$next 1'0
+    end
+    switch \rst
+      case 1'1
+        assign \s$next 1'0
+    end
+  end
+  wire width 16 \shifted_point_data
+  process $group_1
+    assign \shifted_point_data 16'0000000000000000
+    assign \shifted_point_data [7] \point_data [13]
+    assign \shifted_point_data [6] \point_data [12]
+    assign \shifted_point_data [5] \point_data [11]
+    assign \shifted_point_data [4] \point_data [10]
+    assign \shifted_point_data [3] \point_data [9]
+    assign \shifted_point_data [2] \point_data [8]
+    assign \shifted_point_data [1] \point_data [7]
+    assign \shifted_point_data [0] \point_data [6]
+  end
+  wire width 16 \replaced
+  process $group_2
+    assign \replaced 16'0000000000000000
+    assign \replaced 16'0011111111111111
+  end
+  wire width 16 \replaced_with
+  process $group_3
+    assign \replaced_with 16'0000000000000000
+    assign \replaced_with 16'0011111111111110
+  end
+  wire width 1 $1
+  cell $eq $2
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A \shifted_point_data
+    connect \B \replaced
+    connect \Y $1
+  end
+  wire width 8 \replaced_onebyte
+  wire width 1 $3
+  cell $eq $4
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 8
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 8
+    parameter \Y_WIDTH 1
+    connect \A \shifted_point_data [7:0]
+    connect \B \replaced_onebyte
+    connect \Y $3
+  end
+  wire width 8 \replaced_with_onebyte
+  process $group_4
+    assign \processed_point_data 16'0000000000000000
+    switch { $1 }
+      case 1'1
+        assign \processed_point_data \replaced_with
+      case
+        assign \processed_point_data \shifted_point_data
+    end
+    switch { \eight_bit_output }
+      case 1'1
+        switch { $3 }
+          case 1'1
+            assign \processed_point_data [7:0] \replaced_with_onebyte
+          case
+            assign \processed_point_data \shifted_point_data
+        end
+    end
+  end
+  wire width 1 \q
+  wire width 1 $5
+  cell $eq $6
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 16
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 16
+    parameter \Y_WIDTH 1
+    connect \A \shifted_point_data
+    connect \B \replaced
+    connect \Y $5
+  end
+  wire width 1 $7
+  cell $eq $8
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 8
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 8
+    parameter \Y_WIDTH 1
+    connect \A \shifted_point_data [7:0]
+    connect \B \replaced_onebyte
+    connect \Y $7
+  end
+  process $group_5
+    assign \q 1'0
+    switch { $5 }
+      case 1'1
+        assign \q 1'1
+      case
+    end
+    switch { \eight_bit_output }
+      case 1'1
+        switch { $7 }
+          case 1'1
+            assign \q 1'1
+          case
+        end
+    end
+  end
+  process $group_6
+    assign \replaced_onebyte 8'00000000
+    switch { \eight_bit_output }
+      case 1'1
+        assign \replaced_onebyte 8'11111111
+    end
+  end
+  process $group_7
+    assign \replaced_with_onebyte 8'00000000
+    switch { \eight_bit_output }
+      case 1'1
+        assign \replaced_with_onebyte 8'11111110
+    end
+  end
+  cell $dff $9
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 1
+    connect \CLK \clk
+    connect \D \s$next
+    connect \Q \s
   end
 end
 attribute \generator "Amaranth"
@@ -10944,183 +8536,136 @@ module \top.multiplexer.U$$0
   wire width 8 input 11 $signal$9
   wire width 8 input 12 $signal$10
   wire width 8 input 13 $signal$11
-  wire width 1 input 14 $signal$12
+  wire width 8 input 14 $signal$12
   wire width 8 input 15 $signal$13
   wire width 1 input 16 $signal$14
-  wire width 1 input 17 $signal$15
-  wire width 8 input 18 $signal$16
-  wire width 1 input 19 \w_rdy
-  wire width 8 output 20 \w_data
-  wire width 1 output 21 \w_en
-  wire width 8 input 22 \r_data
-  wire width 1 input 23 \r_rdy
-  wire width 1 output 24 \r_en
-  wire width 1 output 25 \port_a_0__io__oe
-  wire width 1 output 26 \port_a_0__io__o
-  wire width 1 input 27 \port_a_0__io__i
-  wire width 1 output 28 \port_a_0__oe__o
-  wire width 1 output 29 \port_a_1__io__oe
-  wire width 1 output 30 \port_a_1__io__o
-  wire width 1 input 31 \port_a_1__io__i
-  wire width 1 output 32 \port_a_1__oe__o
-  wire width 1 output 33 \port_a_2__io__oe
-  wire width 1 output 34 \port_a_2__io__o
-  wire width 1 input 35 \port_a_2__io__i
-  wire width 1 output 36 \port_a_2__oe__o
-  wire width 1 output 37 \port_a_3__io__oe
-  wire width 1 output 38 \port_a_3__io__o
-  wire width 1 input 39 \port_a_3__io__i
-  wire width 1 output 40 \port_a_3__oe__o
-  wire width 1 output 41 \port_a_4__io__oe
-  wire width 1 output 42 \port_a_4__io__o
-  wire width 1 input 43 \port_a_4__io__i
-  wire width 1 output 44 \port_a_4__oe__o
-  wire width 1 output 45 \port_a_5__io__oe
-  wire width 1 output 46 \port_a_5__io__o
-  wire width 1 input 47 \port_a_5__io__i
-  wire width 1 output 48 \port_a_5__oe__o
-  wire width 1 output 49 \port_a_6__io__oe
-  wire width 1 output 50 \port_a_6__io__o
-  wire width 1 input 51 \port_a_6__io__i
-  wire width 1 output 52 \port_a_6__oe__o
-  wire width 1 output 53 \port_a_7__io__oe
-  wire width 1 output 54 \port_a_7__io__o
-  wire width 1 input 55 \port_a_7__io__i
-  wire width 1 output 56 \port_a_7__oe__o
-  wire width 1 output 57 \port_b_0__io__oe
-  wire width 1 output 58 \port_b_0__io__o
-  wire width 1 input 59 \port_b_0__io__i
-  wire width 1 output 60 \port_b_0__oe__o
-  wire width 1 output 61 \port_b_1__io__oe
-  wire width 1 output 62 \port_b_1__io__o
-  wire width 1 input 63 \port_b_1__io__i
-  wire width 1 output 64 \port_b_1__oe__o
-  wire width 1 output 65 \port_b_2__io__oe
-  wire width 1 output 66 \port_b_2__io__o
-  wire width 1 input 67 \port_b_2__io__i
-  wire width 1 output 68 \port_b_2__oe__o
-  wire width 1 output 69 \port_b_3__io__oe
-  wire width 1 output 70 \port_b_3__io__o
-  wire width 1 input 71 \port_b_3__io__i
-  wire width 1 output 72 \port_b_3__oe__o
-  wire width 1 output 73 \port_b_4__io__oe
-  wire width 1 output 74 \port_b_4__io__o
-  wire width 1 input 75 \port_b_4__io__i
-  wire width 1 output 76 \port_b_4__oe__o
-  wire width 1 output 77 \port_b_5__io__oe
-  wire width 1 output 78 \port_b_5__io__o
-  wire width 1 input 79 \port_b_5__io__i
-  wire width 1 output 80 \port_b_5__oe__o
-  wire width 1 output 81 \port_b_7__io__oe
-  wire width 1 output 82 \port_b_7__io__o
-  wire width 1 input 83 \port_b_7__io__i
-  wire width 1 output 84 \port_b_7__oe__o
-  wire width 1 output 85 \control_0__D19__o
-  wire width 1 output 86 \control_0__D20__o
-  wire width 1 output 87 \control_0__D22__o
-  wire width 1 output 88 \control_0__D21__o
-  wire width 1 output 89 \control_0__D24__o
-  wire width 1 output 90 \control_0__D23__o
-  wire width 1 output 91 \data_0__D1__oe
-  wire width 1 output 92 \data_0__D1__o
-  wire width 1 output 93 \data_0__D2__oe
-  wire width 1 output 94 \data_0__D2__o
-  wire width 1 output 95 \data_0__D3__oe
-  wire width 1 output 96 \data_0__D3__o
-  wire width 1 output 97 \data_0__D4__oe
-  wire width 1 output 98 \data_0__D4__o
-  wire width 1 output 99 \data_0__D5__oe
-  wire width 1 output 100 \data_0__D5__o
-  wire width 1 output 101 \data_0__D6__oe
-  wire width 1 output 102 \data_0__D6__o
-  wire width 1 output 103 \data_0__D7__oe
-  wire width 1 output 104 \data_0__D7__o
-  wire width 1 output 105 \data_0__D8__oe
-  wire width 1 output 106 \data_0__D8__o
-  wire width 1 output 107 \data_0__D9__oe
-  wire width 1 output 108 \data_0__D9__o
-  wire width 1 output 109 \data_0__D10__oe
-  wire width 1 output 110 \data_0__D10__o
-  wire width 1 output 111 \data_0__D11__oe
-  wire width 1 output 112 \data_0__D11__o
-  wire width 1 output 113 \data_0__D12__oe
-  wire width 1 output 114 \data_0__D12__o
-  wire width 1 output 115 \data_0__D13__oe
-  wire width 1 output 116 \data_0__D13__o
-  wire width 1 output 117 \data_0__D14__oe
-  wire width 1 output 118 \data_0__D14__o
-  wire width 1 \ModeCtrl_replace_FF_to_FE
-  wire width 8 \ModeCtrl_step_size
-  wire width 8 \ModeCtrl_step_size$17
-  wire width 1 \ModeCtrl_writer_data_complete
-  wire width 1 \ModeCtrl_reset
-  wire width 1 \ModeCtrl_disable_dwell
-  wire width 2 \ModeCtrl_mode
-  wire width 1 \ModeCtrl_external_force_load_new_point
-  wire width 8 \ModeCtrl_const_dwell_time
-  wire width 1 \ModeCtrl_eight_bit_output
-  wire width 16 \ModeCtrl_x_full_frame_resolution
-  wire width 16 \ModeCtrl_y_full_frame_resolution
-  wire width 16 \ModeCtrl_x_upper_limit
-  wire width 16 \ModeCtrl_x_lower_limit
-  wire width 16 \ModeCtrl_y_upper_limit
-  wire width 16 \ModeCtrl_y_lower_limit
-  wire width 1 \ModeCtrl_dwelling
-  wire width 1 \ModeCtrl_count_enable
-  wire width 14 \ModeCtrl_x_position
-  wire width 14 \ModeCtrl_y_position
-  wire width 1 \ModeCtrl_adc_data_strobe
-  wire width 16 \ModeCtrl_adc_data
-  wire width 1 \ModeCtrl_reader_data_complete
-  wire width 8 \ModeCtrl_out_fifo_r_data
-  wire width 1 \ModeCtrl_read_happened
-  wire width 1 \ModeCtrl_writer_data_valid
-  wire width 1 \ModeCtrl_write_happened
-  wire width 1 \ModeCtrl_write_ready
-  wire width 8 \ModeCtrl_in_fifo_w_data
-  cell \top.multiplexer.U$$0.ModeCtrl \ModeCtrl
-    connect \rst \rst
-    connect \clk \clk
-    connect $signal $signal
-    connect \replace_FF_to_FE \ModeCtrl_replace_FF_to_FE
-    connect \step_size \ModeCtrl_step_size
-    connect \step_size$1 \ModeCtrl_step_size$17
-    connect \writer_data_complete \ModeCtrl_writer_data_complete
-    connect \reset \ModeCtrl_reset
-    connect \disable_dwell \ModeCtrl_disable_dwell
-    connect \mode \ModeCtrl_mode
-    connect \external_force_load_new_point \ModeCtrl_external_force_load_new_point
-    connect \const_dwell_time \ModeCtrl_const_dwell_time
-    connect \eight_bit_output \ModeCtrl_eight_bit_output
-    connect \x_full_frame_resolution \ModeCtrl_x_full_frame_resolution
-    connect \y_full_frame_resolution \ModeCtrl_y_full_frame_resolution
-    connect \x_upper_limit \ModeCtrl_x_upper_limit
-    connect \x_lower_limit \ModeCtrl_x_lower_limit
-    connect \y_upper_limit \ModeCtrl_y_upper_limit
-    connect \y_lower_limit \ModeCtrl_y_lower_limit
-    connect \dwelling \ModeCtrl_dwelling
-    connect \count_enable \ModeCtrl_count_enable
-    connect \x_position \ModeCtrl_x_position
-    connect \y_position \ModeCtrl_y_position
-    connect \adc_data_strobe \ModeCtrl_adc_data_strobe
-    connect \adc_data \ModeCtrl_adc_data
-    connect \reader_data_complete \ModeCtrl_reader_data_complete
-    connect \out_fifo_r_data \ModeCtrl_out_fifo_r_data
-    connect \read_happened \ModeCtrl_read_happened
-    connect \writer_data_valid \ModeCtrl_writer_data_valid
-    connect \write_happened \ModeCtrl_write_happened
-    connect \write_ready \ModeCtrl_write_ready
-    connect \in_fifo_w_data \ModeCtrl_in_fifo_w_data
-  end
+  wire width 8 input 17 $signal$15
+  wire width 1 input 18 $signal$16
+  wire width 1 input 19 $signal$17
+  wire width 8 input 20 $signal$18
+  wire width 1 input 21 \w_rdy
+  wire width 8 output 22 \w_data
+  wire width 1 output 23 \w_en
+  wire width 8 input 24 \r_data
+  wire width 1 input 25 \r_rdy
+  wire width 1 output 26 \r_en
+  wire width 1 output 27 \port_a_0__io__oe
+  wire width 1 output 28 \port_a_0__io__o
+  wire width 1 input 29 \port_a_0__io__i
+  wire width 1 output 30 \port_a_0__oe__o
+  wire width 1 output 31 \port_a_1__io__oe
+  wire width 1 output 32 \port_a_1__io__o
+  wire width 1 input 33 \port_a_1__io__i
+  wire width 1 output 34 \port_a_1__oe__o
+  wire width 1 output 35 \port_a_2__io__oe
+  wire width 1 output 36 \port_a_2__io__o
+  wire width 1 input 37 \port_a_2__io__i
+  wire width 1 output 38 \port_a_2__oe__o
+  wire width 1 output 39 \port_a_3__io__oe
+  wire width 1 output 40 \port_a_3__io__o
+  wire width 1 input 41 \port_a_3__io__i
+  wire width 1 output 42 \port_a_3__oe__o
+  wire width 1 output 43 \port_a_4__io__oe
+  wire width 1 output 44 \port_a_4__io__o
+  wire width 1 input 45 \port_a_4__io__i
+  wire width 1 output 46 \port_a_4__oe__o
+  wire width 1 output 47 \port_a_5__io__oe
+  wire width 1 output 48 \port_a_5__io__o
+  wire width 1 input 49 \port_a_5__io__i
+  wire width 1 output 50 \port_a_5__oe__o
+  wire width 1 output 51 \port_a_6__io__oe
+  wire width 1 output 52 \port_a_6__io__o
+  wire width 1 input 53 \port_a_6__io__i
+  wire width 1 output 54 \port_a_6__oe__o
+  wire width 1 output 55 \port_a_7__io__oe
+  wire width 1 output 56 \port_a_7__io__o
+  wire width 1 input 57 \port_a_7__io__i
+  wire width 1 output 58 \port_a_7__oe__o
+  wire width 1 output 59 \port_b_0__io__oe
+  wire width 1 output 60 \port_b_0__io__o
+  wire width 1 input 61 \port_b_0__io__i
+  wire width 1 output 62 \port_b_0__oe__o
+  wire width 1 output 63 \port_b_1__io__oe
+  wire width 1 output 64 \port_b_1__io__o
+  wire width 1 input 65 \port_b_1__io__i
+  wire width 1 output 66 \port_b_1__oe__o
+  wire width 1 output 67 \port_b_2__io__oe
+  wire width 1 output 68 \port_b_2__io__o
+  wire width 1 input 69 \port_b_2__io__i
+  wire width 1 output 70 \port_b_2__oe__o
+  wire width 1 output 71 \port_b_3__io__oe
+  wire width 1 output 72 \port_b_3__io__o
+  wire width 1 input 73 \port_b_3__io__i
+  wire width 1 output 74 \port_b_3__oe__o
+  wire width 1 output 75 \port_b_4__io__oe
+  wire width 1 output 76 \port_b_4__io__o
+  wire width 1 input 77 \port_b_4__io__i
+  wire width 1 output 78 \port_b_4__oe__o
+  wire width 1 output 79 \port_b_5__io__oe
+  wire width 1 output 80 \port_b_5__io__o
+  wire width 1 input 81 \port_b_5__io__i
+  wire width 1 output 82 \port_b_5__oe__o
+  wire width 1 output 83 \port_b_7__io__oe
+  wire width 1 output 84 \port_b_7__io__o
+  wire width 1 input 85 \port_b_7__io__i
+  wire width 1 output 86 \port_b_7__oe__o
+  wire width 1 output 87 \control_0__D19__o
+  wire width 1 output 88 \control_0__D20__o
+  wire width 1 output 89 \control_0__D22__o
+  wire width 1 output 90 \control_0__D21__o
+  wire width 1 output 91 \control_0__D24__o
+  wire width 1 output 92 \control_0__D23__o
+  wire width 1 output 93 \data_0__D1__oe
+  wire width 1 output 94 \data_0__D1__o
+  wire width 1 output 95 \data_0__D2__oe
+  wire width 1 output 96 \data_0__D2__o
+  wire width 1 output 97 \data_0__D3__oe
+  wire width 1 output 98 \data_0__D3__o
+  wire width 1 output 99 \data_0__D4__oe
+  wire width 1 output 100 \data_0__D4__o
+  wire width 1 output 101 \data_0__D5__oe
+  wire width 1 output 102 \data_0__D5__o
+  wire width 1 output 103 \data_0__D6__oe
+  wire width 1 output 104 \data_0__D6__o
+  wire width 1 output 105 \data_0__D7__oe
+  wire width 1 output 106 \data_0__D7__o
+  wire width 1 output 107 \data_0__D8__oe
+  wire width 1 output 108 \data_0__D8__o
+  wire width 1 output 109 \data_0__D9__oe
+  wire width 1 output 110 \data_0__D9__o
+  wire width 1 output 111 \data_0__D10__oe
+  wire width 1 output 112 \data_0__D10__o
+  wire width 1 output 113 \data_0__D11__oe
+  wire width 1 output 114 \data_0__D11__o
+  wire width 1 output 115 \data_0__D12__oe
+  wire width 1 output 116 \data_0__D12__o
+  wire width 1 output 117 \data_0__D13__oe
+  wire width 1 output 118 \data_0__D13__o
+  wire width 1 output 119 \data_0__D14__oe
+  wire width 1 output 120 \data_0__D14__o
+  wire width 1 input 121 \data_0__D1__i
+  wire width 1 input 122 \data_0__D2__i
+  wire width 1 input 123 \data_0__D3__i
+  wire width 1 input 124 \data_0__D4__i
+  wire width 1 input 125 \data_0__D5__i
+  wire width 1 input 126 \data_0__D6__i
+  wire width 1 input 127 \data_0__D7__i
+  wire width 1 input 128 \data_0__D8__i
+  wire width 1 input 129 \data_0__D9__i
+  wire width 1 input 130 \data_0__D10__i
+  wire width 1 input 131 \data_0__D11__i
+  wire width 1 input 132 \data_0__D12__i
+  wire width 1 input 133 \data_0__D13__i
+  wire width 1 input 134 \data_0__D14__i
   wire width 1 \MuxBus_is_x
   wire width 1 \MuxBus_is_y
   wire width 1 \MuxBus_is_a
   wire width 1 \MuxBus_le
   wire width 1 \MuxBus_oe
-  wire width 1 \MuxBus_le$18
-  wire width 1 \MuxBus_oe$19
-  wire width 1 \MuxBus_le$20
-  wire width 1 \MuxBus_oe$21
+  wire width 1 \MuxBus_le$19
+  wire width 1 \MuxBus_oe$20
+  wire width 1 \MuxBus_le$21
+  wire width 1 \MuxBus_oe$22
   wire width 1 \MuxBus_clock
   wire width 1 \MuxBus_sampling
   wire width 1 \MuxBus_is_done
@@ -11134,10 +8679,10 @@ module \top.multiplexer.U$$0
     connect \is_a \MuxBus_is_a
     connect \le \MuxBus_le
     connect \oe \MuxBus_oe
-    connect \le$1 \MuxBus_le$18
-    connect \oe$2 \MuxBus_oe$19
-    connect \le$3 \MuxBus_le$20
-    connect \oe$4 \MuxBus_oe$21
+    connect \le$1 \MuxBus_le$19
+    connect \oe$2 \MuxBus_oe$20
+    connect \le$3 \MuxBus_le$21
+    connect \oe$4 \MuxBus_oe$22
     connect \clock \MuxBus_clock
     connect \sampling \MuxBus_sampling
     connect \is_done \MuxBus_is_done
@@ -11150,21 +8695,13 @@ module \top.multiplexer.U$$0
   wire width 1 \ConfigHdlr_writing_config
   wire width 1 \ConfigHdlr_outer_configuration_flag
   wire width 1 \ConfigHdlr_configuration_flag
+  wire width 1 \ConfigHdlr_eight_bit_output_locked
   wire width 1 \ConfigHdlr_config_flag_released
   wire width 1 \ConfigHdlr_eight_bit_output
-  wire width 1 \ConfigHdlr_eight_bit_output_locked
   wire width 8 \ConfigHdlr_x_full_frame_resolution_b1
   wire width 8 \ConfigHdlr_x_full_frame_resolution_b2
   wire width 8 \ConfigHdlr_y_full_frame_resolution_b1
   wire width 8 \ConfigHdlr_y_full_frame_resolution_b2
-  wire width 8 \ConfigHdlr_x_upper_limit_b1
-  wire width 8 \ConfigHdlr_x_upper_limit_b2
-  wire width 8 \ConfigHdlr_x_lower_limit_b1
-  wire width 8 \ConfigHdlr_x_lower_limit_b2
-  wire width 8 \ConfigHdlr_y_upper_limit_b1
-  wire width 8 \ConfigHdlr_y_upper_limit_b2
-  wire width 8 \ConfigHdlr_y_lower_limit_b1
-  wire width 8 \ConfigHdlr_y_lower_limit_b2
   wire width 16 \ConfigHdlr_x_full_frame_resolution_locked
   wire width 16 \ConfigHdlr_y_full_frame_resolution_locked
   wire width 64 \ConfigHdlr_roi_registers_locked
@@ -11182,27 +8719,181 @@ module \top.multiplexer.U$$0
     connect \writing_config \ConfigHdlr_writing_config
     connect \outer_configuration_flag \ConfigHdlr_outer_configuration_flag
     connect \configuration_flag \ConfigHdlr_configuration_flag
+    connect \eight_bit_output_locked \ConfigHdlr_eight_bit_output_locked
     connect \config_flag_released \ConfigHdlr_config_flag_released
     connect \eight_bit_output \ConfigHdlr_eight_bit_output
-    connect \eight_bit_output_locked \ConfigHdlr_eight_bit_output_locked
     connect \x_full_frame_resolution_b1 \ConfigHdlr_x_full_frame_resolution_b1
     connect \x_full_frame_resolution_b2 \ConfigHdlr_x_full_frame_resolution_b2
     connect \y_full_frame_resolution_b1 \ConfigHdlr_y_full_frame_resolution_b1
     connect \y_full_frame_resolution_b2 \ConfigHdlr_y_full_frame_resolution_b2
-    connect \x_upper_limit_b1 \ConfigHdlr_x_upper_limit_b1
-    connect \x_upper_limit_b2 \ConfigHdlr_x_upper_limit_b2
-    connect \x_lower_limit_b1 \ConfigHdlr_x_lower_limit_b1
-    connect \x_lower_limit_b2 \ConfigHdlr_x_lower_limit_b2
-    connect \y_upper_limit_b1 \ConfigHdlr_y_upper_limit_b1
-    connect \y_upper_limit_b2 \ConfigHdlr_y_upper_limit_b2
-    connect \y_lower_limit_b1 \ConfigHdlr_y_lower_limit_b1
-    connect \y_lower_limit_b2 \ConfigHdlr_y_lower_limit_b2
     connect \x_full_frame_resolution_locked \ConfigHdlr_x_full_frame_resolution_locked
     connect \y_full_frame_resolution_locked \ConfigHdlr_y_full_frame_resolution_locked
     connect \roi_registers_locked \ConfigHdlr_roi_registers_locked
     connect \config_data_valid \ConfigHdlr_config_data_valid
     connect \write_happened \ConfigHdlr_write_happened
     connect \in_fifo_w_data \ConfigHdlr_in_fifo_w_data
+  end
+  wire width 1 \BeamController_dwelling
+  wire width 1 \BeamController_count_enable
+  wire width 14 \BeamController_x_position
+  wire width 14 \BeamController_y_position
+  wire width 1 \BeamController_lock_new_point
+  wire width 1 \BeamController_reset
+  wire width 14 \BeamController_next_x_position
+  wire width 14 \BeamController_next_y_position
+  wire width 1 \BeamController_end_of_dwell
+  wire width 16 \BeamController_next_dwell
+  wire width 1 \BeamController_at_dwell
+  cell \top.multiplexer.U$$0.BeamController \BeamController
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \dwelling \BeamController_dwelling
+    connect \count_enable \BeamController_count_enable
+    connect \x_position \BeamController_x_position
+    connect \y_position \BeamController_y_position
+    connect \lock_new_point \BeamController_lock_new_point
+    connect \reset \BeamController_reset
+    connect \next_x_position \BeamController_next_x_position
+    connect \next_y_position \BeamController_next_y_position
+    connect \end_of_dwell \BeamController_end_of_dwell
+    connect \next_dwell \BeamController_next_dwell
+    connect \at_dwell \BeamController_at_dwell
+  end
+  wire width 1 \1byteWriter_data_complete
+  wire width 8 \1byteWriter_data_c
+  wire width 8 \1byteWriter_in_fifo_w_data
+  wire width 1 \1byteWriter_write_happened
+  wire width 1 \1byteWriter_strobe_in
+  wire width 1 \1byteWriter_data_valid
+  cell \top.multiplexer.U$$0.1byteWriter \1byteWriter
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \data_complete \1byteWriter_data_complete
+    connect \data_c \1byteWriter_data_c
+    connect \in_fifo_w_data \1byteWriter_in_fifo_w_data
+    connect \write_happened \1byteWriter_write_happened
+    connect \strobe_in \1byteWriter_strobe_in
+    connect \data_valid \1byteWriter_data_valid
+  end
+  wire width 1 \Writer_data_complete
+  wire width 16 \Writer_data_c
+  wire width 8 \Writer_in_fifo_w_data
+  wire width 1 \Writer_write_happened
+  wire width 1 \Writer_strobe_in
+  wire width 1 \Writer_data_valid
+  cell \top.multiplexer.U$$0.Writer \Writer
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \data_complete \Writer_data_complete
+    connect \data_c \Writer_data_c
+    connect \in_fifo_w_data \Writer_in_fifo_w_data
+    connect \write_happened \Writer_write_happened
+    connect \strobe_in \Writer_strobe_in
+    connect \data_valid \Writer_data_valid
+  end
+  wire width 1 \RasterReader_data_complete
+  wire width 1 \RasterReader_data_used
+  wire width 16 \RasterReader_data_c
+  wire width 1 \RasterReader_data_fresh
+  wire width 8 \RasterReader_out_fifo_r_data
+  wire width 1 \RasterReader_read_happened
+  wire width 16 \RasterReader_data
+  cell \top.multiplexer.U$$0.RasterReader \RasterReader
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \data_complete \RasterReader_data_complete
+    connect \data_used \RasterReader_data_used
+    connect \data_c \RasterReader_data_c
+    connect \data_fresh \RasterReader_data_fresh
+    connect \out_fifo_r_data \RasterReader_out_fifo_r_data
+    connect \read_happened \RasterReader_read_happened
+    connect \data \RasterReader_data
+  end
+  wire width 1 \VectorReader_data_complete
+  wire width 1 \VectorReader_data_fresh
+  wire width 1 \VectorReader_read_happened
+  wire width 8 \VectorReader_out_fifo_r_data
+  wire width 48 \VectorReader_data
+  wire width 1 \VectorReader_data_used
+  cell \top.multiplexer.U$$0.VectorReader \VectorReader
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \data_complete \VectorReader_data_complete
+    connect \data_fresh \VectorReader_data_fresh
+    connect \read_happened \VectorReader_read_happened
+    connect \out_fifo_r_data \VectorReader_out_fifo_r_data
+    connect \data \VectorReader_data
+    connect \data_used \VectorReader_data_used
+  end
+  wire width 1 \XYScanGen_increment
+  wire width 1 \XYScanGen_reset
+  wire width 16 \XYScanGen_x_full_frame_resolution
+  wire width 16 \XYScanGen_y_full_frame_resolution
+  wire width 16 \XYScanGen_upper_limit
+  wire width 16 \XYScanGen_lower_limit
+  wire width 16 \XYScanGen_upper_limit$23
+  wire width 16 \XYScanGen_lower_limit$24
+  wire width 16 \XYScanGen_current_x
+  wire width 16 \XYScanGen_current_y
+  cell \top.multiplexer.U$$0.XYScanGen \XYScanGen
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \increment \XYScanGen_increment
+    connect \reset \XYScanGen_reset
+    connect \x_full_frame_resolution \XYScanGen_x_full_frame_resolution
+    connect \y_full_frame_resolution \XYScanGen_y_full_frame_resolution
+    connect \upper_limit \XYScanGen_upper_limit
+    connect \lower_limit \XYScanGen_lower_limit
+    connect \upper_limit$1 \XYScanGen_upper_limit$23
+    connect \lower_limit$2 \XYScanGen_lower_limit$24
+    connect \current_x \XYScanGen_current_x
+    connect \current_y \XYScanGen_current_y
+  end
+  wire width 8 \XInt_step_size
+  wire width 16 \XInt_output
+  wire width 16 \XInt_input
+  cell \top.multiplexer.U$$0.XInt \XInt
+    connect \step_size \XInt_step_size
+    connect \output \XInt_output
+    connect \input \XInt_input
+  end
+  wire width 8 \YInt_step_size
+  wire width 16 \YInt_output
+  wire width 16 \YInt_input
+  cell \top.multiplexer.U$$0.YInt \YInt
+    connect \step_size \YInt_step_size
+    connect \output \YInt_output
+    connect \input \YInt_input
+  end
+  wire width 1 \DwellAvgr_strobe
+  wire width 16 \DwellAvgr_pixel_in
+  wire width 1 \DwellAvgr_start_new_average
+  wire width 16 \DwellAvgr_running_average
+  cell \top.multiplexer.U$$0.DwellAvgr \DwellAvgr
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \strobe \DwellAvgr_strobe
+    connect \pixel_in \DwellAvgr_pixel_in
+    connect \start_new_average \DwellAvgr_start_new_average
+    connect \running_average \DwellAvgr_running_average
+  end
+  wire width 16 \ByteReplace_point_data
+  wire width 1 \ByteReplace_eight_bit_output
+  wire width 16 \ByteReplace_processed_point_data
+  cell \top.multiplexer.U$$0.ByteReplace \ByteReplace
+    connect \rst \rst
+    connect \clk \clk
+    connect $signal $signal
+    connect \point_data \ByteReplace_point_data
+    connect \eight_bit_output \ByteReplace_eight_bit_output
+    connect \processed_point_data \ByteReplace_processed_point_data
   end
   wire width 1 \triple__oe
   process $group_0
@@ -11223,271 +8914,271 @@ module \top.multiplexer.U$$0
     assign \port_a_0__oe__o 1'0
     assign \port_a_0__oe__o \triple__oe
   end
-  wire width 1 \triple__oe$22
+  wire width 1 \triple__oe$25
   process $group_4
     assign \port_a_1__io__oe 1'0
-    assign \port_a_1__io__oe \triple__oe$22
+    assign \port_a_1__io__oe \triple__oe$25
   end
-  wire width 1 \triple__o$23
+  wire width 1 \triple__o$26
   process $group_5
     assign \port_a_1__io__o 1'0
-    assign \port_a_1__io__o \triple__o$23
+    assign \port_a_1__io__o \triple__o$26
   end
-  wire width 1 \triple__i$24
+  wire width 1 \triple__i$27
   process $group_6
-    assign \triple__i$24 1'0
-    assign \triple__i$24 \port_a_1__io__i
+    assign \triple__i$27 1'0
+    assign \triple__i$27 \port_a_1__io__i
   end
   process $group_7
     assign \port_a_1__oe__o 1'0
-    assign \port_a_1__oe__o \triple__oe$22
+    assign \port_a_1__oe__o \triple__oe$25
   end
-  wire width 1 \triple__oe$25
+  wire width 1 \triple__oe$28
   process $group_8
     assign \port_a_2__io__oe 1'0
-    assign \port_a_2__io__oe \triple__oe$25
+    assign \port_a_2__io__oe \triple__oe$28
   end
-  wire width 1 \triple__o$26
+  wire width 1 \triple__o$29
   process $group_9
     assign \port_a_2__io__o 1'0
-    assign \port_a_2__io__o \triple__o$26
+    assign \port_a_2__io__o \triple__o$29
   end
-  wire width 1 \triple__i$27
+  wire width 1 \triple__i$30
   process $group_10
-    assign \triple__i$27 1'0
-    assign \triple__i$27 \port_a_2__io__i
+    assign \triple__i$30 1'0
+    assign \triple__i$30 \port_a_2__io__i
   end
   process $group_11
     assign \port_a_2__oe__o 1'0
-    assign \port_a_2__oe__o \triple__oe$25
+    assign \port_a_2__oe__o \triple__oe$28
   end
-  wire width 1 \triple__oe$28
+  wire width 1 \triple__oe$31
   process $group_12
     assign \port_a_3__io__oe 1'0
-    assign \port_a_3__io__oe \triple__oe$28
+    assign \port_a_3__io__oe \triple__oe$31
   end
-  wire width 1 \triple__o$29
+  wire width 1 \triple__o$32
   process $group_13
     assign \port_a_3__io__o 1'0
-    assign \port_a_3__io__o \triple__o$29
+    assign \port_a_3__io__o \triple__o$32
   end
-  wire width 1 \triple__i$30
+  wire width 1 \triple__i$33
   process $group_14
-    assign \triple__i$30 1'0
-    assign \triple__i$30 \port_a_3__io__i
+    assign \triple__i$33 1'0
+    assign \triple__i$33 \port_a_3__io__i
   end
   process $group_15
     assign \port_a_3__oe__o 1'0
-    assign \port_a_3__oe__o \triple__oe$28
+    assign \port_a_3__oe__o \triple__oe$31
   end
-  wire width 1 \triple__oe$31
+  wire width 1 \triple__oe$34
   process $group_16
     assign \port_a_4__io__oe 1'0
-    assign \port_a_4__io__oe \triple__oe$31
+    assign \port_a_4__io__oe \triple__oe$34
   end
-  wire width 1 \triple__o$32
+  wire width 1 \triple__o$35
   process $group_17
     assign \port_a_4__io__o 1'0
-    assign \port_a_4__io__o \triple__o$32
+    assign \port_a_4__io__o \triple__o$35
   end
-  wire width 1 \triple__i$33
+  wire width 1 \triple__i$36
   process $group_18
-    assign \triple__i$33 1'0
-    assign \triple__i$33 \port_a_4__io__i
+    assign \triple__i$36 1'0
+    assign \triple__i$36 \port_a_4__io__i
   end
   process $group_19
     assign \port_a_4__oe__o 1'0
-    assign \port_a_4__oe__o \triple__oe$31
+    assign \port_a_4__oe__o \triple__oe$34
   end
-  wire width 1 \triple__oe$34
+  wire width 1 \triple__oe$37
   process $group_20
     assign \port_a_5__io__oe 1'0
-    assign \port_a_5__io__oe \triple__oe$34
+    assign \port_a_5__io__oe \triple__oe$37
   end
-  wire width 1 \triple__o$35
+  wire width 1 \triple__o$38
   process $group_21
     assign \port_a_5__io__o 1'0
-    assign \port_a_5__io__o \triple__o$35
+    assign \port_a_5__io__o \triple__o$38
   end
-  wire width 1 \triple__i$36
+  wire width 1 \triple__i$39
   process $group_22
-    assign \triple__i$36 1'0
-    assign \triple__i$36 \port_a_5__io__i
+    assign \triple__i$39 1'0
+    assign \triple__i$39 \port_a_5__io__i
   end
   process $group_23
     assign \port_a_5__oe__o 1'0
-    assign \port_a_5__oe__o \triple__oe$34
+    assign \port_a_5__oe__o \triple__oe$37
   end
-  wire width 1 \triple__oe$37
+  wire width 1 \triple__oe$40
   process $group_24
     assign \port_a_6__io__oe 1'0
-    assign \port_a_6__io__oe \triple__oe$37
+    assign \port_a_6__io__oe \triple__oe$40
   end
-  wire width 1 \triple__o$38
+  wire width 1 \triple__o$41
   process $group_25
     assign \port_a_6__io__o 1'0
-    assign \port_a_6__io__o \triple__o$38
+    assign \port_a_6__io__o \triple__o$41
   end
-  wire width 1 \triple__i$39
+  wire width 1 \triple__i$42
   process $group_26
-    assign \triple__i$39 1'0
-    assign \triple__i$39 \port_a_6__io__i
+    assign \triple__i$42 1'0
+    assign \triple__i$42 \port_a_6__io__i
   end
   process $group_27
     assign \port_a_6__oe__o 1'0
-    assign \port_a_6__oe__o \triple__oe$37
+    assign \port_a_6__oe__o \triple__oe$40
   end
-  wire width 1 \triple__oe$40
+  wire width 1 \triple__oe$43
   process $group_28
     assign \port_a_7__io__oe 1'0
-    assign \port_a_7__io__oe \triple__oe$40
+    assign \port_a_7__io__oe \triple__oe$43
   end
-  wire width 1 \triple__o$41
+  wire width 1 \triple__o$44
   process $group_29
     assign \port_a_7__io__o 1'0
-    assign \port_a_7__io__o \triple__o$41
+    assign \port_a_7__io__o \triple__o$44
   end
-  wire width 1 \triple__i$42
+  wire width 1 \triple__i$45
   process $group_30
-    assign \triple__i$42 1'0
-    assign \triple__i$42 \port_a_7__io__i
+    assign \triple__i$45 1'0
+    assign \triple__i$45 \port_a_7__io__i
   end
   process $group_31
     assign \port_a_7__oe__o 1'0
-    assign \port_a_7__oe__o \triple__oe$40
+    assign \port_a_7__oe__o \triple__oe$43
   end
-  wire width 1 \triple__oe$43
+  wire width 1 \triple__oe$46
   process $group_32
     assign \port_b_0__io__oe 1'0
-    assign \port_b_0__io__oe \triple__oe$43
+    assign \port_b_0__io__oe \triple__oe$46
   end
-  wire width 1 \triple__o$44
+  wire width 1 \triple__o$47
   process $group_33
     assign \port_b_0__io__o 1'0
-    assign \port_b_0__io__o \triple__o$44
+    assign \port_b_0__io__o \triple__o$47
   end
-  wire width 1 \triple__i$45
+  wire width 1 \triple__i$48
   process $group_34
-    assign \triple__i$45 1'0
-    assign \triple__i$45 \port_b_0__io__i
+    assign \triple__i$48 1'0
+    assign \triple__i$48 \port_b_0__io__i
   end
   process $group_35
     assign \port_b_0__oe__o 1'0
-    assign \port_b_0__oe__o \triple__oe$43
+    assign \port_b_0__oe__o \triple__oe$46
   end
-  wire width 1 \triple__oe$46
+  wire width 1 \triple__oe$49
   process $group_36
     assign \port_b_1__io__oe 1'0
-    assign \port_b_1__io__oe \triple__oe$46
+    assign \port_b_1__io__oe \triple__oe$49
   end
-  wire width 1 \triple__o$47
+  wire width 1 \triple__o$50
   process $group_37
     assign \port_b_1__io__o 1'0
-    assign \port_b_1__io__o \triple__o$47
+    assign \port_b_1__io__o \triple__o$50
   end
-  wire width 1 \triple__i$48
+  wire width 1 \triple__i$51
   process $group_38
-    assign \triple__i$48 1'0
-    assign \triple__i$48 \port_b_1__io__i
+    assign \triple__i$51 1'0
+    assign \triple__i$51 \port_b_1__io__i
   end
   process $group_39
     assign \port_b_1__oe__o 1'0
-    assign \port_b_1__oe__o \triple__oe$46
+    assign \port_b_1__oe__o \triple__oe$49
   end
-  wire width 1 \triple__oe$49
+  wire width 1 \triple__oe$52
   process $group_40
     assign \port_b_2__io__oe 1'0
-    assign \port_b_2__io__oe \triple__oe$49
+    assign \port_b_2__io__oe \triple__oe$52
   end
-  wire width 1 \triple__o$50
+  wire width 1 \triple__o$53
   process $group_41
     assign \port_b_2__io__o 1'0
-    assign \port_b_2__io__o \triple__o$50
+    assign \port_b_2__io__o \triple__o$53
   end
-  wire width 1 \triple__i$51
+  wire width 1 \triple__i$54
   process $group_42
-    assign \triple__i$51 1'0
-    assign \triple__i$51 \port_b_2__io__i
+    assign \triple__i$54 1'0
+    assign \triple__i$54 \port_b_2__io__i
   end
   process $group_43
     assign \port_b_2__oe__o 1'0
-    assign \port_b_2__oe__o \triple__oe$49
+    assign \port_b_2__oe__o \triple__oe$52
   end
-  wire width 1 \triple__oe$52
+  wire width 1 \triple__oe$55
   process $group_44
     assign \port_b_3__io__oe 1'0
-    assign \port_b_3__io__oe \triple__oe$52
+    assign \port_b_3__io__oe \triple__oe$55
   end
-  wire width 1 \triple__o$53
+  wire width 1 \triple__o$56
   process $group_45
     assign \port_b_3__io__o 1'0
-    assign \port_b_3__io__o \triple__o$53
+    assign \port_b_3__io__o \triple__o$56
   end
-  wire width 1 \triple__i$54
+  wire width 1 \triple__i$57
   process $group_46
-    assign \triple__i$54 1'0
-    assign \triple__i$54 \port_b_3__io__i
+    assign \triple__i$57 1'0
+    assign \triple__i$57 \port_b_3__io__i
   end
   process $group_47
     assign \port_b_3__oe__o 1'0
-    assign \port_b_3__oe__o \triple__oe$52
+    assign \port_b_3__oe__o \triple__oe$55
   end
-  wire width 1 \triple__oe$55
+  wire width 1 \triple__oe$58
   process $group_48
     assign \port_b_4__io__oe 1'0
-    assign \port_b_4__io__oe \triple__oe$55
+    assign \port_b_4__io__oe \triple__oe$58
   end
-  wire width 1 \triple__o$56
+  wire width 1 \triple__o$59
   process $group_49
     assign \port_b_4__io__o 1'0
-    assign \port_b_4__io__o \triple__o$56
+    assign \port_b_4__io__o \triple__o$59
   end
-  wire width 1 \triple__i$57
+  wire width 1 \triple__i$60
   process $group_50
-    assign \triple__i$57 1'0
-    assign \triple__i$57 \port_b_4__io__i
+    assign \triple__i$60 1'0
+    assign \triple__i$60 \port_b_4__io__i
   end
   process $group_51
     assign \port_b_4__oe__o 1'0
-    assign \port_b_4__oe__o \triple__oe$55
+    assign \port_b_4__oe__o \triple__oe$58
   end
-  wire width 1 \triple__oe$58
+  wire width 1 \triple__oe$61
   process $group_52
     assign \port_b_5__io__oe 1'0
-    assign \port_b_5__io__oe \triple__oe$58
+    assign \port_b_5__io__oe \triple__oe$61
   end
-  wire width 1 \triple__o$59
+  wire width 1 \triple__o$62
   process $group_53
     assign \port_b_5__io__o 1'0
-    assign \port_b_5__io__o \triple__o$59
+    assign \port_b_5__io__o \triple__o$62
   end
-  wire width 1 \triple__i$60
+  wire width 1 \triple__i$63
   process $group_54
-    assign \triple__i$60 1'0
-    assign \triple__i$60 \port_b_5__io__i
+    assign \triple__i$63 1'0
+    assign \triple__i$63 \port_b_5__io__i
   end
   process $group_55
     assign \port_b_5__oe__o 1'0
-    assign \port_b_5__oe__o \triple__oe$58
+    assign \port_b_5__oe__o \triple__oe$61
   end
-  wire width 1 \triple__oe$61
+  wire width 1 \triple__oe$64
   process $group_56
     assign \port_b_7__io__oe 1'0
-    assign \port_b_7__io__oe \triple__oe$61
+    assign \port_b_7__io__oe \triple__oe$64
   end
-  wire width 1 \triple__o$62
+  wire width 1 \triple__o$65
   process $group_57
     assign \port_b_7__io__o 1'0
-    assign \port_b_7__io__o \triple__o$62
+    assign \port_b_7__io__o \triple__o$65
   end
-  wire width 1 \triple__i$63
+  wire width 1 \triple__i$66
   process $group_58
-    assign \triple__i$63 1'0
-    assign \triple__i$63 \port_b_7__io__i
+    assign \triple__i$66 1'0
+    assign \triple__i$66 \port_b_7__io__i
   end
   process $group_59
     assign \port_b_7__oe__o 1'0
-    assign \port_b_7__oe__o \triple__oe$61
+    assign \port_b_7__oe__o \triple__oe$64
   end
   wire width 1 \x_latch
   process $group_60
@@ -11828,20 +9519,29 @@ module \top.multiplexer.U$$0
         assign \data_0__D14__o \pins_o [13]
     end
   end
-  wire width 1 \_ctrl_en
-  wire width 1 \w_rdy$64
-  wire width 1 $65
-  cell $and $66
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \_ctrl_en
-    connect \B \w_rdy$64
-    connect \Y $65
+  wire width 14 \pins_i
+  process $group_94
+    assign \pins_i 14'00000000000000
+    switch { \MuxBus_is_a }
+      case 1'1
+        assign \pins_i [0] \data_0__D1__i
+        assign \pins_i [1] \data_0__D2__i
+        assign \pins_i [2] \data_0__D3__i
+        assign \pins_i [3] \data_0__D4__i
+        assign \pins_i [4] \data_0__D5__i
+        assign \pins_i [5] \data_0__D6__i
+        assign \pins_i [6] \data_0__D7__i
+        assign \pins_i [7] \data_0__D8__i
+        assign \pins_i [8] \data_0__D9__i
+        assign \pins_i [9] \data_0__D10__i
+        assign \pins_i [10] \data_0__D11__i
+        assign \pins_i [11] \data_0__D12__i
+        assign \pins_i [12] \data_0__D13__i
+        assign \pins_i [13] \data_0__D14__i
+    end
   end
-  wire width 1 \w_en$67
+  wire width 1 \_ctrl_en
+  wire width 1 \w_rdy$67
   wire width 1 $68
   cell $and $69
     parameter \A_SIGNED 0
@@ -11849,79 +9549,79 @@ module \top.multiplexer.U$$0
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A $65
-    connect \B \w_en$67
+    connect \A \_ctrl_en
+    connect \B \w_rdy$67
     connect \Y $68
   end
-  wire width 1 $70
-  cell $and $71
+  wire width 1 \w_en$70
+  wire width 1 $71
+  cell $and $72
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $68
+    connect \B \w_en$70
+    connect \Y $71
+  end
+  wire width 1 $73
+  cell $and $74
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \_ctrl_en
-    connect \B \w_rdy$64
-    connect \Y $70
+    connect \B \w_rdy$67
+    connect \Y $73
   end
-  wire width 1 $72
-  cell $and $73
+  wire width 1 $75
+  cell $and $76
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A $70
-    connect \B \w_en$67
-    connect \Y $72
-  end
-  process $group_94
-    assign \w_en 1'0
-    assign \w_en $68
-    assign \w_en $72
-  end
-  wire width 1 \_data_en
-  wire width 1 $74
-  cell $and $75
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \_data_en
-    connect \B \w_rdy
-    connect \Y $74
-  end
-  wire width 1 $76
-  cell $and $77
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \_data_en
-    connect \B \w_rdy
-    connect \Y $76
+    connect \A $73
+    connect \B \w_en$70
+    connect \Y $75
   end
   process $group_95
-    assign \w_rdy$64 1'0
-    assign \w_rdy$64 $74
-    assign \w_rdy$64 $76
+    assign \w_en 1'0
+    assign \w_en $71
+    assign \w_en $75
   end
-  wire width 1 \_ctrl_en$78
-  wire width 1 \r_rdy$79
-  wire width 1 $80
-  cell $and $81
+  wire width 1 \_data_en
+  wire width 1 $77
+  cell $and $78
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A \_ctrl_en$78
-    connect \B \r_rdy$79
-    connect \Y $80
+    connect \A \_data_en
+    connect \B \w_rdy
+    connect \Y $77
   end
-  wire width 1 \r_en$82
+  wire width 1 $79
+  cell $and $80
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \_data_en
+    connect \B \w_rdy
+    connect \Y $79
+  end
+  process $group_96
+    assign \w_rdy$67 1'0
+    assign \w_rdy$67 $77
+    assign \w_rdy$67 $79
+  end
+  wire width 1 \_ctrl_en$81
+  wire width 1 \r_rdy$82
   wire width 1 $83
   cell $and $84
     parameter \A_SIGNED 0
@@ -11929,38 +9629,33 @@ module \top.multiplexer.U$$0
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A $80
-    connect \B \r_en$82
+    connect \A \_ctrl_en$81
+    connect \B \r_rdy$82
     connect \Y $83
   end
-  wire width 1 $85
-  cell $and $86
+  wire width 1 \r_en$85
+  wire width 1 $86
+  cell $and $87
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A \_ctrl_en$78
-    connect \B \r_rdy$79
-    connect \Y $85
+    connect \A $83
+    connect \B \r_en$85
+    connect \Y $86
   end
-  wire width 1 $87
-  cell $and $88
+  wire width 1 $88
+  cell $and $89
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A $85
-    connect \B \r_en$82
-    connect \Y $87
+    connect \A \_ctrl_en$81
+    connect \B \r_rdy$82
+    connect \Y $88
   end
-  process $group_96
-    assign \r_en 1'0
-    assign \r_en $83
-    assign \r_en $87
-  end
-  wire width 1 \_data_en$89
   wire width 1 $90
   cell $and $91
     parameter \A_SIGNED 0
@@ -11968,184 +9663,296 @@ module \top.multiplexer.U$$0
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A \_data_en$89
-    connect \B \r_rdy
+    connect \A $88
+    connect \B \r_en$85
     connect \Y $90
   end
-  wire width 1 $92
-  cell $and $93
+  process $group_97
+    assign \r_en 1'0
+    assign \r_en $86
+    assign \r_en $90
+  end
+  wire width 1 \_data_en$92
+  wire width 1 $93
+  cell $and $94
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A \_data_en$89
+    connect \A \_data_en$92
     connect \B \r_rdy
-    connect \Y $92
+    connect \Y $93
   end
-  process $group_97
-    assign \r_rdy$79 1'0
-    assign \r_rdy$79 $90
-    assign \r_rdy$79 $92
+  wire width 1 $95
+  cell $and $96
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \_data_en$92
+    connect \B \r_rdy
+    connect \Y $95
   end
   process $group_98
+    assign \r_rdy$82 1'0
+    assign \r_rdy$82 $93
+    assign \r_rdy$82 $95
+  end
+  process $group_99
     assign \x_latch 1'0
     assign \x_latch \MuxBus_le
   end
   wire width 1 \x_enable
-  process $group_99
+  process $group_100
     assign \x_enable 1'0
     assign \x_enable \MuxBus_oe
   end
-  process $group_100
+  process $group_101
     assign \y_latch 1'0
-    assign \y_latch \MuxBus_le$18
+    assign \y_latch \MuxBus_le$19
   end
   wire width 1 \y_enable
-  process $group_101
-    assign \y_enable 1'0
-    assign \y_enable \MuxBus_oe$19
-  end
   process $group_102
-    assign \a_latch 1'0
-    assign \a_latch \MuxBus_le$20
+    assign \y_enable 1'0
+    assign \y_enable \MuxBus_oe$20
   end
   process $group_103
-    assign \a_enable 1'0
-    assign \a_enable \MuxBus_oe$21
+    assign \a_latch 1'0
+    assign \a_latch \MuxBus_le$21
   end
   process $group_104
+    assign \a_enable 1'0
+    assign \a_enable \MuxBus_oe$22
+  end
+  process $group_105
     assign \a_clock 1'0
     assign \a_clock \MuxBus_clock
   end
-  wire width 1 $94
-  cell $not $95
+  wire width 1 $97
+  cell $not $98
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \MuxBus_clock
-    connect \Y $94
+    connect \Y $97
   end
-  process $group_105
-    assign \d_clock 1'0
-    assign \d_clock $94
-  end
-  wire width 64 \roi_registers
   process $group_106
-    assign \roi_registers 64'0000000000000000000000000000000000000000000000000000000000000000
-    assign \roi_registers [7:0] $signal$8
-    assign \roi_registers [15:8] $signal$6
-    assign \roi_registers [23:16] $signal$7
-    assign \roi_registers [31:24] $signal$6
-    assign \roi_registers [39:32] $signal$11
-    assign \roi_registers [47:40] $signal$9
-    assign \roi_registers [55:48] $signal$10
-    assign \roi_registers [63:56] $signal$9
+    assign \d_clock 1'0
+    assign \d_clock $97
   end
   process $group_107
+    assign \MuxBus_sampling 1'0
+    assign \MuxBus_sampling \BeamController_dwelling
+  end
+  process $group_108
+    assign \BeamController_count_enable 1'0
+    assign \BeamController_count_enable \MuxBus_is_done
+  end
+  process $group_109
+    assign \pins_o 14'00000000000000
+    switch { \MuxBus_is_x }
+      case 1'1
+        assign \pins_o \BeamController_x_position
+    end
+    switch { \MuxBus_is_y }
+      case 1'1
+        assign \pins_o \BeamController_y_position
+    end
+  end
+  process $group_110
+    assign \DwellAvgr_strobe 1'0
+    switch { \MuxBus_is_a }
+      case 1'1
+        assign \DwellAvgr_strobe \MuxBus_released
+    end
+  end
+  wire width 16 $99
+  cell $pos $100
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 14
+    parameter \Y_WIDTH 16
+    connect \A \pins_i
+    connect \Y $99
+  end
+  process $group_111
+    assign \DwellAvgr_pixel_in 16'0000000000000000
+    switch { \MuxBus_is_a }
+      case 1'1
+        assign \DwellAvgr_pixel_in $99
+    end
+  end
+  wire width 64 \roi_registers
+  process $group_112
+    assign \roi_registers 64'0000000000000000000000000000000000000000000000000000000000000000
+    assign \roi_registers [7:0] $signal$8
+    assign \roi_registers [15:8] $signal$9
+    assign \roi_registers [23:16] $signal$6
+    assign \roi_registers [31:24] $signal$7
+    assign \roi_registers [39:32] $signal$12
+    assign \roi_registers [47:40] $signal$13
+    assign \roi_registers [55:48] $signal$10
+    assign \roi_registers [63:56] $signal$11
+  end
+  process $group_113
     assign \ConfigHdlr_roi_registers 64'0000000000000000000000000000000000000000000000000000000000000000
     assign \ConfigHdlr_roi_registers \roi_registers
   end
-  process $group_108
-    assign \ModeCtrl_replace_FF_to_FE 1'0
-    assign \ModeCtrl_replace_FF_to_FE 1'1
-  end
-  process $group_109
+  process $group_114
     assign \ConfigHdlr_scan_mode 2'00
     assign \ConfigHdlr_scan_mode $signal$1
   end
-  process $group_110
+  process $group_115
     assign \ConfigHdlr_step_size 8'00000000
-    assign \ConfigHdlr_step_size $signal$16
+    assign \ConfigHdlr_step_size $signal$18
   end
-  process $group_111
-    assign \ModeCtrl_step_size 8'00000000
-    assign \ModeCtrl_step_size \ConfigHdlr_step_size_locked
+  process $group_116
+    assign \XInt_step_size 8'00000000
+    assign \XInt_step_size \ConfigHdlr_step_size_locked
   end
-  process $group_112
-    assign \ModeCtrl_step_size$17 8'00000000
-    assign \ModeCtrl_step_size$17 \ConfigHdlr_step_size_locked
+  process $group_117
+    assign \YInt_step_size 8'00000000
+    assign \YInt_step_size \ConfigHdlr_step_size_locked
   end
   wire width 1 \handling_config
-  process $group_113
+  process $group_118
     assign \handling_config 1'0
     assign \handling_config \ConfigHdlr_writing_config
   end
-  process $group_114
+  process $group_119
     assign \ConfigHdlr_outer_configuration_flag 1'0
-    assign \ConfigHdlr_outer_configuration_flag $signal$14
+    assign \ConfigHdlr_outer_configuration_flag $signal$16
   end
-  wire width 1 $96
-  cell $eq $97
+  wire width 1 $101
+  cell $eq $102
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A $signal$15
+    connect \A $signal$17
     connect \B 1'0
-    connect \Y $96
+    connect \Y $101
   end
   attribute \init 1'0
   wire width 1 \config_flag_latched
   wire width 1 \config_flag_latched$next
-  wire width 1 $98
-  cell $and $99
+  wire width 1 $103
+  cell $and $104
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \config_flag_latched
-    connect \B \ModeCtrl_writer_data_complete
-    connect \Y $98
+    connect \B \1byteWriter_data_complete
+    connect \Y $103
   end
-  process $group_115
+  wire width 1 $105
+  cell $not $106
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \ConfigHdlr_eight_bit_output_locked
+    connect \Y $105
+  end
+  wire width 1 $107
+  cell $and $108
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \config_flag_latched
+    connect \B \Writer_data_complete
+    connect \Y $107
+  end
+  process $group_120
     assign \ConfigHdlr_configuration_flag 1'0
-    switch { $96 }
+    switch { $101 }
       case 1'1
-        assign \ConfigHdlr_configuration_flag $signal$14
+        assign \ConfigHdlr_configuration_flag $signal$16
       case
-        switch { $98 }
+        switch { \ConfigHdlr_eight_bit_output_locked }
           case 1'1
-            assign \ConfigHdlr_configuration_flag 1'1
+            switch { $103 }
+              case 1'1
+                assign \ConfigHdlr_configuration_flag 1'1
+            end
+        end
+        switch { $105 }
+          case 1'1
+            switch { $107 }
+              case 1'1
+                assign \ConfigHdlr_configuration_flag 1'1
+            end
         end
     end
   end
-  wire width 1 $100
-  cell $eq $101
+  wire width 1 $109
+  cell $eq $110
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A $signal$15
+    connect \A $signal$17
     connect \B 1'0
-    connect \Y $100
+    connect \Y $109
   end
-  wire width 1 $102
-  cell $and $103
+  wire width 1 $111
+  cell $and $112
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \config_flag_latched
-    connect \B \ModeCtrl_writer_data_complete
-    connect \Y $102
+    connect \B \1byteWriter_data_complete
+    connect \Y $111
   end
-  process $group_116
+  wire width 1 $113
+  cell $not $114
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \ConfigHdlr_eight_bit_output_locked
+    connect \Y $113
+  end
+  wire width 1 $115
+  cell $and $116
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \config_flag_latched
+    connect \B \Writer_data_complete
+    connect \Y $115
+  end
+  process $group_121
     assign \config_flag_latched$next \config_flag_latched
-    switch { $100 }
+    switch { $109 }
       case 1'1
       case
-        switch { $signal$14 }
+        switch { $signal$16 }
           case 1'1
             assign \config_flag_latched$next 1'1
         end
-        switch { $102 }
+        switch { \ConfigHdlr_eight_bit_output_locked }
           case 1'1
-            assign \config_flag_latched$next 1'0
+            switch { $111 }
+              case 1'1
+                assign \config_flag_latched$next 1'0
+            end
+        end
+        switch { $113 }
+          case 1'1
+            switch { $115 }
+              case 1'1
+                assign \config_flag_latched$next 1'0
+            end
         end
     end
     switch $signal
@@ -12157,90 +9964,70 @@ module \top.multiplexer.U$$0
         assign \config_flag_latched$next 1'0
     end
   end
-  process $group_117
-    assign \ModeCtrl_reset 1'0
-    assign \ModeCtrl_reset \handling_config
-  end
-  wire width 1 $104
-  cell $not $105
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $signal$15
-    connect \Y $104
-  end
-  wire width 1 $106
-  cell $or $107
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $104
-    connect \B \handling_config
-    connect \Y $106
-  end
-  process $group_118
-    assign \ModeCtrl_disable_dwell 1'0
-    assign \ModeCtrl_disable_dwell $106
-  end
-  process $group_119
-    assign \ModeCtrl_mode 2'00
-    switch { \handling_config }
-      case 1'1
-        assign \ModeCtrl_mode 2'00
-      case
-        assign \ModeCtrl_mode $signal$1
-    end
-  end
   wire width 1 \write_strobe
-  wire width 1 $108
-  cell $not $109
+  wire width 1 $117
+  cell $not $118
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A $signal$15
-    connect \Y $108
+    connect \A $signal$17
+    connect \Y $117
   end
-  wire width 1 $110
-  cell $and $111
+  wire width 1 $119
+  cell $and $120
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A \w_rdy$64
+    connect \A \w_rdy$67
     connect \B \ConfigHdlr_config_data_valid
-    connect \Y $110
+    connect \Y $119
   end
-  wire width 1 $112
-  cell $and $113
+  wire width 1 $121
+  cell $and $122
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
-    connect \A \w_rdy$64
-    connect \B \ModeCtrl_writer_data_valid
-    connect \Y $112
+    connect \A \w_rdy$67
+    connect \B \1byteWriter_data_valid
+    connect \Y $121
   end
-  process $group_120
+  wire width 1 $123
+  cell $and $124
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \w_rdy$67
+    connect \B \Writer_data_valid
+    connect \Y $123
+  end
+  process $group_122
     assign \write_strobe 1'0
-    switch { $108 }
+    switch { $117 }
       case 1'1
         assign \write_strobe 1'0
     end
     switch { \handling_config }
       case 1'1
-        assign \write_strobe $110
+        assign \write_strobe $119
       case
-        assign \write_strobe $112
+        switch { \ConfigHdlr_eight_bit_output_locked }
+          case 1'1
+            assign \write_strobe $121
+          case
+            assign \write_strobe $123
+        end
     end
   end
   attribute \init 1'0
   wire width 1 \eflnp
   wire width 1 \eflnp$next
-  process $group_121
+  process $group_123
     assign \eflnp$next \eflnp
     assign \eflnp$next \ConfigHdlr_config_flag_released
     switch $signal
@@ -12255,7 +10042,7 @@ module \top.multiplexer.U$$0
   attribute \init 1'0
   wire width 1 \asdf
   wire width 1 \asdf$next
-  process $group_122
+  process $group_124
     assign \asdf$next \asdf
     assign \asdf$next \eflnp
     switch $signal
@@ -12267,300 +10054,1625 @@ module \top.multiplexer.U$$0
         assign \asdf$next 1'0
     end
   end
+  wire width 1 \load_next_point
+  wire width 1 $125
+  cell $eq $126
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $125
+  end
+  wire width 1 $127
+  cell $eq $128
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $127
+  end
+  wire width 1 $129
+  cell $or $130
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $125
+    connect \B $127
+    connect \Y $129
+  end
+  wire width 1 \reader_data_fresh
+  wire width 1 $131
+  cell $and $132
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \BeamController_end_of_dwell
+    connect \B \reader_data_fresh
+    connect \Y $131
+  end
   attribute \init 1'0
-  wire width 1 \sdfg
-  wire width 1 \sdfg$next
-  process $group_123
-    assign \sdfg$next \sdfg
-    assign \sdfg$next \asdf
-    switch $signal
-      case 1'1
-        assign \sdfg$next 1'0
-    end
-    switch \rst
-      case 1'1
-        assign \sdfg$next 1'0
-    end
+  wire width 1 \fsm_state
+  wire width 1 \fsm_state$next
+  wire width 1 $133
+  cell $eq $134
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $133
   end
-  process $group_124
-    assign \ModeCtrl_external_force_load_new_point 1'0
-    assign \ModeCtrl_external_force_load_new_point \sdfg
+  wire width 1 $135
+  cell $eq $136
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $135
   end
-  wire width 1 \beam_controller_end_of_dwell
-  wire width 1 \beam_controller_end_of_dwell$114
+  wire width 1 $137
+  cell $eq $138
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $137
+  end
   process $group_125
-    assign \beam_controller_end_of_dwell 1'0
-    assign \beam_controller_end_of_dwell \beam_controller_end_of_dwell$114
+    assign \load_next_point 1'0
+    switch { \asdf }
+      case 1'1
+        assign \load_next_point 1'1
+    end
+    switch { $129 }
+      case 1'1
+        switch { $131 }
+          case 1'1
+            assign \load_next_point 1'1
+        end
+        switch \fsm_state
+          attribute \amaranth.decoding "Wait for first USB/0"
+          case 1'0
+            switch { $133 }
+              case 1'1
+                switch { \RasterReader_data_complete }
+                  case 1'1
+                    assign \load_next_point 1'1
+                end
+            end
+            switch { $135 }
+              case 1'1
+                switch { \VectorReader_data_complete }
+                  case 1'1
+                    assign \load_next_point 1'1
+                end
+            end
+          attribute \amaranth.decoding "Patterning/1"
+          case 1'1
+        end
+    end
+    switch { $137 }
+      case 1'1
+        assign \load_next_point \BeamController_end_of_dwell
+    end
   end
   process $group_126
-    assign \ModeCtrl_const_dwell_time 8'00000000
-    assign \ModeCtrl_const_dwell_time $signal$13
+    assign \BeamController_lock_new_point 1'0
+    switch { \asdf }
+      case 1'1
+        assign \BeamController_lock_new_point 1'1
+    end
+    switch { }
+      case
+        assign \BeamController_lock_new_point \load_next_point
+    end
+  end
+  wire width 1 $139
+  cell $eq $140
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $139
+  end
+  wire width 1 $141
+  cell $eq $142
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $141
+  end
+  wire width 1 $143
+  cell $or $144
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $139
+    connect \B $141
+    connect \Y $143
+  end
+  wire width 1 $145
+  cell $and $146
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \BeamController_end_of_dwell
+    connect \B \reader_data_fresh
+    connect \Y $145
+  end
+  wire width 1 $147
+  cell $eq $148
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $147
+  end
+  wire width 1 $149
+  cell $eq $150
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $149
+  end
+  wire width 1 $151
+  cell $eq $152
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $151
   end
   process $group_127
-    assign \ConfigHdlr_eight_bit_output 1'0
-    assign \ConfigHdlr_eight_bit_output $signal$12
+    assign \DwellAvgr_start_new_average 1'0
+    switch { \asdf }
+      case 1'1
+        assign \DwellAvgr_start_new_average 1'1
+    end
+    switch { $143 }
+      case 1'1
+        switch { $145 }
+          case 1'1
+            assign \DwellAvgr_start_new_average 1'1
+        end
+        switch \fsm_state
+          attribute \amaranth.decoding "Wait for first USB/0"
+          case 1'0
+            switch { $147 }
+              case 1'1
+                switch { \RasterReader_data_complete }
+                  case 1'1
+                    assign \DwellAvgr_start_new_average 1'1
+                end
+            end
+            switch { $149 }
+              case 1'1
+                switch { \VectorReader_data_complete }
+                  case 1'1
+                    assign \DwellAvgr_start_new_average 1'1
+                end
+            end
+          attribute \amaranth.decoding "Patterning/1"
+          case 1'1
+        end
+    end
+    switch { $151 }
+      case 1'1
+        assign \DwellAvgr_start_new_average \BeamController_at_dwell
+    end
+  end
+  wire width 1 $153
+  cell $eq $154
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $153
+  end
+  wire width 1 $155
+  cell $eq $156
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $155
+  end
+  wire width 1 $157
+  cell $or $158
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $153
+    connect \B $155
+    connect \Y $157
   end
   process $group_128
-    assign \ModeCtrl_eight_bit_output 1'0
-    assign \ModeCtrl_eight_bit_output \ConfigHdlr_eight_bit_output_locked
+    assign \XYScanGen_increment 1'0
+    switch { \asdf }
+      case 1'1
+        assign \XYScanGen_increment 1'1
+    end
+    switch { $157 }
+      case 1'1
+        switch { \load_next_point }
+          case 1'1
+            assign \XYScanGen_increment 1'1
+        end
+    end
   end
   process $group_129
+    assign \XYScanGen_reset 1'0
+    assign \XYScanGen_reset \handling_config
+  end
+  process $group_130
+    assign \BeamController_reset 1'0
+    assign \BeamController_reset \handling_config
+  end
+  process $group_131
+    assign \ConfigHdlr_eight_bit_output 1'0
+    assign \ConfigHdlr_eight_bit_output $signal$14
+  end
+  process $group_132
     assign \ConfigHdlr_x_full_frame_resolution_b1 8'00000000
     assign \ConfigHdlr_x_full_frame_resolution_b1 $signal$2
   end
-  process $group_130
+  process $group_133
     assign \ConfigHdlr_x_full_frame_resolution_b2 8'00000000
     assign \ConfigHdlr_x_full_frame_resolution_b2 $signal$3
   end
-  process $group_131
+  process $group_134
     assign \ConfigHdlr_y_full_frame_resolution_b1 8'00000000
     assign \ConfigHdlr_y_full_frame_resolution_b1 $signal$4
   end
-  process $group_132
+  process $group_135
     assign \ConfigHdlr_y_full_frame_resolution_b2 8'00000000
     assign \ConfigHdlr_y_full_frame_resolution_b2 $signal$5
   end
-  process $group_133
-    assign \ConfigHdlr_x_upper_limit_b1 8'00000000
-    assign \ConfigHdlr_x_upper_limit_b1 $signal$6
+  wire width 1 $159
+  cell $eq $160
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $159
   end
-  process $group_134
-    assign \ConfigHdlr_x_upper_limit_b2 8'00000000
-    assign \ConfigHdlr_x_upper_limit_b2 $signal$7
+  wire width 1 $161
+  cell $eq $162
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $161
   end
-  process $group_135
-    assign \ConfigHdlr_x_lower_limit_b1 8'00000000
-    assign \ConfigHdlr_x_lower_limit_b1 $signal$6
+  wire width 1 $163
+  cell $or $164
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $159
+    connect \B $161
+    connect \Y $163
   end
   process $group_136
-    assign \ConfigHdlr_x_lower_limit_b2 8'00000000
-    assign \ConfigHdlr_x_lower_limit_b2 $signal$8
+    assign \XYScanGen_x_full_frame_resolution 16'0000000000000000
+    assign \XYScanGen_x_full_frame_resolution \ConfigHdlr_x_full_frame_resolution_locked
+    switch { $163 }
+      case 1'1
+        assign \XYScanGen_x_full_frame_resolution \ConfigHdlr_x_full_frame_resolution_locked
+    end
+  end
+  wire width 1 $165
+  cell $eq $166
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $165
+  end
+  wire width 1 $167
+  cell $eq $168
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $167
+  end
+  wire width 1 $169
+  cell $or $170
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $165
+    connect \B $167
+    connect \Y $169
   end
   process $group_137
-    assign \ConfigHdlr_y_upper_limit_b1 8'00000000
-    assign \ConfigHdlr_y_upper_limit_b1 $signal$9
+    assign \XYScanGen_y_full_frame_resolution 16'0000000000000000
+    assign \XYScanGen_y_full_frame_resolution \ConfigHdlr_y_full_frame_resolution_locked
+    switch { $169 }
+      case 1'1
+        assign \XYScanGen_y_full_frame_resolution \ConfigHdlr_y_full_frame_resolution_locked
+    end
   end
   process $group_138
-    assign \ConfigHdlr_y_upper_limit_b2 8'00000000
-    assign \ConfigHdlr_y_upper_limit_b2 $signal$10
+    assign \XYScanGen_upper_limit 16'0000000000000001
+    assign \XYScanGen_upper_limit \ConfigHdlr_roi_registers_locked [31:16]
   end
   process $group_139
-    assign \ConfigHdlr_y_lower_limit_b1 8'00000000
-    assign \ConfigHdlr_y_lower_limit_b1 $signal$9
+    assign \XYScanGen_lower_limit 16'0000000000000000
+    assign \XYScanGen_lower_limit \ConfigHdlr_roi_registers_locked [15:0]
   end
   process $group_140
-    assign \ConfigHdlr_y_lower_limit_b2 8'00000000
-    assign \ConfigHdlr_y_lower_limit_b2 $signal$11
+    assign \XYScanGen_upper_limit$23 16'0000000000000001
+    assign \XYScanGen_upper_limit$23 \ConfigHdlr_roi_registers_locked [63:48]
   end
   process $group_141
-    assign \ModeCtrl_x_full_frame_resolution 16'0000000000000000
-    assign \ModeCtrl_x_full_frame_resolution \ConfigHdlr_x_full_frame_resolution_locked
+    assign \XYScanGen_lower_limit$24 16'0000000000000000
+    assign \XYScanGen_lower_limit$24 \ConfigHdlr_roi_registers_locked [47:32]
   end
   process $group_142
-    assign \ModeCtrl_y_full_frame_resolution 16'0000000000000000
-    assign \ModeCtrl_y_full_frame_resolution \ConfigHdlr_y_full_frame_resolution_locked
+    assign \ByteReplace_point_data 16'0000000000000000
+    assign \ByteReplace_point_data \DwellAvgr_running_average
   end
   process $group_143
-    assign \ModeCtrl_x_upper_limit 16'0000000000000000
-    assign \ModeCtrl_x_upper_limit \ConfigHdlr_roi_registers_locked [31:16]
+    assign \ByteReplace_eight_bit_output 1'0
+    assign \ByteReplace_eight_bit_output \ConfigHdlr_eight_bit_output_locked
   end
   process $group_144
-    assign \ModeCtrl_x_lower_limit 16'0000000000000000
-    assign \ModeCtrl_x_lower_limit \ConfigHdlr_roi_registers_locked [15:0]
+    assign \BeamController_next_x_position 14'00000000000000
+    assign \BeamController_next_x_position \XInt_output [13:0]
   end
   process $group_145
-    assign \ModeCtrl_y_upper_limit 16'0000000000000000
-    assign \ModeCtrl_y_upper_limit \ConfigHdlr_roi_registers_locked [63:48]
+    assign \BeamController_next_y_position 14'00000000000000
+    assign \BeamController_next_y_position \YInt_output [13:0]
   end
   process $group_146
-    assign \ModeCtrl_y_lower_limit 16'0000000000000000
-    assign \ModeCtrl_y_lower_limit \ConfigHdlr_roi_registers_locked [47:32]
+    assign \1byteWriter_data_c 8'00000000
+    switch { \ConfigHdlr_eight_bit_output_locked }
+      case 1'1
+        assign \1byteWriter_data_c \ByteReplace_processed_point_data [7:0]
+      case
+    end
   end
   process $group_147
-    assign \MuxBus_sampling 1'0
-    assign \MuxBus_sampling \ModeCtrl_dwelling
-  end
-  process $group_148
-    assign \ModeCtrl_count_enable 1'0
-    assign \ModeCtrl_count_enable \MuxBus_is_done
-  end
-  process $group_149
-    assign \pins_o 14'00000000000000
-    switch { \MuxBus_is_x }
-      case 1'1
-        assign \pins_o \ModeCtrl_x_position
-    end
-    switch { \MuxBus_is_y }
-      case 1'1
-        assign \pins_o \ModeCtrl_y_position
-    end
-  end
-  process $group_150
-    assign \ModeCtrl_adc_data_strobe 1'0
-    switch { \MuxBus_is_a }
-      case 1'1
-        assign \ModeCtrl_adc_data_strobe \MuxBus_released
-    end
-  end
-  wire width 16 $115
-  wire width 14 \pins_i
-  cell $pos $116
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 14
-    parameter \Y_WIDTH 16
-    connect \A \pins_i
-    connect \Y $115
-  end
-  process $group_151
-    assign \ModeCtrl_adc_data 16'0000000000000000
-    switch { \MuxBus_is_a }
-      case 1'1
-        assign \ModeCtrl_adc_data $115
-    end
-  end
-  wire width 1 \read_strobe
-  wire width 1 $117
-  cell $not $118
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \ModeCtrl_reader_data_complete
-    connect \Y $117
-  end
-  wire width 1 $119
-  cell $and $120
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A $117
-    connect \B \r_rdy$79
-    connect \Y $119
-  end
-  process $group_152
-    assign \read_strobe 1'0
-    assign \read_strobe $119
-  end
-  process $group_153
-    assign \ModeCtrl_out_fifo_r_data 8'00000000
-    assign \ModeCtrl_out_fifo_r_data \r_data
-  end
-  process $group_154
-    assign \ModeCtrl_read_happened 1'0
-    assign \ModeCtrl_read_happened \read_strobe
-  end
-  wire width 1 $121
-  cell $and $122
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \write_strobe
-    connect \B $signal$15
-    connect \Y $121
-  end
-  process $group_155
-    assign \ConfigHdlr_write_happened 1'0
-    switch { \handling_config }
-      case 1'1
-        assign \ConfigHdlr_write_happened $121
-      case
-    end
-  end
-  wire width 1 $123
-  cell $and $124
-    parameter \A_SIGNED 0
-    parameter \A_WIDTH 1
-    parameter \B_SIGNED 0
-    parameter \B_WIDTH 1
-    parameter \Y_WIDTH 1
-    connect \A \write_strobe
-    connect \B $signal$15
-    connect \Y $123
-  end
-  process $group_156
-    assign \ModeCtrl_write_happened 1'0
-    switch { \handling_config }
-      case 1'1
-      case
-        assign \ModeCtrl_write_happened $123
-    end
-  end
-  process $group_157
-    assign \ModeCtrl_write_ready 1'0
-    assign \ModeCtrl_write_ready \w_rdy$64
-  end
-  process $group_158
     assign \w_data 8'00000000
-    switch { $signal$15 }
+    switch { \ConfigHdlr_eight_bit_output_locked }
+      case 1'1
+        assign \w_data \1byteWriter_in_fifo_w_data
+      case
+        assign \w_data \Writer_in_fifo_w_data
+    end
+    switch { $signal$17 }
       case 1'1
         switch { \handling_config }
           case 1'1
             assign \w_data \ConfigHdlr_in_fifo_w_data
           case
-            assign \w_data \ModeCtrl_in_fifo_w_data
+            switch { \ConfigHdlr_eight_bit_output_locked }
+              case 1'1
+                assign \w_data \1byteWriter_in_fifo_w_data
+              case
+                assign \w_data \Writer_in_fifo_w_data
+            end
         end
     end
   end
-  wire width 1 $125
-  cell $and $126
+  wire width 1 $171
+  cell $and $172
     parameter \A_SIGNED 0
     parameter \A_WIDTH 1
     parameter \B_SIGNED 0
     parameter \B_WIDTH 1
     parameter \Y_WIDTH 1
     connect \A \write_strobe
-    connect \B $signal$15
-    connect \Y $125
+    connect \B $signal$17
+    connect \Y $171
+  end
+  wire width 1 $173
+  cell $and $174
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \write_strobe
+    connect \B $signal$17
+    connect \Y $173
+  end
+  process $group_148
+    assign \1byteWriter_write_happened 1'0
+    switch { \ConfigHdlr_eight_bit_output_locked }
+      case 1'1
+        assign \1byteWriter_write_happened $171
+      case
+    end
+    switch { \handling_config }
+      case 1'1
+      case
+        switch { \ConfigHdlr_eight_bit_output_locked }
+          case 1'1
+            assign \1byteWriter_write_happened $173
+          case
+        end
+    end
+  end
+  wire width 1 \write_this_point
+  process $group_149
+    assign \1byteWriter_strobe_in 1'0
+    switch { \ConfigHdlr_eight_bit_output_locked }
+      case 1'1
+        assign \1byteWriter_strobe_in \write_this_point
+      case
+    end
+  end
+  wire width 16 $175
+  cell $pos $176
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 8
+    parameter \Y_WIDTH 16
+    connect \A \ByteReplace_processed_point_data [7:0]
+    connect \Y $175
+  end
+  process $group_150
+    assign \Writer_data_c 16'0000000000000000
+    switch { \ConfigHdlr_eight_bit_output_locked }
+      case 1'1
+      case
+        assign \Writer_data_c $175
+    end
+  end
+  wire width 1 $177
+  cell $and $178
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \write_strobe
+    connect \B $signal$17
+    connect \Y $177
+  end
+  wire width 1 $179
+  cell $and $180
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \write_strobe
+    connect \B $signal$17
+    connect \Y $179
+  end
+  process $group_151
+    assign \Writer_write_happened 1'0
+    switch { \ConfigHdlr_eight_bit_output_locked }
+      case 1'1
+      case
+        assign \Writer_write_happened $177
+    end
+    switch { \handling_config }
+      case 1'1
+      case
+        switch { \ConfigHdlr_eight_bit_output_locked }
+          case 1'1
+          case
+            assign \Writer_write_happened $179
+        end
+    end
+  end
+  process $group_152
+    assign \Writer_strobe_in 1'0
+    switch { \ConfigHdlr_eight_bit_output_locked }
+      case 1'1
+      case
+        assign \Writer_strobe_in \write_this_point
+    end
+  end
+  attribute \init 1'0
+  wire width 1 \data_stale
+  wire width 1 \data_stale$next
+  wire width 1 $181
+  cell $eq $182
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $181
+  end
+  wire width 1 $183
+  cell $eq $184
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $183
+  end
+  wire width 1 $185
+  cell $or $186
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $181
+    connect \B $183
+    connect \Y $185
+  end
+  wire width 1 $187
+  cell $not $188
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \reader_data_fresh
+    connect \Y $187
+  end
+  wire width 1 $189
+  cell $and $190
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \BeamController_end_of_dwell
+    connect \B $187
+    connect \Y $189
+  end
+  wire width 1 $191
+  cell $and $192
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \BeamController_end_of_dwell
+    connect \B \reader_data_fresh
+    connect \Y $191
+  end
+  process $group_153
+    assign \data_stale$next \data_stale
+    switch { $185 }
+      case 1'1
+        switch { $189 }
+          case 1'1
+            assign \data_stale$next 1'1
+        end
+        switch { $191 }
+          case 1'1
+            assign \data_stale$next 1'0
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \data_stale$next 1'0
+    end
+    switch \rst
+      case 1'1
+        assign \data_stale$next 1'0
+    end
+  end
+  wire width 1 $193
+  cell $eq $194
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $193
+  end
+  wire width 1 $195
+  cell $eq $196
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $195
+  end
+  wire width 1 $197
+  cell $or $198
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $193
+    connect \B $195
+    connect \Y $197
+  end
+  wire width 1 $199
+  cell $not $200
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \reader_data_fresh
+    connect \Y $199
+  end
+  wire width 1 $201
+  cell $and $202
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \BeamController_end_of_dwell
+    connect \B $199
+    connect \Y $201
+  end
+  wire width 1 $203
+  cell $not $204
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \data_stale
+    connect \Y $203
+  end
+  wire width 1 $205
+  cell $and $206
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \BeamController_end_of_dwell
+    connect \B \reader_data_fresh
+    connect \Y $205
+  end
+  wire width 1 $207
+  cell $not $208
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \data_stale
+    connect \Y $207
+  end
+  wire width 1 $209
+  cell $eq $210
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $209
+  end
+  process $group_154
+    assign \write_this_point 1'0
+    switch { $197 }
+      case 1'1
+        switch { $201 }
+          case 1'1
+            switch { $203 }
+              case 1'1
+                assign \write_this_point 1'1
+            end
+        end
+        switch { $205 }
+          case 1'1
+            switch { $207 }
+              case 1'1
+                assign \write_this_point 1'1
+            end
+        end
+    end
+    switch { $209 }
+      case 1'1
+        assign \write_this_point \BeamController_end_of_dwell
+    end
+  end
+  wire width 1 $211
+  cell $eq $212
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $211
+  end
+  wire width 1 $213
+  cell $eq $214
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $213
+  end
+  wire width 1 $215
+  cell $or $216
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $211
+    connect \B $213
+    connect \Y $215
+  end
+  wire width 1 $217
+  cell $eq $218
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $217
+  end
+  wire width 1 $219
+  cell $and $220
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \w_rdy$67
+    connect \B $signal$17
+    connect \Y $219
+  end
+  wire width 1 $221
+  cell $not $222
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \handling_config
+    connect \Y $221
+  end
+  wire width 1 $223
+  cell $and $224
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $219
+    connect \B $221
+    connect \Y $223
+  end
+  wire width 1 $225
+  cell $eq $226
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $225
+  end
+  wire width 1 $227
+  cell $and $228
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \w_rdy$67
+    connect \B $signal$17
+    connect \Y $227
+  end
+  wire width 1 $229
+  cell $not $230
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \handling_config
+    connect \Y $229
+  end
+  wire width 1 $231
+  cell $and $232
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $227
+    connect \B $229
+    connect \Y $231
+  end
+  wire width 1 $233
+  cell $and $234
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \w_rdy$67
+    connect \B $signal$17
+    connect \Y $233
+  end
+  wire width 1 $235
+  cell $not $236
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \handling_config
+    connect \Y $235
+  end
+  wire width 1 $237
+  cell $and $238
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $233
+    connect \B $235
+    connect \Y $237
+  end
+  wire width 1 $239
+  cell $eq $240
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $239
+  end
+  wire width 1 $241
+  cell $and $242
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \w_rdy$67
+    connect \B $signal$17
+    connect \Y $241
+  end
+  wire width 1 $243
+  cell $not $244
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \handling_config
+    connect \Y $243
+  end
+  wire width 1 $245
+  cell $and $246
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $241
+    connect \B $243
+    connect \Y $245
+  end
+  process $group_155
+    assign \BeamController_dwelling 1'0
+    switch { $215 }
+      case 1'1
+        switch \fsm_state
+          attribute \amaranth.decoding "Wait for first USB/0"
+          case 1'0
+            switch { $217 }
+              case 1'1
+                switch { \RasterReader_data_complete }
+                  case 1'1
+                    assign \BeamController_dwelling $223
+                end
+            end
+            switch { $225 }
+              case 1'1
+                switch { \VectorReader_data_complete }
+                  case 1'1
+                    assign \BeamController_dwelling $231
+                end
+            end
+          attribute \amaranth.decoding "Patterning/1"
+          case 1'1
+            assign \BeamController_dwelling $237
+        end
+    end
+    switch { $239 }
+      case 1'1
+        assign \BeamController_dwelling $245
+    end
+  end
+  wire width 1 $247
+  cell $eq $248
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $247
+  end
+  wire width 1 $249
+  cell $eq $250
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $249
+  end
+  wire width 1 $251
+  cell $or $252
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $247
+    connect \B $249
+    connect \Y $251
+  end
+  wire width 1 $253
+  cell $eq $254
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $253
+  end
+  wire width 1 $255
+  cell $eq $256
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $255
+  end
+  process $group_156
+    assign \fsm_state$next \fsm_state
+    switch { $251 }
+      case 1'1
+        switch \fsm_state
+          attribute \amaranth.decoding "Wait for first USB/0"
+          case 1'0
+            switch { $253 }
+              case 1'1
+                switch { \RasterReader_data_complete }
+                  case 1'1
+                    assign \fsm_state$next 1'1
+                end
+            end
+            switch { $255 }
+              case 1'1
+                switch { \VectorReader_data_complete }
+                  case 1'1
+                    assign \fsm_state$next 1'1
+                end
+            end
+          attribute \amaranth.decoding "Patterning/1"
+          case 1'1
+        end
+    end
+    switch $signal
+      case 1'1
+        assign \fsm_state$next 1'0
+    end
+    switch \rst
+      case 1'1
+        assign \fsm_state$next 1'0
+    end
+  end
+  wire width 1 $257
+  cell $eq $258
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $257
+  end
+  wire width 1 $259
+  cell $eq $260
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $259
+  end
+  wire width 1 $261
+  cell $or $262
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $257
+    connect \B $259
+    connect \Y $261
+  end
+  wire width 1 $263
+  cell $eq $264
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $263
+  end
+  process $group_157
+    assign \XInt_input 16'0000000000000000
+    switch { $261 }
+      case 1'1
+        switch { \load_next_point }
+          case 1'1
+            assign \XInt_input \XYScanGen_current_x
+        end
+    end
+    switch { $263 }
+      case 1'1
+        assign \XInt_input { \VectorReader_data [15:8] \VectorReader_data [7:0] }
+    end
+  end
+  wire width 1 $265
+  cell $eq $266
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $265
+  end
+  wire width 1 $267
+  cell $eq $268
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $267
+  end
+  wire width 1 $269
+  cell $or $270
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $265
+    connect \B $267
+    connect \Y $269
+  end
+  wire width 1 $271
+  cell $eq $272
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $271
+  end
+  process $group_158
+    assign \YInt_input 16'0000000000000000
+    switch { $269 }
+      case 1'1
+        switch { \load_next_point }
+          case 1'1
+            assign \YInt_input \XYScanGen_current_y
+        end
+    end
+    switch { $271 }
+      case 1'1
+        assign \YInt_input { \VectorReader_data [31:24] \VectorReader_data [23:16] }
+    end
+  end
+  wire width 1 $273
+  cell $eq $274
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $273
+  end
+  wire width 1 $275
+  cell $eq $276
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $275
+  end
+  wire width 1 $277
+  cell $or $278
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $273
+    connect \B $275
+    connect \Y $277
   end
   process $group_159
-    assign \w_en$67 1'0
-    switch { $125 }
+    assign \RasterReader_data_used 1'0
+    switch { $277 }
       case 1'1
-        assign \w_en$67 1'1
+        switch { \load_next_point }
+          case 1'1
+            assign \RasterReader_data_used 1'1
+        end
     end
+  end
+  wire width 1 $279
+  cell $eq $280
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $279
+  end
+  wire width 1 $281
+  cell $eq $282
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $281
+  end
+  wire width 1 $283
+  cell $or $284
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $279
+    connect \B $281
+    connect \Y $283
+  end
+  wire width 1 $285
+  cell $eq $286
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'01
+    connect \Y $285
+  end
+  wire width 16 $287
+  cell $pos $288
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 8
+    parameter \Y_WIDTH 16
+    connect \A $signal$15
+    connect \Y $287
+  end
+  wire width 1 $289
+  cell $eq $290
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $289
+  end
+  wire width 1 $291
+  cell $eq $292
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $291
   end
   process $group_160
-    assign \r_en$82 1'0
-    switch { \read_strobe }
+    assign \BeamController_next_dwell 16'0000000000000000
+    switch { $283 }
       case 1'1
-        assign \r_en$82 1'1
+        switch { \load_next_point }
+          case 1'1
+            assign \BeamController_next_dwell \RasterReader_data_c
+        end
+    end
+    switch { $285 }
+      case 1'1
+        assign \BeamController_next_dwell $287
+    end
+    switch { $289 }
+      case 1'1
+        assign \BeamController_next_dwell { \RasterReader_data [15:8] \RasterReader_data [7:0] }
+    end
+    switch { $291 }
+      case 1'1
+        assign \BeamController_next_dwell { \VectorReader_data [47:40] \VectorReader_data [39:32] }
     end
   end
-  cell $dff $127
+  wire width 1 $293
+  cell $eq $294
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $293
+  end
+  wire width 1 $295
+  cell $eq $296
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $295
+  end
+  process $group_161
+    assign \reader_data_fresh 1'0
+    switch { $293 }
+      case 1'1
+        assign \reader_data_fresh \RasterReader_data_fresh
+    end
+    switch { $295 }
+      case 1'1
+        assign \reader_data_fresh \VectorReader_data_fresh
+    end
+  end
+  wire width 1 $297
+  cell $eq $298
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $297
+  end
+  process $group_162
+    assign \RasterReader_out_fifo_r_data 8'00000000
+    switch { $297 }
+      case 1'1
+        assign \RasterReader_out_fifo_r_data \r_data
+    end
+  end
+  wire width 1 $299
+  cell $eq $300
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $299
+  end
+  wire width 1 \read_strobe
+  process $group_163
+    assign \RasterReader_read_happened 1'0
+    switch { $299 }
+      case 1'1
+        assign \RasterReader_read_happened \read_strobe
+    end
+  end
+  wire width 1 $301
+  cell $eq $302
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $301
+  end
+  process $group_164
+    assign \VectorReader_read_happened 1'0
+    switch { $301 }
+      case 1'1
+        assign \VectorReader_read_happened \read_strobe
+    end
+  end
+  wire width 1 $303
+  cell $eq $304
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $303
+  end
+  process $group_165
+    assign \VectorReader_out_fifo_r_data 8'00000000
+    switch { $303 }
+      case 1'1
+        assign \VectorReader_out_fifo_r_data \r_data
+    end
+  end
+  wire width 1 $305
+  cell $eq $306
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $305
+  end
+  process $group_166
+    assign \VectorReader_data_used 1'0
+    switch { $305 }
+      case 1'1
+        switch { \load_next_point }
+          case 1'1
+            assign \VectorReader_data_used 1'1
+        end
+    end
+  end
+  wire width 1 $307
+  cell $eq $308
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'10
+    connect \Y $307
+  end
+  wire width 1 $309
+  cell $eq $310
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 2
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 2
+    parameter \Y_WIDTH 1
+    connect \A $signal$1
+    connect \B 2'11
+    connect \Y $309
+  end
+  wire width 1 $311
+  cell $not $312
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \RasterReader_data_complete
+    connect \Y $311
+  end
+  wire width 1 $313
+  cell $and $314
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $311
+    connect \B \r_rdy$82
+    connect \Y $313
+  end
+  wire width 1 $315
+  cell $not $316
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \VectorReader_data_complete
+    connect \Y $315
+  end
+  wire width 1 $317
+  cell $and $318
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A $315
+    connect \B \r_rdy$82
+    connect \Y $317
+  end
+  process $group_167
+    assign \read_strobe 1'0
+    switch { $309 $307 }
+      case 2'-1
+        assign \read_strobe $313
+      case 2'1-
+        assign \read_strobe $317
+      case
+        assign \read_strobe \r_rdy$82
+    end
+  end
+  wire width 1 $319
+  cell $and $320
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \write_strobe
+    connect \B $signal$17
+    connect \Y $319
+  end
+  process $group_168
+    assign \ConfigHdlr_write_happened 1'0
+    switch { \handling_config }
+      case 1'1
+        assign \ConfigHdlr_write_happened $319
+      case
+    end
+  end
+  wire width 1 $321
+  cell $and $322
+    parameter \A_SIGNED 0
+    parameter \A_WIDTH 1
+    parameter \B_SIGNED 0
+    parameter \B_WIDTH 1
+    parameter \Y_WIDTH 1
+    connect \A \write_strobe
+    connect \B $signal$17
+    connect \Y $321
+  end
+  process $group_169
+    assign \w_en$70 1'0
+    switch { $321 }
+      case 1'1
+        assign \w_en$70 1'1
+    end
+  end
+  process $group_170
+    assign \r_en$85 1'0
+    switch { \read_strobe }
+      case 1'1
+        assign \r_en$85 1'1
+    end
+  end
+  cell $dff $323
     parameter \CLK_POLARITY 1
     parameter \WIDTH 1
     connect \CLK \clk
     connect \D \config_flag_latched$next
     connect \Q \config_flag_latched
   end
-  cell $dff $128
+  cell $dff $324
     parameter \CLK_POLARITY 1
     parameter \WIDTH 1
     connect \CLK \clk
     connect \D \eflnp$next
     connect \Q \eflnp
   end
-  cell $dff $129
+  cell $dff $325
     parameter \CLK_POLARITY 1
     parameter \WIDTH 1
     connect \CLK \clk
     connect \D \asdf$next
     connect \Q \asdf
   end
-  cell $dff $130
+  cell $dff $326
     parameter \CLK_POLARITY 1
     parameter \WIDTH 1
     connect \CLK \clk
-    connect \D \sdfg$next
-    connect \Q \sdfg
+    connect \D \data_stale$next
+    connect \Q \data_stale
+  end
+  cell $dff $327
+    parameter \CLK_POLARITY 1
+    parameter \WIDTH 1
+    connect \CLK \clk
+    connect \D \fsm_state$next
+    connect \Q \fsm_state
   end
   connect \triple__oe 1'0
   connect \triple__o 1'0
-  connect \triple__oe$22 1'0
-  connect \triple__o$23 1'0
   connect \triple__oe$25 1'0
   connect \triple__o$26 1'0
   connect \triple__oe$28 1'0
@@ -12587,12 +11699,12 @@ module \top.multiplexer.U$$0
   connect \triple__o$59 1'0
   connect \triple__oe$61 1'0
   connect \triple__o$62 1'0
+  connect \triple__oe$64 1'0
+  connect \triple__o$65 1'0
   connect \_ctrl_en 1'1
   connect \_data_en 1'1
-  connect \_ctrl_en$78 1'1
-  connect \_data_en$89 1'1
-  connect \beam_controller_end_of_dwell$114 1'0
-  connect \pins_i 14'00000000000000
+  connect \_ctrl_en$81 1'1
+  connect \_data_en$92 1'1
 end
 attribute \generator "Amaranth"
 module \top.multiplexer
@@ -12610,111 +11722,127 @@ module \top.multiplexer
   wire width 8 input 11 $signal$9
   wire width 8 input 12 $signal$10
   wire width 8 input 13 $signal$11
-  wire width 1 input 14 $signal$12
+  wire width 8 input 14 $signal$12
   wire width 8 input 15 $signal$13
   wire width 1 input 16 $signal$14
-  wire width 1 input 17 $signal$15
-  wire width 8 input 18 $signal$16
-  wire width 1 input 19 \w_rdy
-  wire width 8 output 20 \w_data
-  wire width 1 output 21 \w_en
-  wire width 8 input 22 \r_data
-  wire width 1 input 23 \r_rdy
-  wire width 1 output 24 \r_en
-  wire width 1 output 25 \port_a_0__io__oe
-  wire width 1 output 26 \port_a_0__io__o
-  wire width 1 input 27 \port_a_0__io__i
-  wire width 1 output 28 \port_a_0__oe__o
-  wire width 1 output 29 \port_a_1__io__oe
-  wire width 1 output 30 \port_a_1__io__o
-  wire width 1 input 31 \port_a_1__io__i
-  wire width 1 output 32 \port_a_1__oe__o
-  wire width 1 output 33 \port_a_2__io__oe
-  wire width 1 output 34 \port_a_2__io__o
-  wire width 1 input 35 \port_a_2__io__i
-  wire width 1 output 36 \port_a_2__oe__o
-  wire width 1 output 37 \port_a_3__io__oe
-  wire width 1 output 38 \port_a_3__io__o
-  wire width 1 input 39 \port_a_3__io__i
-  wire width 1 output 40 \port_a_3__oe__o
-  wire width 1 output 41 \port_a_4__io__oe
-  wire width 1 output 42 \port_a_4__io__o
-  wire width 1 input 43 \port_a_4__io__i
-  wire width 1 output 44 \port_a_4__oe__o
-  wire width 1 output 45 \port_a_5__io__oe
-  wire width 1 output 46 \port_a_5__io__o
-  wire width 1 input 47 \port_a_5__io__i
-  wire width 1 output 48 \port_a_5__oe__o
-  wire width 1 output 49 \port_a_6__io__oe
-  wire width 1 output 50 \port_a_6__io__o
-  wire width 1 input 51 \port_a_6__io__i
-  wire width 1 output 52 \port_a_6__oe__o
-  wire width 1 output 53 \port_a_7__io__oe
-  wire width 1 output 54 \port_a_7__io__o
-  wire width 1 input 55 \port_a_7__io__i
-  wire width 1 output 56 \port_a_7__oe__o
-  wire width 1 output 57 \port_b_0__io__oe
-  wire width 1 output 58 \port_b_0__io__o
-  wire width 1 input 59 \port_b_0__io__i
-  wire width 1 output 60 \port_b_0__oe__o
-  wire width 1 output 61 \port_b_1__io__oe
-  wire width 1 output 62 \port_b_1__io__o
-  wire width 1 input 63 \port_b_1__io__i
-  wire width 1 output 64 \port_b_1__oe__o
-  wire width 1 output 65 \port_b_2__io__oe
-  wire width 1 output 66 \port_b_2__io__o
-  wire width 1 input 67 \port_b_2__io__i
-  wire width 1 output 68 \port_b_2__oe__o
-  wire width 1 output 69 \port_b_3__io__oe
-  wire width 1 output 70 \port_b_3__io__o
-  wire width 1 input 71 \port_b_3__io__i
-  wire width 1 output 72 \port_b_3__oe__o
-  wire width 1 output 73 \port_b_4__io__oe
-  wire width 1 output 74 \port_b_4__io__o
-  wire width 1 input 75 \port_b_4__io__i
-  wire width 1 output 76 \port_b_4__oe__o
-  wire width 1 output 77 \port_b_5__io__oe
-  wire width 1 output 78 \port_b_5__io__o
-  wire width 1 input 79 \port_b_5__io__i
-  wire width 1 output 80 \port_b_5__oe__o
-  wire width 1 output 81 \port_b_7__io__oe
-  wire width 1 output 82 \port_b_7__io__o
-  wire width 1 input 83 \port_b_7__io__i
-  wire width 1 output 84 \port_b_7__oe__o
-  wire width 1 output 85 \control_0__D19__o
-  wire width 1 output 86 \control_0__D20__o
-  wire width 1 output 87 \control_0__D22__o
-  wire width 1 output 88 \control_0__D21__o
-  wire width 1 output 89 \control_0__D24__o
-  wire width 1 output 90 \control_0__D23__o
-  wire width 1 output 91 \data_0__D1__oe
-  wire width 1 output 92 \data_0__D1__o
-  wire width 1 output 93 \data_0__D2__oe
-  wire width 1 output 94 \data_0__D2__o
-  wire width 1 output 95 \data_0__D3__oe
-  wire width 1 output 96 \data_0__D3__o
-  wire width 1 output 97 \data_0__D4__oe
-  wire width 1 output 98 \data_0__D4__o
-  wire width 1 output 99 \data_0__D5__oe
-  wire width 1 output 100 \data_0__D5__o
-  wire width 1 output 101 \data_0__D6__oe
-  wire width 1 output 102 \data_0__D6__o
-  wire width 1 output 103 \data_0__D7__oe
-  wire width 1 output 104 \data_0__D7__o
-  wire width 1 output 105 \data_0__D8__oe
-  wire width 1 output 106 \data_0__D8__o
-  wire width 1 output 107 \data_0__D9__oe
-  wire width 1 output 108 \data_0__D9__o
-  wire width 1 output 109 \data_0__D10__oe
-  wire width 1 output 110 \data_0__D10__o
-  wire width 1 output 111 \data_0__D11__oe
-  wire width 1 output 112 \data_0__D11__o
-  wire width 1 output 113 \data_0__D12__oe
-  wire width 1 output 114 \data_0__D12__o
-  wire width 1 output 115 \data_0__D13__oe
-  wire width 1 output 116 \data_0__D13__o
-  wire width 1 output 117 \data_0__D14__oe
-  wire width 1 output 118 \data_0__D14__o
+  wire width 8 input 17 $signal$15
+  wire width 1 input 18 $signal$16
+  wire width 1 input 19 $signal$17
+  wire width 8 input 20 $signal$18
+  wire width 1 input 21 \w_rdy
+  wire width 8 output 22 \w_data
+  wire width 1 output 23 \w_en
+  wire width 8 input 24 \r_data
+  wire width 1 input 25 \r_rdy
+  wire width 1 output 26 \r_en
+  wire width 1 output 27 \port_a_0__io__oe
+  wire width 1 output 28 \port_a_0__io__o
+  wire width 1 input 29 \port_a_0__io__i
+  wire width 1 output 30 \port_a_0__oe__o
+  wire width 1 output 31 \port_a_1__io__oe
+  wire width 1 output 32 \port_a_1__io__o
+  wire width 1 input 33 \port_a_1__io__i
+  wire width 1 output 34 \port_a_1__oe__o
+  wire width 1 output 35 \port_a_2__io__oe
+  wire width 1 output 36 \port_a_2__io__o
+  wire width 1 input 37 \port_a_2__io__i
+  wire width 1 output 38 \port_a_2__oe__o
+  wire width 1 output 39 \port_a_3__io__oe
+  wire width 1 output 40 \port_a_3__io__o
+  wire width 1 input 41 \port_a_3__io__i
+  wire width 1 output 42 \port_a_3__oe__o
+  wire width 1 output 43 \port_a_4__io__oe
+  wire width 1 output 44 \port_a_4__io__o
+  wire width 1 input 45 \port_a_4__io__i
+  wire width 1 output 46 \port_a_4__oe__o
+  wire width 1 output 47 \port_a_5__io__oe
+  wire width 1 output 48 \port_a_5__io__o
+  wire width 1 input 49 \port_a_5__io__i
+  wire width 1 output 50 \port_a_5__oe__o
+  wire width 1 output 51 \port_a_6__io__oe
+  wire width 1 output 52 \port_a_6__io__o
+  wire width 1 input 53 \port_a_6__io__i
+  wire width 1 output 54 \port_a_6__oe__o
+  wire width 1 output 55 \port_a_7__io__oe
+  wire width 1 output 56 \port_a_7__io__o
+  wire width 1 input 57 \port_a_7__io__i
+  wire width 1 output 58 \port_a_7__oe__o
+  wire width 1 output 59 \port_b_0__io__oe
+  wire width 1 output 60 \port_b_0__io__o
+  wire width 1 input 61 \port_b_0__io__i
+  wire width 1 output 62 \port_b_0__oe__o
+  wire width 1 output 63 \port_b_1__io__oe
+  wire width 1 output 64 \port_b_1__io__o
+  wire width 1 input 65 \port_b_1__io__i
+  wire width 1 output 66 \port_b_1__oe__o
+  wire width 1 output 67 \port_b_2__io__oe
+  wire width 1 output 68 \port_b_2__io__o
+  wire width 1 input 69 \port_b_2__io__i
+  wire width 1 output 70 \port_b_2__oe__o
+  wire width 1 output 71 \port_b_3__io__oe
+  wire width 1 output 72 \port_b_3__io__o
+  wire width 1 input 73 \port_b_3__io__i
+  wire width 1 output 74 \port_b_3__oe__o
+  wire width 1 output 75 \port_b_4__io__oe
+  wire width 1 output 76 \port_b_4__io__o
+  wire width 1 input 77 \port_b_4__io__i
+  wire width 1 output 78 \port_b_4__oe__o
+  wire width 1 output 79 \port_b_5__io__oe
+  wire width 1 output 80 \port_b_5__io__o
+  wire width 1 input 81 \port_b_5__io__i
+  wire width 1 output 82 \port_b_5__oe__o
+  wire width 1 output 83 \port_b_7__io__oe
+  wire width 1 output 84 \port_b_7__io__o
+  wire width 1 input 85 \port_b_7__io__i
+  wire width 1 output 86 \port_b_7__oe__o
+  wire width 1 output 87 \control_0__D19__o
+  wire width 1 output 88 \control_0__D20__o
+  wire width 1 output 89 \control_0__D22__o
+  wire width 1 output 90 \control_0__D21__o
+  wire width 1 output 91 \control_0__D24__o
+  wire width 1 output 92 \control_0__D23__o
+  wire width 1 output 93 \data_0__D1__oe
+  wire width 1 output 94 \data_0__D1__o
+  wire width 1 output 95 \data_0__D2__oe
+  wire width 1 output 96 \data_0__D2__o
+  wire width 1 output 97 \data_0__D3__oe
+  wire width 1 output 98 \data_0__D3__o
+  wire width 1 output 99 \data_0__D4__oe
+  wire width 1 output 100 \data_0__D4__o
+  wire width 1 output 101 \data_0__D5__oe
+  wire width 1 output 102 \data_0__D5__o
+  wire width 1 output 103 \data_0__D6__oe
+  wire width 1 output 104 \data_0__D6__o
+  wire width 1 output 105 \data_0__D7__oe
+  wire width 1 output 106 \data_0__D7__o
+  wire width 1 output 107 \data_0__D8__oe
+  wire width 1 output 108 \data_0__D8__o
+  wire width 1 output 109 \data_0__D9__oe
+  wire width 1 output 110 \data_0__D9__o
+  wire width 1 output 111 \data_0__D10__oe
+  wire width 1 output 112 \data_0__D10__o
+  wire width 1 output 113 \data_0__D11__oe
+  wire width 1 output 114 \data_0__D11__o
+  wire width 1 output 115 \data_0__D12__oe
+  wire width 1 output 116 \data_0__D12__o
+  wire width 1 output 117 \data_0__D13__oe
+  wire width 1 output 118 \data_0__D13__o
+  wire width 1 output 119 \data_0__D14__oe
+  wire width 1 output 120 \data_0__D14__o
+  wire width 1 input 121 \data_0__D1__i
+  wire width 1 input 122 \data_0__D2__i
+  wire width 1 input 123 \data_0__D3__i
+  wire width 1 input 124 \data_0__D4__i
+  wire width 1 input 125 \data_0__D5__i
+  wire width 1 input 126 \data_0__D6__i
+  wire width 1 input 127 \data_0__D7__i
+  wire width 1 input 128 \data_0__D8__i
+  wire width 1 input 129 \data_0__D9__i
+  wire width 1 input 130 \data_0__D10__i
+  wire width 1 input 131 \data_0__D11__i
+  wire width 1 input 132 \data_0__D12__i
+  wire width 1 input 133 \data_0__D13__i
+  wire width 1 input 134 \data_0__D14__i
   cell \top.multiplexer.U$$0 \U$$0
     connect \rst \rst
     connect \clk \clk
@@ -12735,6 +11863,8 @@ module \top.multiplexer
     connect $signal$14 $signal$14
     connect $signal$15 $signal$15
     connect $signal$16 $signal$16
+    connect $signal$17 $signal$17
+    connect $signal$18 $signal$18
     connect \w_rdy \w_rdy
     connect \w_data \w_data
     connect \w_en \w_en
@@ -12835,6 +11965,20 @@ module \top.multiplexer
     connect \data_0__D13__o \data_0__D13__o
     connect \data_0__D14__oe \data_0__D14__oe
     connect \data_0__D14__o \data_0__D14__o
+    connect \data_0__D1__i \data_0__D1__i
+    connect \data_0__D2__i \data_0__D2__i
+    connect \data_0__D3__i \data_0__D3__i
+    connect \data_0__D4__i \data_0__D4__i
+    connect \data_0__D5__i \data_0__D5__i
+    connect \data_0__D6__i \data_0__D6__i
+    connect \data_0__D7__i \data_0__D7__i
+    connect \data_0__D8__i \data_0__D8__i
+    connect \data_0__D9__i \data_0__D9__i
+    connect \data_0__D10__i \data_0__D10__i
+    connect \data_0__D11__i \data_0__D11__i
+    connect \data_0__D12__i \data_0__D12__i
+    connect \data_0__D13__i \data_0__D13__i
+    connect \data_0__D14__i \data_0__D14__i
   end
 end
 attribute \generator "Amaranth"
@@ -13784,8 +12928,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D1
   wire width 1 input 0 \data_0__D1__oe
   wire width 1 input 1 \data_0__D1__o
-  wire width 1 inout 2 \data_0__D1__io
-  wire width 1 \data_0__D1__i
+  wire width 1 output 2 \data_0__D1__i
+  wire width 1 inout 3 \data_0__D1__io
   cell \SB_IO \data_0__D1_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13799,8 +12943,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D2
   wire width 1 input 0 \data_0__D2__oe
   wire width 1 input 1 \data_0__D2__o
-  wire width 1 inout 2 \data_0__D2__io
-  wire width 1 \data_0__D2__i
+  wire width 1 output 2 \data_0__D2__i
+  wire width 1 inout 3 \data_0__D2__io
   cell \SB_IO \data_0__D2_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13814,8 +12958,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D3
   wire width 1 input 0 \data_0__D3__oe
   wire width 1 input 1 \data_0__D3__o
-  wire width 1 inout 2 \data_0__D3__io
-  wire width 1 \data_0__D3__i
+  wire width 1 output 2 \data_0__D3__i
+  wire width 1 inout 3 \data_0__D3__io
   cell \SB_IO \data_0__D3_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13829,8 +12973,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D4
   wire width 1 input 0 \data_0__D4__oe
   wire width 1 input 1 \data_0__D4__o
-  wire width 1 inout 2 \data_0__D4__io
-  wire width 1 \data_0__D4__i
+  wire width 1 output 2 \data_0__D4__i
+  wire width 1 inout 3 \data_0__D4__io
   cell \SB_IO \data_0__D4_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13844,8 +12988,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D5
   wire width 1 input 0 \data_0__D5__oe
   wire width 1 input 1 \data_0__D5__o
-  wire width 1 inout 2 \data_0__D5__io
-  wire width 1 \data_0__D5__i
+  wire width 1 output 2 \data_0__D5__i
+  wire width 1 inout 3 \data_0__D5__io
   cell \SB_IO \data_0__D5_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13859,8 +13003,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D6
   wire width 1 input 0 \data_0__D6__oe
   wire width 1 input 1 \data_0__D6__o
-  wire width 1 inout 2 \data_0__D6__io
-  wire width 1 \data_0__D6__i
+  wire width 1 output 2 \data_0__D6__i
+  wire width 1 inout 3 \data_0__D6__io
   cell \SB_IO \data_0__D6_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13874,8 +13018,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D7
   wire width 1 input 0 \data_0__D7__oe
   wire width 1 input 1 \data_0__D7__o
-  wire width 1 inout 2 \data_0__D7__io
-  wire width 1 \data_0__D7__i
+  wire width 1 output 2 \data_0__D7__i
+  wire width 1 inout 3 \data_0__D7__io
   cell \SB_IO \data_0__D7_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13889,8 +13033,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D8
   wire width 1 input 0 \data_0__D8__oe
   wire width 1 input 1 \data_0__D8__o
-  wire width 1 inout 2 \data_0__D8__io
-  wire width 1 \data_0__D8__i
+  wire width 1 output 2 \data_0__D8__i
+  wire width 1 inout 3 \data_0__D8__io
   cell \SB_IO \data_0__D8_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13904,8 +13048,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D9
   wire width 1 input 0 \data_0__D9__oe
   wire width 1 input 1 \data_0__D9__o
-  wire width 1 inout 2 \data_0__D9__io
-  wire width 1 \data_0__D9__i
+  wire width 1 output 2 \data_0__D9__i
+  wire width 1 inout 3 \data_0__D9__io
   cell \SB_IO \data_0__D9_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13919,8 +13063,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D10
   wire width 1 input 0 \data_0__D10__oe
   wire width 1 input 1 \data_0__D10__o
-  wire width 1 inout 2 \data_0__D10__io
-  wire width 1 \data_0__D10__i
+  wire width 1 output 2 \data_0__D10__i
+  wire width 1 inout 3 \data_0__D10__io
   cell \SB_IO \data_0__D10_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13934,8 +13078,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D11
   wire width 1 input 0 \data_0__D11__oe
   wire width 1 input 1 \data_0__D11__o
-  wire width 1 inout 2 \data_0__D11__io
-  wire width 1 \data_0__D11__i
+  wire width 1 output 2 \data_0__D11__i
+  wire width 1 inout 3 \data_0__D11__io
   cell \SB_IO \data_0__D11_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13949,8 +13093,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D12
   wire width 1 input 0 \data_0__D12__oe
   wire width 1 input 1 \data_0__D12__o
-  wire width 1 inout 2 \data_0__D12__io
-  wire width 1 \data_0__D12__i
+  wire width 1 output 2 \data_0__D12__i
+  wire width 1 inout 3 \data_0__D12__io
   cell \SB_IO \data_0__D12_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13964,8 +13108,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D13
   wire width 1 input 0 \data_0__D13__oe
   wire width 1 input 1 \data_0__D13__o
-  wire width 1 inout 2 \data_0__D13__io
-  wire width 1 \data_0__D13__i
+  wire width 1 output 2 \data_0__D13__i
+  wire width 1 inout 3 \data_0__D13__io
   cell \SB_IO \data_0__D13_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -13979,8 +13123,8 @@ attribute \generator "Amaranth"
 module \top.pin_data_0__D14
   wire width 1 input 0 \data_0__D14__oe
   wire width 1 input 1 \data_0__D14__o
-  wire width 1 inout 2 \data_0__D14__io
-  wire width 1 \data_0__D14__i
+  wire width 1 output 2 \data_0__D14__i
+  wire width 1 inout 3 \data_0__D14__io
   cell \SB_IO \data_0__D14_0
     parameter \IO_STANDARD "SB_LVCMOS33"
     parameter \PIN_TYPE 6'101001
@@ -14114,11 +13258,13 @@ module \top
   wire width 8 \registers_$signal$9
   wire width 8 \registers_$signal$10
   wire width 8 \registers_$signal$11
-  wire width 1 \registers_$signal$12
+  wire width 8 \registers_$signal$12
   wire width 8 \registers_$signal$13
   wire width 1 \registers_$signal$14
-  wire width 1 \registers_$signal$15
-  wire width 8 \registers_$signal$16
+  wire width 8 \registers_$signal$15
+  wire width 1 \registers_$signal$16
+  wire width 1 \registers_$signal$17
+  wire width 8 \registers_$signal$18
   cell \top.registers \registers
     connect \start \i2c_target_start
     connect \data_o \i2c_target_data_o
@@ -14145,6 +13291,8 @@ module \top
     connect $signal$14 \registers_$signal$14
     connect $signal$15 \registers_$signal$15
     connect $signal$16 \registers_$signal$16
+    connect $signal$17 \registers_$signal$17
+    connect $signal$18 \registers_$signal$18
   end
   wire width 1 \fx2_crossbar_fx2_0__flag__i_clk
   wire width 4 \fx2_crossbar_fx2_0__flag__i1
@@ -14293,6 +13441,20 @@ module \top
   wire width 1 \multiplexer_data_0__D13__o
   wire width 1 \multiplexer_data_0__D14__oe
   wire width 1 \multiplexer_data_0__D14__o
+  wire width 1 \multiplexer_data_0__D1__i
+  wire width 1 \multiplexer_data_0__D2__i
+  wire width 1 \multiplexer_data_0__D3__i
+  wire width 1 \multiplexer_data_0__D4__i
+  wire width 1 \multiplexer_data_0__D5__i
+  wire width 1 \multiplexer_data_0__D6__i
+  wire width 1 \multiplexer_data_0__D7__i
+  wire width 1 \multiplexer_data_0__D8__i
+  wire width 1 \multiplexer_data_0__D9__i
+  wire width 1 \multiplexer_data_0__D10__i
+  wire width 1 \multiplexer_data_0__D11__i
+  wire width 1 \multiplexer_data_0__D12__i
+  wire width 1 \multiplexer_data_0__D13__i
+  wire width 1 \multiplexer_data_0__D14__i
   cell \top.multiplexer \multiplexer
     connect \rst \i2c_target_rst
     connect \clk \i2c_target_clk
@@ -14313,6 +13475,8 @@ module \top
     connect $signal$14 \registers_$signal$14
     connect $signal$15 \registers_$signal$15
     connect $signal$16 \registers_$signal$16
+    connect $signal$17 \registers_$signal$17
+    connect $signal$18 \registers_$signal$18
     connect \w_rdy \fx2_crossbar_w_rdy
     connect \w_data \fx2_crossbar_w_data
     connect \w_en \fx2_crossbar_w_en
@@ -14413,6 +13577,20 @@ module \top
     connect \data_0__D13__o \multiplexer_data_0__D13__o
     connect \data_0__D14__oe \multiplexer_data_0__D14__oe
     connect \data_0__D14__o \multiplexer_data_0__D14__o
+    connect \data_0__D1__i \multiplexer_data_0__D1__i
+    connect \data_0__D2__i \multiplexer_data_0__D2__i
+    connect \data_0__D3__i \multiplexer_data_0__D3__i
+    connect \data_0__D4__i \multiplexer_data_0__D4__i
+    connect \data_0__D5__i \multiplexer_data_0__D5__i
+    connect \data_0__D6__i \multiplexer_data_0__D6__i
+    connect \data_0__D7__i \multiplexer_data_0__D7__i
+    connect \data_0__D8__i \multiplexer_data_0__D8__i
+    connect \data_0__D9__i \multiplexer_data_0__D9__i
+    connect \data_0__D10__i \multiplexer_data_0__D10__i
+    connect \data_0__D11__i \multiplexer_data_0__D11__i
+    connect \data_0__D12__i \multiplexer_data_0__D12__i
+    connect \data_0__D13__i \multiplexer_data_0__D13__i
+    connect \data_0__D14__i \multiplexer_data_0__D14__i
   end
   wire width 1 \cd_sync_clk_if_0__i
   cell \top.cd_sync \cd_sync
@@ -14668,71 +13846,85 @@ module \top
   cell \top.pin_data_0__D1 \pin_data_0__D1
     connect \data_0__D1__oe \multiplexer_data_0__D1__oe
     connect \data_0__D1__o \multiplexer_data_0__D1__o
+    connect \data_0__D1__i \multiplexer_data_0__D1__i
     connect \data_0__D1__io \data_0__D1__io
   end
   cell \top.pin_data_0__D2 \pin_data_0__D2
     connect \data_0__D2__oe \multiplexer_data_0__D2__oe
     connect \data_0__D2__o \multiplexer_data_0__D2__o
+    connect \data_0__D2__i \multiplexer_data_0__D2__i
     connect \data_0__D2__io \data_0__D2__io
   end
   cell \top.pin_data_0__D3 \pin_data_0__D3
     connect \data_0__D3__oe \multiplexer_data_0__D3__oe
     connect \data_0__D3__o \multiplexer_data_0__D3__o
+    connect \data_0__D3__i \multiplexer_data_0__D3__i
     connect \data_0__D3__io \data_0__D3__io
   end
   cell \top.pin_data_0__D4 \pin_data_0__D4
     connect \data_0__D4__oe \multiplexer_data_0__D4__oe
     connect \data_0__D4__o \multiplexer_data_0__D4__o
+    connect \data_0__D4__i \multiplexer_data_0__D4__i
     connect \data_0__D4__io \data_0__D4__io
   end
   cell \top.pin_data_0__D5 \pin_data_0__D5
     connect \data_0__D5__oe \multiplexer_data_0__D5__oe
     connect \data_0__D5__o \multiplexer_data_0__D5__o
+    connect \data_0__D5__i \multiplexer_data_0__D5__i
     connect \data_0__D5__io \data_0__D5__io
   end
   cell \top.pin_data_0__D6 \pin_data_0__D6
     connect \data_0__D6__oe \multiplexer_data_0__D6__oe
     connect \data_0__D6__o \multiplexer_data_0__D6__o
+    connect \data_0__D6__i \multiplexer_data_0__D6__i
     connect \data_0__D6__io \data_0__D6__io
   end
   cell \top.pin_data_0__D7 \pin_data_0__D7
     connect \data_0__D7__oe \multiplexer_data_0__D7__oe
     connect \data_0__D7__o \multiplexer_data_0__D7__o
+    connect \data_0__D7__i \multiplexer_data_0__D7__i
     connect \data_0__D7__io \data_0__D7__io
   end
   cell \top.pin_data_0__D8 \pin_data_0__D8
     connect \data_0__D8__oe \multiplexer_data_0__D8__oe
     connect \data_0__D8__o \multiplexer_data_0__D8__o
+    connect \data_0__D8__i \multiplexer_data_0__D8__i
     connect \data_0__D8__io \data_0__D8__io
   end
   cell \top.pin_data_0__D9 \pin_data_0__D9
     connect \data_0__D9__oe \multiplexer_data_0__D9__oe
     connect \data_0__D9__o \multiplexer_data_0__D9__o
+    connect \data_0__D9__i \multiplexer_data_0__D9__i
     connect \data_0__D9__io \data_0__D9__io
   end
   cell \top.pin_data_0__D10 \pin_data_0__D10
     connect \data_0__D10__oe \multiplexer_data_0__D10__oe
     connect \data_0__D10__o \multiplexer_data_0__D10__o
+    connect \data_0__D10__i \multiplexer_data_0__D10__i
     connect \data_0__D10__io \data_0__D10__io
   end
   cell \top.pin_data_0__D11 \pin_data_0__D11
     connect \data_0__D11__oe \multiplexer_data_0__D11__oe
     connect \data_0__D11__o \multiplexer_data_0__D11__o
+    connect \data_0__D11__i \multiplexer_data_0__D11__i
     connect \data_0__D11__io \data_0__D11__io
   end
   cell \top.pin_data_0__D12 \pin_data_0__D12
     connect \data_0__D12__oe \multiplexer_data_0__D12__oe
     connect \data_0__D12__o \multiplexer_data_0__D12__o
+    connect \data_0__D12__i \multiplexer_data_0__D12__i
     connect \data_0__D12__io \data_0__D12__io
   end
   cell \top.pin_data_0__D13 \pin_data_0__D13
     connect \data_0__D13__oe \multiplexer_data_0__D13__oe
     connect \data_0__D13__o \multiplexer_data_0__D13__o
+    connect \data_0__D13__i \multiplexer_data_0__D13__i
     connect \data_0__D13__io \data_0__D13__io
   end
   cell \top.pin_data_0__D14 \pin_data_0__D14
     connect \data_0__D14__oe \multiplexer_data_0__D14__oe
     connect \data_0__D14__o \multiplexer_data_0__D14__o
+    connect \data_0__D14__i \multiplexer_data_0__D14__i
     connect \data_0__D14__io \data_0__D14__io
   end
   cell \top.pin_clk_if_0 \pin_clk_if_0
