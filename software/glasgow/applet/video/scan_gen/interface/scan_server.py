@@ -77,22 +77,7 @@ class ServerHost:
         addr = writer.get_extra_info('peername')
         print(f"addr: {addr!r}")
         self.data_server_future.set_result("done")
-        
 
-    # async def send_data_continously(self):
-    #     while True:
-    #         await self.write_data()
-
-    # async def write_data(self):
-    #     await asyncio.sleep(1)
-    #     data = await get_data()
-    #     print("sending data")
-    #     self.data_writer.write(data)
-
-
-
-
-# server_host = ServerHost()
 
 
 def main():
