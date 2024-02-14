@@ -249,14 +249,12 @@ class ScanGenInterface(MicroscopeInterface):
     def sim_write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
         print("writing", b1, b2)
-        yield from self.iface.write(bits(b2))
-        yield from self.iface.write(bits(b1))
+        yield from self.iface.write([b2, b1])
         
     async def write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
         print("writing", b1, b2)
-        await self.iface.write(bits(b2))
-        await self.iface.write(bits(b1))
+        await self.iface.write([b2,b1])
 
     async def set_2byte_register(self,val,addr_b1, addr_b2):
         b1, b2 = get_two_bytes(val)
@@ -773,7 +771,6 @@ class ScanGenApplet(GlasgowApplet):
         ## tests that vector mode works
         if args.buf == "test_vector":
             scan_stream = ScanStream()
-            scan_stream.change_buffer(1024, 1024)
             r = vector_gradient_rectangle(1024, 512 ,3)
             patterngen = packet_from_generator(r)
             r2 = vector_gradient_rectangle(1024, 512 ,3)
@@ -789,6 +786,7 @@ class ScanGenApplet(GlasgowApplet):
                     scan_iface.text_file.write("\n=====Sent=====\n")
                     scan_iface.text_file.write(str(list(pattern)))
                     await scan_iface.write(pattern)
+                    print("Wrote data to iface")
                 data = await scan_iface.read(16384)
                 scan_iface.text_file.write("\n=====Received=====\n")
                 scan_iface.text_file.write(str(data.tolist()))
