@@ -59,7 +59,7 @@ class IOBus(Elaboratable):
         self.beam_controller = BeamController()
         self.x_interpolator = PixelRatioInterpolator()
         self.y_interpolator = PixelRatioInterpolator()
-        self.byte_replacer = ByteSwapper(self.test_mode)
+        self.byte_replacer = ByteSwapper(test_mode=self.test_mode)
         self.dwell_avgr = DwellTimeAverager()
         #### FIFOs
         self.out_fifo = out_fifo
@@ -200,7 +200,7 @@ class IOBus(Elaboratable):
                 with m.If(self.scan_mode == ScanMode.Raster):
                     m.d.comb += self.dwell_avgr.pixel_in.eq(self.beam_controller.x_position)
                 with m.If((self.scan_mode == ScanMode.Vector)|(self.scan_mode == ScanMode.RasterPattern)):
-                    m.d.comb += self.dwell_avgr.pixel_in.eq(self.beam_controller.dwell_time)
+                    m.d.comb += self.dwell_avgr.pixel_in.eq(self.beam_controller.dwell_time*64)
             else:
                 m.d.comb += self.dwell_avgr.pixel_in.eq(self.pins_i)
 
@@ -332,7 +332,7 @@ class IOBus(Elaboratable):
             m.d.comb += self.onebyte_writer.write_happened.eq((self.write_strobe)&(self.unpause))
             m.d.comb += self.onebyte_writer.strobe_in.eq(self.write_this_point)
         with m.Else():
-            m.d.comb += self.writer.data_c.eq(self.byte_replacer.processed_point_data)
+            m.d.comb += self.writer.data_c.eq(self.byte_replacer.processed_point_data.D1)
             m.d.comb += self.in_fifo.w_data.eq(self.writer.in_fifo_w_data)
             m.d.comb += self.writer.write_happened.eq((self.write_strobe)&(self.unpause))
             m.d.comb += self.writer.strobe_in.eq(self.write_this_point)
