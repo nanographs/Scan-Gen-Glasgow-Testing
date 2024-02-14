@@ -42,47 +42,47 @@ class TrueDwellTimeAverager(Elaboratable):
 
 class DwellTimeAverager(Elaboratable):
     '''
-    Inputs:
-        pixel_in: Next value read from ADC
-        start_new_average: If high, running_average is set to pixel_in, and
-        prev_pixel is not used.
+    pixel_in: Signal, in, 16
+            Next value read from ADC
 
-    Outputs:
-        running_average: The current running average. Average of pixel_in and prev_pixel
-        prev_pixel: Running average or pixel value from the previous cycle
+    start_new_average: Signal, in, 1
+        Strobed at end_of_dwell (when beam controller moves to the next position) 
+    start_new_average_latched: Signal, in, 1:
+        If start_new_average is high and strobe is not, start_new_average_latched
+        goes high until the next strobe
+    strobe: Signal, in, 1
+        Strobed whenever a new ADC value is latched
+
+    running_average: Signal, out, 16
+        The current running average. Average of pixel_in and prev_pixel
+    running_average_latched: Signal, internal, 16
+        Running average or pixel value from the previous cycle
     '''
     def __init__(self):
         self.pixel_in = Signal(16)
-        self.pixel_in_s = Signal(16)
-        self.running_average = Signal(16)
-        self.running_average_s = Signal(16)
-        self.prev_pixel = Signal(16)
         self.start_new_average = Signal()
-        self.start_new_average_s = Signal()
-        self.averaging = Signal()
+        self.start_new_average_latched = Signal()
         self.strobe = Signal()
-
+        self.running_average = Signal(16)
+        self.running_average_latched = Signal(16)
+        
     def elaborate(self, platform):
         m = Module()
 
-        #m.d.comb += self.running_average.eq((self.pixel_in_s+self.prev_pixel)//2)
-        m.d.comb += self.running_average.eq(self.running_average_s)
+        with m.If((self.start_new_average) & (~(self.strobe))):
+            m.d.sync += self.start_new_average_latched.eq(1)
 
         with m.If(self.strobe):
-            m.d.sync += self.pixel_in_s.eq(self.pixel_in)
-            m.d.comb += self.running_average.eq((self.pixel_in+self.prev_pixel)//2)
-            m.d.sync += self.running_average_s.eq((self.pixel_in+self.prev_pixel)//2)
-            m.d.sync += self.prev_pixel.eq(self.running_average)
-        #with m.If((self.strobe) & ((self.start_new_average)|(self.start_new_average_s))):
-        with m.If((self.strobe) & (self.start_new_average_s)):
-            m.d.sync += self.start_new_average_s.eq(0)
-            m.d.sync += self.prev_pixel.eq(self.pixel_in)
-            m.d.comb += self.running_average.eq((self.pixel_in))
-            m.d.sync += self.running_average_s.eq((self.pixel_in))
-        #with m.If((~(self.strobe)) & (self.start_new_average)):
-        with m.If(self.strobe):
-            m.d.sync += self.start_new_average_s.eq(1)
-            #m.d.sync += self.prev_pixel.eq(self.pixel_in)
+            m.d.sync += self.running_average_latched.eq(self.running_average)
+
+            with m.If((~((self.start_new_average)|(self.start_new_average_latched)))):
+                m.d.comb += self.running_average.eq((self.pixel_in+self.running_average_latched)//2)
+            with m.If(((self.start_new_average)|(self.start_new_average_latched))):
+                m.d.sync += self.start_new_average_latched.eq(0)
+                m.d.comb += self.running_average.eq(self.pixel_in)
+
+        with m.If(~(self.strobe)):
+            m.d.comb += self.running_average.eq(self.running_average_latched)
 
         return m
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         dut = TrueDwellTimeAverager()
         def bench():
             yield dut.start_new_average.eq(1)
-            yield dut.averaging.eq(1)
+            yield
             yield dut.strobe.eq(1)
             yield dut.pixel_in.eq(Const(test_pixel_stream[0],shape=14))
             print("Pixel in:", test_pixel_stream[0])
@@ -139,7 +139,8 @@ if __name__ == "__main__":
         dut = DwellTimeAverager()
         def bench():
             yield dut.start_new_average.eq(1)
-            yield dut.averaging.eq(1)
+            yield
+            yield dut.start_new_average.eq(0)
             yield dut.strobe.eq(1)
             yield dut.pixel_in.eq(Const(test_pixel_stream[0],shape=14))
             print("Pixel in:", test_pixel_stream[0])
