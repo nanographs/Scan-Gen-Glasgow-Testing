@@ -75,7 +75,7 @@ def vector_pattern_sim(dut):
         yield from sim_scangen_iface.sim_write_2bytes(x)
         yield from sim_scangen_iface.sim_write_2bytes(y)
         yield from sim_scangen_iface.sim_write_2bytes(d)
-    data = yield from sim_app_iface.read(8)
+    data = yield from sim_app_iface.read(4)
     print(list(data))
 
 def set_frame_params(dut, x_res=8, y_res = 8, x_lower = 0, y_lower = 0, x_upper = 0, y_upper = 0):
@@ -180,7 +180,7 @@ def sim_iobus():
     eight_bit_output, do_frame_sync, do_line_sync,
     const_dwell_time, configuration, unpause, step_size,
     is_simulation = True,
-    test_mode = "data loopback"
+    #test_mode = "data loopback"
     )
     def bench():
         # yield do_frame_sync.eq(1)
@@ -188,21 +188,23 @@ def sim_iobus():
         # yield eight_bit_output.eq(1)
 
         def raster_averaging_sim():
-            for n in range(50):
+            
+            for n in range(12):
                 n += 1
-                data = yield from sim_scangen_iface.iface.read(1)
+                #data = yield from sim_scangen_iface.iface.read(1)
                 yield dut.pins_i.eq(n)
-                for n in range(6):
-                    yield 
+                for _ in range(6):
+                    yield
                 yield dut.pins_i.eq(n+1)
-                for n in range(6):
-                    yield 
+                for _ in range(6):
+                    yield
                 yield dut.pins_i.eq(n-1)
-                for n in range(6):
-                    yield 
+                for _ in range(6):
+                    yield
                 
         def config_test():
-            #yield const_dwell_time.eq(0)
+            yield const_dwell_time.eq(2)
+            #
             #yield const_dwell_time.eq(0)
             yield scan_mode.eq(1)
             yield from set_frame_params(dut, x_res=255, y_res=255, x_lower = 10, x_upper = 100, y_lower = 20, y_upper = 110)
@@ -225,19 +227,19 @@ def sim_iobus():
             yield
             output = yield from sim_scangen_iface.iface.read(18)
             print(list(output))
-            output = yield from sim_app_iface.read(50)
-            print(list(output))
-            yield from set_frame_params(dut, x_res=200, y_res=200)
-            yield configuration.eq(1)
-            for n in range(20):
-                yield
-            yield configuration.eq(0)
-            for n in range(20):
-                yield
-            output = yield from sim_scangen_iface.iface.read(18)
-            print(list(output))
-            output = yield from sim_app_iface.read(50)
-            print(list(output))
+            # output = yield from sim_app_iface.read(50)
+            # print(list(output))
+            # yield from set_frame_params(dut, x_res=200, y_res=200)
+            # yield configuration.eq(1)
+            # for n in range(20):
+            #     yield
+            # yield configuration.eq(0)
+            # for n in range(20):
+            #     yield
+            # output = yield from sim_scangen_iface.iface.read(18)
+            # print(list(output))
+            # output = yield from sim_app_iface.read(50)
+            # print(list(output))
             # #yield from raster_averaging_sim()
             # yield from set_frame_params(dut, x_res=512, y_res=512)
             # yield configuration.eq(1)
@@ -328,48 +330,10 @@ def sim_iobus():
             data = yield from sim_app_iface.read(12)
             print(data)
 
-
-        # yield scan_mode.eq(3)
-        # yield eight_bit_output.eq(0)
-        # yield from set_frame_params(dut, x_res=1024, y_res=1024)
-        # yield
-        # yield configuration.eq(1)
-        # yield
-        # yield configuration.eq(0)
-        # yield unpause.eq(1)
-        # data = yield from sim_app_iface.read(18)
-        # print(list(data))
-        # yield from sim_scangen_iface.sim_write_2bytes(1024)
-        # yield from sim_scangen_iface.sim_write_2bytes(1024)
-        # yield from sim_scangen_iface.sim_write_2bytes(1)
-        # data = yield from sim_app_iface.read(6)
-        # print(data)
-
                 
         yield from config_test()
         #yield from vec_test()
-        # data = yield from sim_app_iface.read(2)
-        # print(data)
-        # data = yield from sim_app_iface.read(2)
-        # print(data)
-        # data = yield from sim_app_iface.read(2)
-        # print(data)
-
-        #yield from hilbert_test()
-        #yield from raster_pattern_test()
-        #yield from config_test()
-        # yield unpause.eq(0)
-        # yield
-        # yield from set_frame_params(dut, x_res=1024, y_res=1024)
-        # yield scan_mode.eq(ScanMode.Raster)
-        # yield configuration.eq(1)
-        # yield
-        # yield configuration.eq(0)
-        # yield
-        # yield unpause.eq(1)
-        # yield
-        # data = yield from sim_app_iface.read(100)
-        # print(data)
+        yield from raster_averaging_sim()
 
 
 
