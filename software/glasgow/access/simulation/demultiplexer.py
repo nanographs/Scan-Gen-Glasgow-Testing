@@ -54,12 +54,12 @@ class SimulationDemultiplexerInterface(AccessDemultiplexerInterface):
                 print(f'FIFO: need {length - len(data)} bytes')
                 n = 0
                 while not (yield self._in_fifo.r_rdy):
-                    #if n < 1000:
-                    # n += 1
-                        #print(f'not in fifo rdy {n}')
-                    yield
-                    #else:
-                        #break
+                    #yield
+                    if n < 200:
+                        n += 1
+                        yield
+                    else:
+                        break
                 data.append((yield from _fifo_read(self._in_fifo)))
 
         data = bytes(data)
@@ -74,11 +74,12 @@ class SimulationDemultiplexerInterface(AccessDemultiplexerInterface):
         n = 0
         for byte in data:
             while not (yield self._out_fifo.w_rdy):
-                # if n > 70:
-                #     n+=1
-                yield
-                # else:
-                #     break
+                #yield
+                if n < 200:
+                    n+=1
+                    yield
+                else:
+                    break
 
             yield from _fifo_write(self._out_fifo, byte)
 
