@@ -46,12 +46,10 @@ class ByteSwapper(Elaboratable):
             #     data_lines.D14
             # ]
 
-
         # m.d.comb += self.shifted_point_data.as_value().bit_select(0,13)\
         #                 .eq(self.point_data.as_value().bit_select(self.lsb, self.msb))
         #m.d.comb += self.shifted_point_data.eq(self.point_data)
 
-        m.d.comb += self.shifted_point_data.D1.eq(self.point_data.D2)
 
         m.d.comb += self.shifted_point_data.as_value()[7].eq(self.point_data.as_value()[13])
         m.d.comb += self.shifted_point_data.as_value()[6].eq(self.point_data.as_value()[12])       
@@ -61,12 +59,7 @@ class ByteSwapper(Elaboratable):
         m.d.comb += self.shifted_point_data.as_value()[2].eq(self.point_data.as_value()[8])
         m.d.comb += self.shifted_point_data.as_value()[1].eq(self.point_data.as_value()[7])
         m.d.comb += self.shifted_point_data.as_value()[0].eq(self.point_data.as_value()[6])
-        # m.d.comb += self.shifted_point_data.as_value()[5].eq(self.point_data.as_value()[5])
-        # m.d.comb += self.shifted_point_data.as_value()[4].eq(self.point_data.as_value()[4])
-        # m.d.comb += self.shifted_point_data.as_value()[3].eq(self.point_data.as_value()[3])
-        # m.d.comb += self.shifted_point_data.as_value()[2].eq(self.point_data.as_value()[2])
-        # m.d.comb += self.shifted_point_data.as_value()[1].eq(self.point_data.as_value()[1])
-        # m.d.comb += self.shifted_point_data.as_value()[0].eq(self.point_data.as_value()[0])
+
 
 
         for pair in replace_16:
