@@ -7,6 +7,7 @@ if __name__ == "interface.scan_socket":
     sys.path.append(path)
     from interface.scan_ctrl import ScanCtrl
     from interface.scan_stream import ScanStream
+    from pattern_generators.patterngen_utils import packet_from_generator
 
 else:
     from scan_ctrl import ScanCtrl
