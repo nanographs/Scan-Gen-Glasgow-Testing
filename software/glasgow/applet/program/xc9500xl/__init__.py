@@ -224,12 +224,6 @@
 import struct
 import logging
 import argparse
-<<<<<<< HEAD
-import re
-
-from ....arch.jtag import *
-from ....arch.xilinx.xc9500xl import *
-=======
 import math
 import re
 from enum import Enum, auto
@@ -237,7 +231,6 @@ from enum import Enum, auto
 from ....arch.jtag import *
 from ....arch.xilinx.xc9500xl import *
 from ....support.bits import *
->>>>>>> glasgow/main
 from ....support.logging import *
 from ....database.xilinx.xc9500xl import *
 from ...interface.jtag_probe import JTAGProbeApplet
@@ -245,41 +238,6 @@ from ....protocol.jesd3 import *
 from ... import *
 
 
-<<<<<<< HEAD
-BLOCK_WORDS = 15
-GROUP_WORDS = 5
-
-
-def bitstream_to_device_address(word_address):
-    block_num = word_address // BLOCK_WORDS
-    block_off = word_address  % BLOCK_WORDS
-    return 32 * block_num + 8 * (block_off // GROUP_WORDS) + block_off % GROUP_WORDS
-
-
-def fuses_to_words(fuses, device):
-    wc = device.word_width // 8
-    blocks = device.bitstream_words // BLOCK_WORDS
-    total_bits = (device.bitstream_words // BLOCK_WORDS) * (9 * 8 * wc + 6 * 6 * wc)
-
-    if len(fuses) != total_bits:
-        raise GlasgowAppletError(
-            "JED file does not have the right fuse count (expected %d, got %d)"
-            % (total_bits, fuses))
-
-    words = []
-    p = 0
-    for block in range(blocks):
-        for word in range(9):
-            words.append(int.from_bytes(fuses[p:p + 8 * wc].tobytes(), "little"))
-            p += 8 * wc
-        for word in range(6):
-            val = []
-            for sextuplet in range(wc):
-                val.append(fuses[p:p + 6].tobytes()[0])
-                p += 6
-            words.append(int.from_bytes(bytes(val), "little"))
-    return words
-=======
 class XC9500XLBitstream:
     def __init__(self, device):
         self.device = device
@@ -352,7 +310,6 @@ class BlankCheckResult(Enum):
     BLANK = auto()
     PROGRAMMED = auto()
     WRITE_PROTECTED = auto()
->>>>>>> glasgow/main
 
 
 class XC9500XLError(GlasgowAppletError):
@@ -396,13 +353,6 @@ class XC95xxXLInterface:
         self._level  = logging.DEBUG if self._logger.name == __name__ else logging.TRACE
         self._frequency = frequency
         self.device  = device
-<<<<<<< HEAD
-        self.DR_ISDATA = DR_ISDATA(device.word_width)
-        self.DR_ISCONFIGURATION = DR_ISCONFIGURATION(device.word_width)
-
-    def _log(self, message, *args):
-        self._logger.log(self._level, "XC95xx: " + message, *args)
-=======
         self.DR_ISDATA = DR_ISDATA(device.fbs)
         self.DR_ISCONFIGURATION = DR_ISCONFIGURATION(device.fbs)
 
@@ -411,7 +361,6 @@ class XC95xxXLInterface:
 
     def _log(self, message, *args):
         self._logger.log(self._level, "XC95xxXL: " + message, *args)
->>>>>>> glasgow/main
 
     async def programming_enable(self):
         self._log("programming enable")
@@ -421,63 +370,6 @@ class XC95xxXLInterface:
     async def programming_disable(self):
         self._log("programming disable")
         await self.lower.write_ir(IR_ISPEX)
-<<<<<<< HEAD
-        await self.lower.run_test_idle(100)
-        await self.lower.write_ir(IR_BYPASS)
-        await self.lower.run_test_idle(1)
-
-    async def _fvfy(self, address, count):
-        await self.lower.write_ir(IR_FVFY)
-
-        dev_address = bitstream_to_device_address(address)
-        self._log("read address=%03x", dev_address)
-        isconf = self.DR_ISCONFIGURATION(valid=1, strobe=1, address=dev_address)
-        await self.lower.write_dr(isconf.to_bits())
-
-        words = []
-        for offset in range(count):
-            await self.lower.run_test_idle(1)
-
-            dev_address = bitstream_to_device_address(address + offset + 1)
-            isconf = self.DR_ISCONFIGURATION(valid=1, strobe=1, address=dev_address)
-            isconf_bits = await self.lower.exchange_dr(isconf.to_bits())
-            isconf = self.DR_ISCONFIGURATION.from_bits(isconf_bits)
-            self._log("read address=%03x prev-data=%s",
-                      dev_address, "{:0{}b}".format(isconf.data, self.device.word_width))
-            words.append(isconf.data)
-
-        return words
-
-    async def _fvfyi(self, count):
-        await self.lower.write_ir(IR_FVFYI)
-
-        words = []
-        index = 0
-        while index < count:
-            await self.lower.run_test_idle(1)
-
-            isdata_bits = await self.lower.read_dr(self.DR_ISDATA.bit_length())
-            isdata = self.DR_ISDATA.from_bits(isdata_bits)
-            if isdata.valid:
-                self._log("read autoinc %d data=%s",
-                          index, "{:0{}b}".format(isdata.data, self.device.word_width))
-                words.append(isdata.data)
-                index += 1
-            else:
-                self._log("read autoinc %d invalid")
-
-        return words
-
-    async def read(self, address, count, fast=True):
-        if fast:
-            # Use FVFY just to set the address counter.
-            await self._fvfy(address, 0)
-            # Use FVFYI for much faster reads.
-            return await self._fvfyi(count)
-        else:
-            # Use FVFY for all reads.
-            return await self._fvfy(address, count)
-=======
         await self.lower.run_test_idle(self._time_us(WAIT_ISPEX))
         await self.lower.write_ir(IR_BYPASS)
         await self.lower.run_test_idle(1)
@@ -553,22 +445,10 @@ class XC95xxXLInterface:
             bs.put_word(prev_row, prev_col, res.data)
 
         return bs
->>>>>>> glasgow/main
 
     async def bulk_erase(self):
         self._log("bulk erase")
         await self.lower.write_ir(IR_FBULK)
-<<<<<<< HEAD
-        isaddr = DR_ISADDRESS(valid=1, strobe=1, address=0xffff)
-        await self.lower.write_dr(isaddr.to_bits())
-
-        await self.lower.run_test_idle(200_000)
-
-        isaddr_bits = await self.lower.read_dr(DR_ISADDRESS.bit_length())
-        isaddr = DR_ISADDRESS.from_bits(isaddr_bits)
-        if not (isaddr.valid and not isaddr.strobe):
-            raise XC9500XLError("bulk erase failed %s" % isaddr.bits_repr())
-=======
         isaddr = DR_ISADDRESS(control=CTRL_START, address=0)
         await self.lower.write_dr(isaddr.to_bits())
 
@@ -581,85 +461,10 @@ class XC95xxXLInterface:
             raise XC9500XLError("bulk erase failed: device is write protected")
         if isaddr.control != CTRL_OK:
             raise XC9500XLError(f"bulk erase failed {isaddr.bits_repr()}")
->>>>>>> glasgow/main
 
     async def override_erase(self):
         self._log("override erase")
         await self.lower.write_ir(IR_FERASE)
-<<<<<<< HEAD
-        isaddr = DR_ISADDRESS(valid=1, strobe=1, address=0xaa55)
-        await self.lower.write_dr(isaddr.to_bits())
-
-        await self.lower.run_test_idle(200_000)
-
-        isaddr_bits = await self.lower.read_dr(DR_ISADDRESS.bit_length())
-        isaddr = DR_ISADDRESS.from_bits(isaddr_bits)
-        if not (isaddr.valid and not isaddr.strobe):
-            raise XC9500XLError("override erase failed %s" % isaddr.bits_repr())
-
-    async def _fpgm(self, address, words):
-        await self.lower.write_ir(IR_FPGM)
-
-        for offset, word in enumerate(words):
-            dev_address = bitstream_to_device_address(address + offset)
-            self._log("program address=%03x data=%s",
-                      dev_address, "{:0{}b}".format(word, self.device.word_width))
-            strobe = (offset % BLOCK_WORDS == BLOCK_WORDS - 1)
-            isconf = self.DR_ISCONFIGURATION(valid=1, strobe=strobe, address=dev_address,
-                                             data=word)
-            await self.lower.write_dr(isconf.to_bits())
-
-            if not strobe:
-                await self.lower.run_test_idle(1)
-            else:
-                await self.lower.run_test_idle(20_000)
-
-                isconf = self.DR_ISCONFIGURATION(address=dev_address)
-                isconf_bits = await self.lower.exchange_dr(isconf.to_bits())
-                isconf = self.DR_ISCONFIGURATION.from_bits(isconf_bits)
-                if not (isconf.valid and not isconf.strobe):
-                    self._logger.warn("program failed address=%03x %s",
-                                      offset, isconf.bits_repr())
-
-        if not words:
-            dev_address = bitstream_to_device_address(address)
-            isconf = self.DR_ISCONFIGURATION(valid=1, address=dev_address)
-            await self.lower.write_dr(isconf.to_bits())
-
-    async def _fpgmi(self, words):
-        await self.lower.write_ir(IR_FPGMI)
-
-        for offset, word in enumerate(words):
-            self._log("program autoinc data=%s",
-                      "{:0{}b}".format(word, self.device.word_width))
-            strobe = (offset % BLOCK_WORDS == BLOCK_WORDS - 1)
-            isdata = self.DR_ISDATA(valid=1, strobe=strobe, data=word)
-            await self.lower.write_dr(isdata.to_bits())
-
-            if not strobe:
-                await self.lower.run_test_idle(1)
-            else:
-                await self.lower.run_test_idle(20_000)
-
-                isdata = self.DR_ISDATA()
-                isdata_bits = await self.lower.exchange_dr(isdata.to_bits())
-                isdata = self.DR_ISDATA.from_bits(isdata_bits)
-                if not (isdata.valid and not isdata.strobe):
-                    self._logger.warn("program autoinc word %03x failed %s",
-                                      offset, isdata.bits_repr())
-
-    async def program(self, address, words, fast=True):
-        assert address % BLOCK_WORDS == 0 and len(words) % BLOCK_WORDS == 0
-
-        if fast:
-            # Use FPGM to program first block and set the address counter.
-            await self._fpgm(0, words[:BLOCK_WORDS])
-            # Use FPGMI for much faster following writes.
-            return await self._fpgmi(words[BLOCK_WORDS:])
-        else:
-            # Use FPGM for all writes.
-            return await self._fpgm(address, words)
-=======
         isaddr = DR_ISADDRESS(control=CTRL_START, address=ADDR_OVERRIDE_MAGIC)
         await self.lower.write_dr(isaddr.to_bits())
 
@@ -761,20 +566,13 @@ class XC95xxXLInterface:
             res = await self._dr_isconfiguration(CTRL_OK, 0)
         if res.control != CTRL_OK:
             raise XC9500XLError(f"programming protection and DONE bits failed {isaddr.bits_repr()}")
->>>>>>> glasgow/main
 
 
 class ProgramXC9500XLApplet(JTAGProbeApplet):
     logger = logging.getLogger(__name__)
-<<<<<<< HEAD
-    help = "program Xilinx XC9500XL CPLDs via JTAG"
-    description = """
-    Program, verify, and read out Xilinx XC9500XL series CPLD bitstreams via the JTAG interface.
-=======
     help = "program Xilinx XC9500XL and XC9500XV CPLDs via JTAG"
     description = """
     Program, verify, and read out Xilinx XC9500XL and XC9500XV series CPLD bitstreams via the JTAG interface.
->>>>>>> glasgow/main
 
     It is recommended to use TCK frequency between 100 and 250 kHz for programming.
 
@@ -787,18 +585,8 @@ class ProgramXC9500XLApplet(JTAGProbeApplet):
 
     Supported devices are:
 {devices}
-<<<<<<< HEAD
-
-    The Glasgow .bit XC9500XL bitstream format is a flat, unstructured sequence of n-bit words
-    comprising the bitstream, written in little endian binary. It is substantially different
-    from both .jed and .svf bitstream formats, but matches the internal device programming
-    architecture.
-    """.format(
-        devices="\n".join("        * {.name}".format(device) for device in devices)
-=======
     """.format(
         devices="\n".join(f"        * {device.name}" for device in devices)
->>>>>>> glasgow/main
     )
 
     @classmethod
@@ -818,25 +606,6 @@ class ProgramXC9500XLApplet(JTAGProbeApplet):
 
         p_operation = parser.add_subparsers(dest="operation", metavar="OPERATION")
 
-<<<<<<< HEAD
-        p_read_bit = p_operation.add_parser(
-            "read-bit", help="read bitstream from the device and save it to a .bit file")
-        p_read_bit.add_argument(
-            "bit_file", metavar="BIT-FILE", type=argparse.FileType("wb"),
-            help="bitstream file to write")
-
-        p_program_bit = p_operation.add_parser(
-            "program-bit", help="read bitstream from a .bit file and program it to the device")
-        p_program_bit.add_argument(
-            "bit_file", metavar="BIT-FILE", type=argparse.FileType("rb"),
-            help="bitstream file to read")
-
-        p_verify_bit = p_operation.add_parser(
-            "verify-bit", help="read bitstream from a .bit file and verify it against the device")
-        p_verify_bit.add_argument(
-            "bit_file", metavar="BIT-FILE", type=argparse.FileType("rb"),
-            help="bitstream file to read")
-=======
         p_read = p_operation.add_parser(
             "read", help="read bitstream from the device and save it to a .jed file")
         p_read.add_argument(
@@ -869,7 +638,6 @@ class ProgramXC9500XLApplet(JTAGProbeApplet):
         p_verify.add_argument(
             "jed_file", metavar="JED-FILE", type=argparse.FileType("rb"),
             help="JED file to read")
->>>>>>> glasgow/main
 
         p_erase = p_operation.add_parser(
             "erase", help="erase bitstream from the device")
@@ -891,40 +659,6 @@ class ProgramXC9500XLApplet(JTAGProbeApplet):
                          usercode.hex(),
                          re.sub(rb"[^\x20-\x7e]", b"?", usercode).decode("ascii"))
 
-<<<<<<< HEAD
-        bytes_per_word = (xc9500_device.word_width + 7) // 8
-        try:
-            if args.operation == "read-bit":
-                await xc95xx_iface.programming_enable()
-                for word in await xc95xx_iface.read(0, xc9500_device.bitstream_words,
-                                                    fast=not args.slow):
-                    args.bit_file.write(word.to_bytes(bytes_per_word, "little"))
-
-            if args.operation in ("program-bit", "verify-bit"):
-                words = []
-                while True:
-                    data = args.bit_file.read(bytes_per_word)
-                    if data == b"": break
-                    words.append(int.from_bytes(data, "little"))
-
-                if len(words) != xc9500_device.bitstream_words:
-                    raise GlasgowAppletError("incorrect .bit file size (%d words) for device %s"
-                                             % (len(words), xc9500_device.name))
-
-            if args.operation == "program-bit":
-                await xc95xx_iface.programming_enable()
-                await xc95xx_iface.program(0, words,
-                                           fast=not args.slow)
-
-            if args.operation == "verify-bit":
-                await xc95xx_iface.programming_enable()
-                device_words = await xc95xx_iface.read(0, xc9500_device.bitstream_words,
-                                                       fast=not args.slow)
-                for offset, (device_word, gold_word) in enumerate(zip(device_words, words)):
-                    if device_word != gold_word:
-                        raise GlasgowAppletError("bitstream verification failed at word %03x"
-                                                 % offset)
-=======
         try:
             if args.operation == "read":
                 await xc95xx_iface.programming_enable()
@@ -975,7 +709,6 @@ class ProgramXC9500XLApplet(JTAGProbeApplet):
                 dev_bs = await xc95xx_iface.read(fast=not args.slow)
                 dev_bs.clear_prot_done()
                 bs.verify(dev_bs)
->>>>>>> glasgow/main
 
             if args.operation == "erase":
                 await xc95xx_iface.programming_enable()
@@ -989,11 +722,7 @@ class ProgramXC9500XLApplet(JTAGProbeApplet):
 # -------------------------------------------------------------------------------------------------
 
 class ProgramXC9500XLAppletTool(GlasgowAppletTool, applet=ProgramXC9500XLApplet):
-<<<<<<< HEAD
-    help = "manipulate Xilinx XC9500XL CPLD bitstreams"
-=======
     help = "manipulate Xilinx XC9500XL and XC9500XV CPLD bitstreams"
->>>>>>> glasgow/main
     description = """
     See `run program-xc9500xl --help` for details.
     """
@@ -1019,53 +748,6 @@ class ProgramXC9500XLAppletTool(GlasgowAppletTool, applet=ProgramXC9500XLApplet)
 
         p_operation = parser.add_subparsers(dest="operation", metavar="OPERATION")
 
-<<<<<<< HEAD
-        p_read_bit_usercode = p_operation.add_parser(
-            "read-bit-usercode", help="read USERCODE from a .bit file")
-        p_read_bit_usercode.add_argument(
-            "bit_file", metavar="BIT-FILE", type=argparse.FileType("rb"),
-            help="bitstream file to read")
-
-        p_jed_to_bit = p_operation.add_parser(
-            "jed-to-bit", help="convert a .jed file to a .bit file")
-        p_jed_to_bit.add_argument(
-            "jed_file", metavar="JED-FILE", type=argparse.FileType("r"),
-            help="bitstream file to read")
-        p_jed_to_bit.add_argument(
-            "bit_file", metavar="BIT-FILE", type=argparse.FileType("wb"),
-            help="bitstream file to write")
-
-    async def run(self, args):
-        bytes_per_word = (args.device.word_width + 7) // 8
-
-        if args.operation == "read-bit-usercode":
-            words = []
-            while True:
-                data = args.bit_file.read(bytes_per_word)
-                if data == b"": break
-                words.append(int.from_bytes(data, "little"))
-
-            if len(words) != args.device.bitstream_words:
-                raise GlasgowAppletError("incorrect .bit file size (%d words) for device %s"
-                                         % (len(words), args.device.name))
-
-            usercode_words = [
-                words[index] for index in range(args.device.usercode_low,
-                                                args.device.usercode_low  + 8)
-            ] + [
-                words[index] for index in range(args.device.usercode_high,
-                                                args.device.usercode_high + 8)
-            ]
-            usercode = 0
-            for usercode_word in usercode_words:
-                usercode = (usercode << 2) | ((usercode_word >> 6) & 0b11)
-            usercode = struct.pack(">L", usercode)
-            self.logger.info("USERCODE=%s (%s)",
-                             usercode.hex(),
-                             re.sub(rb"[^\x20-\x7e]", b"?", usercode).decode("ascii"))
-
-        if args.operation == "jed-to-bit":
-=======
         p_read_usercode = p_operation.add_parser(
             "read-usercode", help="read USERCODE from a .jed file")
         p_read_usercode.add_argument(
@@ -1074,18 +756,12 @@ class ProgramXC9500XLAppletTool(GlasgowAppletTool, applet=ProgramXC9500XLApplet)
 
     async def run(self, args):
         if args.operation == "read-usercode":
->>>>>>> glasgow/main
             try:
                 parser = JESD3Parser(args.jed_file.read(), quirk_no_design_spec=True)
                 parser.parse()
             except JESD3ParsingError as e:
                 raise GlasgowAppletError(str(e))
 
-<<<<<<< HEAD
-            words = fuses_to_words(parser.fuse, args.device)
-            for word in words:
-                args.bit_file.write(word.to_bytes(bytes_per_word, "little"))
-=======
             bs = XC9500XLBitstream.from_fuses(parser.fuse, args.device)
 
             usercode = 0
@@ -1097,4 +773,3 @@ class ProgramXC9500XLAppletTool(GlasgowAppletTool, applet=ProgramXC9500XLApplet)
             self.logger.info("USERCODE=%s (%s)",
                              usercode.hex(),
                              re.sub(rb"[^\x20-\x7e]", b"?", usercode).decode("ascii"))
->>>>>>> glasgow/main

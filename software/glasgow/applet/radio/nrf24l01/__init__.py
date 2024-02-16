@@ -239,11 +239,7 @@ class RadioNRF24L01Applet(GlasgowApplet):
             value = int(value, 10)
             if value not in range(126):
                 raise argparse.ArgumentTypeError(
-<<<<<<< HEAD
-                    "invalid channel: {} (choose from 0..125)".format(value))
-=======
                     f"invalid channel: {value} (choose from 0..125)")
->>>>>>> glasgow/main
             return value
         def address(value):
             # In our API, byte 0 is LSB (which matches the order of writes to registers).
@@ -253,21 +249,13 @@ class RadioNRF24L01Applet(GlasgowApplet):
             value = int(value, 10)
             if value not in range(33):
                 raise argparse.ArgumentTypeError(
-<<<<<<< HEAD
-                    "invalid length: {} (choose from 0..32)".format(value))
-=======
                     f"invalid length: {value} (choose from 0..32)")
->>>>>>> glasgow/main
             return value
         def payload(value):
             payload = bytes.fromhex(value)
             if len(payload) not in range(33):
                 raise argparse.ArgumentTypeError(
-<<<<<<< HEAD
-                    "invalid payload length: {} (must be between 0..32)".format(len(value)))
-=======
                     f"invalid payload length: {len(value)} (must be between 0..32)")
->>>>>>> glasgow/main
             return payload
 
         parser.add_argument(
@@ -580,11 +568,7 @@ class RadioNRF24L01Applet(GlasgowApplet):
                             crc_msg = ""
 
                         self.logger.info("packet received: PID=%s %s%s",
-<<<<<<< HEAD
-                                         "{:02b}".format(packet_id), payload_msg, crc_msg)
-=======
                                          f"{packet_id:02b}", payload_msg, crc_msg)
->>>>>>> glasgow/main
                     else:
                         self.logger.info("packet received: %s", dump_hex(payload))
 
@@ -593,16 +577,7 @@ class RadioNRF24L01Applet(GlasgowApplet):
             finally:
                 await nrf24l01_iface.disable()
 
-<<<<<<< HEAD
-# -------------------------------------------------------------------------------------------------
-
-class RadioNRF24L01AppletTestCase(GlasgowAppletTestCase, applet=RadioNRF24L01Applet):
-    @synthesis_test
-    def test_build(self):
-        self.assertBuilds()
-=======
     @classmethod
     def tests(cls):
         from . import test
         return test.RadioNRF24L01AppletTestCase
->>>>>>> glasgow/main

@@ -710,14 +710,11 @@ class MemoryFloppyApplet(GlasgowApplet):
         finally:
             await floppy_iface.stop()
 
-<<<<<<< HEAD
-=======
     @classmethod
     def tests(cls):
         from . import test
         return test.MemoryFloppyAppletTestCase
 
->>>>>>> glasgow/main
 # -------------------------------------------------------------------------------------------------
 
 class MemoryFloppyAppletTool(GlasgowAppletTool, applet=MemoryFloppyApplet):
@@ -790,11 +787,7 @@ class MemoryFloppyAppletTool(GlasgowAppletTool, applet=MemoryFloppyApplet):
 
             mfm = SoftwareMFMDecoder(self.logger)
             data.append(np.array(list(mfm.edges(bytestream))) * self._timebase)
-<<<<<<< HEAD
-            labels.append("cylinder {}, head {}".format(cylinder, head))
-=======
             labels.append(f"cylinder {cylinder}, head {head}")
->>>>>>> glasgow/main
 
         fig, ax = plt.subplots()
         fig.suptitle("Domain size histogram for {} (heads: {})"
@@ -1096,13 +1089,3 @@ class MemoryFloppyAppletTool(GlasgowAppletTool, applet=MemoryFloppyApplet):
 
             if count == 0:
                 state = "IDLE"
-<<<<<<< HEAD
-
-# -------------------------------------------------------------------------------------------------
-
-class MemoryFloppyAppletTestCase(GlasgowAppletTestCase, applet=MemoryFloppyApplet):
-    @synthesis_test
-    def test_build(self):
-        self.assertBuilds()
-=======
->>>>>>> glasgow/main

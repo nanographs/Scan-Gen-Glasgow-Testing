@@ -198,11 +198,7 @@ class ProgramM16CInterface:
         await self.lower.write([Command.READ_STATUS])
         async def response():
             srd1, srd2 = await self.lower.read(2)
-<<<<<<< HEAD
-            self._log("response srd1=%s srd2=%s", "{:08b}".format(srd1), "{:08b}".format(srd2))
-=======
             self._log("response srd1=%s srd2=%s", f"{srd1:08b}", f"{srd2:08b}")
->>>>>>> glasgow/main
             return srd1, srd2
         try:
             return await asyncio.wait_for(response(), timeout=self.timeout)
@@ -215,11 +211,7 @@ class ProgramM16CInterface:
             await self.lower.write([Command.READ_STATUS])
             async def response():
                 srd1, srd2 = await self.lower.read(2)
-<<<<<<< HEAD
-                self._log("response srd1=%s srd2=%s", "{:08b}".format(srd1), "{:08b}".format(srd2))
-=======
                 self._log("response srd1=%s srd2=%s", f"{srd1:08b}", f"{srd2:08b}")
->>>>>>> glasgow/main
                 return srd1, srd2
             try:
                 return await asyncio.wait_for(response(), timeout=0.1)
@@ -269,11 +261,7 @@ class ProgramM16CInterface:
         try:
             return await asyncio.wait_for(response(), timeout=self.timeout)
         except asyncio.TimeoutError:
-<<<<<<< HEAD
-            raise M16CBootloaderError("cannot read page {:06x}".format(address))
-=======
             raise M16CBootloaderError(f"cannot read page {address:06x}")
->>>>>>> glasgow/main
 
     async def program_page(self, address, data):
         assert address % PAGE_SIZE == 0 and len(data) == PAGE_SIZE
@@ -310,11 +298,7 @@ class ProgramM16CInterface:
             srd1, srd2 = await self._bootloader_poll_status(1.0)
             assert (srd1 & ST_READY) != 0
             if (srd1 & ST_ERASE_FAIL) != 0:
-<<<<<<< HEAD
-                raise M16CBootloaderError("cannot erase block {:06x}".format(address))
-=======
                 raise M16CBootloaderError(f"cannot erase block {address:06x}")
->>>>>>> glasgow/main
         except asyncio.TimeoutError:
             raise M16CBootloaderError("block erase timeout")
 
@@ -396,15 +380,9 @@ class ProgramM16CApplet(GlasgowApplet):
             try:
                 key = bytes.fromhex(arg)
             except ValueError:
-<<<<<<< HEAD
-                raise argparse.ArgumentTypeError("{} is not a hexadecimal string".format(arg))
-            if len(key) > 7:
-                raise argparse.ArgumentTypeError("{} is not a valid bootloader key".format(arg))
-=======
                 raise argparse.ArgumentTypeError(f"{arg} is not a hexadecimal string")
             if len(key) > 7:
                 raise argparse.ArgumentTypeError(f"{arg} is not a valid bootloader key")
->>>>>>> glasgow/main
             return key
 
         parser.add_argument(
@@ -414,20 +392,12 @@ class ProgramM16CApplet(GlasgowApplet):
         def page_address(arg):
             address = int(arg, 0)
             if address % PAGE_SIZE != 0:
-<<<<<<< HEAD
-                raise argparse.ArgumentTypeError("{} is not a page-aligned address".format(arg))
-=======
                 raise argparse.ArgumentTypeError(f"{arg} is not a page-aligned address")
->>>>>>> glasgow/main
             return address
         def page_length(arg):
             address = int(arg, 0)
             if address % PAGE_SIZE != 0:
-<<<<<<< HEAD
-                raise argparse.ArgumentTypeError("{} is not a page-aligned length".format(arg))
-=======
                 raise argparse.ArgumentTypeError(f"{arg} is not a page-aligned length")
->>>>>>> glasgow/main
             return address
 
         p_operation = parser.add_subparsers(dest="operation", metavar="OPERATION")
@@ -521,16 +491,7 @@ class ProgramM16CApplet(GlasgowApplet):
         finally:
             await iface.reset_application()
 
-<<<<<<< HEAD
-# -------------------------------------------------------------------------------------------------
-
-class ProgramM16CAppletTestCase(GlasgowAppletTestCase, applet=ProgramM16CApplet):
-    @synthesis_test
-    def test_build(self):
-        self.assertBuilds()
-=======
     @classmethod
     def tests(cls):
         from . import test
         return test.ProgramM16CAppletTestCase
->>>>>>> glasgow/main
