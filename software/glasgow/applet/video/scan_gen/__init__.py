@@ -38,7 +38,6 @@ from ..scan_gen.gateware.resources import obi_resources
 from ... import *
 
 
-import pyqtgraph as pg
 
 class IOBusSubtarget(Elaboratable):
     def __init__(self, data, power_ok, in_fifo, out_fifo, scan_mode,
@@ -258,9 +257,6 @@ class ScanGenInterface(MicroscopeInterface):
 
     async def set_2byte_register(self,val,addr_b1, addr_b2):
         b1, b2 = get_two_bytes(val)
-        b1 = int(bits(b1))
-        b2 = int(bits(b2))
-        #print("writing", b1, b2)
         await asyncio.gather(self._device.write_register(addr_b1, b1),
         self._device.write_register(addr_b2, b2))
         print("set 2 REGISTERS", val, "1:", addr_b1, "2:", addr_b1)
@@ -272,12 +268,6 @@ class ScanGenInterface(MicroscopeInterface):
         else:
             self.eight_bit_output = False
     
-    async def set_frame_sync(self, val=1):
-        await self._device.write_register(self.__addr_do_frame_sync, val)
-
-    async def set_line_sync(self,val):
-        await self._device.write_register(self.__addr_do_line_sync, val)
-
     async def set_ROI(self, x_lower, x_upper, y_lower, y_upper):
         await self.set_x_lower_limit(x_lower)
         await self.set_x_upper_limit(x_upper)
@@ -346,6 +336,10 @@ class ScanGenInterface(MicroscopeInterface):
         await self._device.write_register(self.__addr_configuration, val)
         print("REG: set config flag", val)
 
+    async def strobe_config(self):
+        await self.set_config_flag(1)
+        await self.set_config_flag(0)
+
     async def set_dwell_time(self, val):
         assert(val > 0)
         ## subtract 1 to account for 0-indexing
@@ -384,14 +378,56 @@ class ScanGenInterface(MicroscopeInterface):
         print(((length/(1000000))/(end_time-start_time)), "MB/s")
 
 
+class SG_APIInterface(ScanGenInterface):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.scan_stream = ScanStream()
+    async def configure_image(self, x_resolution, y_resolution, dwell_time):
+        await self.set_raster_mode()
+        await self.set_x_resolution(x_resolution)
+        await self.set_y_resolution(y_resolution)
+        await self.set_dwell_time(dwell_time)
+        await self.strobe_config()
+    async def configure_r_pattern(self, x_resolution, y_resolution):
+        await self.set_scan_mode(2)
+        await self.set_x_resolution(x_resolution)
+        await self.set_y_resolution(y_resolution)
+        await self.strobe_config()
+    async def acquire_image(self):
+        await self.unpause()
+        if self.eight_bit_output:
+            bytes_needed = 18 + self.x_width*self.y_height
+        if not self.eight_bit_output:
+            bytes_needed = 18 + self.x_width*self.y_height*2
+        data = await self.iface.read(bytes_needed)
+        await self.pause()
+        self.scan_stream.writeto(data)
+        print(str(data.tolist()))
+        print(f'read {len(data)} bytes')
+        print(self.scan_stream.buffer)
+        print(self.scan_stream.buffer.shape)
+    async def write_bitmap(self, path):
+        stream, x_width, y_height = bmp_to_bitstream(path)
+        self.x_width, self.y_height = x_width, y_height
+        await self.configure_r_pattern(x_width, y_height)
+        await self.unpause()
+        await self.iface.write(stream)
+        if self.eight_bit_output:
+            bytes_needed = 18 + self.x_width*self.y_height
+        if not self.eight_bit_output:
+            bytes_needed = 18 + self.x_width*self.y_height*2
+        data = await self.iface.read(bytes_needed)
+        await self.pause()
+        self.scan_stream.writeto(data)
+        print(self.scan_stream.buffer)
+
+
 class SG_EndpointInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.task_queue = TaskQueue()
         self.server_host = ServerHost(self.process_cmd, self.task_queue)
         self.streaming = None
-        self.logging = True
-        print(f'logging? {self.logging}')
 
         self.write_buffer = ChunkedFIFO()
         self.in_tasks = TaskQueue()
@@ -411,24 +447,8 @@ class SG_EndpointInterface(ScanGenInterface):
         ## using sys.prefix instead of "python3" results in a PermissionError
         ## because pipx isn't supposed to be used that way
         ## would be nice to stay in the same environment though
-        subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/streaming_gui.py"],
+        subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/gui/streaming_gui.py"],
                         start_new_session = True)
-
-    # async def send_packet(self, future_data,n):
-    #     loop = asyncio.get_event_loop()
-    #     future_future_data = loop.create_future()
-    #     await self.rcv_future_data(future_future_data,n)
-    #     data = future_future_data.result()
-    #     if self.logging:
-    #         self._logger.info(f'received future data {n}, length: {str(len(data))}' )
-    #     print("writing", data)
-    #     if data is not None:
-    #         self.server_host.data_writer.write(data)
-    #         await self.server_host.data_writer.drain()
-    #         self._logger.info(f'wrote future data to socket {n}, length: {str(len(data))}')
-    #         self.text_file.write(str(data.tolist()))
-    #         print("send complete")
-    #     future_data.set_result(n)
 
     async def recv_packet(self, n):
         print(f'standing by to recieve pattern packet {n}...')
@@ -440,8 +460,8 @@ class SG_EndpointInterface(ScanGenInterface):
         print("data reader at eof?", self.server_host.data_reader.at_eof())
         print(len(self.server_host.data_reader._buffer))
         try:
-            data = await self.server_host.data_reader.readexactly(16384*3)
-            #data = await self.server_host.data_reader.read()
+            #data = await self.server_host.data_reader.readexactly(16384*3)
+            data = await self.server_host.data_reader.read()
             print(f'recieved {len(data)} points, {n}')
             if self.logging:
                 self._logger.info(f'recieved points from server {n}')
@@ -459,17 +479,13 @@ class SG_EndpointInterface(ScanGenInterface):
             try:
                 if (self.scan_mode == 3) | (self.scan_mode == 2):
                     await self.recv_packet(n)
-                if self.logging:
-                    self._logger.info(f'awaiting read {n}')
-                data = await self.iface.read(16384)
+                self._logger.info(f'awaiting read {n}')
+                data = await self.iface.read()
                 n += 1
-                if self.logging:
-                    self._logger.info(f'got read data {n}')
-                    self.text_file.write(str(data.tolist()))
+                self._logger.info(f'got read data {n}')
                 self.server_host.data_writer.write(data)
                 await self.server_host.data_writer.drain()
-                if self.logging:
-                    self._logger.info(f'wrote data to socket {n}')
+                self._logger.info(f'wrote data to socket {n}')
             except Exception as exc:
                 print(f'error streaming: {exc}')
                 break
@@ -482,52 +498,33 @@ class SG_EndpointInterface(ScanGenInterface):
         if c == "ps":
             if val == 0:
                 await self.pause()
-                #self.task_queue.submit(self.pause())
-                print("pause")
             if val == 1:
                 await self.unpause()
-                #self.task_queue.submit(self.unpause())
-                print("unpaused")
                 if (self.scan_mode == 3) | (self.scan_mode == 2):
                     if self.logging:
                         self._logger.info("created recv_packet task")
-                    #await self.recv_packet("*")
-                    self.task_queue.submit(self.recv_packet("*"))
+                    await self.recv_packet("*")
         elif c == "sc":
-            await self.set_scan_mode(val)
-            #self.task_queue.submit(self.set_scan_mode(val))
-            print("set scan mode done")
+            return await self.set_scan_mode(val)
         elif c == "dw":
-            await self.set_dwell_time(val)
-            #self.task_queue.submit(self.set_dwell_time(val))
+            return await self.set_dwell_time(val)
         elif c == "rx":
-            await self.set_x_resolution(val)
-            #self.task_queue.submit(self.set_x_resolution(val))
+            return await self.set_x_resolution(val)
         elif c == "ry":
-            await self.set_y_resolution(val)
-            #self.task_queue.submit(self.set_y_resolution(val))
+            return await self.set_y_resolution(val)
         elif c == "ux":
-            await self.set_x_upper_limit(val)
-            #self.task_queue.submit(self.set_x_upper_limit(val))
+            return await self.set_x_upper_limit(val)
         elif c == "lx":
-            await self.set_x_lower_limit(val)
-            #self.task_queue.submit(self.set_x_lower_limit(val))
+            return await self.set_x_lower_limit(val)
         elif c == "uy":
-            await self.set_y_upper_limit(val)
-            #self.task_queue.submit(self.set_y_upper_limit(val))
+            return await self.set_y_upper_limit(val)
         elif c == "ly":
-            await self.set_y_lower_limit(val)
-            #self.task_queue.submit(self.set_y_lower_limit(val))
+            return await self.set_y_lower_limit(val)
         elif c == "8b":
-            await self.set_8bit_output(val)
-            #self.task_queue.submit(self.set_8bit_output(val))
+            return await self.set_8bit_output(val)
         elif c == "cf":
-            await self.set_config_flag(val)
-            #self.task_queue.submit(self.set_config_flag(val))
+            return await self.set_config_flag(val)
         
-        #await self.task_queue.poll()
-
-
 class SG_LocalBufferInterface(ScanGenInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -535,6 +532,7 @@ class SG_LocalBufferInterface(ScanGenInterface):
         self.dimension, self.dimension_path = self.save_dimension(512)
         self.buf, self.buf_path = self.create_buf_file()
         self.last_pixel = 0
+        self.scan_stream = ScanStream()
     def save_dimension(self, dimension):
         path = f'{self.cwd}/current_display_setting'
         np.savetxt(path, [dimension])
@@ -543,43 +541,6 @@ class SG_LocalBufferInterface(ScanGenInterface):
         path = f'{self.cwd}/current_frame'
         buf = np.memmap(path, np.uint8, shape = (self.dimension*self.dimension), mode = "w+")
         return buf, path
-    def stream_to_buf(self, raw_data):
-        # print("-----------")
-        data = raw_data.tolist()
-        d = np.array(data)
-        print(d)
-        # print(buf)
-        zero_index = np.nonzero(d < 1)[0]
-        # print("buffer length:", len(buf))
-        # print("last pixel:",current.last_pixel)
-        #print("d length:", len(d))
-        # print("d:",d)
-        
-        if len(zero_index) > 0: #if a zero was found
-            # current.n += 1
-            # print("zero index:",zero_index)
-            zero_index = int(zero_index)
-
-            self.buf[:d[zero_index+1:].size] = d[zero_index+1:]
-            # print(buf[:d[zero_index+1:].size])
-            # print(d[:zero_index+1].size)
-            self.buf[self.dimension * self.dimension - zero_index:] = d[:zero_index]
-            # print(buf[dimension * dimension - zero_index:])
-            self.last_pixel = d[zero_index+1:].size
-            
-        else: 
-            if len(self.buf[self.last_pixel:self.last_pixel+len(d)]) < len(d):
-                pass
-            #     print("data too long to fit in end of frame, but no zero")
-            #     print(d[:dimension])
-            self.buf[self.last_pixel:self.last_pixel + d.size] = d
-            # print(buf[current.last_pixel:current.last_pixel + d.size])
-            self.last_pixel = self.last_pixel + d.size
-    async def stream_video(self):
-        print("getting data")
-        raw_data = await self.iface.read(16384)
-        print("got data")
-        threading.Thread(target=self.stream_to_buf(raw_data)).start()
     def launch_gui(self):
         ## using sys.prefix instead of "python3" results in a PermissionError
         ## because pipx isn't supposed to be used that way
@@ -657,7 +618,7 @@ class ScanGenApplet(GlasgowApplet):
         do_frame_sync,         self.__addr_do_frame_sync  = target.registers.add_rw(1, reset=0)
         do_line_sync,          self.__addr_do_line_sync  = target.registers.add_rw(1, reset=0)
 
-        const_dwell_time,      self.__addr_const_dwell_time = target.registers.add_rw(8, reset=0)
+        const_dwell_time,      self.__addr_const_dwell_time = target.registers.add_rw(8, reset=2)
 
         configuration,         self.__addr_configuration = target.registers.add_rw(1, reset=0)
 
@@ -668,7 +629,7 @@ class ScanGenApplet(GlasgowApplet):
         iface.add_subtarget(IOBusSubtarget(
             data=[iface.get_pin(pin) for pin in args.pin_set_data],
             power_ok=iface.get_pin(args.pin_power_ok),
-            in_fifo = iface.get_in_fifo(auto_flush = False),
+            in_fifo = iface.get_in_fifo(auto_flush = True),
             out_fifo = iface.get_out_fifo(),
             scan_mode = scan_mode,
             x_full_resolution_b1 = x_full_resolution_b1, x_full_resolution_b2 = x_full_resolution_b2,
@@ -691,42 +652,24 @@ class ScanGenApplet(GlasgowApplet):
                                     # read_buffer_size = 10*16384,
                                     # write_buffer_size = 10*16384)
 
+        arguments = [iface, self.logger, device, self.__addr_scan_mode,
+            self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
+            self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
+            self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
+            self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
+            self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
+            self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
+            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
+            self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
+            self.__addr_const_dwell_time]
         if args.buf == "local":
-            scan_iface = SG_LocalBufferInterface(iface, self.logger, device, self.__addr_scan_mode,
-            self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
-            self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
-            self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
-            self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
-            self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
-            self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
-            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
-            self.__addr_const_dwell_time
-            )
-        if args.buf == "endpoint":
-            scan_iface = SG_EndpointInterface(iface, self.logger, device, self.__addr_scan_mode,
-            self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
-            self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
-            self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
-            self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
-            self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
-            self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
-            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
-            self.__addr_const_dwell_time
-            )
+            scan_iface = SG_LocalBufferInterface(*arguments)
+        elif args.buf == "api":
+            scan_iface = SG_APIInterface(*arguments)
+        elif args.buf == "endpoint":
+            scan_iface = SG_EndpointInterface(*arguments)
         else:
-            scan_iface = ScanGenInterface(iface, self.logger, device, self.__addr_scan_mode,
-            self.__addr_x_full_resolution_b1, self.__addr_x_full_resolution_b2,
-            self.__addr_y_full_resolution_b1, self.__addr_y_full_resolution_b2,
-            self.__addr_x_upper_limit_b1, self.__addr_x_upper_limit_b2,
-            self.__addr_x_lower_limit_b1, self.__addr_x_lower_limit_b2,
-            self.__addr_y_upper_limit_b1, self.__addr_y_upper_limit_b2,
-            self.__addr_y_lower_limit_b1, self.__addr_y_lower_limit_b2,
-            self.__addr_8_bit_output, self.__addr_do_frame_sync, self.__addr_do_line_sync,
-            self.__addr_configuration, self.__addr_unpause, self.__addr_step_size,
-            self.__addr_const_dwell_time
-            )
+            scan_iface = ScanGenInterface(*arguments)
 
         return scan_iface
         
@@ -837,8 +780,6 @@ class ScanGenApplet(GlasgowApplet):
                 scan_iface.text_file.write("\n RCVD: \n")
                 scan_iface.text_file.write(str(data.tolist()))
 
-        if args.buf == "hilbert":
-            await scan_iface.hilbert_loop()
 
         if args.buf == "endless":
             await scan_iface.pause()
@@ -850,7 +791,8 @@ class ScanGenApplet(GlasgowApplet):
             while True:
                 data = await scan_iface.iface.read(16384)
 
-        
+        if args.buf == "api":
+            await scan_iface.write_bitmap("/Users/isabelburgos/Scan-Gen-Glasgow-Testing-main/software/glasgow/applet/video/scan_gen/pattern_files/Nanographs Pattern Test Logo and Gradients.bmp")
             
         if args.buf == "endpoint":
             if args.gui:
