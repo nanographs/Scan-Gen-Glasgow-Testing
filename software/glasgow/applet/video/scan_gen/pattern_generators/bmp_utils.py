@@ -18,13 +18,17 @@ def bmp_import(filename):
 
 
 
-def bmp_to_bitstream(filename, x_width, y_height, invert_color = False):
+def bmp_to_bitstream(filename, x_width=None, y_height=None, invert_color = False):
     im = Image.open(filename)
     height, width = im.size
+    if x_width == None:
+        x_width = width
+    if y_height == None:
+        y_height = height
     im = im.convert("L")
     if invert_color:
         im = ImageChops.invert(im)
-    im = im.point(lambda i: window(i))
+    #im = im.point(lambda i: window(i))
     pattern_array = np.array(im).astype(np.uint8)
 
     ## pad the array to fit the full frame resolution
@@ -51,7 +55,8 @@ def bmp_to_bitstream(filename, x_width, y_height, invert_color = False):
     print(pattern_array)
 
     pattern_stream = np.ravel(pattern_array)
-    return pattern_loop(x_width*y_height, pattern_stream)
+    #return pattern_loop(x_width*y_height, pattern_stream)
+    return list(pattern_stream), x_width, y_height
 
 
 def pattern_loop(dimension, pattern_stream):

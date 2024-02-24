@@ -63,7 +63,7 @@ class FrameSettings(QHBoxLayout):
         )
         self.addButtonPanel(s)
 
-        self.dwell = self.addRegister("Dwell Time", 1, 255, 1)
+        self.dwell = self.addRegister("Dwell Time", 2, 255, 1)
         self.pattern_settings = PatternSettings()
         self.addLayout(self.pattern_settings)
 

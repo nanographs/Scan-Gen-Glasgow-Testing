@@ -16,6 +16,7 @@ if __name__ == "__main__":
 
 from modules.frame_settings import FrameSettings
 from modules.image_display import ImageDisplay
+from modules.waveform_monitor import WFM
 from interface.scan_stream import ScanStream
 from pattern_generators.bmp_utils import bmp_to_bitstream, bmp_import
 
@@ -62,6 +63,10 @@ class ScanMainWindow(QWidget):
         self.save_btn = QPushButton("Save")
         self.save_btn.clicked.connect(self.image_display.saveImage_PIL)
 
+        self.wfm_btn = QPushButton("WFM")
+        self.wfm_btn.setCheckable(True) 
+        self.wfm_btn.clicked.connect(self.toggle_wfm)
+        self.wfm = WFM()
 
         mode_options = QGridLayout()
         mode_options.addWidget(self.conn_btn,0,0)
@@ -69,12 +74,17 @@ class ScanMainWindow(QWidget):
         mode_options.addWidget(self.start_btn,0,2)
         mode_options.addWidget(self.reset_btn,0,3)
         mode_options.addWidget(self.roi_btn,0,4)
-        mode_options.addWidget(self.upload_pattern_btn, 0, 5)
-        mode_options.addWidget(self.save_btn, 0, 6)
+        mode_options.addWidget(self.wfm_btn,0,5)
+        mode_options.addWidget(self.upload_pattern_btn, 0, 6)
+        mode_options.addWidget(self.save_btn, 0, 7)
 
         self.layout.addLayout(mode_options,0,0)
 
         #self.setState("disconnected")
+
+    def toggle_wfm(self):
+        self.wfm.show()
+
 
     def toggle_ROI(self):
         print(f'roi mode? {self.roi_btn.isChecked()}')

@@ -339,7 +339,7 @@ def sim_iobus():
 
 
     sim = Simulator(dut)
-    sim.add_clock(1e-6) # 1 MHz
+    sim.add_clock(2.083333e-8) # 48 MHz
     sim.add_sync_process(bench)
     with sim.write_vcd("applet_sim.vcd"):
         sim.run()

@@ -90,7 +90,7 @@ class ConnectionManager:
             print(f'Pattern complete')
             return "done"
 
-    async def read_continously(self, print_debug = True):
+    async def read_continously(self, print_debug = False):
         reader = self.data_reader
         writer = self.data_writer
         n = 0

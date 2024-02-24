@@ -42,6 +42,9 @@ class ScanStream:
         self._buffer = bytearray()
 
         self.totalbytes = 0
+
+        self.divert_to_waveform = False
+        self.waveformbuffer = [0]
     
     def writeto(self, d:bytes, print_debug = False):
         if print_debug:
@@ -76,7 +79,7 @@ class ScanStream:
         assert(self.buffer[self.current_y,self.x_lower] == b2)
 
     
-    def new_points_to_frame(self, m:memoryview, print_debug = True):
+    def points_to_frame(self, m:memoryview, print_debug = False):
         data_length = len(m)
         if print_debug:
             print("\tdata length:", data_length)
@@ -324,8 +327,6 @@ class ScanStream:
 
         #self.check_left_sync()
             
-
-
     def points_to_vector(self, m:memoryview, print_debug = True):
         self.point_buffer.extend(m)
         while len(self.point_buffer) >= 2:
@@ -360,17 +361,19 @@ class ScanStream:
             pass
 
         if len(data) > 0: 
+            if self.divert_to_waveform:
+                self.waveformbuffer = data.cast('H').tolist()
             if (self.scan_mode == 1) | (self.scan_mode == 2):
                 if self.eight_bit_output == 0:
                     start = time.perf_counter()
                     #data = data.cast('H')
-                    eight_bit_data = data.tobytes()[1::2]
+                    eight_bit_data = data.tobytes()[0::2]
                     data = memoryview(eight_bit_data)
                     end = time.perf_counter()
                     if print_debug:
                         print(f'16 to 8 time {end-start}')
                 start = time.perf_counter()
-                self.new_points_to_frame(data)
+                self.points_to_frame(data)
                 end = time.perf_counter()
                 if print_debug:
                     print(f'Time to stuff {end-start}')
@@ -415,7 +418,7 @@ class ScanStream:
 
 
 
-    def parse_config_from_data(self, d:bytes, print_debug=True):
+    def parse_config_from_data(self, d:bytes, print_debug=False):
         n = re.finditer(self.config_match, d)
         prev_stop = 0
         prev_config = None

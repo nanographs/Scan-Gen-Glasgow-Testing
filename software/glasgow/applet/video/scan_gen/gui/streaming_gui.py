@@ -107,6 +107,9 @@ class MainWindow(ScanMainWindow):
         self.con.scan_stream.clear_buffer()
         await self.updateData()
     
+    def toggle_wfm(self):
+        super().toggle_wfm()
+        self.con.scan_stream.divert_to_waveform = True
 
     @asyncSlot()
     async def set_ROI(self):
@@ -177,7 +180,9 @@ class MainWindow(ScanMainWindow):
 
     async def updateData(self):
         self.image_display.setImage(self.con.scan_stream.y_height, self.con.scan_stream.x_width, self.con.scan_stream.buffer)
-        
+        print(self.con.scan_stream.waveformbuffer)
+        if self.wfm_btn.isChecked():
+            self.wfm.setData(self.con.scan_stream.waveformbuffer)
         
 
 
