@@ -42,7 +42,7 @@ import pyqtgraph as pg
 
 class IOBusSubtarget(Elaboratable):
     def __init__(self, data, power_ok, in_fifo, out_fifo, scan_mode,
-                x_full_resolution_b1, x_full_resolution_b2, 
+                x_full_resolution_b1, x_full_resolution_b2,
                 y_full_resolution_b1, y_full_resolution_b2,
                 x_upper_limit_b1, x_upper_limit_b2,
                 x_lower_limit_b1, x_lower_limit_b2,
@@ -57,9 +57,9 @@ class IOBusSubtarget(Elaboratable):
         self.in_fifo = in_fifo
         self.out_fifo = out_fifo
         self.scan_mode = scan_mode
-        
 
-        self.io_bus = IOBus(self.in_fifo, self.out_fifo, scan_mode, 
+
+        self.io_bus = IOBus(self.in_fifo, self.out_fifo, scan_mode,
                             x_full_resolution_b1, x_full_resolution_b2,
                             y_full_resolution_b1, y_full_resolution_b2,
                             x_upper_limit_b1, x_upper_limit_b2,
@@ -68,7 +68,7 @@ class IOBusSubtarget(Elaboratable):
                             y_lower_limit_b1, y_lower_limit_b2,
                             eight_bit_output, do_frame_sync, do_line_sync,
                             const_dwell_time, configuration, unpause, step_size,
-                            test_mode = test_mode, 
+                            test_mode = test_mode,
                             is_simulation = False)
 
         self.pins = Signal(14)
@@ -137,7 +137,7 @@ class IOBusSubtarget(Elaboratable):
             ]
 
 
-        
+
         with m.If(self.io_bus.bus_multiplexer.is_x):
             if self.board_version == 0:
                 for i, pad in enumerate(self.data):
@@ -228,10 +228,10 @@ class ScanGenInterface(MicroscopeInterface):
 
         self.x_width = 0
         self.y_height = 0
-    
+
     async def write(self, *args, **kwargs):
         return await self.iface.write(*args, **kwargs)
-    
+
     async def read(self, *args, **kwargs):
         return await self.iface.read(*args, **kwargs)
 
@@ -253,7 +253,7 @@ class ScanGenInterface(MicroscopeInterface):
         b1, b2 = get_two_bytes(val)
         print("writing", b1, b2)
         yield from self.iface.write([b2, b1])
-        
+
     async def write_2bytes(self, val):
         b1, b2 = get_two_bytes(val)
         print("writing", b1, b2)
@@ -274,7 +274,7 @@ class ScanGenInterface(MicroscopeInterface):
             self.eight_bit_output = True
         else:
             self.eight_bit_output = False
-    
+
     async def set_frame_sync(self, val=1):
         await self._device.write_register(self.__addr_do_frame_sync, val)
 
@@ -398,7 +398,7 @@ class SG_EndpointInterface(ScanGenInterface):
 
         self.write_buffer = ChunkedFIFO()
         self.in_tasks = TaskQueue()
-        
+
 
     def start_servers(self, close_future):
         self.close_future = close_future
@@ -527,7 +527,7 @@ class SG_EndpointInterface(ScanGenInterface):
         elif c == "cf":
             await self.set_config_flag(val)
             #self.task_queue.submit(self.set_config_flag(val))
-        
+
         #await self.task_queue.poll()
 
 
@@ -557,7 +557,7 @@ class SG_LocalBufferInterface(ScanGenInterface):
         # print("last pixel:",current.last_pixel)
         #print("d length:", len(d))
         # print("d:",d)
-        
+
         if len(zero_index) > 0: #if a zero was found
             # current.n += 1
             # print("zero index:",zero_index)
@@ -569,8 +569,8 @@ class SG_LocalBufferInterface(ScanGenInterface):
             self.buf[self.dimension * self.dimension - zero_index:] = d[:zero_index]
             # print(buf[dimension * dimension - zero_index:])
             self.last_pixel = d[zero_index+1:].size
-            
-        else: 
+
+        else:
             if len(self.buf[self.last_pixel:self.last_pixel+len(d)]) < len(d):
                 pass
             #     print("data too long to fit in end of frame, but no zero")
@@ -589,7 +589,7 @@ class SG_LocalBufferInterface(ScanGenInterface):
         ## would be nice to stay in the same environment though
         subprocess.Popen(["python3", "software/glasgow/applet/video/scan_gen/output_formats/local_gui.py"],
                         start_new_session = True)
-        
+
 
 
 class ScanGenApplet(GlasgowApplet):
@@ -633,7 +633,7 @@ class ScanGenApplet(GlasgowApplet):
                 Resource("A_CLOCK", 0, Pins("F4", dir="o"), Attrs(IO_STANDARD="SB_LVCMOS33")),]
 
             target.platform.add_resources(LVDS)
-        
+
         if args.vers == 1:
             target.platform.add_resources(obi_resources)
 
@@ -684,7 +684,7 @@ class ScanGenApplet(GlasgowApplet):
             const_dwell_time = const_dwell_time, configuration = configuration, unpause = unpause, step_size = step_size,
             test_mode = args.test_mode, board_version = args.vers
         ))
-        
+
     @classmethod
     def add_run_arguments(cls, parser, access):
         super().add_run_arguments(parser, access)
@@ -732,7 +732,7 @@ class ScanGenApplet(GlasgowApplet):
             )
 
         return scan_iface
-        
+
     @classmethod
     def add_interact_arguments(cls, parser):
         parser.add_argument("--gui", default=False, action="store_true")
@@ -811,7 +811,7 @@ class ScanGenApplet(GlasgowApplet):
                         assert(d == check_against)
                     except AssertionError:
                         print("NOT A MATCH")
-                
+
             #     scan_stream.parse_config_from_data(bytes(data))
             # pg.image(scan_stream.buffer)
             # pg.exec()
@@ -853,8 +853,8 @@ class ScanGenApplet(GlasgowApplet):
             while True:
                 data = await scan_iface.iface.read(16384)
 
-        
-            
+
+
         if args.buf == "endpoint":
             if args.gui:
                 scan_iface.launch_gui()
@@ -874,8 +874,8 @@ class ScanGenApplet(GlasgowApplet):
 
 
 
-        
-                
+
+
 
 
 
