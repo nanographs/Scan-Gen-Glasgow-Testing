@@ -79,7 +79,10 @@ class IOBusSubtarget(Elaboratable):
         m.submodules["IOBus"] = self.io_bus
 
         if self.board_version == 0:
-            x_latch = platform.request("X_LATCH")
+            #x_latch = platform.request("X_LATCH", xdr=1)
+            #m.d.comb += x_latch.o_clk.eq(ClockSignal())
+            
+            x_latch = platform.request("X_LATCH", xdr=1)
             x_enable = platform.request("X_ENABLE")
             y_latch = platform.request("Y_LATCH")
             y_enable = platform.request("Y_ENABLE")

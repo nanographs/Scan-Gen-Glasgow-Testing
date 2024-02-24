@@ -3,7 +3,7 @@ from amaranth import *
 from amaranth.sim import Simulator
 
 class MinDwellCtr(Elaboratable):
-    def __init__(self,half_freq):
+    def __init__(self,half_freq): # half_period
         self.half_freq = half_freq
         self.clock = Signal()
     def elaborate(self, platform):
@@ -36,6 +36,14 @@ class DataLatch(Elaboratable):
         #     Cat(self.oe, self.le).eq(self.state)
         # ]
         return m
+
+# from amaranth.lib import wiring
+# from amaranth.lib.wiring import In, Out
+# DATA_LATCH = wiring.Signature({
+#     "le": Out(1),
+#     "oe": Out(1),
+# })
+# x = DATA_LATCH.create(); x.le # (sig 1)
 
 class DACSample(Elaboratable):
     '''

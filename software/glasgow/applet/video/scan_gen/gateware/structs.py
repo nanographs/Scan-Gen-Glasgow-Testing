@@ -61,10 +61,8 @@ reduced_area_16 = data.StructLayout({
 
 
 import struct 
-def get_two_bytes(n: int):
-    b = struct.pack('H', n)
-    b1, b2 = list(b)
-    return b2, b1
+def get_two_bytes(n: int) -> bytes:
+    return struct.pack('>H', n)
 
 
 #print(get_two_bytes(1000))

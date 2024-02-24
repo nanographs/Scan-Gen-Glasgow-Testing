@@ -66,27 +66,34 @@ class StreamReader(Elaboratable):
         m = Module()
 
         s = Signal()
-        fields = self.dtype._fields
+        fields = list(self.dtype._fields)
         field_strs = list(fields.keys())
         first_field = field_strs[0]
         last_field = field_strs[-1]
-        second_to_last_field = field_strs[-2]
+
+        # from amaranth.lib import data
+        # vector_point_layout = data.StructLayout({
+        #     "x": unsigned(16),
+        #     "y": unsigned(16),
+        #     "dwell": unsigned(16),
+        # })
+        # vector_point = Signal(vector_point_layout)
+        # vector_point.y # equivalent to vector_point.as_value()[16:32]
 
 
         with m.FSM() as fsm:
-            for n in range(len(fields)-1):
-                field = list(fields)[n]
-                next_field = list(fields)[n+1]
+            for n, field in enumerate(fields[:-1]):
+                next_field = fields[n+1]
                 with m.State(field):
                     with m.If(self.read_happened):
-                        m.d.sync += self.data.__getitem__(field).eq(self.out_fifo_r_data)
+                        m.d.sync += self.data[field].eq(self.out_fifo_r_data)
                         m.next = next_field
+
             with m.State(last_field):
                 with m.If(self.read_happened):
-                    for n in range(len(fields)-1):
-                        field = list(fields)[n]
-                        m.d.comb += self.data_c.__getitem__(field).eq(self.data.__getitem__(field))
-                    m.d.comb += self.data_c.__getitem__(last_field).eq(self.out_fifo_r_data)
+                    for field in fields[:-1]:
+                        m.d.comb += self.data_c[field].eq(self.data[field])
+                    m.d.comb += self.data_c[last_field].eq(self.out_fifo_r_data)
                     m.d.comb += self.data_fresh.eq(1)
                     with m.If(self.data_used):
                         m.d.sync += self.data.eq(0)

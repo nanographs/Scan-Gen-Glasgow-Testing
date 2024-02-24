@@ -22,6 +22,7 @@ class TrueDwellTimeAverager(Elaboratable):
         self.averaging = Signal()
         self.strobe = Signal()
         self.dwell_time = Signal(16)
+        
     def elaborate(self, platform):
         m = Module()
         q = Signal(16)

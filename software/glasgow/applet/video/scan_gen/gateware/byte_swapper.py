@@ -51,15 +51,16 @@ class ByteSwapper(Elaboratable):
         #m.d.comb += self.shifted_point_data.eq(self.point_data)
 
 
-        m.d.comb += self.shifted_point_data.as_value()[7].eq(self.point_data.as_value()[13])
-        m.d.comb += self.shifted_point_data.as_value()[6].eq(self.point_data.as_value()[12])       
-        m.d.comb += self.shifted_point_data.as_value()[5].eq(self.point_data.as_value()[11])
-        m.d.comb += self.shifted_point_data.as_value()[4].eq(self.point_data.as_value()[10])
-        m.d.comb += self.shifted_point_data.as_value()[3].eq(self.point_data.as_value()[9])
-        m.d.comb += self.shifted_point_data.as_value()[2].eq(self.point_data.as_value()[8])
-        m.d.comb += self.shifted_point_data.as_value()[1].eq(self.point_data.as_value()[7])
-        m.d.comb += self.shifted_point_data.as_value()[0].eq(self.point_data.as_value()[6])
+        # m.d.comb += self.shifted_point_data.as_value()[7].eq(self.point_data.as_value()[13])
+        # m.d.comb += self.shifted_point_data.as_value()[6].eq(self.point_data.as_value()[12])       
+        # m.d.comb += self.shifted_point_data.as_value()[5].eq(self.point_data.as_value()[11])
+        # m.d.comb += self.shifted_point_data.as_value()[4].eq(self.point_data.as_value()[10])
+        # m.d.comb += self.shifted_point_data.as_value()[3].eq(self.point_data.as_value()[9])
+        # m.d.comb += self.shifted_point_data.as_value()[2].eq(self.point_data.as_value()[8])
+        # m.d.comb += self.shifted_point_data.as_value()[1].eq(self.point_data.as_value()[7])
+        # m.d.comb += self.shifted_point_data.as_value()[0].eq(self.point_data.as_value()[6])
 
+        m.d.comb += self.shifted_point_data.eq(self.point_data.as_value()[6:13])
 
 
         for pair in replace_16:
@@ -69,7 +70,7 @@ class ByteSwapper(Elaboratable):
             m.d.comb += replaced_with.eq(pair[1])
             
             with m.If(self.shifted_point_data.as_value() == replaced.as_value()):
-                m.d.comb += self.processed_point_data.as_value().eq(replaced_with.as_value())
+                m.d.comb += self.processed_point_data.eq(replaced_with.as_value())
                 m.d.comb += q.eq(1)
             with m.Else():
                 m.d.comb += self.processed_point_data.eq(self.shifted_point_data)
